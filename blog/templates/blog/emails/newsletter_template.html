@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ campaign.title }}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #FF7120;
+        }
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #FF7120;
+            margin-bottom: 10px;
+        }
+        .tagline {
+            color: #666;
+            font-size: 14px;
+        }
+        .content {
+            margin-bottom: 30px;
+        }
+        .content h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .blog-post {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #FF7120;
+        }
+        .blog-post h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .blog-post .meta {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        .blog-post .excerpt {
+            margin-bottom: 15px;
+        }
+        .read-more {
+            display: inline-block;
+            background-color: #FF7120;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .read-more:hover {
+            background-color: #e55a0d;
+        }
+        .featured-image {
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            color: #666;
+            font-size: 12px;
+        }
+        .social-links {
+            margin: 20px 0;
+        }
+        .social-links a {
+            display: inline-block;
+            margin: 0 10px;
+            color: #FF7120;
+            text-decoration: none;
+        }
+        .unsubscribe {
+            margin-top: 20px;
+            font-size: 11px;
+            color: #999;
+        }
+        .unsubscribe a {
+            color: #999;
+        }
+        .tracking-pixel {
+            width: 1px;
+            height: 1px;
+            border: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">Triple G BuildHub</div>
+            <div class="tagline">Building Excellence, Delivering Dreams</div>
+        </div>
+        
+        <div class="content">
+            <h2>{{ campaign.title }}</h2>
+            
+            <p>Hi{% if subscriber.name %} {{ subscriber.name }}{% endif %},</p>
+            
+            {% if campaign.campaign_type == 'new_post' and campaign.blog_post %}
+                <div class="blog-post">
+                    {% if campaign.blog_post.featured_image %}
+                        <img src="{{ campaign.blog_post.featured_image.url }}" alt="{{ campaign.blog_post.title }}" class="featured-image">
+                    {% endif %}
+                    
+                    <h3>{{ campaign.blog_post.title }}</h3>
+                    
+                    <div class="meta">
+                        Published on {{ campaign.blog_post.published_date|date:"F j, Y" }} 
+                        {% if campaign.blog_post.category %}in {{ campaign.blog_post.category.name }}{% endif %}
+                        • {{ campaign.blog_post.reading_time }} min read
+                    </div>
+                    
+                    <div class="excerpt">
+                        {{ campaign.blog_post.excerpt|default:campaign.blog_post.content|truncatewords:30|striptags }}
+                    </div>
+                    
+                    <a href="{{ click_tracking_url }}?url={{ campaign.blog_post.get_absolute_url }}" class="read-more">
+                        Read Full Article
+                    </a>
+                </div>
+            {% elif campaign.campaign_type == 'weekly_digest' %}
+                <p>Here's what's been happening at Triple G BuildHub this week:</p>
+                
+                <!-- Weekly digest content would go here -->
+                <div class="blog-post">
+                    <h3>This Week's Highlights</h3>
+                    <div class="excerpt">
+                        {{ campaign.content|safe }}
+                    </div>
+                    <a href="{{ click_tracking_url }}?url=/blog/" class="read-more">
+                        Visit Our Blog
+                    </a>
+                </div>
+            {% else %}
+                <!-- Custom campaign content -->
+                <div class="blog-post">
+                    <div class="excerpt">
+                        {{ campaign.content|safe }}
+                    </div>
+                    <a href="{{ click_tracking_url }}?url=/blog/" class="read-more">
+                        Learn More
+                    </a>
+                </div>
+            {% endif %}
+            
+            <p>Thank you for being part of the Triple G BuildHub community. We're committed to bringing you the latest insights, tips, and updates from the construction industry.</p>
+        </div>
+        
+        <div class="footer">
+            <div class="social-links">
+                <a href="{{ click_tracking_url }}?url=https://facebook.com/triplegbuildhub">Facebook</a> |
+                <a href="{{ click_tracking_url }}?url=https://twitter.com/triplegbuildhub">Twitter</a> |
+                <a href="{{ click_tracking_url }}?url=https://linkedin.com/company/triplegbuildhub">LinkedIn</a> |
+                <a href="{{ click_tracking_url }}?url=https://instagram.com/triplegbuildhub">Instagram</a>
+            </div>
+            
+            <p>© {{ "now"|date:"Y" }} Triple G BuildHub. All rights reserved.</p>
+            <p>Building Excellence, Delivering Dreams</p>
+            
+            <p style="margin-top: 20px;">
+                <strong>Triple G BuildHub</strong><br>
+                Your trusted construction partner<br>
+                Email: info@triplegbuildhub.com
+            </p>
+            
+            <div class="unsubscribe">
+                <p>
+                    You're receiving this email because you subscribed to Triple G BuildHub newsletter.<br>
+                    <a href="{{ unsubscribe_url }}">Unsubscribe</a> | 
+                    <a href="{{ click_tracking_url }}?url=/blog/newsletter/preferences/{{ subscriber.confirmation_token }}/">Update Preferences</a>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tracking pixel for open tracking -->
+    <img src="{{ open_tracking_url }}" alt="" class="tracking-pixel">
+</body>
+</html>

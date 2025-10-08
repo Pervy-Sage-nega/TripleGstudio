@@ -63,6 +63,22 @@ class Project(models.Model):
     
     def __str__(self):
         return f"{self.title} ({self.year})"
+    
+    def hero_image_preview(self):
+        """Return HTML for hero image preview in admin"""
+        if self.hero_image:
+            return f'<img src="{self.hero_image.url}" style="max-width: 200px; max-height: 150px;" />'
+        return "No hero image"
+    hero_image_preview.allow_tags = True
+    hero_image_preview.short_description = "Hero Image Preview"
+    
+    def video_preview(self):
+        """Return HTML for video preview in admin"""
+        if self.video:
+            return f'<video controls style="max-width: 200px; max-height: 150px;"><source src="{self.video.url}" type="video/mp4"></video>'
+        return "No video"
+    video_preview.allow_tags = True
+    video_preview.short_description = "Video Preview"
 
 
 class ProjectImage(models.Model):

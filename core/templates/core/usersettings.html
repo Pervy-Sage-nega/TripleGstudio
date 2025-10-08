@@ -1,9 +1,8 @@
 {% extends 'layout.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  {% block head %}
+
+{% block head %}
+  {{ block.super }}
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>User Settings | Triple G Studio - {{ cache_buster }}</title>
@@ -58,11 +57,9 @@
   </style>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;400;500;600;700&display=swap">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap">
-  {% endblock %}
-</head>
-<body>
-  <!-- Navigation -->
-  {% block body %}
+{% endblock %}
+
+{% block body %}
 
   <!-- Main Content -->
   <!-- DEBUG: Rendering for user {{ user.username }} (ID: {{ user_id }}) at {{ cache_buster }} -->
@@ -363,11 +360,8 @@
           <img src="{% static 'images/tripleGlogo.jpg' %}" alt="Logo" class="logo-img">
         </div>
       </div>
-    </div>
   </footer>
 
   <!-- Scripts -->
   <script src="{% static 'js/usersettings.js' %}"></script>
-  {% endblock %}
-</body>
-</html>
+{% endblock %}

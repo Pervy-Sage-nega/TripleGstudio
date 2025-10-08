@@ -2,152 +2,214 @@ document.addEventListener('DOMContentLoaded', function() {
     // Mobile Navigation Toggle - Enhanced with animation
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const navLinks = document.getElementById('navLinks');
-    const postImageContainers = document.querySelectorAll('.post-image-container');
-
-if (postImageContainers.length) {
-    postImageContainers.forEach(container => {
-        // Skip if buttons already exist (e.g., in a dynamic DOM)
-        if (container.querySelector('.image-action-buttons')) return;
-
-        // Get the image element
-        const img = container.querySelector('img');
-        if (!img) return; // Skip if no image
-
-        // Create toggle button
-        const toggleBtn = document.createElement('button');
-        toggleBtn.className = 'image-toggle-btn';
-        toggleBtn.innerHTML = '<i class="fas fa-expand"></i>';
-        toggleBtn.title = 'Toggle image size';
-        toggleBtn.setAttribute('aria-label', 'Toggle image size');
-        
-        // Create download button
-        const downloadBtn = document.createElement('a');
-        downloadBtn.className = 'image-download-btn';
-        downloadBtn.innerHTML = '<i class="fas fa-download"></i>';
-        downloadBtn.title = 'Download image';
-        downloadBtn.setAttribute('aria-label', 'Download image');
-        
-        // Set download link (disable if invalid)
-        const canDownload = img.src && !img.src.startsWith('data:');
-        if (canDownload) {
-            downloadBtn.href = img.src;
-            downloadBtn.download = img.alt || 'image-download';
-        } else {
-            downloadBtn.style.opacity = '0.5';
-            downloadBtn.title = 'Download not available';
-            downloadBtn.onclick = (e) => e.preventDefault();
-        }
-        
-        // Create button container
-        const btnContainer = document.createElement('div');
-        btnContainer.className = 'image-action-buttons';
-        btnContainer.appendChild(toggleBtn);
-        btnContainer.appendChild(downloadBtn);
-        container.appendChild(btnContainer);
-
-        // Store overlay reference to avoid duplicates
-        let overlay = null;
-
-        // Toggle functionality
-        const toggleImage = () => {
-            container.classList.toggle('expanded');
-            
-            if (container.classList.contains('expanded')) {
-                // Expanded state
-                toggleBtn.innerHTML = '<i class="fas fa-compress"></i>';
-                toggleBtn.title = 'Minimize image';
-                
-                // Store original dimensions
-                container.dataset.originalWidth = container.style.width || 'auto';
-                container.dataset.originalHeight = container.style.height || 'auto';
-                
-                // Expand to full width
-                container.style.width = '100%';
-                container.style.height = 'auto';
-                container.style.maxWidth = 'none';
-                container.style.cursor = 'zoom-out';
-                
-                // Create overlay if it doesn't exist
-                if (!overlay) {
-                    overlay = document.createElement('div');
-                    overlay.className = 'image-overlay';
-                    overlay.addEventListener('click', toggleImage);
-                    container.appendChild(overlay);
-                }
-                
-                // Focus for keyboard navigation
-                container.setAttribute('tabindex', '0');
-                container.focus();
-            } else {
-                // Normal state
-                toggleBtn.innerHTML = '<i class="fas fa-expand"></i>';
-                toggleBtn.title = 'Expand image';
-                
-                // Restore original dimensions
-                container.style.width = container.dataset.originalWidth;
-                container.style.height = container.dataset.originalHeight;
-                container.style.maxWidth = '';
-                container.style.cursor = 'zoom-in';
-                
-                // Remove overlay if it exists
-                if (overlay) {
-                    overlay.remove();
-                    overlay = null;
-                }
-            }
-        };
-
-        // Attach toggle event
-        toggleBtn.addEventListener('click', toggleImage);
-        
-        // Keyboard support
-        container.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                toggleImage();
-            } else if (e.key === 'Escape' && container.classList.contains('expanded')) {
-                toggleImage();
-            }
-        });
-        
-        // Toggle on image click (excluding buttons)
-        img.addEventListener('click', (e) => {
-            if (!e.target.closest('.image-action-buttons')) {
-                toggleImage();
-            }
-        });
-        
-        // Prevent button clicks from bubbling to the image
-        btnContainer.addEventListener('click', (e) => e.stopPropagation());
-    });
-}
     
+    // Initialize mobile menu
     if (mobileMenuBtn && navLinks) {
         mobileMenuBtn.addEventListener('click', function() {
-            this.classList.toggle('active');
             navLinks.classList.toggle('active');
-            
-            // Change icon based on state
-            const icon = this.querySelector('i');
-            if (navLinks.classList.contains('active')) {
-                icon.classList.replace('fa-bars', 'fa-times');
-                document.body.style.overflow = 'hidden';
-            } else {
-                icon.classList.replace('fa-times', 'fa-bars');
-                document.body.style.overflow = '';
-            }
-        });
-        
-        // Close menu when clicking on a link
-        document.querySelectorAll('.nav-links a').forEach(link => {
-            link.addEventListener('click', () => {
-                navLinks.classList.remove('active');
-                mobileMenuBtn.querySelector('i').classList.replace('fa-times', 'fa-bars');
-                document.body.style.overflow = '';
-            });
         });
     }
     
+    // Initialize image functionality for both static and dynamic content
+    initializeImageFeatures();
+    
+    // Initialize gallery lightbox if gallery exists
+    initializeGalleryLightbox();
+    
+    // Initialize additional features
+    initializeAdditionalFeatures();
+});
+
+/**
+ * Initialize image features for blog posts
+ */
+function initializeImageFeatures() {
+    const postImageContainers = document.querySelectorAll('.post-image-container, .gallery-item');
+
+    if (postImageContainers.length) {
+        postImageContainers.forEach(container => {
+            // Skip if buttons already exist (e.g., in a dynamic DOM)
+            if (container.querySelector('.image-action-buttons')) return;
+
+            // Get the image element
+            const img = container.querySelector('img');
+            if (!img) return; // Skip if no image
+
+            // Create toggle button
+            const toggleBtn = document.createElement('button');
+            toggleBtn.className = 'image-toggle-btn';
+            toggleBtn.innerHTML = '<i class="fas fa-expand"></i>';
+            toggleBtn.title = 'Toggle image size';
+            toggleBtn.setAttribute('aria-label', 'Toggle image size');
+            
+            // Create download button
+            const downloadBtn = document.createElement('a');
+            downloadBtn.className = 'image-download-btn';
+            downloadBtn.innerHTML = '<i class="fas fa-download"></i>';
+            downloadBtn.title = 'Download image';
+            downloadBtn.setAttribute('aria-label', 'Download image');
+            
+            // Set download link (disable if invalid)
+            const canDownload = img.src && !img.src.startsWith('data:');
+            if (canDownload) {
+                downloadBtn.href = img.src;
+                downloadBtn.download = img.alt || 'image-download';
+            } else {
+                downloadBtn.style.opacity = '0.5';
+                downloadBtn.title = 'Download not available';
+                downloadBtn.onclick = (e) => e.preventDefault();
+            }
+            
+            // Create button container
+            const btnContainer = document.createElement('div');
+            btnContainer.className = 'image-action-buttons';
+            btnContainer.appendChild(toggleBtn);
+            btnContainer.appendChild(downloadBtn);
+            container.appendChild(btnContainer);
+
+            // Store overlay reference to avoid duplicates
+            let overlay = null;
+
+            // Toggle functionality
+            const toggleImage = () => {
+                container.classList.toggle('expanded');
+                
+                if (container.classList.contains('expanded')) {
+                    // Expanded state
+                    toggleBtn.innerHTML = '<i class="fas fa-compress"></i>';
+                    toggleBtn.title = 'Minimize image';
+                    
+                    // Store original dimensions
+                    container.dataset.originalWidth = container.style.width || 'auto';
+                    container.dataset.originalHeight = container.style.height || 'auto';
+                    
+                    // Expand to full width
+                    container.style.width = '100%';
+                    container.style.height = 'auto';
+                    container.style.maxWidth = 'none';
+                    container.style.cursor = 'zoom-out';
+                    
+                    // Create overlay if it doesn't exist
+                    if (!overlay) {
+                        overlay = document.createElement('div');
+                        overlay.className = 'image-overlay';
+                        overlay.addEventListener('click', toggleImage);
+                    }
+                    
+                    // Focus for keyboard navigation
+                    container.setAttribute('tabindex', '0');
+                    container.focus();
+                } else {
+                    // Normal state
+                    toggleBtn.innerHTML = '<i class="fas fa-expand"></i>';
+                    toggleBtn.title = 'Expand image';
+                    
+                    // Restore original dimensions
+                    container.style.width = container.dataset.originalWidth;
+                    container.style.height = container.dataset.originalHeight;
+                    container.style.maxWidth = '';
+                    container.style.cursor = 'zoom-in';
+                    
+                    // Remove overlay if it exists
+                    if (overlay) {
+                        overlay.remove();
+                        overlay = null;
+                    }
+                }
+            };
+
+            // Attach toggle event
+            toggleBtn.addEventListener('click', toggleImage);
+            
+            // Keyboard support
+            container.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    toggleImage();
+                } else if (e.key === 'Escape' && container.classList.contains('expanded')) {
+                    toggleImage();
+                }
+            });
+            
+            // Toggle on image click (excluding buttons)
+            img.addEventListener('click', (e) => {
+                if (!e.target.closest('.image-action-buttons')) {
+                    toggleImage();
+                }
+            });
+            
+            // Prevent button clicks from bubbling to the image
+            btnContainer.addEventListener('click', (e) => e.stopPropagation());
+        });
+    }
+}
+
+/**
+ * Initialize gallery lightbox functionality
+ */
+function initializeGalleryLightbox() {
+    // Add lightbox functionality for gallery images
+    const galleryImages = document.querySelectorAll('.gallery-item img');
+    
+    galleryImages.forEach(img => {
+        img.addEventListener('click', function() {
+            openLightbox(this.src, this.alt);
+        });
+    });
+}
+
+/**
+ * Open lightbox for image viewing
+ */
+function openLightbox(imageSrc, caption) {
+    // Create lightbox if it doesn't exist
+    let lightbox = document.getElementById('imageLightbox');
+    if (!lightbox) {
+        lightbox = document.createElement('div');
+        lightbox.id = 'imageLightbox';
+        lightbox.className = 'image-lightbox';
+        lightbox.innerHTML = `
+            <div class="lightbox-content">
+                <span class="lightbox-close">&times;</span>
+                <img class="lightbox-image" src="" alt="">
+                <div class="lightbox-caption"></div>
+            </div>
+        `;
+        document.body.appendChild(lightbox);
+        
+        // Add close functionality
+        lightbox.querySelector('.lightbox-close').addEventListener('click', closeLightbox);
+        lightbox.addEventListener('click', function(e) {
+            if (e.target === lightbox) {
+                closeLightbox();
+            }
+        });
+    }
+    
+    // Set image and caption
+    lightbox.querySelector('.lightbox-image').src = imageSrc;
+    lightbox.querySelector('.lightbox-image').alt = caption || '';
+    lightbox.querySelector('.lightbox-caption').textContent = caption || '';
+    
+    // Show lightbox
+    lightbox.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+/**
+ * Close lightbox
+ */
+function closeLightbox() {
+    const lightbox = document.getElementById('imageLightbox');
+    if (lightbox) {
+        lightbox.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+}
+
+// Additional functionality that was outside of functions
+// This code should be inside a function or removed if duplicate
+function initializeAdditionalFeatures() {
     // Enhanced Back to Top Button with progress indicator
     const backToTopBtn = document.querySelector('.back-to-top');
     
@@ -698,10 +760,13 @@ if (postImageContainers.length) {
                 .catch(err => {
                     console.error('Failed to copy: ', err);
                     copyButton.innerHTML = '<i class="fas fa-times"></i> Error';
+                    setTimeout(() => {
+                        copyButton.innerHTML = '<i class="far fa-copy"></i> Copy';
+                    }, 2000);
                 });
         });
     });
-});
+}
 
 // Helper function to debounce events
 function debounce(func, wait, immediate) {

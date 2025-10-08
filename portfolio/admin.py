@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.html import format_html
 from .models import Category, Project, ProjectImage, ProjectStat, ProjectTimeline
 
 # Register your models here.
@@ -12,7 +13,15 @@ class CategoryAdmin(admin.ModelAdmin):
 class ProjectImageInline(admin.TabularInline):
     model = ProjectImage
     extra = 1
-    fields = ['image', 'alt_text', 'order']
+    fields = ['image', 'image_preview', 'alt_text', 'order']
+    readonly_fields = ['image_preview']
+    
+    def image_preview(self, obj):
+        """Show image preview in inline"""
+        if obj.image:
+            return format_html('<img src="{}" style="max-width: 100px; max-height: 75px;" />', obj.image.url)
+        return "No image"
+    image_preview.short_description = "Preview"
 
 
 class ProjectStatInline(admin.TabularInline):
@@ -29,11 +38,12 @@ class ProjectTimelineInline(admin.TabularInline):
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = ['title', 'category', 'year', 'status', 'featured', 'completion_date']
+    list_display = ['title', 'category', 'year', 'status', 'featured', 'completion_date', 'has_hero_image', 'has_video']
     list_filter = ['category', 'year', 'status', 'featured']
     search_fields = ['title', 'description', 'location', 'lead_architect']
     list_editable = ['featured', 'status']
     date_hierarchy = 'completion_date'
+    readonly_fields = ['hero_image_preview', 'video_preview']
     
     fieldsets = (
         ('Basic Information', {
@@ -43,11 +53,21 @@ class ProjectAdmin(admin.ModelAdmin):
             'fields': ('year', 'location', 'size', 'duration', 'completion_date', 'lead_architect')
         }),
         ('Status & Media', {
-            'fields': ('status', 'featured', 'hero_image', 'video')
+            'fields': ('status', 'featured', 'hero_image', 'hero_image_preview', 'video', 'video_preview')
         }),
     )
     
     inlines = [ProjectImageInline, ProjectStatInline, ProjectTimelineInline]
+    
+    def has_hero_image(self, obj):
+        """Show if project has hero image"""
+        return "✅" if obj.hero_image else "❌"
+    has_hero_image.short_description = "Hero Image"
+    
+    def has_video(self, obj):
+        """Show if project has video"""
+        return "✅" if obj.video else "❌"
+    has_video.short_description = "Video"
 
 
 @admin.register(ProjectImage)

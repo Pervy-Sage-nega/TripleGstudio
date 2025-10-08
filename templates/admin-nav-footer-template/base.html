@@ -11,6 +11,9 @@
         {% block content %}{% endblock %}
     </main>
     {% include 'admin-nav-footer-template/layoutfooter.html' %}
+    
+    <!-- Admin Logout Functionality -->
+    <script src="{% static 'js/adminjs/admin-logout.js' %}"></script>
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>

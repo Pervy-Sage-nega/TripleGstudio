@@ -3,6 +3,15 @@ from . import views, api
 
 urlpatterns = [
     path('projectmanagement/', views.projectmanagement, name='projectmanagement'),
+    
+    # Project CRUD operations
+    path('create/', views.create_project, name='create_project'),
+    path('edit/<int:project_id>/', views.edit_project, name='edit_project'),
+    path('delete/<int:project_id>/', views.delete_project, name='delete_project'),
+    path('get-project/<int:project_id>/', views.get_project_data, name='get_project_data'),
+    path('save-draft/', views.save_draft, name='save_draft'),
+    
+    # Public views
     path('', views.project_list, name='project_list'),
     path('<int:project_id>/', views.project_detail, name='project_detail'),
     

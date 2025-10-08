@@ -19,6 +19,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from site_diary import views as site_diary_views
+from core.views import permission_denied_view
 
 urlpatterns = [
     # Put accounts URLs BEFORE admin to avoid conflicts
@@ -41,3 +42,6 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# Custom error handlers
+handler403 = permission_denied_view  # For 403 Forbidden errors (permission denied)

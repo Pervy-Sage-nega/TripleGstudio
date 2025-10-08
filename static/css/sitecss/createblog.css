@@ -76,6 +76,7 @@ a:hover {
     margin-bottom: 30px;
     padding-bottom: 15px;
     border-bottom: 2px solid var(--primary-color);
+   
 }
 
 .page-title {
@@ -135,6 +136,8 @@ a:hover {
     grid-template-columns: 1fr 1fr;
     gap: 30px;
     margin-bottom: 40px;
+    max-width: 100%;
+    overflow: hidden;
 }
 
 /* Form Container */
@@ -298,13 +301,14 @@ select.form-control {
     border-radius: 0 0 6px 6px;
     color: var(--dark-gray);
     overflow-y: auto;
+    overflow-x: auto;
     transition: border-color 0.3s;
     line-height: 1.6;
-}
-
-.editor-content:focus {
-    outline: none;
-    border-color: var(--primary-color);
+    word-wrap: break-word;
+    word-break: break-word;
+    white-space: pre-wrap;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .editor-content[data-placeholder]:empty:before {
@@ -408,7 +412,7 @@ select.form-control {
     padding: 20px;
     overflow-y: auto;
     flex: 1;
-    max-height: 670px;
+    max-height: 1000px;
 }
 
 .blog-preview h2 {

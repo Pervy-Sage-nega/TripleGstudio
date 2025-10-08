@@ -1,11 +1,20 @@
 {% load static %}
 {% if messages %}
-<div id="customModalOverlay" class="custom-modal-overlay" role="dialog" aria-modal="true">
-  <div class="custom-modal-content">
-    <button class="custom-modal-close" aria-label="Close modal">&times;</button>
-    {% for message in messages %}
-      <div class="custom-modal-body custom-alert-{{ message.tags }}">
-        <div class="custom-modal-icon">
+<!-- Modal Backdrop -->
+<div id="customModalOverlay" class="modal-backdrop active" role="dialog" aria-modal="true">
+  {% for message in messages %}
+  <div class="modal">
+    <!-- Close Button -->
+    <button class="close-btn custom-modal-close" aria-label="Close modal">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor">
+        <path d="M15 5L5 15M5 5L15 15" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+
+    <div class="modal-content">
+      <!-- Icon Section -->
+      <div class="icon-section">
+        <div class="icon-container custom-modal-icon">
           {% if message.tags == 'success' %}
             <i class="lni lni-checkmark-circle"></i>
           {% elif message.tags == 'info' %}
@@ -16,17 +25,21 @@
             <i class="lni lni-cross-circle"></i>
           {% endif %}
         </div>
-        <div class="custom-modal-text">
-          <h3>{{ message.tags|title }}</h3>
-          <p>{{ message }}</p>
-        </div>
-        <div class="custom-modal-actions">
+        <h2 class="modal-title">{{ message.tags|title }}</h2>
+      </div>
+
+      <!-- Content Section -->
+      <div class="content-section">
+        <p class="modal-description custom-modal-text">{{ message }}</p>
+        
+        <div class="modal-buttons custom-modal-actions">
           <button type="button" class="custom-btn-cancel">Cancel</button>
           <button type="button" class="custom-btn-confirm">Confirm</button>
         </div>
       </div>
-    {% endfor %}
+    </div>
   </div>
+  {% endfor %}
 </div>
 {% endif %}
-<!-- CSS and JS should be included in your main template, not here -->
+<!-- New modal design implemented with Django template integration -->

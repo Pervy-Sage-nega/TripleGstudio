@@ -4,7 +4,6 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize mobile menu functionality
     initMobileMenu();
     
     // Initialize the sticky comments functionality
@@ -13,10 +12,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize TOC toggle
     initTOCToggle();
     
-    // Add comment functionality
-    initCommentForm();
+    // Generate TOC from content headings
+    generateTOC();
     
-    // Initialize scroll events
     initScrollEvents();
     
     // Initialize image zoom functionality
@@ -153,201 +151,125 @@ function initTOCToggle() {
 }
 
 /**
- * Initialize comment form submission
+ * Generate Table of Contents from blog post headings
  */
-function initCommentForm() {
-    const commentForm = document.getElementById('blogCommentForm');
+function generateTOC() {
+    const tocList = document.getElementById('tocList');
+    const postContent = document.querySelector('.post-content');
+    const tocContainer = document.getElementById('postToc');
     
-    if (commentForm) {
-        // Set default avatar and name for all users
-        const clientName = document.getElementById('clientName');
-        const clientAvatar = document.getElementById('clientAvatar');
-        
-        commentForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Get form value
-            const content = document.getElementById('commentContent').value;
-            
-            if (content) {
-                // Use a default name for comments
-                const name = "Guest User";
-                
-                // Create new comment element
-                addNewComment(name, content);
-                
-                // Reset form
-                this.reset();
-                
-                // Show success message
-                showCommentSuccess();
-            }
-        });
+    if (!tocList || !postContent) return;
+    
+    // Find all headings in the post content
+    const headings = postContent.querySelectorAll('h1, h2, h3, h4, h5, h6');
+    
+    if (headings.length === 0) {
+        // Hide TOC if no headings found
+        if (tocContainer) {
+            tocContainer.style.display = 'none';
+        }
+        return;
     }
     
-    // Initialize reply buttons
-    const replyButtons = document.querySelectorAll('.reply-btn');
-    replyButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const commentEl = this.closest('.comment');
-            const commenterName = commentEl.querySelector('.commenter-name').textContent;
+    // Show TOC container
+    if (tocContainer) {
+        tocContainer.style.display = 'block';
+    }
+    
+    // Clear existing TOC
+    tocList.innerHTML = '';
+    
+    // Generate TOC items
+    headings.forEach((heading, index) => {
+        // Create unique ID if heading doesn't have one
+        if (!heading.id) {
+            // Create slug from heading text
+            const slug = heading.textContent
+                .toLowerCase()
+                .trim()
+                .replace(/[^\w\s-]/g, '') // Remove special characters
+                .replace(/[\s_-]+/g, '-') // Replace spaces and underscores with hyphens
+                .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
             
-            // Set focus to comment text area and add @username
-            const commentTextarea = document.getElementById('commentContent');
-            if (commentTextarea) {
-                commentTextarea.focus();
-                commentTextarea.value = `@${commenterName} `;
+            heading.id = slug || `heading-${index}`;
+        }
+        
+        // Create TOC item
+        const tocItem = document.createElement('li');
+        const tocLink = document.createElement('a');
+        
+        tocLink.href = `#${heading.id}`;
+        tocLink.textContent = heading.textContent;
+        tocLink.className = `toc-${heading.tagName.toLowerCase()}`;
+        
+        // Add indentation based on heading level
+        const level = parseInt(heading.tagName.charAt(1));
+        if (level > 2) {
+            tocItem.style.paddingLeft = `${(level - 2) * 20}px`;
+            tocItem.classList.add(`toc-level-${level}`);
+        }
+        
+        // Add smooth scroll behavior
+        tocLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            const target = document.getElementById(heading.id);
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
                 
-                // Scroll to form
-                const commentForm = document.querySelector('.comment-form');
-                if (commentForm) {
-                    commentForm.scrollIntoView({ behavior: 'smooth' });
+                // Update URL hash
+                history.pushState(null, null, `#${heading.id}`);
+            }
+        });
+        
+        tocItem.appendChild(tocLink);
+        tocList.appendChild(tocItem);
+    });
+    
+    // Add scroll spy functionality
+    addScrollSpy(headings);
+}
+
+/**
+ * Add scroll spy functionality to highlight current section in TOC
+ */
+function addScrollSpy(headings) {
+    if (headings.length === 0) return;
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            const id = entry.target.id;
+            const tocLink = document.querySelector(`#tocList a[href="#${id}"]`);
+            
+            if (tocLink) {
+                if (entry.isIntersecting) {
+                    // Remove active class from all TOC links
+                    document.querySelectorAll('#tocList a').forEach(link => {
+                        link.classList.remove('active');
+                    });
+                    
+                    // Add active class to current TOC link
+                    tocLink.classList.add('active');
                 }
             }
         });
+    }, {
+        rootMargin: '-20% 0% -35% 0%'
+    });
+    
+    // Observe all headings
+    headings.forEach(heading => {
+        observer.observe(heading);
     });
 }
 
-/**
- * Add a new comment to the comments list
- * @param {string} name - Commenter name
- * @param {string} content - Comment content
- */
-function addNewComment(name, content) {
-    // Get comments list container
-    const commentsList = document.querySelector('.sticky-comments-section .comments-list');
-    if (!commentsList) return;
-    
-    // Create comment element
-    const commentEl = document.createElement('div');
-    commentEl.className = 'comment';
-    
-    // Get current date
-    const now = new Date();
-    const dateStr = `${now.toLocaleString('default', { month: 'long' })} ${now.getDate()}, ${now.getFullYear()}`;
-    
-    // Use default avatar
-    const avatarSrc = "./css/images/default-profile.jpg";
-    
-    // Set comment HTML
-    commentEl.innerHTML = `
-        <div class="comment-avatar">
-            <img src="${avatarSrc}" alt="${name}">
-        </div>
-        <div class="comment-content">
-            <div class="comment-header">
-                <h4 class="commenter-name">${name}</h4>
-                <span class="comment-date">${dateStr}</span>
-            </div>
-            <p>${content}</p>
-            <div class="comment-actions">
-                <button class="reply-btn">Reply</button>
-            </div>
-        </div>
-    `;
-    
-    // Prepend to comments list
-    commentsList.insertBefore(commentEl, commentsList.firstChild);
-    
-    // Update comment count in header and badge
-    updateCommentCount();
-    
-    // Add event listener to reply button
-    const replyBtn = commentEl.querySelector('.reply-btn');
-    replyBtn.addEventListener('click', function() {
-        const commenterName = commentEl.querySelector('.commenter-name').textContent;
-        
-        // Set focus to comment text area and add @username
-        const commentTextarea = document.getElementById('commentContent');
-        if (commentTextarea) {
-            commentTextarea.focus();
-            commentTextarea.value = `@${commenterName} `;
-            
-            // Scroll to form
-            const commentForm = document.querySelector('.comment-form');
-            if (commentForm) {
-                commentForm.scrollIntoView({ behavior: 'smooth' });
-            }
-        }
-    });
-}
+// Comment functionality moved to blog-comments.js
 
-/**
- * Show success message after comment submission
- */
-function showCommentSuccess() {
-    // Create success message
-    const successMsg = document.createElement('div');
-    successMsg.className = 'comment-success-message';
-    successMsg.innerHTML = `
-        <div class="success-content">
-            <i class="fas fa-check-circle"></i>
-            <p>Your comment has been posted!</p>
-        </div>
-    `;
-    
-    // Style the message
-    Object.assign(successMsg.style, {
-        backgroundColor: 'rgba(0, 150, 0, 0.1)',
-        color: '#fff',
-        padding: '10px 15px',
-        borderRadius: '5px',
-        marginBottom: '15px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        opacity: '0',
-        transition: 'opacity 0.3s ease'
-    });
-    
-    // Add icon styling
-    const icon = successMsg.querySelector('i');
-    Object.assign(icon.style, {
-        color: '#00c853',
-        marginRight: '10px',
-        fontSize: '20px'
-    });
-    
-    // Insert before form
-    const commentForm = document.querySelector('.sticky-comments-section .comment-form');
-    if (commentForm) {
-        commentForm.parentElement.insertBefore(successMsg, commentForm);
-        
-        // Fade in
-        setTimeout(() => {
-            successMsg.style.opacity = '1';
-        }, 10);
-        
-        // Remove after a few seconds
-        setTimeout(() => {
-            successMsg.style.opacity = '0';
-            setTimeout(() => {
-                successMsg.parentElement.removeChild(successMsg);
-            }, 300);
-        }, 3000);
-    }
-}
+// addNewComment function moved to blog-comments.js
 
-/**
- * Update comment count in header and badge
- */
-function updateCommentCount() {
-    // Get all comments
-    const comments = document.querySelectorAll('.sticky-comments-section .comment');
-    const count = comments.length;
-    
-    // Update header
-    const headerEl = document.querySelector('.sticky-comments-section .comments-section h3');
-    if (headerEl) {
-        headerEl.textContent = `Comments (${count})`;
-    }
-    
-    // Update badge
-    const badge = document.querySelector('.comments-count-badge');
-    if (badge) {
-        badge.innerHTML = `<i class="fas fa-comments"></i> ${count} Comments`;
-    }
-}
+// Comment success and count functions moved to blog-comments.js
 
 /**
  * Initialize scroll events

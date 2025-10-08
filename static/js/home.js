@@ -98,7 +98,6 @@ document.addEventListener("DOMContentLoaded", function () {
     prevBtn.addEventListener("click", () => {
       smoothScroll("prev");
     });
-  
     // Next Button: Smooth Scroll Right
     nextBtn.addEventListener("click", () => {
       smoothScroll("next");
@@ -106,35 +105,46 @@ document.addEventListener("DOMContentLoaded", function () {
   
     // Function to change main image and background
     window.changeMainImage = function (imageSrc) {
-      let imagePath = imageSrc.includes("/images") ? imageSrc : "./images/" + imageSrc;
-  
+      // Handle both Django media URLs and static image paths
+      let imagePath;
+      if (imageSrc.startsWith('/media/') || imageSrc.startsWith('/static/') || imageSrc.startsWith('http')) {
+        // Django URL - use as is
+        imagePath = imageSrc;
+      } else if (imageSrc.includes("/images")) {
+        // Static path with /images - use as is
+        imagePath = imageSrc;
+      } else {
+        // Legacy path - add ./images/ prefix
+        imagePath = "./images/" + imageSrc;
+      }
+
       mainImage.style.transition = "opacity 0.5s ease, transform 0.5s ease";
       mainImage.style.opacity = "0";
       mainImage.style.transform = "scale(1.1)"; // Slight zoom effect
-  
+
       setTimeout(() => {
         mainImage.src = imagePath;
         mainImage.style.opacity = "1";
         mainImage.style.transform = "scale(1)"; // Reset scale
       }, 300);
-  
+
       homeSection.style.backgroundImage = `url('${imagePath}')`;
     };
-  
+
     // Clicking an image updates the main image
     images.forEach((img) => {
       img.addEventListener("click", function () {
         changeMainImage(this.src);
       });
     });
-  
+
     // Button hover effect
     let btns = document.querySelectorAll("a[data-color]");
     btns.forEach((btn) => {
       btn.onmousemove = function (e) {
         let x = e.pageX - btn.offsetLeft;
         let y = e.pageY - btn.offsetTop;
-  
+
         btn.style.setProperty("--x", x + "px");
         btn.style.setProperty("--y", y + "px");
         btn.style.setProperty("--clr", btn.getAttribute("data-color"));
@@ -150,6 +160,82 @@ document.addEventListener("DOMContentLoaded", function () {
         const newMaxScroll = recentProjects.scrollWidth - recentProjects.clientWidth;
       }
     });
+
+    // Homepage project filtering functionality
+    const yearFilter = document.getElementById('year-filter');
+    const categoryFilter = document.getElementById('category-filter');
+    const projectCards = document.querySelectorAll('.project-card');
+
+    // Function to filter projects
+    function filterProjects() {
+      const selectedYear = yearFilter ? yearFilter.value : 'all';
+      const selectedCategory = categoryFilter ? categoryFilter.value : 'all';
+
+      projectCards.forEach(card => {
+        const cardYear = card.getAttribute('data-year');
+        const cardCategory = card.getAttribute('data-category');
+        const isFeatured = card.querySelector('.featured-badge') !== null;
+
+        let showCard = true;
+
+        // Filter by year
+        if (selectedYear !== 'all' && cardYear !== selectedYear) {
+          showCard = false;
+        }
+
+        // Filter by category
+        if (selectedCategory !== 'all') {
+          if (selectedCategory === 'featured' && !isFeatured) {
+            showCard = false;
+          } else if (selectedCategory !== 'featured' && cardCategory !== selectedCategory) {
+            showCard = false;
+          }
+        }
+
+        // Show/hide card with animation
+        if (showCard) {
+          card.style.display = 'block';
+          card.style.opacity = '0';
+          card.style.transform = 'translateY(20px)';
+          
+          setTimeout(() => {
+            card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+          }, 50);
+        } else {
+          card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+          card.style.opacity = '0';
+          card.style.transform = 'translateY(-20px)';
+          
+          setTimeout(() => {
+            card.style.display = 'none';
+          }, 300);
+        }
+      });
+
+      // Update the "ALL" heading to show current filter
+      const filterHeading = document.querySelector('.filter-container h2');
+      if (filterHeading) {
+        let headingText = 'ALL';
+        if (selectedYear !== 'all' || selectedCategory !== 'all') {
+          const yearText = selectedYear !== 'all' ? selectedYear : '';
+          const categoryText = selectedCategory !== 'all' ? 
+            (selectedCategory === 'featured' ? 'FEATURED' : selectedCategory.toUpperCase()) : '';
+          headingText = [yearText, categoryText].filter(Boolean).join(' ') || 'FILTERED';
+        }
+        filterHeading.textContent = headingText;
+      }
+    }
+
+    // Add event listeners to filters
+    if (yearFilter) {
+      yearFilter.addEventListener('change', filterProjects);
+    }
+
+    if (categoryFilter) {
+      categoryFilter.addEventListener('change', filterProjects);
+    }
   
     // Add smooth scrolling behavior for vertical page scrolling
     // Current scroll position

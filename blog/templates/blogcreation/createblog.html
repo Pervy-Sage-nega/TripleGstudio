@@ -12,7 +12,11 @@
 
 {% block body %}
     {% include "site_diary/navtemplate/layout.html" %}
-    
+    <style>
+        .page-header {
+            margin-top: 50px;
+        }
+    </style>
     <div class="container">
         <!-- Page Header -->
         <div class="page-header">
@@ -32,25 +36,27 @@
         <!-- Blog Creation Form -->
         <div class="blog-creation-container">
             <div class="form-container">
-                <form id="blogForm" class="blog-form">
+                <form id="blogForm" class="blog-form" method="post" enctype="multipart/form-data" action="{% url 'site:createblog' %}">
+                    {% csrf_token %}
                     <!-- Title Input -->
                     <div class="form-group">
                         <label for="blogTitle">Blog Title <span class="required">*</span></label>
-                        <input type="text" id="blogTitle" name="blogTitle" class="form-control" placeholder="Enter a catchy title" required>
+                        <input type="text" id="blogTitle" name="title" class="form-control" placeholder="Enter a catchy title" value="{{ edit_blog.title|default:'' }}" required>
                     </div>
+                    
+                    <!-- Hidden field for edit mode -->
+                    {% if edit_blog %}
+                        <input type="hidden" name="edit_id" value="{{ edit_blog.id }}">
+                    {% endif %}
 
                     <!-- Blog Category -->
                     <div class="form-group">
                         <label for="blogCategory">Category <span class="required">*</span></label>
-                        <select id="blogCategory" name="blogCategory" class="form-control" required>
-                            <option value="" disabled selected>Select a category</option>
-                            <option value="industry-insights">Industry Insights</option>
-                            <option value="expert-advice">Expert Advice</option>
-                            <option value="case-study">Case Study</option>
-                            <option value="design-trends">Design Trends</option>
-                            <option value="sustainable-building">Sustainable Building</option>
-                            <option value="technology">Construction Technology</option>
-                            <option value="regulations">Regulations & Standards</option>
+                        <select id="blogCategory" name="category" class="form-control">
+                            <option value="" disabled {% if not edit_blog.category %}selected{% endif %}>Select a category</option>
+                            {% for category in categories %}
+                                <option value="{{ category.id }}" {% if edit_blog.category.id == category.id %}selected{% endif %}>{{ category.name }}</option>
+                            {% endfor %}
                         </select>
                     </div>
                     
@@ -59,29 +65,150 @@
                         <label for="featuredImage">Featured Image</label>
                         <div class="image-upload-container">
                             <div class="image-preview" id="imagePreview">
-                                <i class="fas fa-image"></i>
-                                <span>No image selected</span>
+                                {% if edit_blog and edit_blog.featured_image %}
+                                    <img src="{{ edit_blog.featured_image.url }}" alt="{{ edit_blog.featured_image_alt|default:'Featured image' }}" id="previewImg">
+                                {% else %}
+                                    <i class="fas fa-image"></i>
+                                    <span>No image selected</span>
+                                {% endif %}
                             </div>
                             <div class="image-input">
-                                <input type="file" id="featuredImage" name="featuredImage" accept=".jpg, .jpeg, .png" class="form-control-file">
+                                <input type="file" id="featuredImage" name="featured_image" accept=".jpg, .jpeg, .png" class="form-control-file">
                                 <label for="featuredImage" class="upload-btn">
                                     <i class="fas fa-upload"></i> Choose Image
                                 </label>
                                 <p class="file-info">JPG or PNG, max 2MB</p>
                             </div>
                         </div>
+                        
+                        <!-- Featured Image Alt Text -->
+                        <div class="form-group" style="margin-top: 10px;">
+                            <label for="featuredImageAlt">Featured Image Alt Text (for accessibility)</label>
+                            <input type="text" id="featuredImageAlt" name="featured_image_alt" class="form-control" placeholder="Describe the image for screen readers" value="{{ edit_blog.featured_image_alt|default:'' }}">
+                            <small class="form-text text-muted">Helps with accessibility and SEO. Describe what's in the image.</small>
+                        </div>
                     </div>
 
                     <!-- Tags Input -->
                     <div class="form-group">
                         <label for="blogTags">Tags (separate with commas)</label>
-                        <input type="text" id="blogTags" name="blogTags" class="form-control" placeholder="architecture, design, construction">
+                        <input type="text" id="blogTags" name="tags" class="form-control" placeholder="architecture, design, construction" value="{% if edit_blog %}{% for tag in edit_blog.tags.all %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}">
                     </div>
 
-                    <!-- Reading Time Estimate -->
+                    <!-- Blog Excerpt -->
                     <div class="form-group">
-                        <label for="readingTime">Estimated Reading Time (minutes)</label>
-                        <input type="number" id="readingTime" name="readingTime" class="form-control" min="1" max="60" placeholder="5">
+                        <label for="blogExcerpt">Blog Excerpt (Brief Summary)</label>
+                        <textarea id="blogExcerpt" name="excerpt" class="form-control" rows="3" maxlength="500" placeholder="Brief summary of your blog post for previews...">{{ edit_blog.excerpt|default:'' }}</textarea>
+                        <small class="form-text text-muted">Maximum 500 characters</small>
+                    </div>
+
+                    <!-- SEO Section -->
+                    <div class="form-section">
+                        <h4 class="section-title"><i class="fas fa-search"></i> SEO Optimization</h4>
+                        
+                        <!-- SEO Meta Title -->
+                        <div class="form-group">
+                            <label for="seoTitle">SEO Meta Title</label>
+                            <input type="text" id="seoTitle" name="seo_meta_title" class="form-control" maxlength="60" placeholder="Optimized title for search engines" value="{{ edit_blog.seo_meta_title|default:'' }}">
+                            <small class="form-text text-muted">Maximum 60 characters. Leave empty to auto-generate from title.</small>
+                            <div class="char-counter">0/60</div>
+                        </div>
+                        
+                        <!-- SEO Meta Description -->
+                        <div class="form-group">
+                            <label for="seoDescription">SEO Meta Description</label>
+                            <textarea id="seoDescription" name="seo_meta_description" class="form-control" rows="2" maxlength="160" placeholder="Brief description for search engine results">{{ edit_blog.seo_meta_description|default:'' }}</textarea>
+                            <small class="form-text text-muted">Maximum 160 characters. Leave empty to auto-generate from excerpt.</small>
+                            <div class="char-counter">0/160</div>
+                        </div>
+                    </div>
+
+                    <!-- Blog Status -->
+                    <div class="form-group">
+                        <label for="blogStatus">Status</label>
+                        <select id="blogStatus" name="status" class="form-control">
+                            <option value="draft" {% if not edit_blog or edit_blog.status == 'draft' %}selected{% endif %}>Draft</option>
+                            <option value="published" {% if edit_blog.status == 'published' %}selected{% endif %}>Published</option>
+                        </select>
+                    </div>
+
+                    <!-- Featured Post -->
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input type="checkbox" id="featuredPost" name="featured" class="form-check-input" {% if edit_blog.featured %}checked{% endif %}>
+                            <label for="featuredPost" class="form-check-label">Mark as Featured Post</label>
+                        </div>
+                    </div>
+
+                    <!-- Gallery Images Section -->
+                    <div class="form-section">
+                        <h4 class="section-title"><i class="fas fa-images"></i> Gallery Images</h4>
+                        
+                        <div class="form-group">
+                            <label for="galleryImages">Additional Images</label>
+                            <div class="gallery-upload-container">
+                                <div class="gallery-upload-area" id="galleryUploadArea">
+                                    <div class="upload-placeholder">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                        <p>Click to upload gallery images or drag and drop</p>
+                                        <small>Supports multiple images (JPG, PNG, WebP)</small>
+                                    </div>
+                                    <input type="file" id="galleryImages" name="gallery_images" multiple accept="image/*" style="display: none;">
+                                </div>
+                                
+                                <div class="gallery-preview" id="galleryPreview">
+                                    <!-- Existing gallery images for edit mode -->
+                                    {% if edit_blog and edit_blog.gallery_images.exists %}
+                                        {% for image in edit_blog.gallery_images.all %}
+                                            <div class="gallery-item" data-image-id="{{ image.id }}">
+                                                <img src="{{ image.image.url }}" alt="{{ image.alt_text }}">
+                                                <div class="gallery-item-controls">
+                                                    <input type="text" placeholder="Caption" value="{{ image.caption }}" name="gallery_caption_{{ image.id }}">
+                                                    <input type="text" placeholder="Alt text" value="{{ image.alt_text }}" name="gallery_alt_{{ image.id }}">
+                                                    <button type="button" class="btn-remove-gallery" data-image-id="{{ image.id }}" onclick="markGalleryImageForDeletion(this)">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                    <input type="hidden" name="delete_gallery_image_{{ image.id }}" value="false" class="delete-flag">
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Table of Contents Section -->
+                    <div class="form-section">
+                        <h4 class="section-title"><i class="fas fa-list"></i> Table of Contents</h4>
+                        
+                        <div class="form-group">
+                            <div class="form-check">
+                                <input type="checkbox" id="enableTOC" name="enable_toc" class="form-check-input" checked>
+                                <label for="enableTOC" class="form-check-label">Auto-generate Table of Contents from headings</label>
+                            </div>
+                            <small class="form-text text-muted">TOC will be generated from H2 and H3 headings in your content</small>
+                        </div>
+                        
+                        <div class="toc-preview" id="tocPreview">
+                            <h5>Preview:</h5>
+                            <ul class="toc-list-preview">
+                                <li><em>Table of contents will appear here as you add headings to your content</em></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Newsletter Integration -->
+                    <div class="form-section">
+                        <h4 class="section-title"><i class="fas fa-envelope"></i> Newsletter Integration</h4>
+                        
+                        <div class="form-group">
+                            <div class="form-check">
+                                <input type="checkbox" id="sendNewsletter" name="send_newsletter" class="form-check-input">
+                                <label for="sendNewsletter" class="form-check-label">Send newsletter notification when published</label>
+                            </div>
+                            <small class="form-text text-muted">Notify subscribers about this new blog post</small>
+                        </div>
                     </div>
 
                     <!-- Blog Content Editor -->
@@ -122,7 +249,7 @@
                         </div>
                         
                         <div id="blogContentEditor" class="editor-content" contenteditable="true" data-placeholder="Write your blog post here..."></div>
-                        <textarea name="blogContent" id="blogContent" required hidden></textarea>
+                        <textarea name="content" id="blogContent" required hidden></textarea>
                     </div>
                     
                     <!-- Form Buttons -->
@@ -130,11 +257,11 @@
                         <button type="button" id="clearFormBtn" class="btn btn-outline">
                             <i class="fas fa-trash-alt"></i> Clear Form
                         </button>
-                        <button type="button" id="saveDraftBtn" class="btn btn-secondary">
+                        <button type="button" id="saveDraftBtn" class="btn btn-secondary" onclick="saveDraft()">
                             <i class="fas fa-save"></i> Save as Draft
                         </button>
                         <button type="submit" id="submitBtn" class="btn btn-primary">
-                            <i class="fas fa-paper-plane"></i> Request Admin Approval
+                            <i class="fas fa-paper-plane"></i> Create Blog Post
                         </button>
                     </div>
                 </form>
@@ -158,6 +285,15 @@
                     <div id="previewContent" class="preview-content">
                         <p>Your blog content will appear here as you type. This preview helps you see how your post will look when published.</p>
                     </div>
+                    
+                    <!-- Gallery Preview Section -->
+                    <div class="preview-gallery" id="previewGallery" style="display: none;">
+                        <h4>Gallery</h4>
+                        <div class="preview-gallery-grid" id="previewGalleryGrid">
+                            <!-- Gallery images will appear here -->
+                        </div>
+                    </div>
+                    
                     <div class="preview-tags" id="previewTags">
                         <span class="preview-tag">architecture</span>
                         <span class="preview-tag">design</span>
@@ -184,6 +320,571 @@
     </div>
     {% include "admin-nav-footer-template/layoutfooter.html" %}
     <script src="{% static 'js/sitejs/createblog.js' %}"></script>
+    
+    <script>
+        // Django integration for blog creation
+        function saveDraft() {
+            // Set status to draft and submit form
+            document.getElementById('blogStatus').value = 'draft';
+            document.getElementById('blogForm').submit();
+        }
+
+        // Form submission handler
+        document.getElementById('blogForm').addEventListener('submit', function(e) {
+            // Get content from the rich text editor
+            const editorContent = document.getElementById('blogContentEditor').innerHTML;
+            document.getElementById('blogContent').value = editorContent;
+            
+            // Validate required fields
+            const title = document.getElementById('blogTitle').value.trim();
+            const content = editorContent.trim();
+            
+            if (!title) {
+                alert('Please enter a blog title.');
+                e.preventDefault();
+                return;
+            }
+            
+            if (!content || content === '<br>' || content === '<div><br></div>') {
+                alert('Please enter blog content.');
+                e.preventDefault();
+                return;
+            }
+        });
+
+        // Pre-fill editor content when editing
+        {% if edit_blog %}
+        document.addEventListener('DOMContentLoaded', function() {
+            const editor = document.getElementById('blogContentEditor');
+            if (editor) {
+                editor.innerHTML = `{{ edit_blog.content|escapejs }}`;
+            }
+        });
+        {% endif %}
+
+        // Update preview when form fields change
+        document.getElementById('blogTitle').addEventListener('input', function() {
+            document.getElementById('previewTitle').textContent = this.value || 'Your Blog Title Will Appear Here';
+        });
+
+        document.getElementById('blogCategory').addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            document.getElementById('previewCategory').textContent = selectedOption.text || 'Category';
+        });
+
+        document.getElementById('blogExcerpt').addEventListener('input', function() {
+            const content = document.getElementById('previewContent');
+            if (this.value.trim()) {
+                content.innerHTML = '<p>' + this.value + '</p>';
+            } else {
+                content.innerHTML = '<p>Your blog content will appear here as you type. This preview helps you see how your post will look when published.</p>';
+            }
+        });
+
+        function showModal(title, message, iconClass) {
+            document.querySelector('.modal-title').textContent = title;
+            document.querySelector('.modal-message').textContent = message;
+            document.querySelector('.modal-icon i').className = iconClass;
+            document.getElementById('notificationModal').style.display = 'block';
+        }
+
+        // Modal close handlers
+        document.querySelector('.close-modal').addEventListener('click', function() {
+            document.getElementById('notificationModal').style.display = 'none';
+        });
+
+        document.querySelector('.modal-confirm').addEventListener('click', function() {
+            document.getElementById('notificationModal').style.display = 'none';
+        });
+    </script>
+    
+    <!-- Django Messages Handler -->
+    {% if messages %}
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                {% for message in messages %}
+                    {% if message.tags == 'success' %}
+                        showModal('Success!', {{ message|escapejs|safe }}, 'fas fa-check-circle');
+                    {% elif message.tags == 'error' %}
+                        showModal('Error!', {{ message|escapejs|safe }}, 'fas fa-exclamation-triangle');
+                    {% endif %}
+                {% endfor %}
+            });
+        </script>
+    {% endif %}
+
+    <!-- Gallery Upload JavaScript -->
+    <script>
+        // Gallery Image Upload Functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const galleryUploadArea = document.getElementById('galleryUploadArea');
+            const galleryInput = document.getElementById('galleryImages');
+            const galleryPreview = document.getElementById('galleryPreview');
+            
+            if (galleryUploadArea && galleryInput) {
+                // Click to upload
+                galleryUploadArea.addEventListener('click', function() {
+                    galleryInput.click();
+                });
+                
+                // Drag and drop functionality
+                galleryUploadArea.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    galleryUploadArea.classList.add('drag-over');
+                });
+                
+                galleryUploadArea.addEventListener('dragleave', function(e) {
+                    e.preventDefault();
+                    galleryUploadArea.classList.remove('drag-over');
+                });
+                
+                galleryUploadArea.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    galleryUploadArea.classList.remove('drag-over');
+                    
+                    const files = e.dataTransfer.files;
+                    handleGalleryFiles(files);
+                });
+                
+                // File input change
+                galleryInput.addEventListener('change', function(e) {
+                    handleGalleryFiles(e.target.files);
+                });
+            }
+            
+            // Handle selected files
+            function handleGalleryFiles(files) {
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    
+                    if (file.type.startsWith('image/')) {
+                        createGalleryPreview(file);
+                    }
+                }
+            }
+            
+            // Create preview for gallery image
+            function createGalleryPreview(file) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    const galleryItem = document.createElement('div');
+                    galleryItem.className = 'gallery-item';
+                    
+                    galleryItem.innerHTML = `
+                        <img src="${e.target.result}" alt="Gallery image preview">
+                        <div class="gallery-item-controls">
+                            <input type="text" placeholder="Caption" name="new_gallery_caption[]" onchange="updatePreviewGallery()">
+                            <input type="text" placeholder="Alt text" name="new_gallery_alt[]" onchange="updatePreviewGallery()">
+                            <button type="button" class="btn-remove-gallery" onclick="removeGalleryItem(this)">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                    
+                    galleryPreview.appendChild(galleryItem);
+                    
+                    // Update preview gallery
+                    updatePreviewGallery();
+                };
+                
+                reader.readAsDataURL(file);
+            }
+            
+            // Remove gallery item
+            window.removeGalleryItem = function(button) {
+                button.closest('.gallery-item').remove();
+                updatePreviewGallery();
+            };
+            
+            // Mark existing gallery image for deletion
+            window.markGalleryImageForDeletion = function(button) {
+                const galleryItem = button.closest('.gallery-item');
+                const deleteFlag = galleryItem.querySelector('.delete-flag');
+                
+                if (deleteFlag.value === 'false') {
+                    // Mark for deletion
+                    deleteFlag.value = 'true';
+                    galleryItem.style.opacity = '0.5';
+                    galleryItem.style.border = '2px solid #e74c3c';
+                    button.innerHTML = '<i class="fas fa-undo"></i>';
+                    button.title = 'Undo deletion';
+                } else {
+                    // Undo deletion
+                    deleteFlag.value = 'false';
+                    galleryItem.style.opacity = '1';
+                    galleryItem.style.border = 'none';
+                    button.innerHTML = '<i class="fas fa-trash"></i>';
+                    button.title = 'Delete';
+                }
+                updatePreviewGallery();
+            };
+            
+            // Update preview gallery
+            window.updatePreviewGallery = function() {
+                const previewGallery = document.getElementById('previewGallery');
+                const previewGalleryGrid = document.getElementById('previewGalleryGrid');
+                const galleryItems = document.querySelectorAll('.gallery-item');
+                
+                // Filter out items marked for deletion
+                const visibleItems = Array.from(galleryItems).filter(item => {
+                    const deleteFlag = item.querySelector('.delete-flag');
+                    return !deleteFlag || deleteFlag.value === 'false';
+                });
+                
+                if (visibleItems.length > 0) {
+                    previewGallery.style.display = 'block';
+                    previewGalleryGrid.innerHTML = '';
+                    
+                    visibleItems.forEach(item => {
+                        const img = item.querySelector('img');
+                        const captionInput = item.querySelector('input[placeholder="Caption"]');
+                        const altInput = item.querySelector('input[placeholder="Alt text"]');
+                        
+                        const previewItem = document.createElement('div');
+                        previewItem.className = 'preview-gallery-item';
+                        
+                        previewItem.innerHTML = `
+                            <img src="${img.src}" alt="${altInput.value || 'Gallery image'}">
+                            ${captionInput.value ? `<span class="gallery-caption">${captionInput.value}</span>` : ''}
+                        `;
+                        
+                        previewGalleryGrid.appendChild(previewItem);
+                    });
+                } else {
+                    previewGallery.style.display = 'none';
+                }
+            };
+            
+            // SEO character counters
+            const seoTitle = document.getElementById('seoTitle');
+            const seoDescription = document.getElementById('seoDescription');
+            
+            if (seoTitle) {
+                const titleCounter = seoTitle.parentElement.querySelector('.char-counter');
+                if (titleCounter) {
+                    seoTitle.addEventListener('input', function() {
+                        const count = this.value.length;
+                        titleCounter.textContent = `${count}/60`;
+                        titleCounter.style.color = count > 60 ? '#e74c3c' : '#666';
+                    });
+                    // Initial count
+                    seoTitle.dispatchEvent(new Event('input'));
+                }
+            }
+            
+            if (seoDescription) {
+                const descCounter = seoDescription.parentElement.querySelector('.char-counter');
+                if (descCounter) {
+                    seoDescription.addEventListener('input', function() {
+                        const count = this.value.length;
+                        descCounter.textContent = `${count}/160`;
+                        descCounter.style.color = count > 160 ? '#e74c3c' : '#666';
+                    });
+                    // Initial count
+                    seoDescription.dispatchEvent(new Event('input'));
+                }
+            }
+            
+            // Dynamic Preview Updates
+            setupDynamicPreview();
+        });
+        
+        // Dynamic Preview System
+        function setupDynamicPreview() {
+            // Get all form elements
+            const titleInput = document.getElementById('blogTitle');
+            const categorySelect = document.getElementById('blogCategory');
+            const contentEditor = document.getElementById('blogContent');
+            const featuredImageInput = document.getElementById('featuredImage');
+            const tagsInput = document.getElementById('blogTags');
+            
+            // Get preview elements
+            const previewTitle = document.getElementById('previewTitle');
+            const previewCategory = document.getElementById('previewCategory');
+            const previewContent = document.getElementById('previewContent');
+            const previewImage = document.getElementById('previewImage');
+            const previewTags = document.getElementById('previewTags');
+            const previewReadingTime = document.getElementById('previewReadingTime');
+            
+            // Title update
+            if (titleInput && previewTitle) {
+                titleInput.addEventListener('input', function() {
+                    const title = this.value.trim();
+                    previewTitle.textContent = title || 'Your Blog Title Will Appear Here';
+                });
+            }
+            
+            // Category update
+            if (categorySelect && previewCategory) {
+                categorySelect.addEventListener('change', function() {
+                    const selectedOption = this.options[this.selectedIndex];
+                    previewCategory.textContent = selectedOption.text || 'Category';
+                });
+            }
+            
+            // Content update with reading time calculation
+            const richTextEditor = document.getElementById('blogContentEditor');
+            if (richTextEditor && previewContent && previewReadingTime) {
+                // Listen for input events on the rich text editor
+                richTextEditor.addEventListener('input', function() {
+                    const content = this.innerHTML.trim();
+                    const textContent = this.textContent.trim();
+                    
+                    if (textContent) {
+                        // Use the HTML content for preview
+                        previewContent.innerHTML = content;
+                        
+                        // Calculate reading time based on text content (200 words per minute)
+                        const wordCount = textContent.split(/\s+/).filter(word => word.length > 0).length;
+                        const readingTime = Math.max(1, Math.ceil(wordCount / 200));
+                        previewReadingTime.textContent = readingTime;
+                    } else {
+                        previewContent.innerHTML = '<p>Your blog content will appear here as you type. This preview helps you see how your post will look when published.</p>';
+                        previewReadingTime.textContent = '5';
+                    }
+                });
+                
+                // Also listen for paste events
+                richTextEditor.addEventListener('paste', function() {
+                    setTimeout(() => {
+                        richTextEditor.dispatchEvent(new Event('input'));
+                    }, 100);
+                });
+            }
+            
+            // Featured image update
+            if (featuredImageInput && previewImage) {
+                featuredImageInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file && file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            previewImage.src = e.target.result;
+                            previewImage.alt = 'Featured image preview';
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+            
+            // Tags update
+            if (tagsInput && previewTags) {
+                tagsInput.addEventListener('input', function() {
+                    const tags = this.value.trim();
+                    
+                    if (tags) {
+                        const tagArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+                        
+                        previewTags.innerHTML = tagArray
+                            .map(tag => `<span class="preview-tag">${tag}</span>`)
+                            .join('');
+                    } else {
+                        // Default tags
+                        previewTags.innerHTML = `
+                            <span class="preview-tag">architecture</span>
+                            <span class="preview-tag">design</span>
+                            <span class="preview-tag">construction</span>
+                        `;
+                    }
+                });
+            }
+            
+            // Initialize preview with current values
+            initializePreview();
+        }
+        
+        // Initialize preview with existing form values
+        function initializePreview() {
+            // Trigger all input events to populate preview
+            const titleInput = document.getElementById('blogTitle');
+            const categorySelect = document.getElementById('blogCategory');
+            const richTextEditor = document.getElementById('blogContentEditor');
+            const tagsInput = document.getElementById('blogTags');
+            
+            if (titleInput && titleInput.value) {
+                titleInput.dispatchEvent(new Event('input'));
+            }
+            
+            if (categorySelect && categorySelect.value) {
+                categorySelect.dispatchEvent(new Event('change'));
+            }
+            
+            if (richTextEditor && richTextEditor.innerHTML.trim()) {
+                richTextEditor.dispatchEvent(new Event('input'));
+            }
+            
+            if (tagsInput && tagsInput.value) {
+                tagsInput.dispatchEvent(new Event('input'));
+            }
+            
+            // Initialize featured image preview if editing
+            const editFeaturedImageUrl = '{% if edit_blog and edit_blog.featured_image %}{{ edit_blog.featured_image.url }}{% endif %}';
+            const editFeaturedImageAlt = '{% if edit_blog and edit_blog.featured_image_alt %}{{ edit_blog.featured_image_alt }}{% else %}Featured image{% endif %}';
+            
+            if (editFeaturedImageUrl) {
+                const previewImage = document.getElementById('previewImage');
+                if (previewImage) {
+                    previewImage.src = editFeaturedImageUrl;
+                    previewImage.alt = editFeaturedImageAlt;
+                }
+            }
+            
+            // Initialize gallery preview if editing
+            setTimeout(function() {
+                const galleryItems = document.querySelectorAll('.gallery-item');
+                if (galleryItems.length > 0) {
+                    updatePreviewGallery();
+                }
+            }, 100);
+        }
+    </script>
+    
+    <style>
+        /* Gallery Upload Styles */
+        .gallery-upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+        
+        .gallery-upload-area:hover,
+        .gallery-upload-area.drag-over {
+            border-color: var(--primary-color);
+            background-color: #f8f9fa;
+        }
+        
+        .upload-placeholder i {
+            font-size: 48px;
+            color: #ccc;
+            margin-bottom: 15px;
+        }
+        
+        .upload-placeholder p {
+            margin: 10px 0 5px;
+            font-weight: 500;
+            color: #666;
+        }
+        
+        .upload-placeholder small {
+            color: #999;
+        }
+        
+        .gallery-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .gallery-item {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+        }
+        
+        .gallery-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+        
+        .gallery-item-controls {
+            padding: 10px;
+        }
+        
+        .gallery-item-controls input {
+            width: 100%;
+            margin-bottom: 8px;
+            padding: 5px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .btn-remove-gallery {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .btn-remove-gallery:hover {
+            background: #c0392b;
+        }
+        
+        .form-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+        
+        .section-title {
+            margin-bottom: 15px;
+            color: var(--primary-color);
+            font-size: 1.1rem;
+        }
+        
+        .char-counter {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        /* Preview Gallery Styles */
+        .preview-gallery {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        
+        .preview-gallery h4 {
+            margin: 0 0 15px 0;
+            color: #333;
+            font-size: 1.1rem;
+        }
+        
+        .preview-gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .preview-gallery-item {
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .preview-gallery-item img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+        }
+        
+        .gallery-caption {
+            display: block;
+            padding: 10px;
+            font-size: 14px;
+            color: #666;
+            font-style: italic;
+            text-align: center;
+            background: white;
+        }
+    </style>
 
     {% endblock %}
 

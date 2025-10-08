@@ -12,6 +12,7 @@ urlpatterns = [
     path('reports/', views.reports, name='reports'),
     path('settings/', views.settings, name='settings'),
     path('sitedraft/', views.sitedraft, name='sitedraft'),
+    path('project/<int:project_id>/', views.project_detail, name='project_detail'),
     
     # Admin views
     path('admin/clientproject/', views.adminclientproject, name='adminclientproject'),

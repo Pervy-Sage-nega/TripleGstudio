@@ -60,8 +60,10 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'core.middleware.UnauthorizedAccessMiddleware',  # Custom 401 error handling - BEFORE messages
     'django.contrib.messages.middleware.MessageMiddleware',
     'accounts.middleware.RoleBasedAccessMiddleware',  # Role-based access control
+    'admin_side.middleware.AdminAuthenticationMiddleware',  # Admin authentication control
     'axes.middleware.AxesMiddleware',
 ]
 

@@ -1,159 +1,295 @@
 /* ================================
-   Modal Overlay (full screen bg)
+   Modal Backdrop (New Design)
 ================================ */
-.custom-modal-overlay {
+.modal-backdrop {
     position: fixed;
-    top: 0; 
-    left: 0;
-    width: 100%; 
-    height: 100%;
-    background: rgba(0,0,0,0.4);
-    display: flex; 
-    align-items: center; 
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(6px);
+    display: none;
+    align-items: center;
     justify-content: center;
     z-index: 1000;
-    overflow: hidden; /* lock background scroll */
-  }
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.modal-backdrop.active {
+    display: flex;
+    opacity: 1;
+}
+
+.modal-backdrop.closing {
+    opacity: 0;
+}
+
+/* Legacy support for existing class names */
+.custom-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
   
-  /* ================================
-     Modal Box
-  ================================ */
-  .custom-modal-content {
-    background: #fff;
-    border-radius: 12px;
-    padding: 24px;
-    max-width: 400px;
+/* ================================
+   Modal Container (New Design)
+================================ */
+.modal {
+    background: #02344D;
+    border-radius: 28px;
+    max-width: 440px;
     width: 100%;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-    font-family: "Poppins", sans-serif;
     position: relative;
-    z-index: 1100;
-    animation: slideUp 0.3s ease;
-    transform: translateZ(0);
-  }
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4),
+                0 0 0 1px rgba(255, 113, 32, 0.1);
+    transform: translateY(20px) scale(0.95);
+    opacity: 0;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.modal-backdrop.active .modal {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+}
+
+.modal-backdrop.closing .modal {
+    transform: translateY(10px) scale(0.95);
+    opacity: 0;
+}
+
+/* Legacy support */
+.custom-modal-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
   
-  @keyframes slideUp {
-    from { transform: translateY(30px) scale(0.95); opacity: 0; }
-    to { transform: translateY(0) scale(1); opacity: 1; }
-  }
-  
-  /* ================================
-     Close Button
-  ================================ */
-  .custom-modal-close {
+/* ================================
+   Close Button (New Design)
+================================ */
+.close-btn {
     position: absolute;
-    top: 12px; 
-    right: 12px;
+    top: 20px;
+    right: 20px;
     background: none;
     border: none;
-    font-size: 20px;
+    color: #9ca3af;
     cursor: pointer;
-    color: #555;
+    padding: 4px;
     transition: color 0.2s ease;
-  }
-  .custom-modal-close:hover {
-    color: #000;
-  }
-  
-  /* ================================
-     Modal Body
-  ================================ */
-  .custom-modal-body {
-    text-align: center;
-  }
-  
-  /* Icon Circle */
-  .custom-modal-icon {
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
-    display: flex; 
-    align-items: center; 
-    justify-content: center;
-    margin: 0 auto 16px auto;
-    font-size: 32px;
-  }
-  
-  /* Icon Colors */
-  .alert-success .custom-modal-icon {
-    background: rgba(0, 200, 83, 0.1);
-    color: #00c853;
-  }
-  .alert-info .custom-modal-icon {
-    background: rgba(33, 150, 243, 0.1);
-    color: #2196f3;
-  }
-  .alert-warning .custom-modal-icon {
-    background: rgba(255, 193, 7, 0.1);
-    color: #ffc107;
-  }
-  .alert-error .custom-modal-icon {
-    background: rgba(244, 67, 54, 0.1);
-    color: #f44336;
-  }
-  
-  /* ================================
-     Text
-  ================================ */
-  .custom-modal-text h3 {
-    margin: 0 0 8px 0;
-    font-size: 18px;
-    font-weight: 600;
-    color: #222;
-  }
-  .custom-modal-text p {
-    margin: 0;
-    font-size: 14px;
-    color: #555;
-    line-height: 1.5;
-  }
-  
-  /* ================================
-   Actions (Scoped Buttons Only)
-================================ */
-.custom-modal .custom-modal-actions {
-    margin-top: 24px;
-    display: flex;
-    justify-content: space-between;
-  }
-  
-  .custom-modal .custom-modal-actions button {
-    flex: 1;
-    padding: 10px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 500;
-    transition: background 0.2s ease, border-color 0.2s ease;
-  }
-  
-  /* Cancel */
-  .custom-modal .custom-modal-actions .btn-cancel {
-    margin-right: 8px;
-    border: 1px solid #ccc;
-    background: #fff;
-    color: #333;
-  }
-  .custom-modal .custom-modal-actions .btn-cancel:hover {
-    background: #f5f5f5 !important;
-    border-color: #aaa !important;
-    color: #333 !important;
-    box-shadow: none !important;
-    transform: none !important;
-    letter-spacing: normal !important;
-  }
-  
-  /* Confirm */
-  .custom-modal .custom-modal-actions .btn-confirm {
-    margin-left: 8px;
+    z-index: 10;
+}
+
+.close-btn:hover {
+    color: white;
+}
+
+/* Legacy support */
+.custom-modal-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: none;
     border: none;
-    background: #5a31f4;
-    color: #fff;
-  }
-  .custom-modal .custom-modal-actions .btn-confirm:hover {
-    background: #4526c9 !important;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 4px;
+    transition: color 0.2s ease;
+    z-index: 10;
+}
+
+.custom-modal-close:hover {
+    color: white;
+}
+  
+/* ================================
+   Modal Structure (New Design)
+================================ */
+.modal-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* ICON SECTION */
+.icon-section {
+    width: 100%;
+    background: #00273C;
+    padding: 48px 24px 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.icon-container {
+    width: 96px;
+    height: 96px;
+    margin-bottom: 18px;
+    border-radius: 50%;
+    background: #0A3047;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 0 4px rgba(255, 113, 32, 0.2),
+                0 0 18px rgba(255, 113, 32, 0.4);
+    animation: subtlePulse 3s infinite ease-in-out;
+}
+
+@keyframes subtlePulse {
+    0%, 100% { box-shadow: 0 0 0 4px rgba(255, 113, 32, 0.2), 0 0 18px rgba(255, 113, 32, 0.4); }
+    50% { box-shadow: 0 0 0 5px rgba(255, 113, 32, 0.15), 0 0 22px rgba(255, 113, 32, 0.5); }
+}
+
+.icon-container i {
+    font-size: 48px;
+    color: #FF7120;
+}
+
+.icon-section h2 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 22px;
+    color: #FFFFFF;
+    margin-top: 6px;
+    letter-spacing: -0.02em;
+}
+
+/* Legacy support */
+.custom-modal-icon {
+    width: 96px;
+    height: 96px;
+    margin-bottom: 18px;
+    border-radius: 50%;
+    background: #0A3047;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 0 4px rgba(255, 113, 32, 0.2),
+                0 0 18px rgba(255, 113, 32, 0.4);
+    animation: subtlePulse 3s infinite ease-in-out;
+}
+
+.custom-modal-icon i {
+    font-size: 48px;
+    color: #FF7120;
+}
+  
+/* CONTENT SECTION */
+.content-section {
+    width: 100%;
+    padding: 32px 48px 48px;
+    text-align: center;
+    background: #ffffff; /* White section */
+}
+
+.modal-description {
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    color: #334155;
+    line-height: 1.7;
+    margin-bottom: 40px;
+}
+
+/* Legacy support for text */
+.custom-modal-text {
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    color: #334155;
+    line-height: 1.7;
+    margin-bottom: 40px;
+}
+
+.modal-title {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 22px;
+    color: #FFFFFF;
+    margin-top: 6px;
+    letter-spacing: -0.02em;
+}
+  
+/* ================================
+   BUTTONS (New Design)
+================================ */
+.modal-buttons {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+}
+
+.custom-btn-cancel,
+.custom-btn-confirm {
+    background-color: #0A3047 !important;
+    border: 2px solid #FF7120 !important;
+    color: white !important;
+    padding: 10px 40px !important;
+    border-radius: 50px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    font-family: 'Poppins', sans-serif !important;
+}
+
+.custom-btn-cancel:hover,
+.custom-btn-confirm:hover {
+    background-color: #FF7120 !important;
     color: #fff !important;
-    box-shadow: none !important;
-    transform: none !important;
-    letter-spacing: normal !important;
-  }
+    transform: scale(1.05) !important;
+    box-shadow: 0 4px 12px rgba(255, 113, 32, 0.3) !important;
+}
+
+/* Legacy support */
+.custom-modal-actions {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin-top: 0;
+}
+  
+/* ================================
+   Responsive Design
+================================ */
+@media (max-width: 480px) {
+    .modal {
+        margin: 20px;
+        max-width: calc(100% - 40px);
+    }
+    
+    .content-section {
+        padding: 24px 32px 32px;
+    }
+    
+    .icon-section {
+        padding: 32px 24px 24px;
+    }
+    
+    .icon-container {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .icon-container i {
+        font-size: 40px;
+    }
+    
+    .modal-buttons {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .custom-btn-cancel,
+    .custom-btn-confirm {
+        width: 100%;
+    }
+}
   

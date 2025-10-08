@@ -84,7 +84,7 @@ def client_verify_otp(request):
                     otp_obj.delete()
                     del request.session['pending_user_id']
                     
-                messages.success(request, "Account verified! You can now log in.")
+                # Don't set Django message here - JavaScript will handle the success modal
                 return redirect("accounts:client_login")
             else:
                 messages.error(request, "Invalid or expired OTP.")

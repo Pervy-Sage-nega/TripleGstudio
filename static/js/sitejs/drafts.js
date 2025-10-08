@@ -1,7 +1,6 @@
 /**
  * Triple G BuildHub - Blog Draft Management JavaScript
- * Handles draft functionality including:
- * - Loading drafts from localStorage
+ * Handles draft functionality for Django-rendered content including:
  * - Displaying drafts in card and table views
  * - Draft preview in modal
  * - Draft actions (edit, delete, submit)
@@ -14,7 +13,6 @@ document.addEventListener('DOMContentLoaded', function() {
     initViewToggle();
     initDrafts();
     initModalHandlers();
-    updateStatistics();
 });
 
 /**
@@ -87,236 +85,272 @@ function initViewToggle() {
  * Initialize drafts display
  */
 function initDrafts() {
-    // Load drafts from localStorage
-    const drafts = loadDrafts();
+    // Initialize search and filter functionality for Django-rendered content
+    initSearchAndFilter();
     
-    // Initialize search and filter functionality
-    initSearchAndFilter(drafts);
-    
-    // Display drafts
-    displayDrafts(drafts);
+    // Initialize action buttons for Django-rendered cards and table rows
+    initDjangoActionButtons();
 }
 
 /**
- * Load drafts from localStorage
+ * Initialize action buttons for Django-rendered content
  */
-function loadDrafts() {
-    let drafts = [];
+function initDjangoActionButtons() {
+    // Initialize card action buttons
+    const draftCards = document.querySelectorAll('.draft-card');
+    draftCards.forEach(card => {
+        setupDjangoCardActions(card);
+    });
     
-    // Get all keys from localStorage
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        
-        // Check if key matches the format for blog drafts
-        if (key.startsWith('blogDraft_')) {
-            try {
-                const draft = JSON.parse(localStorage.getItem(key));
-                draft.id = key.replace('blogDraft_', ''); // Extract ID from key
-                drafts.push(draft);
-            } catch (e) {
-                console.error('Error parsing draft:', e);
+    // Initialize table row action buttons
+    const tableRows = document.querySelectorAll('#drafts-table-body tr');
+    tableRows.forEach(row => {
+        setupDjangoTableRowActions(row);
+    });
+}
+
+/**
+ * Set up action buttons for Django-rendered cards
+ */
+function setupDjangoCardActions(card) {
+    // Get blog data from card elements
+    const blogData = extractBlogDataFromCard(card);
+    
+    // Preview button - handle various selectors
+    const previewBtn = card.querySelector('.preview-btn, .action-btn[title="Preview"], .action-btn.view');
+    if (previewBtn) {
+        previewBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            showPreviewModal(blogData);
+            return false;
+        });
+    }
+    
+    // Delete button - add confirmation
+    const deleteBtn = card.querySelector('.delete-btn, .action-btn[title="Delete"], .action-btn.delete');
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            showDeleteModal(blogData);
+            return false;
+        });
+    }
+    
+    // Submit button
+    const submitBtn = card.querySelector('.submit-btn, .action-btn[title="Submit"], .action-btn.submit');
+    if (submitBtn) {
+        submitBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            showSubmitModal(blogData);
+            return false;
+        });
+    }
+}
+
+/**
+ * Set up action buttons for Django-rendered table rows
+ */
+function setupDjangoTableRowActions(row) {
+    // Get blog data from table row
+    const blogData = extractBlogDataFromTableRow(row);
+    
+    // Preview button - handle various selectors
+    const previewBtn = row.querySelector('.action-btn[title="Preview"], .action-btn.view, .preview-btn');
+    if (previewBtn) {
+        previewBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            showPreviewModal(blogData);
+            return false;
+        });
+    }
+    
+    // Delete button - add confirmation
+    const deleteBtn = row.querySelector('.action-btn[title="Delete"], .action-btn.delete, .delete-btn');
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            showDeleteModal(blogData);
+            return false;
+        });
+    }
+    
+    // Submit button
+    const submitBtn = row.querySelector('.action-btn[title="Submit"], .action-btn.submit, .submit-btn');
+    if (submitBtn) {
+        submitBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            showSubmitModal(blogData);
+            return false;
+        });
+    }
+}
+
+/**
+ * Extract blog data from Django-rendered card
+ */
+function extractBlogDataFromCard(card) {
+    const titleElement = card.querySelector('.draft-title, .card-title');
+    const categoryElement = card.querySelector('.draft-category, .card-category');
+    const excerptElement = card.querySelector('.draft-excerpt, .card-excerpt');
+    const tagsElements = card.querySelectorAll('.draft-tag, .tag');
+    const dateElement = card.querySelector('.date-value, .card-date');
+    const imageElement = card.querySelector('.card-image img, .draft-image img, img');
+    const statusElement = card.querySelector('.status-label, .card-status');
+    
+    // Get the blog ID from data attributes or edit button URL
+    let blogId = card.getAttribute('data-id') || card.getAttribute('data-blog-id');
+    
+    if (!blogId) {
+        const editBtn = card.querySelector('.action-btn[title="Edit"], .edit-btn');
+        if (editBtn && editBtn.href) {
+            const urlMatch = editBtn.href.match(/edit=(\d+)/);
+            if (urlMatch) {
+                blogId = urlMatch[1];
             }
         }
     }
     
-    // Sort drafts by last modified date (newest first)
-    drafts.sort((a, b) => new Date(b.lastModified) - new Date(a.lastModified));
-    
-    return drafts;
+    return {
+        id: blogId,
+        title: titleElement ? titleElement.textContent.trim() : 'Untitled',
+        category: categoryElement ? categoryElement.textContent.trim() : 'Uncategorized',
+        content: excerptElement ? excerptElement.textContent : '',
+        excerpt: excerptElement ? excerptElement.textContent : '',
+        tags: Array.from(tagsElements).map(tag => tag.textContent.trim()),
+        readingTime: '5', // Default reading time
+        lastModified: dateElement ? dateElement.textContent.trim() : new Date().toLocaleDateString(),
+        featuredImage: imageElement ? imageElement.src : null,
+        imageAlt: imageElement ? imageElement.alt : '',
+        status: statusElement ? statusElement.textContent.trim() : 'Draft'
+    };
 }
 
 /**
- * Initialize search and filter functionality
+ * Extract blog data from Django-rendered table row
  */
-function initSearchAndFilter(drafts) {
-    const categoryFilter = document.getElementById('category-filter');
-    const searchInput = document.getElementById('search-input');
+function extractBlogDataFromTableRow(row) {
+    const cells = row.cells;
     
-    if (categoryFilter && searchInput) {
-        // Combined filter & search function
+    // Get the blog ID from data attributes
+    let blogId = row.getAttribute('data-id') || row.getAttribute('data-blog-id');
+    
+    if (!blogId) {
+        const editBtn = row.querySelector('.action-btn[title="Edit"], .edit-btn');
+        if (editBtn && editBtn.href) {
+            const urlMatch = editBtn.href.match(/edit=(\d+)/);
+            if (urlMatch) {
+                blogId = urlMatch[1];
+            }
+        }
+    }
+    
+    return {
+        id: blogId,
+        title: cells[0] ? cells[0].textContent.trim() : 'Untitled',
+        category: cells[1] ? cells[1].textContent.trim() : 'Uncategorized',
+        content: '', // Table doesn't have content preview
+        excerpt: '', // Table doesn't have excerpt
+        tags: [], // Table doesn't show tags
+        readingTime: '5', // Default reading time
+        lastModified: cells[2] ? cells[2].textContent.trim() : new Date().toLocaleDateString(),
+        featuredImage: null, // Table doesn't show images
+        imageAlt: '',
+        status: cells[3] ? cells[3].textContent.trim() : 'Draft'
+    };
+}
+
+/**
+ * Initialize search and filter functionality for Django-rendered content
+ */
+function initSearchAndFilter() {
+    const categoryFilter = document.querySelector('#category-filter, select[name="category"]');
+    const searchInput = document.querySelector('#search-input, input[type="search"], input[placeholder*="Search"]');
+    
+    if (categoryFilter || searchInput) {
         const filterAndSearch = () => {
-            const category = categoryFilter.value;
-            const searchTerm = searchInput.value.toLowerCase();
+            const category = categoryFilter ? categoryFilter.value : '';
+            const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
             
-            // Filter drafts based on category and search term
-            const filteredDrafts = drafts.filter(draft => {
-                const categoryMatch = category === '' || draft.category === category;
-                const titleMatch = draft.title.toLowerCase().includes(searchTerm);
+            // Get all draft cards and table rows
+            const draftCards = document.querySelectorAll('.draft-card');
+            const tableRows = document.querySelectorAll('#drafts-table-body tr');
+            
+            let visibleCount = 0;
+            
+            // Filter cards
+            draftCards.forEach(card => {
+                const title = card.querySelector('.draft-title, .card-title')?.textContent.toLowerCase() || '';
+                const excerpt = card.querySelector('.draft-excerpt, .card-excerpt')?.textContent.toLowerCase() || '';
+                const cardCategory = card.querySelector('.draft-category, .card-category')?.textContent || '';
+                const tags = Array.from(card.querySelectorAll('.draft-tag, .tag')).map(tag => tag.textContent.toLowerCase());
                 
-                return categoryMatch && titleMatch;
+                const categoryMatch = !category || category === '' || cardCategory.toLowerCase().includes(category.toLowerCase());
+                const searchMatch = !searchTerm || 
+                    title.includes(searchTerm) || 
+                    excerpt.includes(searchTerm) ||
+                    tags.some(tag => tag.includes(searchTerm));
+                
+                if (categoryMatch && searchMatch) {
+                    card.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
             });
             
-            // Display filtered drafts
-            displayDrafts(filteredDrafts);
+            // Filter table rows
+            tableRows.forEach(row => {
+                if (row.cells.length < 2) return;
+                
+                const title = row.cells[0]?.textContent.toLowerCase() || '';
+                const rowCategory = row.cells[1]?.textContent.toLowerCase() || '';
+                
+                const categoryMatch = !category || category === '' || rowCategory.includes(category.toLowerCase());
+                const searchMatch = !searchTerm || title.includes(searchTerm);
+                
+                if (categoryMatch && searchMatch) {
+                    row.style.display = 'table-row';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            // Show/hide no results message
+            updateNoResultsMessage(visibleCount);
         };
         
         // Add event listeners
-        categoryFilter.addEventListener('change', filterAndSearch);
-        searchInput.addEventListener('input', filterAndSearch);
-    }
-}
-
-/**
- * Display drafts in both card and table views
- */
-function displayDrafts(drafts) {
-    const cardView = document.getElementById('drafts-card-view');
-    const tableBody = document.getElementById('drafts-table-body');
-    const noContentMessage = document.getElementById('no-drafts-message');
-    
-    if (!cardView || !tableBody) return;
-    
-    // Clear existing content
-    // Remove all cards except the template and no drafts message
-    const existingCards = cardView.querySelectorAll('.draft-card:not(.template)');
-    existingCards.forEach(card => card.remove());
-    
-    // Clear table rows
-    tableBody.innerHTML = '';
-    
-    // Show/hide no content message
-    if (drafts.length === 0) {
-        if (noContentMessage) noContentMessage.style.display = 'flex';
-    } else {
-        if (noContentMessage) noContentMessage.style.display = 'none';
+        if (categoryFilter) {
+            categoryFilter.addEventListener('change', filterAndSearch);
+        }
+        if (searchInput) {
+            searchInput.addEventListener('input', filterAndSearch);
+            searchInput.addEventListener('keyup', filterAndSearch);
+        }
         
-        // Get card template
-        const cardTemplate = document.getElementById('draft-card-template');
-        
-        // Populate cards and table rows
-        drafts.forEach(draft => {
-            // Create card
-            if (cardTemplate) {
-                const card = cardTemplate.cloneNode(true);
-                card.classList.remove('template');
-                card.id = 'card-' + draft.id;
-                
-                // Populate card data
-                card.querySelector('.draft-category').textContent = getCategoryName(draft.category);
-                card.querySelector('.date-value').textContent = formatDate(draft.lastModified);
-                card.querySelector('.draft-title').textContent = draft.title;
-                
-                // Create excerpt from content (strip HTML tags)
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = draft.content;
-                const excerpt = tempDiv.textContent.substring(0, 100) + '...';
-                card.querySelector('.draft-excerpt').textContent = excerpt;
-                
-                // Populate tags
-                const tagsContainer = card.querySelector('.draft-tags');
-                tagsContainer.innerHTML = '';
-                
-                if (draft.tags && draft.tags.length > 0) {
-                    draft.tags.forEach(tag => {
-                        const tagSpan = document.createElement('span');
-                        tagSpan.className = 'draft-tag';
-                        tagSpan.textContent = tag;
-                        tagsContainer.appendChild(tagSpan);
-                    });
-                }
-                
-                // Set up action buttons
-                setupCardActions(card, draft);
-                
-                // Add card to view
-                cardView.appendChild(card);
-            }
-            
-            // Create table row
-            const row = document.createElement('tr');
-            
-            // Format the date
-            const formattedDate = formatDate(draft.lastModified);
-            
-            row.innerHTML = `
-                <td>${draft.title}</td>
-                <td>${getCategoryName(draft.category)}</td>
-                <td>${formattedDate}</td>
-                <td><span class="status-label">Draft</span></td>
-                <td class="table-actions">
-                    <button class="action-btn preview-btn" title="Preview" data-id="${draft.id}">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                    <button class="action-btn edit-btn" title="Edit" data-id="${draft.id}">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="action-btn delete-btn" title="Delete" data-id="${draft.id}">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
-                    <button class="action-btn submit-btn" title="Submit for Approval" data-id="${draft.id}">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
-                </td>
-            `;
-            
-            // Set up table action buttons
-            setupTableRowActions(row, draft);
-            
-            // Add row to table
-            tableBody.appendChild(row);
-        });
+        // Initial filter
+        filterAndSearch();
     }
 }
 
 /**
- * Set up action buttons for a card
+ * Update no results message visibility
  */
-function setupCardActions(card, draft) {
-    // Preview button
-    const previewBtn = card.querySelector('.preview-btn');
-    if (previewBtn) {
-        previewBtn.addEventListener('click', () => showPreviewModal(draft));
-    }
-    
-    // Edit button
-    const editBtn = card.querySelector('.edit-btn');
-    if (editBtn) {
-        editBtn.addEventListener('click', () => {
-            window.location.href = `createblog.html?edit=${draft.id}`;
-        });
-    }
-    
-    // Delete button
-    const deleteBtn = card.querySelector('.delete-btn');
-    if (deleteBtn) {
-        deleteBtn.addEventListener('click', () => showDeleteModal(draft));
-    }
-    
-    // Submit button
-    const submitBtn = card.querySelector('.submit-btn');
-    if (submitBtn) {
-        submitBtn.addEventListener('click', () => showSubmitModal(draft));
-    }
-}
-
-/**
- * Set up action buttons for a table row
- */
-function setupTableRowActions(row, draft) {
-    // Preview button
-    const previewBtn = row.querySelector('.preview-btn');
-    if (previewBtn) {
-        previewBtn.addEventListener('click', () => showPreviewModal(draft));
-    }
-    
-    // Edit button
-    const editBtn = row.querySelector('.edit-btn');
-    if (editBtn) {
-        editBtn.addEventListener('click', () => {
-            window.location.href = `createblog.html?edit=${draft.id}`;
-        });
-    }
-    
-    // Delete button
-    const deleteBtn = row.querySelector('.delete-btn');
-    if (deleteBtn) {
-        deleteBtn.addEventListener('click', () => showDeleteModal(draft));
-    }
-    
-    // Submit button
-    const submitBtn = row.querySelector('.submit-btn');
-    if (submitBtn) {
-        submitBtn.addEventListener('click', () => showSubmitModal(draft));
+function updateNoResultsMessage(visibleCount) {
+    const noResults = document.querySelector('.no-results, .no-drafts-message, .empty-state');
+    if (noResults) {
+        if (visibleCount === 0) {
+            noResults.style.display = 'flex';
+            noResults.style.display = 'block';
+        } else {
+            noResults.style.display = 'none';
+        }
     }
 }
 
@@ -326,23 +360,64 @@ function setupTableRowActions(row, draft) {
 function showPreviewModal(draft) {
     const modal = document.getElementById('previewModal');
     
-    if (!modal) return;
+    if (!modal) {
+        console.warn('Preview modal not found');
+        return;
+    }
+    
+    console.log('Showing preview for draft:', draft); // Debug log
     
     // Fill in preview content
-    document.getElementById('preview-title').textContent = draft.title;
-    document.getElementById('preview-category').textContent = getCategoryName(draft.category);
-    document.getElementById('preview-reading-time').textContent = draft.readingTime || '5';
-    document.getElementById('preview-content').innerHTML = draft.content;
+    const titleElement = document.getElementById('preview-title');
+    const categoryElement = document.getElementById('preview-category');
+    const readingTimeElement = document.getElementById('preview-reading-time');
+    const contentElement = document.getElementById('preview-content');
+    const dateElement = document.getElementById('preview-date');
+    const imageElement = document.getElementById('preview-image');
+    const statusElement = document.getElementById('preview-status');
     
-    // Set featured image if available
-    const previewImage = document.getElementById('preview-image');
-    if (previewImage) {
+    if (titleElement) titleElement.textContent = draft.title || 'Untitled Post';
+    if (categoryElement) categoryElement.textContent = draft.category || 'Uncategorized';
+    if (readingTimeElement) readingTimeElement.textContent = draft.readingTime || '5';
+    if (dateElement) dateElement.textContent = draft.lastModified || new Date().toLocaleDateString();
+    if (statusElement) statusElement.textContent = draft.status || 'Draft';
+    
+    // Handle featured image
+    if (imageElement) {
         if (draft.featuredImage) {
-            previewImage.src = draft.featuredImage;
-            previewImage.style.display = 'block';
+            imageElement.src = draft.featuredImage;
+            imageElement.alt = draft.imageAlt || draft.title || 'Blog post image';
+            imageElement.style.display = 'block';
+            imageElement.parentElement.style.display = 'block';
         } else {
-            previewImage.src = '../userside/css/images/image1.jpg';
-            previewImage.style.display = 'block';
+            imageElement.style.display = 'none';
+            imageElement.parentElement.style.display = 'none';
+        }
+    }
+    
+    // Handle content display with scroll support
+    if (contentElement) {
+        // Add scroll styling
+        contentElement.style.maxHeight = '400px';
+        contentElement.style.overflowY = 'auto';
+        contentElement.style.padding = '15px';
+        contentElement.style.border = '1px solid #e0e0e0';
+        contentElement.style.borderRadius = '8px';
+        contentElement.style.backgroundColor = '#fafafa';
+        
+        if (draft.excerpt && draft.excerpt.trim()) {
+            contentElement.innerHTML = `<div class="preview-text">${formatContentForPreview(draft.excerpt)}</div>`;
+        } else if (draft.content && draft.content.trim()) {
+            contentElement.innerHTML = `<div class="preview-text">${formatContentForPreview(draft.content)}</div>`;
+        } else {
+            contentElement.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #7f8c8d;">
+                    <i class="fas fa-file-alt" style="font-size: 48px; margin-bottom: 20px; opacity: 0.5;"></i>
+                    <h3>Preview Not Available</h3>
+                    <p>No content preview available for this blog post.</p>
+                    <p><em>Click "Edit Post" to view and edit the full content.</em></p>
+                </div>
+            `;
         }
     }
     
@@ -352,211 +427,120 @@ function showPreviewModal(draft) {
         tagsContainer.innerHTML = '';
         
         if (draft.tags && draft.tags.length > 0) {
+            const tagsHeader = document.createElement('h4');
+            tagsHeader.textContent = 'Tags:';
+            tagsHeader.style.marginBottom = '10px';
+            tagsHeader.style.color = '#2c3e50';
+            tagsHeader.style.fontSize = '1rem';
+            tagsContainer.appendChild(tagsHeader);
+            
             draft.tags.forEach(tag => {
                 const tagSpan = document.createElement('span');
                 tagSpan.className = 'preview-tag';
                 tagSpan.textContent = tag;
                 tagsContainer.appendChild(tagSpan);
             });
+        } else {
+            tagsContainer.innerHTML = '<p style="color: #7f8c8d; font-style: italic;">No tags assigned to this post.</p>';
         }
     }
     
     // Set up edit button action
     const editBtn = document.getElementById('preview-edit-btn');
-    if (editBtn) {
+    if (editBtn && draft.id) {
         editBtn.onclick = () => {
-            window.location.href = `createblog.html?edit=${draft.id}`;
+            closeModal(modal);
+            // Use Django URL pattern for editing
+            window.location.href = `/diary/createblog/?edit=${draft.id}`;
         };
+    }
+    
+    // Add modal scroll styling
+    const modalBody = modal.querySelector('.modal-body');
+    if (modalBody) {
+        modalBody.style.maxHeight = '70vh';
+        modalBody.style.overflowY = 'auto';
+        modalBody.style.padding = '20px';
     }
     
     // Show modal
     modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
 }
 
 /**
  * Show delete confirmation modal
  */
 function showDeleteModal(draft) {
-    const modal = document.getElementById('deleteModal');
-    
-    if (!modal) return;
-    
-    // Update modal message
-    modal.querySelector('.modal-message').textContent = 
-        `Are you sure you want to delete "${draft.title}"? This action cannot be undone.`;
-    
-    // Set up confirmation button
-    const confirmBtn = document.getElementById('delete-confirm-btn');
-    if (confirmBtn) {
-        // Remove old event listeners
-        const newConfirmBtn = confirmBtn.cloneNode(true);
-        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
-        
-        // Add new event listener
-        newConfirmBtn.addEventListener('click', () => {
-            deleteDraft(draft.id);
-            closeModal('deleteModal');
-        });
+    if (!draft.id) {
+        console.error('No draft ID provided for deletion');
+        return;
     }
     
-    // Show modal
-    modal.classList.add('active');
+    if (confirm(`Are you sure you want to delete "${draft.title}"? This action cannot be undone.`)) {
+        // Use Django delete URL - adjust based on your URL pattern
+        window.location.href = `/diary/delete-blog/${draft.id}/`;
+    }
 }
 
 /**
  * Show submit confirmation modal
  */
 function showSubmitModal(draft) {
-    const modal = document.getElementById('submitModal');
-    
-    if (!modal) return;
-    
-    // Set up confirmation button
-    const confirmBtn = modal.querySelector('.modal-confirm');
-    if (confirmBtn) {
-        // Remove old event listeners
-        const newConfirmBtn = confirmBtn.cloneNode(true);
-        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
-        
-        // Add new event listener
-        newConfirmBtn.addEventListener('click', () => {
-            submitDraft(draft.id);
-            closeModal('submitModal');
-        });
+    if (!draft.id) {
+        console.error('No draft ID provided for submission');
+        return;
     }
     
-    // Show modal
-    modal.classList.add('active');
-}
-
-/**
- * Delete a draft
- */
-function deleteDraft(draftId) {
-    // Remove from localStorage
-    localStorage.removeItem(`blogDraft_${draftId}`);
-    
-    // Reload drafts
-    const drafts = loadDrafts();
-    displayDrafts(drafts);
-    updateStatistics();
-    
-    // Show notification
-    showToast('Draft deleted successfully');
-}
-
-/**
- * Submit a draft for approval
- */
-function submitDraft(draftId) {
-    // Mark as submitted in localStorage
-    const draftKey = `blogDraft_${draftId}`;
-    const draft = JSON.parse(localStorage.getItem(draftKey));
-    
-    if (draft) {
-        draft.status = 'submitted';
-        draft.submittedDate = new Date().toISOString();
-        localStorage.setItem(draftKey, JSON.stringify(draft));
+    if (confirm(`Submit "${draft.title}" for admin approval?`)) {
+        // Use Django submit URL - adjust based on your URL pattern
+        window.location.href = `/diary/submit-blog/${draft.id}/`;
     }
-    
-    // Reload drafts
-    const drafts = loadDrafts();
-    displayDrafts(drafts);
-    updateStatistics();
-    
-    // Show notification
-    showToast('Draft submitted for admin approval');
 }
 
 /**
  * Initialize modal handlers
  */
 function initModalHandlers() {
-    // Close modal when clicking on X or cancel buttons
-    const closeButtons = document.querySelectorAll('.close-modal, #preview-close-btn, #delete-cancel-btn');
-    closeButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const modal = this.closest('.modal');
-            if (modal) {
-                modal.classList.remove('active');
-            }
-        });
+    // Close modal when clicking on close buttons
+    document.addEventListener('click', function(e) {
+        // Handle close buttons
+        if (e.target.closest('.close-modal, .modal-close, [data-dismiss="modal"]')) {
+            const modal = e.target.closest('.modal');
+            closeModal(modal);
+        }
+        
+        // Handle clicking outside modal content
+        if (e.target.classList.contains('modal')) {
+            closeModal(e.target);
+        }
     });
     
-    // Close modal when clicking outside
-    document.addEventListener('click', function(event) {
-        if (event.target.classList.contains('modal')) {
-            event.target.classList.remove('active');
+    // Handle escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const activeModal = document.querySelector('.modal.active');
+            if (activeModal) {
+                closeModal(activeModal);
+            }
         }
     });
 }
 
 /**
- * Close a modal by ID
+ * Close modal helper function
  */
-function closeModal(modalId) {
-    const modal = document.getElementById(modalId);
+function closeModal(modal) {
     if (modal) {
         modal.classList.remove('active');
+        document.body.style.overflow = '';
     }
-}
-
-/**
- * Update statistics counters
- */
-function updateStatistics() {
-    const drafts = loadDrafts();
-    
-    // Total drafts count
-    document.getElementById('drafts-count').textContent = drafts.length;
-    
-    // Recent drafts (within last 7 days)
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    
-    const recentDrafts = drafts.filter(draft => {
-        return new Date(draft.lastModified) >= sevenDaysAgo;
-    });
-    document.getElementById('recent-count').textContent = recentDrafts.length;
-    
-    // Submitted drafts
-    const submittedDrafts = drafts.filter(draft => draft.status === 'submitted');
-    document.getElementById('submitted-count').textContent = submittedDrafts.length;
-}
-
-/**
- * Get category display name from category ID
- */
-function getCategoryName(categoryId) {
-    const categories = {
-        'industry-insights': 'Industry Insights',
-        'expert-advice': 'Expert Advice',
-        'case-study': 'Case Study',
-        'design-trends': 'Design Trends',
-        'sustainable-building': 'Sustainable Building',
-        'technology': 'Construction Technology',
-        'regulations': 'Regulations & Standards'
-    };
-    
-    return categories[categoryId] || 'Uncategorized';
-}
-
-/**
- * Format date to display format
- */
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-    });
 }
 
 /**
  * Show toast notification
  */
-function showToast(message) {
+function showToast(message, type = 'success') {
     // Create toast element if it doesn't exist
     let toast = document.getElementById('toast-notification');
     
@@ -566,22 +550,25 @@ function showToast(message) {
         document.body.appendChild(toast);
         
         // Add styles to toast
-        toast.style.position = 'fixed';
-        toast.style.bottom = '20px';
-        toast.style.right = '20px';
-        toast.style.backgroundColor = 'var(--primary-color)';
-        toast.style.color = 'white';
-        toast.style.padding = '12px 20px';
-        toast.style.borderRadius = '4px';
-        toast.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.2)';
-        toast.style.zIndex = '9999';
-        toast.style.transition = 'opacity 0.3s, transform 0.3s';
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateY(20px)';
+        Object.assign(toast.style, {
+            position: 'fixed',
+            bottom: '20px',
+            right: '20px',
+            backgroundColor: type === 'success' ? '#27ae60' : '#e74c3c',
+            color: 'white',
+            padding: '12px 20px',
+            borderRadius: '4px',
+            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.2)',
+            zIndex: '9999',
+            transition: 'opacity 0.3s, transform 0.3s',
+            opacity: '0',
+            transform: 'translateY(20px)'
+        });
     }
     
-    // Set message
+    // Set message and style based on type
     toast.textContent = message;
+    toast.style.backgroundColor = type === 'success' ? '#27ae60' : '#e74c3c';
     
     // Show toast
     setTimeout(() => {
@@ -594,4 +581,43 @@ function showToast(message) {
         toast.style.opacity = '0';
         toast.style.transform = 'translateY(20px)';
     }, 3000);
-} 
+}
+
+/**
+ * Format content for preview display
+ */
+function formatContentForPreview(content) {
+    if (!content) return '';
+    
+    // Remove HTML tags but preserve line breaks
+    let formatted = content.replace(/<[^>]*>/g, '');
+    
+    // Convert line breaks to paragraphs
+    formatted = formatted.split('\n').filter(line => line.trim()).map(line => `<p>${line.trim()}</p>`).join('');
+    
+    // If content is too long, truncate it
+    if (formatted.length > 1000) {
+        formatted = formatted.substring(0, 1000) + '... <em>(Content truncated for preview)</em>';
+    }
+    
+    return formatted || '<p><em>No content available</em></p>';
+}
+
+// Utility function to debounce rapid calls
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Make functions available globally
+window.showPreviewModal = showPreviewModal;
+window.showDeleteModal = showDeleteModal;
+window.showSubmitModal = showSubmitModal;
+window.closeModal = closeModal;

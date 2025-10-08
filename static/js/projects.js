@@ -101,252 +101,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Get DOM elements for filters and project grid
-    const yearFilter = document.getElementById('year-filter');
-    const categoryFilter = document.getElementById('category-filter');
-    const projectsGrid = document.querySelector('.projects-grid');
-    
-    // Project data - in a real application, this would come from a database
-    const projects = [
-        {
-            id: 1,
-            title: "Modern Residential Home",
-            description: "Contemporary design with sustainable materials and energy-efficient features for a family of four.",
-            thumbnail: "/static/images/image1.jpg",
-            image: "/static/images/image1.jpg",
-            year: "2023",
-            category: "residential",
-            featured: true
-        },
-        {
-            id: 2,
-            title: "Corporate Office Building",
-            description: "Open-concept workspace design with collaborative areas and natural lighting throughout.",
-            thumbnail: "/static/images/image2.jpeg",
-            image: "/static/images/image2.jpeg",
-            year: "2022",
-            category: "commercial",
-            featured: true
-        },
-        {
-            id: 3,
-            title: "Public Library Renovation",
-            description: "Modernization of a historic library building while preserving its architectural heritage.",
-            thumbnail: "/static/images/image3.jpg",
-            image: "/static/images/image3.jpg",
-            year: "2021",
-            category: "public",
-            featured: true
-        },
-        {
-            id: 4,
-            title: "Luxury Apartment Complex",
-            description: "High-end residential complex with premium amenities and stunning city views.",
-            thumbnail: "/static/images/image4.jpg",
-            image: "/static/images/image4.jpg",
-            year: "2023",
-            category: "residential",
-            featured: false
-        },
-        {
-            id: 5,
-            title: "Beachfront Restaurant",
-            description: "Coastal dining experience with panoramic ocean views and sustainable design.",
-            thumbnail: "/static/images/image5.jpg",
-            image: "/static/images/image5.jpg",
-            year: "2022",
-            category: "commercial",
-            featured: false
-        },
-        {
-            id: 6,
-            title: "Urban Park Design",
-            description: "Community green space with recreational areas, walking paths, and native landscaping.",
-            thumbnail: "/static/images/image6.jpg",
-            image: "/static/images/image6.jpg",
-            year: "2021",
-            category: "public",
-            featured: false
-        },
-        {
-            id: 7,
-            title: "Minimalist Villa",
-            description: "Sleek, modern villa with clean lines and seamless indoor-outdoor living spaces.",
-            thumbnail: "/static/images/image7.jpg",
-            image: "/static/images/image7.jpg",
-            year: "2024",
-            category: "residential",
-            featured: false
-        },
-        {
-            id: 8,
-            title: "Healthcare Center",
-            description: "Patient-centered medical facility designed for comfort, efficiency, and healing.",
-            thumbnail: "/static/images/image8.jpg",
-            image: "/static/images/image8.jpg",
-            year: "2020",
-            category: "public",
-            featured: false
-        },
-        {
-            id: 9,
-            title: "Boutique Hotel",
-            description: "Intimate luxury hotel with unique character and personalized guest experiences.",
-            thumbnail: "/static/images/image9.jpg",
-            image: "/static/images/image9.jpg",
-            year: "2023",
-            category: "commercial",
-            featured: false
-        }
-    ];
+    // Django handles all project data and rendering
+    // This file only provides design enhancements and interactivity
 
-    // Function to render projects based on filters
-    function renderProjects(year = 'all', category = 'all') {
-        // Clear current projects
-        projectsGrid.innerHTML = '';
-        
-        // Filter projects
-        let filteredProjects = projects;
-        
-        if (year !== 'all') {
-            filteredProjects = filteredProjects.filter(project => project.year === year);
-        }
-        
-        if (category !== 'all') {
-            if (category === 'featured') {
-                filteredProjects = filteredProjects.filter(project => project.featured);
-            } else {
-                filteredProjects = filteredProjects.filter(project => project.category === category);
-            }
-        }
-        
-        // If no projects match filters
-        if (filteredProjects.length === 0) {
-            projectsGrid.innerHTML = '<div class="no-projects">No projects match your filter criteria.</div>';
-            return;
-        }
-        
-        // Render filtered projects - this is where duplication was happening previously
-        filteredProjects.forEach(project => {
-            const projectCard = document.createElement('div');
-            projectCard.className = 'project-card';
-            
-            projectCard.innerHTML = `
-                <div class="project-image">
-                    <img src="${project.thumbnail}" alt="${project.title}" onerror="this.src='/static/images/kristelle.jpg';">
-                    <div class="layer"></div>
-                </div>
-                <div class="project-info">
-                    <h3>${project.title}</h3>
-                    <p>${project.description}</p>
-                    <div class="project-metadata">
-                        <span class="project-year">${project.year}</span>
-                        <span class="project-category">${formatCategory(project.category)}</span>
-                    </div>
-                    <a href="/portfolio/${project.id}/" class="project-link">View Details</a>
-                </div>
-            `;
-            
-            projectsGrid.appendChild(projectCard);
-        });
-    }
-
-    function populateFilters() {
-        // Check if filter elements exist on the page
-        if (!yearFilter || !categoryFilter) {
-            console.error('Filter elements not found');
-            return;
-        }
-        
-        // Get unique years
-        const years = [...new Set(projects.map(project => project.year))];
-        years.sort((a, b) => b - a); // Sort descending (newest first)
-        
-        // Clear and rebuild year filter
-        yearFilter.innerHTML = '<option value="all">All</option>';
-        years.forEach(year => {
-            const option = document.createElement('option');
-            option.value = year;
-            option.textContent = year;
-            yearFilter.appendChild(option);
-        });
-        
-        // Get unique categories
-        const categories = [...new Set(projects.map(project => project.category))];
-        
-        // Clear and rebuild category filter
-        categoryFilter.innerHTML = '<option value="all">All</option>';
-        
-        // Add featured option if applicable
-        if (projects.some(project => project.featured)) {
-            const featuredOption = document.createElement('option');
-            featuredOption.value = 'featured';
-            featuredOption.textContent = 'Featured';
-            categoryFilter.appendChild(featuredOption);
-        }
-        
-        // Add all other categories
-        categories.forEach(category => {
-            const option = document.createElement('option');
-            option.value = category;
-            option.textContent = formatCategory(category);
-            categoryFilter.appendChild(option);
-        });
-    }
-
-    // Format category text for display
-    function formatCategory(category) {
-        switch(category) {
-            case 'residential':
-                return 'Residential';
-            case 'commercial':
-                return 'Commercial';
-            case 'public':
-                return 'Public';
-            default:
-                return category.charAt(0).toUpperCase() + category.slice(1);
-        }
-    }
-    
-    
-    // Initialize filters if they exist on the page
-    if (yearFilter && categoryFilter) {
-        populateFilters();
-        
-        // Filter change event listeners
-        yearFilter.addEventListener('change', function() {
-            renderProjects(this.value, categoryFilter.value);
-        });
-        
-        categoryFilter.addEventListener('change', function() {
-            renderProjects(yearFilter.value, this.value);
-        });
-    }
-    
-    // Initialize featured projects interactivity
+    // Initialize featured projects interactivity (if any exist on the page)
     const featuredProjects = document.querySelectorAll('.featured-project');
     const viewProjectBtn = document.querySelector('.view-project-btn');
     
-    // Set up featured project click handling
+    // Set up featured project click handling for homepage carousel
     if (featuredProjects.length > 0 && viewProjectBtn) {
-        // First, associate project IDs with featured projects
-        featuredProjects.forEach((project, index) => {
-            if (projects[index]) {
-                project.setAttribute('data-project-id', projects[index].id);
-            }
-        });
-        
-        // Set default selected project (first project is already active in HTML)
-        const activeProject = document.querySelector('.featured-project.active');
-        if (activeProject) {
-            const projectId = activeProject.getAttribute('data-project-id');
-            if (projectId) {
-                viewProjectBtn.setAttribute('data-project-id', projectId);
-            } else if (projects && projects.length > 0) {
-                viewProjectBtn.setAttribute('data-project-id', projects[0].id);
-            }
-        }
-        
         // Add click event listeners to featured projects
         featuredProjects.forEach(project => {
             project.addEventListener('click', function() {
@@ -356,7 +119,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Add active class to clicked project
                 this.classList.add('active');
                 
-                // Update view project button with project ID
+                // Update view project button with project ID from data attribute
                 const projectId = this.getAttribute('data-project-id');
                 if (projectId) {
                     viewProjectBtn.setAttribute('data-project-id', projectId);
@@ -370,7 +133,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
         
-        // Add mousemove event listener to track cursor position
+        // Add mousemove event listener to track cursor position for glow effect
         viewProjectBtn.addEventListener('mousemove', (e) => {
             // Get position relative to the button
             const rect = viewProjectBtn.getBoundingClientRect();
@@ -389,17 +152,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const projectId = this.getAttribute('data-project-id');
             if (projectId) {
                 window.location.href = `/portfolio/${projectId}/`;
-            } else {
-                // Fallback to first project if available
-                if (projects && projects.length > 0) {
-                    window.location.href = `/portfolio/${projects[0].id}/`;
-                }
             }
         });
-    }
-    
-    // Initialize projects grid if it exists
-    if (projectsGrid) {
-        renderProjects();
     }
 });

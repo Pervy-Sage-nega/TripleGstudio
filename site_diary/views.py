@@ -9,6 +9,15 @@ from datetime import timedelta
 import csv
 import json
 from accounts.decorators import require_site_manager_role, require_admin_role
+from .models import (
+    Project, DiaryEntry, LaborEntry, MaterialEntry, 
+    EquipmentEntry, DelayEntry, VisitorEntry, DiaryPhoto
+)
+from .forms import (
+    ProjectForm, DiaryEntryForm, LaborEntryFormSet, MaterialEntryFormSet,
+    EquipmentEntryFormSet, DelayEntryFormSet, VisitorEntryFormSet, 
+    DiaryPhotoFormSet, DiarySearchForm, ProjectSearchForm
+)
 
 # Create your views here.
 @login_required
@@ -153,11 +162,208 @@ def newproject(request):
 
 @require_site_manager_role
 def createblog(request):
-    return render(request, 'blogcreation/createblog.html')
+    """Create blog post - handles both GET (form display) and POST (form submission)"""
+    # Import blog models
+    from blog.models import BlogPost, Category, Tag
+    from django.contrib import messages
+    
+    # Handle delete operation
+    if request.GET.get('delete'):
+        try:
+            blog_id = int(request.GET.get('delete'))
+            blog_post = BlogPost.objects.get(id=blog_id, author=request.user)
+            blog_title = blog_post.title
+            blog_post.delete()
+            messages.success(request, f'Blog post "{blog_title}" deleted successfully!')
+            return redirect('site:drafts')
+        except (BlogPost.DoesNotExist, ValueError):
+            messages.error(request, 'Blog post not found or you do not have permission to delete it.')
+            return redirect('site:drafts')
+    
+    # Handle edit operation
+    edit_blog = None
+    if request.GET.get('edit'):
+        try:
+            blog_id = int(request.GET.get('edit'))
+            edit_blog = BlogPost.objects.get(id=blog_id, author=request.user)
+        except (BlogPost.DoesNotExist, ValueError):
+            messages.error(request, 'Blog post not found or you do not have permission to edit it.')
+            return redirect('site:drafts')
+    
+    if request.method == 'POST':
+        try:
+            # Extract form data
+            title = request.POST.get('title')
+            content = request.POST.get('content')
+            excerpt = request.POST.get('excerpt', '')
+            category_id = request.POST.get('category')
+            tag_names = request.POST.get('tags', '').split(',')
+            status = request.POST.get('status', 'draft')
+            featured = request.POST.get('featured') == 'on'
+            seo_meta_title = request.POST.get('seo_meta_title', '')
+            seo_meta_description = request.POST.get('seo_meta_description', '')
+            featured_image_alt = request.POST.get('featured_image_alt', '')
+            
+            # Check if this is an edit operation
+            edit_id = request.POST.get('edit_id')
+            if edit_id:
+                # Update existing blog post
+                try:
+                    blog_post = BlogPost.objects.get(id=edit_id, author=request.user)
+                    blog_post.title = title
+                    blog_post.content = content
+                    blog_post.excerpt = excerpt
+                    blog_post.status = status
+                    blog_post.featured = featured
+                    blog_post.seo_meta_title = seo_meta_title
+                    blog_post.seo_meta_description = seo_meta_description
+                    blog_post.featured_image_alt = featured_image_alt
+                    blog_post.save()
+                except BlogPost.DoesNotExist:
+                    messages.error(request, 'Blog post not found or you do not have permission to edit it.')
+                    return redirect('site:drafts')
+            else:
+                # Create new blog post with proper user isolation
+                blog_post = BlogPost.objects.create(
+                    title=title,
+                    content=content,
+                    excerpt=excerpt,
+                    author=request.user,  # Critical: Set the author to logged-in user
+                    status=status,
+                    featured=featured,
+                    seo_meta_title=seo_meta_title,
+                    seo_meta_description=seo_meta_description,
+                    featured_image_alt=featured_image_alt,
+                )
+            
+            # Set category if provided
+            if category_id:
+                try:
+                    category = Category.objects.get(id=category_id)
+                    blog_post.category = category
+                    blog_post.save()
+                except Category.DoesNotExist:
+                    pass
+            
+            # Handle tags
+            for tag_name in tag_names:
+                tag_name = tag_name.strip()
+                if tag_name:
+                    tag, created = Tag.objects.get_or_create(name=tag_name)
+                    blog_post.tags.add(tag)
+            
+            # Handle featured image
+            if 'featured_image' in request.FILES:
+                blog_post.featured_image = request.FILES['featured_image']
+                blog_post.save()
+            
+            # Handle gallery images
+            if 'gallery_images' in request.FILES:
+                from blog.models import BlogImage
+                gallery_files = request.FILES.getlist('gallery_images')
+                
+                for i, gallery_file in enumerate(gallery_files):
+                    # Get caption and alt text for new images
+                    caption = request.POST.get(f'new_gallery_caption[{i}]', '')
+                    alt_text = request.POST.get(f'new_gallery_alt[{i}]', '')
+                    
+                    BlogImage.objects.create(
+                        blog_post=blog_post,
+                        image=gallery_file,
+                        caption=caption,
+                        alt_text=alt_text,
+                        order=i
+                    )
+            
+            # Handle existing gallery image updates and deletions
+            if edit_id:
+                from blog.models import BlogImage
+                # Handle gallery image deletions first
+                for key, value in request.POST.items():
+                    if key.startswith('delete_gallery_image_') and value == 'true':
+                        image_id = key.replace('delete_gallery_image_', '')
+                        try:
+                            gallery_image = BlogImage.objects.get(id=image_id, blog_post=blog_post)
+                            gallery_image.delete()
+                        except BlogImage.DoesNotExist:
+                            pass
+                
+                # Update existing gallery images (captions and alt text)
+                for key, value in request.POST.items():
+                    if key.startswith('gallery_caption_'):
+                        image_id = key.replace('gallery_caption_', '')
+                        try:
+                            gallery_image = BlogImage.objects.get(id=image_id, blog_post=blog_post)
+                            gallery_image.caption = value
+                            gallery_image.save()
+                        except BlogImage.DoesNotExist:
+                            pass
+                    elif key.startswith('gallery_alt_'):
+                        image_id = key.replace('gallery_alt_', '')
+                        try:
+                            gallery_image = BlogImage.objects.get(id=image_id, blog_post=blog_post)
+                            gallery_image.alt_text = value
+                            gallery_image.save()
+                        except BlogImage.DoesNotExist:
+                            pass
+            
+            # Success message and redirect
+            if status == 'draft':
+                messages.success(request, 'Blog post saved as draft successfully!')
+                return redirect('site:drafts')  # Redirect to drafts page
+            else:
+                messages.success(request, 'Blog post created successfully!')
+                return redirect('site:drafts')
+                
+        except Exception as e:
+            messages.error(request, f'Error creating blog post: {str(e)}')
+            return redirect('site:createblog')
+    
+    # GET request - show the form
+    # Get categories and tags for the form
+    categories = Category.objects.all().order_by('name')
+    tags = Tag.objects.all().order_by('name')
+    
+    context = {
+        'categories': categories,
+        'tags': tags,
+        'edit_blog': edit_blog,  # Pass the blog post being edited (if any)
+    }
+    
+    return render(request, 'blogcreation/createblog.html', context)
 
 @require_site_manager_role
 def drafts(request):
-    return render(request, 'blogcreation/drafts.html')
+    """Site manager's drafts page - shows only their blog posts with proper user isolation"""
+    # Import blog models
+    from blog.models import BlogPost, Category
+    
+    # Get all blog posts by current user (proper user isolation)
+    user_blog_posts = BlogPost.objects.select_related(
+        'author', 'category'
+    ).prefetch_related('tags').filter(
+        author=request.user  # Critical: Only show posts by the logged-in user
+    ).order_by('-created_date')
+    
+    # Get statistics for the current user only
+    total_posts = user_blog_posts.count()
+    draft_posts = user_blog_posts.filter(status='draft').count()
+    published_posts = user_blog_posts.filter(status='published').count()
+    archived_posts = user_blog_posts.filter(status='archived').count()
+    
+    # Get all categories for filter dropdown
+    all_categories = Category.objects.all().order_by('name')
+    
+    context = {
+        'blog_posts': user_blog_posts,
+        'total_posts': total_posts,
+        'draft_posts': draft_posts,
+        'published_posts': published_posts,
+        'archived_posts': archived_posts,
+        'all_categories': all_categories,
+    }
+    
+    return render(request, 'blogcreation/drafts.html', context)
 
 @login_required
 def history(request):
@@ -378,17 +584,29 @@ def reports(request):
     }
     return render(request, 'site_diary/reports.html', context)
 
+
+@login_required
+def project_detail(request, project_id):
+    """Project detail view - temporary placeholder"""
+    try:
+        project = get_object_or_404(Project, id=project_id)
+        context = {
+            'project': project,
+        }
+        return render(request, 'site_diary/project_detail.html', context)
+    except:
+        # Fallback - redirect to dashboard if project doesn't exist
+        messages.info(request, 'Project details are not available yet.')
+        return redirect('site:dashboard')
+
 @login_required
 def settings(request):
     """User settings and preferences"""
     return render(request, 'site_diary/settings.html')
 
-@login_required
+@require_admin_role
 def adminclientproject(request):
     """Admin view for client projects"""
-    if not request.user.is_staff:
-        messages.error(request, 'Access denied. Admin privileges required.')
-        return redirect('dashboard')
     
     search_form = ProjectSearchForm(request.GET)
     projects = Project.objects.all().select_related('project_manager', 'architect')
@@ -413,30 +631,28 @@ def adminclientproject(request):
     }
     return render(request, 'admin/adminclientproject.html', context)
 
-@login_required
+@require_admin_role
 def admindiary(request):
     """Admin view for diary entries"""
-    if not request.user.is_staff:
-        messages.error(request, 'Access denied. Admin privileges required.')
-        return redirect('dashboard')
     
+    search_form = DiaryEntrySearchForm(request.GET)
     entries = DiaryEntry.objects.all().select_related(
         'project', 'created_by', 'reviewed_by'
     ).order_by('-entry_date')
     
-    paginator = Paginator(entries, 20)
+    if search_form.is_valid():
+        if search_form.cleaned_data['project']:
+            entries = entries.filter(project=search_form.cleaned_data['project'])
+        if search_form.cleaned_data['start_date']:
+            entries = entries.filter(entry_date__gte=search_form.cleaned_data['start_date'])
+        if search_form.cleaned_data['end_date']:
+            entries = entries.filter(entry_date__lte=search_form.cleaned_data['end_date'])
     page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    context = {'page_obj': page_obj}
     return render(request, 'admin/admindiary.html', context)
 
-@login_required
+@require_admin_role
 def admindiaryreviewer(request):
     """Admin diary reviewer interface"""
-    if not request.user.is_staff:
-        messages.error(request, 'Access denied. Admin privileges required.')
-        return redirect('dashboard')
     
     # Get entries pending review
     pending_entries = DiaryEntry.objects.filter(
@@ -446,22 +662,14 @@ def admindiaryreviewer(request):
     context = {'pending_entries': pending_entries}
     return render(request, 'admin/admindiaryreviewer.html', context)
 
-@login_required
+@require_admin_role
 def adminhistory(request):
     """Admin history view"""
-    if not request.user.is_staff:
-        messages.error(request, 'Access denied. Admin privileges required.')
-        return redirect('dashboard')
-    
     return render(request, 'admin/adminhistory.html')
 
-@login_required
+@require_admin_role
 def adminreports(request):
     """Admin reports view"""
-    if not request.user.is_staff:
-        messages.error(request, 'Access denied. Admin privileges required.')
-        return redirect('dashboard')
-    
     return render(request, 'admin/adminreports.html')
 
 @login_required

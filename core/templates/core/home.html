@@ -1,10 +1,8 @@
 {% extends 'layout.html' %}
 {% load static %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  {% block head %}
+{% block head %}
+  {{ block.super }}
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Triple G Studio</title>
@@ -14,8 +12,9 @@
   <!-- Styles -->
   <link rel="stylesheet" href="{% static 'css/projects.css' %}">
   <link rel="stylesheet" href="{% static 'css/loader.css' %}">
-  <link rel="stylesheet" href="{% static 'css/sitecss/modal_messages.css' %}">
   <link rel="stylesheet" href="{% static 'css/home.css' %}">
+  <!-- Modal CSS loaded last to ensure proper specificity -->
+  <link rel="stylesheet" href="{% static 'css/sitecss/modal_messages.css' %}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;400;500;600;700&display=swap">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap">
@@ -23,14 +22,10 @@
   <!-- Preload Lottie library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.10.2/lottie.min.js"></script>
   <script src="{% static 'js/loader-init.js' %}" defer></script>
-  {% endblock %}
-</head>
-<body>
-  {% include 'client/_modal_messages.html' %}
-  <!-- Content will be hidden until loader completes -->
+{% endblock %}
 
-  <!-- Navigation -->
-  {% block body %}
+{% block body %}
+  <!-- Content will be hidden until loader completes -->
 
   
   <section class="home" id="homeSection">
@@ -48,38 +43,41 @@
    
     <div class="home-right">
       <div class="main-img-container" id="mainImageContainer">
-        <img src="{% static 'images/kristelle.jpg' %}" alt="Main Photo" id="mainImage" class="main-img">
+        {% if recent_projects.first.hero_image %}
+          <img src="{{ recent_projects.first.hero_image.url }}" alt="Main Photo" id="mainImage" class="main-img">
+        {% elif recent_projects.first.images.first %}
+          <img src="{{ recent_projects.first.images.first.image.url }}" alt="Main Photo" id="mainImage" class="main-img">
+        {% else %}
+          <img src="{% static 'images/kristelle.jpg' %}" alt="Main Photo" id="mainImage" class="main-img">
+        {% endif %}
       </div>
       <h3>RECENT PROJECTS</h3>
       <div class="recent-projects-container">
         <button id="prevBtn" class="scroll-btn">⬅</button>
         
         <div class="recent-projects" id="recentProjects">
-          <img src="{% static 'images/samplerecent1.jpg' %}" alt="Project 1" class="recent-img" 
-               onclick="changeMainImage('image1.jpg')">
-          <img src="{% static 'images/image1.jpg' %}" alt="Project 2" class="recent-img" 
-               onclick="changeMainImage('samplerecent2.jpg')">
-          <img src="{% static 'images/image2.jpeg' %}" alt="Project 3" class="recent-img" 
-               onclick="changeMainImage('image2.jpg')">
-          <img src="{% static 'images/image3.jpg' %}" alt="Project 4" class="recent-img" 
-               onclick="changeMainImage('image3.jpg')">
-          <img src="{% static 'images/image4.jpg' %}" alt="Project 5" class="recent-img" 
-               onclick="changeMainImage('image4.jpg')">
-          <img src="{% static 'images/image5.jpg' %}" alt="Project 6" class="recent-img" 
-               onclick="changeMainImage('image5.jpg')">
-          <img src="{% static 'images/image6.jpg' %}" alt="Project 7" class="recent-img" 
-               onclick="changeMainImage('image6.jpg')">
-          <img src="{% static 'images/image7.jpg' %}" alt="Project 8" class="recent-img" 
-               onclick="changeMainImage('image7.jpg')">
-          <img src="{% static 'images/image8.jpg' %}" alt="Project 9" class="recent-img" 
-               onclick="changeMainImage('image8.jpg')">
-          <img src="{% static 'images/image9.jpg' %}" alt="Project 10" class="recent-img" 
-               onclick="changeMainImage('image9.jpg')">
+          {% for project in recent_projects %}
+            {% if project.hero_image %}
+              <img src="{{ project.hero_image.url }}" alt="{{ project.title }}" class="recent-img" 
+                   onclick="changeMainImage('{{ project.hero_image.url }}')">
+            {% elif project.images.first %}
+              <img src="{{ project.images.first.image.url }}" alt="{{ project.title }}" class="recent-img" 
+                   onclick="changeMainImage('{{ project.images.first.image.url }}')">
+            {% else %}
+              <img src="{% static 'images/image1.jpg' %}" alt="{{ project.title }}" class="recent-img" 
+                   onclick="changeMainImage('{% static 'images/image1.jpg' %}')">
+            {% endif %}
+          {% empty %}
+            <!-- Fallback to static images if no projects -->
+            <img src="{% static 'images/samplerecent1.jpg' %}" alt="Project 1" class="recent-img" 
+                 onclick="changeMainImage('{% static 'images/image1.jpg' %}')">
+            <img src="{% static 'images/image1.jpg' %}" alt="Project 2" class="recent-img" 
+                 onclick="changeMainImage('{% static 'images/image2.jpeg' %}')">
+          {% endfor %}
         </div>
-      
+        
         <button id="nextBtn" class="scroll-btn">➡</button>
       </div>
-      
     </div>
   </section>
 
@@ -87,30 +85,56 @@
     <h2>ALL</h2>
     <div class="filters">
       <select id="year-filter">
-        <option value="all">All</option>       
-        <option value="2025">2025</option>
-        <option value="2024">2024</option>
-        <option value="2023">2023</option>
-        <option value="2022">2022</option>
-        <option value="2021">2021</option>
-        <option value="2020">2020</option>
+        <option value="all">All</option>
+        {% for year in years %}
+          <option value="{{ year }}">{{ year }}</option>
+        {% endfor %}
       </select>
       <select id="category-filter">
         <option value="all">All</option>
-        <option value="residential">Residential Projects</option>
-        <option value="commercial">Commercial Projects</option>
-        <option value="public">Public Infrastructure</option>
         <option value="featured">Featured Projects</option>
+        {% for category in categories %}
+          <option value="{{ category.slug }}">{{ category.name }}</option>
+        {% endfor %}
       </select>
     </div>
   </div>
 
   <div class="projects-grid">
-    <!-- Project cards will be dynamically generated -->
+    {% for project in projects %}
+      <div class="project-card" data-category="{{ project.category.slug }}" data-year="{{ project.year }}">
+        <div class="project-image">
+          {% if project.hero_image %}
+            <img src="{{ project.hero_image.url }}?v={{ project.updated_at|date:'U' }}" alt="{{ project.title }}" onerror="this.src='{% static 'images/image1.jpg' %}'">
+          {% elif project.images.first %}
+            <img src="{{ project.images.first.image.url }}?v={{ project.updated_at|date:'U' }}" alt="{{ project.title }}" onerror="this.src='{% static 'images/image1.jpg' %}'">
+          {% else %}
+            <img src="{% static 'images/image1.jpg' %}" alt="{{ project.title }}">
+          {% endif %}
+          <div class="layer"></div>
+          {% if project.featured %}
+            <div class="featured-badge">
+              <i class="fas fa-star"></i> Featured
+            </div>
+          {% endif %}
+        </div>
+        <div class="project-info">
+          <h3>{{ project.title }}</h3>
+          <p>{{ project.description|truncatewords:20 }}</p>
+          <div class="project-metadata">
+            <span class="project-year">{{ project.year }}</span>
+            <span class="project-category">{{ project.category.name }}</span>
+          </div>
+          <a href="{% url 'portfolio:project_detail' project_id=project.id %}" class="project-link">View Details</a>
+        </div>
+      </div>
+    {% empty %}
+      <div class="no-projects">
+        <p>No projects available yet. Check back soon!</p>
+      </div>
+    {% endfor %}
   </div>
 </div>
-
-  <p>DEBUG: User is_authenticated: {{ user.is_authenticated }}</p>
   
   <footer class="footer">
     <div class="footer-content">
@@ -151,6 +175,4 @@
   <script src="{% static 'js/projects.js' %}"></script>
   <!-- <script src="{% static 'js/loader.js' %}"></script> -->
   <!-- loader.js will be loaded by loader-init.js -->
-   {% endblock %}
-</body>
-</html>
+{% endblock %}

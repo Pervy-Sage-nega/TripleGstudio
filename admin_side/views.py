@@ -5,23 +5,18 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.cache import never_cache
+from django.utils import timezone
 from accounts.models import AdminProfile
 from django.contrib.auth.models import User
 from django.db.models import Count
+from .decorators import require_admin_role, ajax_require_admin_role
 import json
 
-@login_required
+@require_admin_role
 def admin_home(request):
     """Admin dashboard home page"""
-    # Check if user is admin/site manager
-    try:
-        admin_profile = AdminProfile.objects.get(user=request.user)
-        if admin_profile.approval_status != 'approved':
-            messages.error(request, 'Your admin account is not approved.')
-            return redirect('accounts:client_login')
-    except AdminProfile.DoesNotExist:
-        messages.error(request, 'Access denied. Admin privileges required.')
-        return redirect('accounts:client_login')
+    admin_profile = AdminProfile.objects.get(user=request.user)
     
     # Get dashboard statistics
     context = {
@@ -34,18 +29,10 @@ def admin_home(request):
     
     return render(request, 'adminhome.html', context)
 
-@login_required
+@require_admin_role
 def admin_settings(request):
     """Admin settings page"""
-    # Check if user is admin/site manager
-    try:
-        admin_profile = AdminProfile.objects.get(user=request.user)
-        if admin_profile.approval_status != 'approved':
-            messages.error(request, 'Your admin account is not approved.')
-            return redirect('accounts:client_login')
-    except AdminProfile.DoesNotExist:
-        messages.error(request, 'Access denied. Admin privileges required.')
-        return redirect('accounts:client_login')
+    admin_profile = AdminProfile.objects.get(user=request.user)
     
     context = {
         'admin_profile': admin_profile,
@@ -54,17 +41,12 @@ def admin_settings(request):
     
     return render(request, 'adminsettings.html', context)
 
-@login_required
+@ajax_require_admin_role
 @csrf_protect
 @require_http_methods(["POST"])
 def update_admin_settings(request):
     """Handle admin settings updates via AJAX"""
-    try:
-        admin_profile = AdminProfile.objects.get(user=request.user)
-        if admin_profile.approval_status != 'approved':
-            return JsonResponse({'success': False, 'message': 'Access denied.'})
-    except AdminProfile.DoesNotExist:
-        return JsonResponse({'success': False, 'message': 'Access denied.'})
+    admin_profile = AdminProfile.objects.get(user=request.user)
     
     data = json.loads(request.body)
     section = data.get('section')
@@ -98,8 +80,47 @@ def update_admin_settings(request):
     
     return JsonResponse({'success': False, 'message': 'Invalid section.'})
 
+@never_cache
 def admin_logout(request):
-    """Admin logout view"""
+    """
+    Enhanced admin logout view with proper session handling
+    """
+    # Check if user was actually logged in as admin
+    was_admin = False
+    if request.user.is_authenticated:
+        try:
+            admin_profile = AdminProfile.objects.get(user=request.user)
+            was_admin = True
+        except AdminProfile.DoesNotExist:
+            pass
+    
+    # Clear all session data
+    if hasattr(request, 'session'):
+        request.session.flush()
+    
+    # Logout the user
     logout(request)
-    messages.success(request, 'You have been logged out successfully.')
+    
+    # Add appropriate message
+    if was_admin:
+        messages.success(request, 'You have been logged out successfully from the admin panel.')
+    else:
+        messages.info(request, 'You have been logged out.')
+    
+    # Redirect to admin login page
     return redirect('accounts:admin_login')
+
+
+@require_admin_role
+def check_session(request):
+    """
+    AJAX endpoint to check if admin session is still valid
+    Used by JavaScript to monitor session status
+    """
+    return JsonResponse({
+        'success': True,
+        'authenticated': True,
+        'user': request.user.username,
+        'role': request.user.adminprofile.get_admin_role_display(),
+        'timestamp': timezone.now().isoformat()
+    })

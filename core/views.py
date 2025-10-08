@@ -4,13 +4,34 @@ from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
+from django.http import HttpResponseForbidden
 from accounts.models import Profile
 from accounts.forms import ProfileUpdateForm
 from accounts.decorators import allow_public_access, require_public_role
+from portfolio.models import Project, Category
 
 @allow_public_access
 def home(request):
-    return render(request, 'core/home.html')
+    # Get projects with related data for homepage
+    projects = Project.objects.select_related('category').prefetch_related('images').order_by('-featured', '-completion_date')
+    
+    # Get categories for filters
+    categories = Category.objects.all().order_by('name')
+    
+    # Get unique years for year filter
+    years = Project.objects.values_list('year', flat=True).distinct().order_by('-year')
+    
+    # Get recent projects (first 6 for carousel)
+    recent_projects = projects[:6]
+    
+    context = {
+        'projects': projects,
+        'categories': categories,
+        'years': years,
+        'recent_projects': recent_projects,
+    }
+    
+    return render(request, 'core/home.html', context)
 
 @allow_public_access
 def about(request):
@@ -145,3 +166,17 @@ def usersettings(request):
 
 def login(request):
     return render(request, 'core/login.html')
+
+def permission_denied_view(request, exception=None):
+    """
+    Custom 401 Unauthorized error handler.
+    Redirects users to client login when they try to access admin/site manager areas.
+    """
+    return render(request, 'page error/401.html', status=401)
+
+def admin_permission_denied_view(request, exception=None):
+    """
+    Custom 401 Unauthorized error handler for admin areas.
+    Shows admin-specific error page when site managers or unauthorized users try to access admin areas.
+    """
+    return render(request, 'page error/401_2.html', status=401)

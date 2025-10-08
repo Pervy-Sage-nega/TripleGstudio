@@ -175,8 +175,8 @@ function initVideoBackground() {
     
     if (!video || !videoBackground) return;
     
-    // Set video source directly in JavaScript
-    video.src = '/static/videos/Sksca9hO.mp4';
+    // Don't override video source - let Django template handle it
+    // The video sources are already set in the HTML template
     
     // Check if browser can play video
     const canPlayVideo = video.canPlayType && (

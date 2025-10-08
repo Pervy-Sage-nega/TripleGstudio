@@ -3,8 +3,8 @@
 {% block title %}Admin Project Portfolio Management | Triple G BuildHub{% endblock %}
 {% block extra_head %}
     <link rel="stylesheet" href="{% static 'css/admincss/header.css' %}">
-    <link rel="stylesheet" href="{% static 'css/admincss/admindiaryreviewer.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/reports.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/history.css' %}">
     <link rel="stylesheet" href="{% static 'css/admincss/projectmanagement.css' %}">
     <link rel="stylesheet" href="{% static 'css/admincss/blogmanagement.css' %}">
@@ -26,14 +26,65 @@
                 <h1>Project Portfolio Management</h1>
             </div>
             <div class="export-options">
+                <button class="btn btn-secondary" id="draftsBtn"><i class="fas fa-file-alt"></i> Drafts</button>
                 <button class="btn btn-primary" id="refreshBtn"><i class="fas fa-sync-alt"></i> Refresh</button>
             </div>
         </div>
         <p style="margin-bottom:2rem; color:#777; font-size:1rem;">Manage project entries that will be publicly visible in the Triple G Studio project showcase.</p>
 
+        
+        <!-- Summary Section -->
+        <div class="summary-section">
+            <div class="summary-card">
+                <i class="fas fa-folder-open summary-icon"></i>
+                <div class="summary-title">Total Projects</div>
+                <div class="summary-value" id="totalProjects">{{ total_projects }}</div>
+                <div class="summary-change">
+                    <span>All portfolio projects</span>
+                </div>
+            </div>
+            
+            <div class="summary-card success">
+                <i class="fas fa-check-circle summary-icon"></i>
+                <div class="summary-title">Completed</div>
+                <div class="summary-value" id="completedProjects">{{ completed_projects }}</div>
+                <div class="summary-change">
+                    <span>Finished projects</span>
+                </div>
+            </div>
+            
+            <div class="summary-card warning">
+                <i class="fas fa-clock summary-icon"></i>
+                <div class="summary-title">Ongoing</div>
+                <div class="summary-value" id="ongoingProjects">{{ ongoing_projects }}</div>
+                <div class="summary-change">
+                    <span>In progress</span>
+                </div>
+            </div>
+            
+            <div class="summary-card info">
+                <i class="fas fa-calendar-alt summary-icon"></i>
+                <div class="summary-title">Planned</div>
+                <div class="summary-value" id="plannedProjects">{{ planned_projects }}</div>
+                <div class="summary-change">
+                    <span>Upcoming projects</span>
+                </div>
+            </div>
+            
+            <div class="summary-card danger">
+                <i class="fas fa-star summary-icon"></i>
+                <div class="summary-title">Featured</div>
+                <div class="summary-value" id="featuredProjects">{{ featured_projects }}</div>
+                <div class="summary-change">
+                    <span>Highlighted projects</span>
+                </div>
+            </div>
+        </div>
+       
         <!-- Project Entry Form -->
-        <div class="form-container card">
-            <form id="projectForm" enctype="multipart/form-data">
+        <div class="form-container card" id="formContainer">
+            <form id="projectForm" method="post" action="{% url 'portfolio:create_project' %}" enctype="multipart/form-data">
+                {% csrf_token %}
                 <div class="form-columns" style="display: flex; gap: 2rem;">
                     <!-- Left Column -->
                     <div class="form-column" style="flex:1; min-width:260px;">
@@ -45,32 +96,27 @@
                             <label for="category">Project Category</label>
                             <select id="category" name="category" required>
                                 <option value="">Select Category</option>
-                                <option>Residential</option>
-                                <option>Commercial</option>
-                                <option>Institutional</option>
-                                <option>Industrial</option>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}">{{ category.name }}</option>
+                                {% endfor %}
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="client">Client Name</label>
-                            <input type="text" id="client" name="client">
-                        </div>
-                        <div class="form-group">
-                            <label for="lead">Lead Architect</label>
-                            <input type="text" id="lead" name="lead">
+                            <label for="lead_architect">Lead Architect</label>
+                            <input type="text" id="lead_architect" name="lead_architect">
                         </div>
                         <div class="form-group">
                             <label for="status">Project Status</label>
                             <select id="status" name="status" required>
                                 <option value="">Select Status</option>
-                                <option>Planned</option>
-                                <option>In Progress</option>
-                                <option>Completed</option>
+                                <option value="planned">Planned</option>
+                                <option value="ongoing">Ongoing</option>
+                                <option value="completed">Completed</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="completion">Completion Date</label>
-                            <input type="date" id="completion" name="completion">
+                            <label for="completion_date">Completion Date</label>
+                            <input type="date" id="completion_date" name="completion_date">
                         </div>
                         <div class="form-group">
                             <label for="duration">Project Duration</label>
@@ -88,20 +134,34 @@
                     <!-- Right Column -->
                     <div class="form-column" style="flex:1; min-width:260px;">
                         <div class="form-group">
-                            <label for="cover">Cover Image <span style="color:red">*</span></label>
-                            <input type="file" id="cover" name="cover" accept="image/png, image/jpeg" required>
+                            <label for="hero_image">Cover Image <span style="color:red">*</span></label>
+                            <input type="file" id="hero_image" name="hero_image" accept="image/png, image/jpeg" required>
                             <div id="coverPreview" class="img-preview"></div>
                             <small>Used as hero banner on project-detail.html</small>
                         </div>
                         <div class="form-group">
                             <label for="gallery">Project Gallery (up to 6)</label>
-                            <input type="file" id="gallery" name="gallery" accept="image/png, image/jpeg" multiple>
+                            <input type="file" id="gallery" name="gallery_images" accept="image/png, image/jpeg" multiple>
                             <div id="galleryPreview" class="img-preview-grid"></div>
                             <small>Accepted: JPG, PNG, ≤ 5MB each</small>
                         </div>
                         <div class="form-group">
-                            <label for="overview">Project Overview <span style="color:red">*</span></label>
-                            <textarea id="overview" name="overview" rows="4" required></textarea>
+                            <label for="video">Background Video (Optional)</label>
+                            <input type="file" id="video" name="video" accept="video/mp4, video/webm, video/ogg">
+                            <div id="videoPreview" class="video-preview"></div>
+                            <small>Accepted: MP4, WebM, OGG ≤ 50MB. Used as background video on project detail page.</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="description">Project Overview <span style="color:red">*</span></label>
+                            <textarea id="description" name="description" rows="4" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="location">Project Location</label>
+                            <input type="text" id="location" name="location" placeholder="e.g. Manila, Philippines">
+                        </div>
+                        <div class="form-group">
+                            <label for="year">Project Year</label>
+                            <input type="number" id="year" name="year" min="2000" max="2030" placeholder="e.g. 2024" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; transition: border-color 0.2s;" onfocus="this.style.borderColor='#4a90e2';" onblur="this.style.borderColor='#ddd';">
                         </div>
                         <div class="form-group">
                             <label for="sustainability">Sustainability / Tech / Goals</label>
@@ -112,14 +172,21 @@
                 <!-- Milestones / Timeline Builder -->
                 <fieldset class="card" style="margin-top:2rem;">
                     <legend><i class="fas fa-tasks"></i> Project Milestones</legend>
-                    <div class="milestone-actions">
-                        <button type="button" class="btn btn-secondary" onclick="addMilestone()"><i class="fas fa-plus"></i> Add Milestone</button>
+                    
+                    <!-- Align Add Milestone button to the right -->
+                    <div class="milestone-actions" 
+                         style="display: flex; justify-content: flex-end; margin-bottom: 1rem; width: 100%;">
+                        <button type="button" class="btn btn-secondary" onclick="addMilestone()">
+                            <i class="fas fa-plus"></i> Add Milestone
+                        </button>
                     </div>
-                    <div id="milestoneList"></div>
+                
+                    <div id="milestoneList" 
+                         style="display: flex; flex-direction: column; gap: 0;"></div>
                 </fieldset>
                 <!-- Visibility Controls -->
                 <div class="form-group" style="margin-top:1.5rem;">
-                    <label><input type="checkbox" id="draft" name="draft"> Keep as Draft</label>
+                    <label><input type="checkbox" id="featured" name="featured"> Mark as Featured Project</label>
                     <label style="margin-left:2em;"><input type="checkbox" id="publish" name="publish" checked> Publish to Public Projects Page</label>
                 </div>
                 <!-- Form Buttons -->
@@ -129,6 +196,42 @@
                     <button type="submit" class="btn btn-primary"><i class="fas fa-upload"></i> Publish Project</button>
                 </div>
             </form>
+        </div>
+
+        <!-- Drafts Section (Hidden by default) -->
+        <div class="drafts-container card" id="draftsContainer" style="display: none;">
+            <div class="drafts-header" style="margin-bottom: 1.5rem;">
+                <h2 style="color: #333; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-file-alt"></i>
+                    Draft Projects
+                </h2>
+                <p style="color: #666; margin: 0.5rem 0 0 0; font-size: 0.9rem;">
+                    Projects saved as drafts that are not yet published to the public portfolio.
+                </p>
+            </div>
+            
+            <div class="drafts-table-responsive">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                            <th style="padding: 1rem; text-align: left; font-weight: 600; color: #dee2e6;">Title</th>
+                            <th style="padding: 1rem; text-align: left; font-weight: 600; color: #dee2e6;">Category</th>
+                            <th style="padding: 1rem; text-align: left; font-weight: 600; color: #dee2e6;">Last Modified</th>
+                            <th style="padding: 1rem; text-align: left; font-weight: 600; color: #dee2e6;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Draft projects would be populated here -->
+                        <tr>
+                            <td colspan="4" style="padding: 3rem; text-align: center; color: #666;">
+                                <i class="fas fa-file-alt" style="font-size: 2rem; margin-bottom: 1rem; display: block; color: #ccc;"></i>
+                                <p style="margin: 0; font-size: 1.1rem;">No draft projects found.</p>
+                                <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem;">Create a project and save it as draft to see it here.</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
        
         <!-- Table View (history style) -->
@@ -145,38 +248,51 @@
                         </tr>
                     </thead>
                     <tbody>
+                        {% for project in projects %}
                         <tr>
-                            <td class="table-project-name">Sample Project</td>
-                            <td>In Progress</td>
-                            <td>Public</td>
-                            <td>Jan 1, 2025</td>
+                            <td class="table-project-name">{{ project.title }}</td>
+                            <td>
+                                <span class="status-badge status-{{ project.status }}">
+                                    {{ project.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if project.featured %}
+                                    <span class="visibility-badge featured">Featured</span>
+                                {% else %}
+                                    <span class="visibility-badge public">Public</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ project.completion_date|date:"M d, Y" }}</td>
                             <td>
                                 <div class="table-actions">
-                                    <button class="action-btn download" title="Download PDF">
-                                        <i class="fas fa-file-pdf"></i>
+                                    <button class="action-btn edit" title="Edit Project" data-project-id="{{ project.id }}" onclick="editProject(this.dataset.projectId)">
+                                        <i class="fas fa-edit"></i>
                                     </button>
-                                    <button class="action-btn view" title="View Details">
+                                    <button class="action-btn view" title="View Details" onclick="window.open('{{ project.get_absolute_url }}', '_blank')">
                                         <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="action-btn delete" title="Delete Project" data-project-id="{{ project.id }}" onclick="deleteProject(this.dataset.projectId)">
+                                        <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
                             </td>
                         </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center">
+                                <p style="padding: 2rem; color: #666;">
+                                    <i class="fas fa-folder-open" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+                                    No projects found. Create your first project using the form above.
+                                </p>
+                            </td>
+                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
         <!-- End Table View -->
-
-                            <th>Completion Date</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Dynamically filled -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
     </div>
     <!-- Modals (confirmation, success/failure) -->
     <div class="modal" id="actionModal">
@@ -191,8 +307,230 @@
     </div>
     {% endblock %}
 {% block extra_scripts %}
+<script>
+    // Basic JavaScript functions to prevent errors
+    function editProject(projectId) {
+        console.log('Edit project:', projectId);
+        
+        // Fetch project data
+        fetch(`/portfolio/get-project/${projectId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Error loading project: ' + data.error);
+                    return;
+                }
+                
+                // Update form action for editing
+                document.getElementById('projectForm').action = `/portfolio/edit/${projectId}/`;
+                
+                // Populate form fields
+                document.getElementById('title').value = data.title || '';
+                document.getElementById('description').value = data.description || '';
+                document.getElementById('category').value = data.category || '';
+                document.getElementById('year').value = data.year || '';
+                document.getElementById('location').value = data.location || '';
+                document.getElementById('size').value = data.size || '';
+                document.getElementById('duration').value = data.duration || '';
+                document.getElementById('completion_date').value = data.completion_date || '';
+                document.getElementById('lead_architect').value = data.lead_architect || '';
+                document.getElementById('status').value = data.status || '';
+                document.getElementById('featured').checked = data.featured || false;
+                
+                // Clear existing milestones and add loaded ones
+                document.getElementById('milestoneList').innerHTML = '';
+                if (data.milestones && data.milestones.length > 0) {
+                    data.milestones.forEach((milestone, index) => {
+                        addMilestone();
+                        const milestoneCards = document.querySelectorAll('.milestone-card');
+                        const lastCard = milestoneCards[milestoneCards.length - 1];
+                        
+                        lastCard.querySelector('input[name="milestone_title[]"]').value = milestone.title;
+                        lastCard.querySelector('input[name="milestone_date[]"]').value = milestone.date;
+                        lastCard.querySelector('textarea[name="milestone_description[]"]').value = milestone.description;
+                    });
+                }
+                
+                // Scroll to form
+                document.getElementById('formContainer').scrollIntoView({ behavior: 'smooth' });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error loading project data');
+            });
+    }
+    
+    function deleteProject(projectId) {
+        console.log('Delete project:', projectId);
+        if (confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
+            // Create a form to submit DELETE request
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/portfolio/delete/${projectId}/`;
+            
+            // Add CSRF token
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrfmiddlewaretoken';
+            csrfInput.value = csrfToken;
+            form.appendChild(csrfInput);
+            
+            // Submit form
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+    
+    function addMilestone() {
+        const milestoneList = document.getElementById('milestoneList');
+        const milestoneCount = milestoneList.children.length;
+        
+        const milestoneCard = document.createElement('div');
+        milestoneCard.className = 'milestone-card';
+        milestoneCard.style.cssText = `
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        `;
+        
+        milestoneCard.innerHTML = `
+            <div style="background: #fff; border-radius: 6px; padding: 1.25rem; border: 1px solid #e9ecef;">
+                <div style="margin-bottom: 1.25rem;">
+                    <h4 style="margin: 0; color: #495057; font-size: 1rem; font-weight: 600;">Milestone ${milestoneCount + 1}</h4>
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #495057;">Title</label>
+                    <input type="text" name="milestone_title[]" style="width: 100%; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 4px; font-size: 0.9rem;" placeholder="e.g., Foundation Complete">
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #495057;">Date</label>
+                    <input type="date" name="milestone_date[]" style="width: 100%; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 4px; font-size: 0.9rem;">
+                </div>
+                
+                <div style="margin-bottom: 1.25rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #495057;">Description</label>
+                    <textarea name="milestone_description[]" rows="3" style="width: 100%; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 4px; resize: vertical; font-size: 0.9rem;" placeholder="Brief description of this milestone..."></textarea>
+                </div>
+                
+                <div style="border-top: 1px solid #e9ecef; padding-top: 1rem; display: flex; justify-content: flex-end;">
+                    <button type="button" class="btn btn-outline-danger btn-sm remove-milestone" onclick="removeMilestone(this)" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                        <i class="fas fa-trash"></i> Remove
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        milestoneList.appendChild(milestoneCard);
+    }
+    
+    function removeMilestone(button) {
+        const milestoneCard = button.closest('.milestone-card');
+        milestoneCard.remove();
+        
+        // Renumber remaining milestones
+        const milestoneCards = document.querySelectorAll('.milestone-card');
+        milestoneCards.forEach((card, index) => {
+            const header = card.querySelector('h4');
+            header.textContent = `Milestone ${index + 1}`;
+        });
+    }
+    
+    function saveAsDraft() {
+        console.log('Save as draft');
+        // Change form action to save as draft
+        const form = document.getElementById('projectForm');
+        const originalAction = form.action;
+        form.action = '/portfolio/save-draft/';
+        
+        // Submit the form
+        form.submit();
+        
+        // Restore original action
+        form.action = originalAction;
+    }
+    
+    function closeModal() {
+        document.getElementById('actionModal').style.display = 'none';
+    }
+    
+    // Function to reset form for new project
+    function resetFormForNew() {
+        const form = document.getElementById('projectForm');
+        form.action = '/portfolio/create/';
+        form.reset();
+        document.getElementById('milestoneList').innerHTML = '';
+    }
+
+    // Video preview functionality
+    document.getElementById('video').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        const preview = document.getElementById('videoPreview');
+        
+        if (file) {
+            const video = document.createElement('video');
+            video.src = URL.createObjectURL(file);
+            video.controls = true;
+            video.style.maxWidth = '100%';
+            video.style.height = 'auto';
+            
+            preview.innerHTML = '';
+            preview.appendChild(video);
+        } else {
+            preview.innerHTML = '';
+        }
+    });
+
+    // Refresh button functionality
+    document.getElementById('refreshBtn').addEventListener('click', function() {
+        location.reload();
+    });
+
+    // Drafts/Form toggle functionality
+    let isDraftsView = false;
+    const draftsBtn = document.getElementById('draftsBtn');
+    const formContainer = document.getElementById('formContainer');
+    const draftsContainer = document.getElementById('draftsContainer');
+    const tableView = document.getElementById('tableView');
+
+    draftsBtn.addEventListener('click', function() {
+        if (!isDraftsView) {
+            // Switch to Drafts view
+            formContainer.style.display = 'none';
+            tableView.style.display = 'none';
+            draftsContainer.style.display = 'block';
+            
+            // Update button
+            draftsBtn.innerHTML = '<i class="fas fa-plus"></i> Form';
+            draftsBtn.classList.remove('btn-secondary');
+            draftsBtn.classList.add('btn-success');
+            
+            isDraftsView = true;
+        } else {
+            // Switch back to Form view
+            formContainer.style.display = 'block';
+            tableView.style.display = 'block';
+            draftsContainer.style.display = 'none';
+            
+            // Reset form for new project
+            resetFormForNew();
+            
+            // Update button
+            draftsBtn.innerHTML = '<i class="fas fa-file-alt"></i> Drafts';
+            draftsBtn.classList.remove('btn-success');
+            draftsBtn.classList.add('btn-secondary');
+            
+            isDraftsView = false;
+        }
+    });
+</script>
+
    
-    <script src="{% static 'js/adminjs/projectmanagement.js' %}"></script>
     <script src="{% static 'js/adminjs/mobile-btn.js' %}"></script>
 {% endblock %}
 </body>

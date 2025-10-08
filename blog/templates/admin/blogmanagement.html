@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="{% static 'css/sitecss/reports.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/history.css' %}">
     <link rel="stylesheet" href="{% static 'css/admincss/blogmanagement.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/blog-ui-fixes.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     {% endblock %}
     {% block content %}
@@ -32,115 +33,80 @@
             </div>
         </div>
         
-        <!-- Filter Section -->
-        <div class="filter-container">
-            <div class="filter-header">
-                <div class="filter-title">
-                    <i class="fas fa-filter"></i>
-                    <span>Filter Blogs</span>
-                </div>
-                
-                <button class="filter-toggle" id="filterToggle">
-                    <span>Hide Filters</span>
-                    <i class="fas fa-chevron-up"></i>
-                </button>
+        <!-- Improved Filter + Search + Button Controls -->
+        <div class="filter-search-controls">
+            <div class="filter-group">
+                <select id="filter-category" class="filter-dropdown">
+                    <option value="">All Categories</option>
+                    {% for category in all_categories %}
+                    <option value="{{ category.slug }}">{{ category.name }}</option>
+                    {% endfor %}
+                </select>
             </div>
             
-            <div class="filter-content" id="filterOptions">
-                <div class="filter-options">
-                    <div class="filter-group">
-                        <label for="filter-status">Status</label>
-                        <select id="filter-status">
-                            <option value="">All Status</option>
-                            <option value="Pending">Pending</option>
-                            <option value="Approved">Approved</option>
-                            <option value="Rejected">Rejected</option>
-                        </select>
-                    </div>
-                    
-                    <div class="filter-group">
-                        <label for="filter-category">Category</label>
-                        <select id="filter-category">
-                            <option value="">All Categories</option>
-                            <option value="industry-insights">Industry Insights</option>
-                            <option value="expert-advice">Expert Advice</option>
-                            <option value="case-study">Case Study</option>
-                            <option value="design-trends">Design Trends</option>
-                            <option value="sustainable-building">Sustainable Building</option>
-                            <option value="technology">Construction Technology</option>
-                            <option value="regulations">Regulations & Standards</option>
-                        </select>
-                    </div>
-                    
-                    <div class="filter-group">
-                        <label for="filter-author">Author</label>
-                        <input type="text" id="filter-author" placeholder="Author name">
-                    </div>
-                    
-                    <div class="filter-group">
-                        <label for="filter-date-from">Date From</label>
-                        <input type="date" id="filter-date-from">
-                    </div>
-                    
-                    <div class="filter-group">
-                        <label for="filter-date-to">Date To</label>
-                        <input type="date" id="filter-date-to">
-                    </div>
-                    
-                    <div class="filter-group" style="grid-column: span 2;">
-                        <label for="search">Search</label>
-                        <input type="text" id="search" class="search-input" placeholder="Search by blog title or tags">
-                    </div>
-                </div>
-                
-                <div class="filter-buttons">
-                    <button class="btn btn-secondary" id="resetFilters">
-                        <i class="fas fa-undo"></i>
-                        Reset Filters
-                    </button>
-                    <button class="btn btn-primary" id="applyFilters">
-                        <i class="fas fa-search"></i>
-                        Apply Filters
-                    </button>
-                </div>
+            <div class="filter-group">
+                <select id="filter-status" class="filter-dropdown">
+                    <option value="">All Statuses</option>
+                    <option value="draft">Drafts</option>
+                    <option value="published">Published</option>
+                    <option value="archived">Archived</option>
+                </select>
             </div>
+            
+            <div class="search-group">
+                <i class="fas fa-search"></i>
+                <input type="text" id="search" placeholder="Search drafts..." class="search-input">
+            </div>
+            
+            <a href="{% url 'blog:create_blog_post' %}" class="new-post-btn btn btn-primary">
+                <i class="fas fa-plus"></i>
+                New Blog Post
+            </a>
         </div>
         
-        <!-- Summary Section -->
+        <!-- Compact Summary Section -->
         <div class="summary-section">
             <div class="summary-card">
-                <i class="fas fa-newspaper summary-icon"></i>
-                <div class="summary-title">Total Blog Posts</div>
-                <div class="summary-value" id="totalBlogs">3</div>
-                <div class="summary-change">
-                    <span>All submitted blogs</span>
+                <div class="summary-icon">
+                    <i class="fas fa-newspaper"></i>
+                </div>
+                <div class="summary-content">
+                    <div class="summary-title">Total Posts</div>
+                    <div class="summary-value" id="totalBlogs">{{ total_posts|default:0 }}</div>
+                    <div class="summary-change">All submitted blogs</div>
                 </div>
             </div>
             
             <div class="summary-card warning">
-                <i class="fas fa-exclamation-triangle summary-icon"></i>
-                <div class="summary-title">Pending Review</div>
-                <div class="summary-value" id="pendingBlogs">1</div>
-                <div class="summary-change">
-                    <span>Awaiting approval</span>
+                <div class="summary-icon">
+                    <i class="fas fa-edit"></i>
+                </div>
+                <div class="summary-content">
+                    <div class="summary-title">Drafts</div>
+                    <div class="summary-value" id="draftBlogs">{{ draft_posts|default:0 }}</div>
+                    <div class="summary-change">Awaiting publication</div>
                 </div>
             </div>
             
             <div class="summary-card success">
-                <i class="fas fa-check-circle summary-icon"></i>
-                <div class="summary-title">Approved</div>
-                <div class="summary-value" id="approvedBlogs">1</div>
-                <div class="summary-change">
-                    <span>Published blogs</span>
+                <div class="summary-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="summary-content">
+                    <div class="summary-title">Published</div>
+                    <div class="summary-value" id="publishedBlogs">{{ published_posts|default:0 }}</div>
+                    <div class="summary-change">Live posts</div>
                 </div>
             </div>
             
             <div class="summary-card danger">
-                <i class="fas fa-times-circle summary-icon"></i>
-                <div class="summary-title">Rejected</div>
-                <div class="summary-value" id="rejectedBlogs">1</div>
-                <div class="summary-change">
-                    <span>Rejected blogs</span>
+                <div class="summary-icon">
+                    <i class="fas fa-archive"></i>
+                </div>
+                <div class="summary-content">
+                    <div class="summary-title">Archived</div>
+                    <div class="summary-value" id="archivedBlogs">{{ archived_posts|default:0 }}</div>
+                    <div class="summary-change">Archived posts</div>
                 </div>
             </div>
         </div>
@@ -186,339 +152,170 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <!-- Blog Item 1 - Approved -->
-                            <tr class="blog-item" data-id="1">
-                                <td><img src="{% static 'images/image1.jpg' %}" alt="Blog Thumbnail" class="blog-thumb"></td>
-                                <td class="blog-title">Sustainable Building Materials for 2023</td>
-                                <td>Sustainable Building</td>
-                                <td>John Smith</td>
-                                <td>2023-05-10</td>
+                            {% for blog in blog_posts %}
+                            <tr class="blog-item" data-id="{{ blog.id }}">
+                                <td>
+                                    {% if blog.featured_image %}
+                                    <img src="{{ blog.featured_image.url }}" alt="{{ blog.title }}" class="blog-thumb">
+                                    {% else %}
+                                    <img src="{% static 'images/default-blog.jpg' %}" alt="{{ blog.title }}" class="blog-thumb">
+                                    {% endif %}
+                                </td>
+                                <td class="blog-title">{{ blog.title }}</td>
+                                <td>{{ blog.category.name|default:"Uncategorized" }}</td>
+                                <td>{{ blog.author.get_full_name|default:blog.author.username }}</td>
+                                <td>{{ blog.created_date|date:"Y-m-d" }}</td>
                                 <td>
                                     <div class="tag-container">
-                                        <span class="blog-tag">sustainable</span>
-                                        <span class="blog-tag">eco-friendly</span>
-                                        <span class="blog-tag">materials</span>
+                                        {% for tag in blog.tags.all|slice:":3" %}
+                                        <span class="blog-tag">{{ tag.name }}</span>
+                                        {% endfor %}
                                     </div>
                                 </td>
-                                <td>5 mins</td>
-                                <td><span class="status-badge status-approved">Approved</span></td>
-                                <td class="actions">
-                                    <button class="action-btn view" title="View" onclick="viewBlog(1)"><i class="fas fa-eye"></i></button>
-                                    <button class="action-btn edit" title="Edit"><i class="fas fa-edit"></i></button>
-                                    <button class="action-btn delete" title="Delete"><i class="fas fa-trash"></i></button>
-                                </td>
-                            </tr>
-                            
-                            <!-- Blog Item 2 - Pending -->
-                            <tr class="blog-item" data-id="2">
-                                <td><img src="{% static 'images/image2.jpeg' %}" alt="Blog Thumbnail" class="blog-thumb"></td>
-                                <td class="blog-title">Latest Architectural Design Trends</td>
-                                <td>Design Trends</td>
-                                <td>Emily Chen</td>
-                                <td>2023-06-15</td>
+                                <td>{{ blog.reading_time }} min{% if blog.reading_time > 1 %}s{% endif %}</td>
                                 <td>
-                                    <div class="tag-container">
-                                        <span class="blog-tag">architecture</span>
-                                        <span class="blog-tag">design</span>
-                                        <span class="blog-tag">trends</span>
-                                    </div>
+                                    <span class="status-badge status-{{ blog.status }}">
+                                        {{ blog.get_status_display }}
+                                    </span>
                                 </td>
-                                <td>7 mins</td>
-                                <td><span class="status-badge status-pending">Pending</span></td>
                                 <td class="actions">
-                                    <button class="action-btn view" title="View" onclick="viewBlog(2)"><i class="fas fa-eye"></i></button>
-                                    <button class="action-btn approve" title="Approve" onclick="approveBlog(2)"><i class="fas fa-check"></i></button>
-                                    <button class="action-btn reject" title="Reject" onclick="rejectBlog(2)"><i class="fas fa-times"></i></button>
+                                    <button class="action-btn view" title="View in Modal" onclick="viewBlog({{ blog.id }})"><i class="fas fa-eye"></i></button>
+                                    <select class="status-select" data-id="{{ blog.id }}" title="Change Status">
+                                        <option value="draft" {% if blog.status == 'draft' %}selected{% endif %}>Draft</option>
+                                        <option value="published" {% if blog.status == 'published' %}selected{% endif %}>Publish</option>
+                                        <option value="archived" {% if blog.status == 'archived' %}selected{% endif %}>Archive</option>
+                                    </select>
+                                    <button class="action-btn delete" title="Delete" onclick="deleteBlog({{ blog.id }})"><i class="fas fa-trash"></i></button>
                                 </td>
                             </tr>
-                            
-                            <!-- Blog Item 3 - Rejected -->
-                            <tr class="blog-item" data-id="3">
-                                <td><img src="{% static 'images/image3.jpg' %}" alt="Blog Thumbnail" class="blog-thumb"></td>
-                                <td class="blog-title">AI in Modern Construction Management</td>
-                                <td>Construction Technology</td>
-                                <td>Michael Wong</td>
-                                <td>2023-06-20</td>
-                                <td>
-                                    <div class="tag-container">
-                                        <span class="blog-tag">technology</span>
-                                        <span class="blog-tag">AI</span>
-                                        <span class="blog-tag">management</span>
-                                    </div>
-                                </td>
-                                <td>10 mins</td>
-                                <td><span class="status-badge status-rejected">Rejected</span></td>
-                                <td class="actions">
-                                    <button class="action-btn view" title="View" onclick="viewBlog(3)"><i class="fas fa-eye"></i></button>
-                                    <button class="action-btn approve" title="Approve" onclick="approveBlog(3)"><i class="fas fa-check"></i></button>
-                                    <button class="action-btn edit" title="Edit"><i class="fas fa-edit"></i></button>
+                            {% empty %}
+                            <tr>
+                                <td colspan="9" class="no-results">
+                                    <i class="fas fa-inbox"></i>
+                                    <h3>No Blog Posts Found</h3>
+                                    <p>Site managers can create blog posts for review.</p>
+                                    <a href="{% url 'blog:create_blog_post' %}" class="btn btn-primary">
+                                        <i class="fas fa-plus"></i>
+                                        Create New Blog Post
+                                    </a>
                                 </td>
                             </tr>
+                            {% endfor %}
                         </tbody>
                     </table>
                 </div>
                 
                 <!-- Grid View -->
                 <div class="grid-view" id="gridView" style="display: none;">
-                    <!-- Blog Card 1 - Approved -->
-                    <div class="blog-card" data-id="1">
+                    {% for blog in blog_posts %}
+                    <div class="blog-card" data-id="{{ blog.id }}">
                         <div class="blog-card-header">
-                            <div class="blog-card-status status-approved">Approved</div>
-                            <img src="{% static 'images/image4.jpg' %}" alt="Blog Thumbnail" class="blog-card-image">
+                            <div class="blog-card-status status-{{ blog.status }}">{{ blog.get_status_display }}</div>
+                            {% if blog.featured_image %}
+                            <img src="{{ blog.featured_image.url }}" alt="{{ blog.title }}" class="blog-card-image">
+                            {% else %}
+                            <img src="{% static 'images/default-blog.jpg' %}" alt="{{ blog.title }}" class="blog-card-image">
+                            {% endif %}
                         </div>
                         <div class="blog-card-body">
-                            <h3 class="blog-card-title">Sustainable Building Materials for 2023</h3>
+                            <h3 class="blog-card-title">{{ blog.title|truncatechars:60 }}</h3>
                             <div class="blog-card-info">
-                                <span><i class="fas fa-folder"></i> Sustainable Building</span>
-                                <span><i class="fas fa-user"></i> John Smith</span>
-                                <span><i class="fas fa-calendar"></i> 2023-05-10</span>
-                                <span><i class="fas fa-clock"></i> 5 mins</span>
+                                <span><i class="fas fa-folder"></i> {{ blog.category.name|default:"Uncategorized" }}</span>
+                                <span><i class="fas fa-user"></i> {{ blog.author.get_full_name|default:blog.author.username }}</span>
+                                <span><i class="fas fa-calendar"></i> {{ blog.created_date|date:"Y-m-d" }}</span>
+                                <span><i class="fas fa-clock"></i> {{ blog.reading_time }} min{% if blog.reading_time > 1 %}s{% endif %}</span>
                             </div>
                             <div class="blog-card-tags">
-                                <span class="blog-tag">sustainable</span>
-                                <span class="blog-tag">eco-friendly</span>
-                                <span class="blog-tag">materials</span>
+                                {% for tag in blog.tags.all|slice:":3" %}
+                                <span class="blog-tag">{{ tag.name }}</span>
+                                {% endfor %}
                             </div>
                         </div>
                         <div class="blog-card-actions">
-                            <button class="btn btn-primary" onclick="viewBlog(1)"><i class="fas fa-eye"></i> View</button>
-                            <button class="btn btn-secondary"><i class="fas fa-edit"></i> Edit</button>
-                            <button class="btn btn-danger"><i class="fas fa-trash"></i> Delete</button>
+                            <button class="btn btn-primary" onclick="viewBlog({{ blog.id }})"><i class="fas fa-eye"></i> View</button>
+                            <select class="status-select" data-id="{{ blog.id }}" title="Change Status">
+                                <option value="draft" {% if blog.status == 'draft' %}selected{% endif %}>Draft</option>
+                                <option value="published" {% if blog.status == 'published' %}selected{% endif %}>Publish</option>
+                                <option value="archived" {% if blog.status == 'archived' %}selected{% endif %}>Archive</option>
+                            </select>
+                            <button class="btn btn-danger" onclick="deleteBlog({{ blog.id }})"><i class="fas fa-trash"></i> Delete</button>
                         </div>
                     </div>
-                    
-                    <!-- Blog Card 2 - Pending -->
-                    <div class="blog-card" data-id="2">
-                        <div class="blog-card-header">
-                            <div class="blog-card-status status-pending">Pending</div>
-                            <img src="{% static 'images/image5.jpg' %}" alt="Blog Thumbnail" class="blog-card-image">
-                        </div>
-                        <div class="blog-card-body">
-                            <h3 class="blog-card-title">Latest Architectural Design Trends</h3>
-                            <div class="blog-card-info">
-                                <span><i class="fas fa-folder"></i> Design Trends</span>
-                                <span><i class="fas fa-user"></i> Emily Chen</span>
-                                <span><i class="fas fa-calendar"></i> 2023-06-15</span>
-                                <span><i class="fas fa-clock"></i> 7 mins</span>
-                            </div>
-                            <div class="blog-card-tags">
-                                <span class="blog-tag">architecture</span>
-                                <span class="blog-tag">design</span>
-                                <span class="blog-tag">trends</span>
-                            </div>
-                        </div>
-                        <div class="blog-card-actions">
-                            <button class="btn btn-primary" onclick="viewBlog(2)"><i class="fas fa-eye"></i> View</button>
-                            <button class="btn btn-success" onclick="approveBlog(2)"><i class="fas fa-check"></i> Approve</button>
-                            <button class="btn btn-danger" onclick="rejectBlog(2)"><i class="fas fa-times"></i> Reject</button>
-                        </div>
+                    {% empty %}
+                    <div class="no-results">
+                        <i class="fas fa-inbox"></i>
+                        <h3>No Blog Posts Found</h3>
+                        <p>Site managers can create blog posts for review.</p>
+                        <a href="{% url 'blog:create_blog_post' %}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i>
+                            Create New Blog Post
+                        </a>
                     </div>
-                    
-                    <!-- Blog Card 3 - Rejected -->
-                    <div class="blog-card" data-id="3">
-                        <div class="blog-card-header">
-                            <div class="blog-card-status status-rejected">Rejected</div>
-                            <img src="{% static 'images/image6.jpg' %}" alt="Blog Thumbnail" class="blog-card-image">
-                        </div>
-                        <div class="blog-card-body">
-                            <h3 class="blog-card-title">AI in Modern Construction Management</h3>
-                            <div class="blog-card-info">
-                                <span><i class="fas fa-folder"></i> Construction Technology</span>
-                                <span><i class="fas fa-user"></i> Michael Wong</span>
-                                <span><i class="fas fa-calendar"></i> 2023-06-20</span>
-                                <span><i class="fas fa-clock"></i> 10 mins</span>
-                            </div>
-                            <div class="blog-card-tags">
-                                <span class="blog-tag">technology</span>
-                                <span class="blog-tag">AI</span>
-                                <span class="blog-tag">management</span>
-                            </div>
-                        </div>
-                        <div class="blog-card-actions">
-                            <button class="btn btn-primary" onclick="viewBlog(3)"><i class="fas fa-eye"></i> View</button>
-                            <button class="btn btn-success" onclick="approveBlog(3)"><i class="fas fa-check"></i> Approve</button>
-                            <button class="btn btn-secondary"><i class="fas fa-edit"></i> Edit</button>
-                        </div>
-                    </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Hidden blog content for modal display -->
+    {% for blog in blog_posts %}
+    <div id="blogPreview{{ blog.id }}" class="blog-preview" style="display: none;">
+        <div class="blog-preview-header">
+            <h2>{{ blog.title }}</h2>
+            <div class="blog-preview-meta">
+                <span><i class="fas fa-user"></i> {{ blog.author.get_full_name|default:blog.author.username }}</span>
+                <span><i class="fas fa-folder"></i> {{ blog.category.name }}</span>
+                <span><i class="fas fa-calendar"></i> {{ blog.created_date|date:"F d, Y" }}</span>
+                <span class="status-badge status-{{ blog.status }}">{{ blog.get_status_display }}</span>
+            </div>
+        </div>
+        
+        {% if blog.featured_image %}
+        <div class="blog-preview-image">
+            <img src="{{ blog.featured_image.url }}" alt="{{ blog.title }}" style="width: 100%; max-height: 300px; object-fit: cover; border-radius: 8px;">
+        </div>
+        {% endif %}
+        
+        <div class="blog-preview-content">
+            {{ blog.content|safe }}
+        </div>
+        
+        {% if blog.gallery_images.exists %}
+        <div class="blog-preview-gallery">
+            <h4><i class="fas fa-images"></i> Gallery Images</h4>
+            <div class="gallery-grid">
+                {% for gallery_image in blog.gallery_images.all %}
+                <div class="gallery-item">
+                    <img src="{{ gallery_image.image.url }}" alt="{{ gallery_image.alt_text|default:blog.title }}" class="gallery-image">
+                    {% if gallery_image.caption %}
+                    <p class="gallery-caption">{{ gallery_image.caption }}</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="blog-preview-tags">
+            {% for tag in blog.tags.all %}
+            <span class="blog-tag">{{ tag.name }}</span>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
     
-    <!-- Blog Preview Modal -->
+    <!-- Blog Preview Modal - Content loaded dynamically via JavaScript -->
     <div class="modal" id="blogPreviewModal">
         <div class="modal-content blog-preview-modal">
             <div class="modal-header">
                 <h3>Blog Preview</h3>
                 <button class="modal-close" id="closeBlogPreviewModal" title="Close Preview">&times;</button>
             </div>
-            <div class="modal-body">
-                <!-- Blog 1 Preview Content -->
-                <div class="blog-preview" id="blogPreview1" style="display: none;">
-                    <div class="blog-preview-header">
-                        <h2>Sustainable Building Materials for 2023</h2>
-                        <div class="blog-meta">
-                            <span><i class="fas fa-folder"></i> Sustainable Building</span>
-                            <span><i class="fas fa-user"></i> John Smith</span>
-                            <span><i class="fas fa-calendar"></i> May 10, 2023</span>
-                            <span><i class="fas fa-clock"></i> 5 min read</span>
-                        </div>
-                    </div>
-                    
-                    <div class="blog-featured-image">
-                       <img src="{% static 'images/image4.jpg' %}" alt="Sustainable Building Materials">
-                    </div>
-                    
-                    <div class="blog-content">
-                        <p>The construction industry is increasingly focusing on sustainability and eco-friendly practices. In 2023, we've seen remarkable advancements in sustainable building materials that are changing how architects and builders approach projects.</p>
-                        
-                        <h3>Top Sustainable Materials of 2023</h3>
-                        <p>This year has introduced several innovative materials that combine durability with environmental responsibility:</p>
-                        
-                        <ul>
-                            <li><strong>Mass Timber:</strong> Engineered wood products that offer the strength of concrete and steel with a much lower carbon footprint.</li>
-                            <li><strong>Hempcrete:</strong> A biocomposite made from hemp hurds and lime, offering excellent insulation properties and carbon sequestration.</li>
-                            <li><strong>Recycled Steel:</strong> Reduces energy consumption by up to 75% compared to virgin steel production.</li>
-                            <li><strong>Mycelium-based Materials:</strong> Fungal-based composites that can be grown into specific shapes for insulation and packaging.</li>
-                        </ul>
-                        
-                        <h3>Benefits of Sustainable Materials</h3>
-                        <p>Adopting these materials brings numerous advantages:</p>
-                        
-                        <ol>
-                            <li>Reduced carbon footprint and embodied energy</li>
-                            <li>Lower waste production during construction</li>
-                            <li>Improved indoor air quality for occupants</li>
-                            <li>Potential cost savings over the building lifecycle</li>
-                            <li>Compliance with increasingly stringent building regulations</li>
-                        </ol>
-                        
-                        <p>As we move forward, architects and builders who embrace these sustainable materials will not only contribute to environmental conservation but also position themselves at the forefront of industry innovation.</p>
-                    </div>
-                    
-                    <div class="blog-tags">
-                        <span class="blog-tag">sustainable</span>
-                        <span class="blog-tag">eco-friendly</span>
-                        <span class="blog-tag">materials</span>
-                    </div>
-                </div>
-                
-                <!-- Blog 2 Preview Content -->
-                <div class="blog-preview" id="blogPreview2" style="display: none;">
-                    <div class="blog-preview-header">
-                        <h2>Latest Architectural Design Trends</h2>
-                        <div class="blog-meta">
-                            <span><i class="fas fa-folder"></i> Design Trends</span>
-                            <span><i class="fas fa-user"></i> Emily Chen</span>
-                            <span><i class="fas fa-calendar"></i> June 15, 2023</span>
-                            <span><i class="fas fa-clock"></i> 7 min read</span>
-                        </div>
-                    </div>
-                    
-                    <div class="blog-featured-image">
-                        <img src="{% static 'images/image7.jpg' %}" alt="Architectural Design Trends">
-                    </div>
-                    
-                    <div class="blog-content">
-                        <p>The architectural landscape is constantly evolving, with new design philosophies and aesthetic approaches emerging each year. In this article, we explore the most influential architectural trends that are shaping the built environment in 2023.</p>
-                        
-                        <h3>Biophilic Design Integration</h3>
-                        <p>Biophilic design, which incorporates natural elements into the built environment, has moved beyond simple plant additions to become a fundamental design principle. Today's architects are:</p>
-                        
-                        <ul>
-                            <li>Creating living walls and integrated gardens throughout structures</li>
-                            <li>Maximizing natural light with strategic fenestration</li>
-                            <li>Using natural materials and textures that evoke connections to nature</li>
-                            <li>Designing spaces that mimic natural patterns and forms</li>
-                        </ul>
-                        
-                        <h3>Adaptive Reuse and Renovation Excellence</h3>
-                        <p>Rather than demolishing existing structures, architects are finding creative ways to breathe new life into them:</p>
-                        
-                        <p>Old industrial buildings are becoming vibrant mixed-use spaces, historical structures are being carefully modernized while preserving their character, and outdated office buildings are transforming into residential environments suitable for contemporary living.</p>
-                        
-                        <h3>Resilient Architecture</h3>
-                        <p>With climate change concerns mounting, resilient design has become non-negotiable. Buildings are now being designed to:</p>
-                        
-                        <ul>
-                            <li>Withstand extreme weather events</li>
-                            <li>Operate during power outages with passive systems</li>
-                            <li>Adapt to changing environmental conditions over time</li>
-                            <li>Reduce dependency on mechanical heating and cooling</li>
-                        </ul>
-                        
-                        <p>These architectural trends reflect our society's evolving needs and values, emphasizing sustainability, flexibility, and connection to both community and nature. As architects, embracing these trends means creating spaces that are not only beautiful but also responsive to the challenges of our time.</p>
-                    </div>
-                    
-                    <div class="blog-tags">
-                        <span class="blog-tag">architecture</span>
-                        <span class="blog-tag">design</span>
-                        <span class="blog-tag">trends</span>
-                    </div>
-                </div>
-                
-                <!-- Blog 3 Preview Content -->
-                <div class="blog-preview" id="blogPreview3" style="display: none;">
-                    <div class="blog-preview-header">
-                        <h2>AI in Modern Construction Management</h2>
-                        <div class="blog-meta">
-                            <span><i class="fas fa-folder"></i> Construction Technology</span>
-                            <span><i class="fas fa-user"></i> Michael Wong</span>
-                            <span><i class="fas fa-calendar"></i> June 20, 2023</span>
-                            <span><i class="fas fa-clock"></i> 10 min read</span>
-                        </div>
-                    </div>
-                    
-                    <div class="blog-featured-image">
-                        <img src="{% static 'images/image8.jpg' %}" alt="AI in Construction">
-                    </div>
-                    
-                    <div class="blog-content">
-                        <p>Artificial Intelligence (AI) is revolutionizing construction management practices, offering unprecedented opportunities for efficiency, safety, and quality improvements. This article explores how AI technologies are transforming the construction industry.</p>
-                        
-                        <h3>Predictive Analytics for Project Planning</h3>
-                        <p>AI algorithms can analyze historical project data to predict potential issues before they arise:</p>
-                        
-                        <ul>
-                            <li>Forecasting project delays based on weather patterns, supply chain disruptions, and labor availability</li>
-                            <li>Optimizing resource allocation through intelligent scheduling systems</li>
-                            <li>Identifying risk factors specific to project type, location, and scale</li>
-                        </ul>
-                        
-                        <h3>Computer Vision for Safety and Progress Monitoring</h3>
-                        <p>Camera systems powered by machine learning can monitor construction sites 24/7:</p>
-                        
-                        <ul>
-                            <li>Detecting safety violations and alerting supervisors in real-time</li>
-                            <li>Tracking work progress by comparing visual data against BIM models</li>
-                            <li>Documenting site conditions without manual intervention</li>
-                            <li>Identifying quality issues during installation processes</li>
-                        </ul>
-                        
-                        <h3>Generative Design and Optimization</h3>
-                        <p>AI can generate thousands of design alternatives while optimizing for specific parameters:</p>
-                        
-                        <p>Structural engineers now use generative design tools to explore material-efficient options that meet all performance criteria. MEP systems can be automatically routed to minimize conflicts and maximize energy efficiency. Space planning can be optimized for occupant flow, natural lighting, and acoustic comfort simultaneously.</p>
-                        
-                        <h3>Challenges and Implementation Considerations</h3>
-                        <p>Despite its potential, AI adoption in construction faces several hurdles:</p>
-                        
-                        <ol>
-                            <li>Data quality and standardization issues</li>
-                            <li>Integration with existing workflows and legacy systems</li>
-                            <li>Training requirements for staff</li>
-                            <li>Initial investment costs</li>
-                            <li>Liability and responsibility questions</li>
-                        </ol>
-                        
-                        <p>As AI technologies mature, construction firms that strategically implement these tools will gain significant competitive advantages through enhanced decision-making capabilities, improved risk management, and optimized project delivery.</p>
-                    </div>
-                    
-                    <div class="blog-tags">
-                        <span class="blog-tag">technology</span>
-                        <span class="blog-tag">AI</span>
-                        <span class="blog-tag">management</span>
-                    </div>
+            <div class="modal-body" id="blogPreviewContent">
+                <!-- Blog preview content will be loaded dynamically -->
+                <div class="loading-spinner" style="text-align: center; padding: 40px;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 48px; color: #007bff;"></i>
+                    <p>Loading blog preview...</p>
                 </div>
             </div>
             <div class="modal-footer" id="blogPreviewActions">

@@ -1,6 +1,78 @@
 /* Blog Individual Page with Sticky Comments */
 @import url('./blogmain.css');
 
+/* Dynamic Table of Contents Enhancements */
+.post-toc {
+    margin-bottom: 30px;
+}
+
+.toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.toc-list li {
+    margin: 8px 0;
+    transition: all 0.3s ease;
+}
+
+.toc-list a {
+    display: block;
+    padding: 8px 12px;
+    text-decoration: none;
+    color: #666;
+    border-left: 3px solid transparent;
+    transition: all 0.3s ease;
+    border-radius: 4px;
+}
+
+.toc-list a:hover {
+    color: #ff7120;
+    background-color: rgba(255, 113, 32, 0.1);
+    border-left-color: #ff7120;
+    transform: translateX(5px);
+}
+
+.toc-list a.active {
+    color: #ff7120;
+    background-color: rgba(255, 113, 32, 0.15);
+    border-left-color: #ff7120;
+    font-weight: 600;
+}
+
+/* TOC Level Styling */
+.toc-h1 { font-weight: 700; font-size: 16px; }
+.toc-h2 { font-weight: 600; font-size: 15px; }
+.toc-h3 { font-weight: 500; font-size: 14px; color: #777; }
+.toc-h4 { font-weight: 400; font-size: 13px; color: #888; }
+.toc-h5 { font-weight: 400; font-size: 12px; color: #999; }
+.toc-h6 { font-weight: 400; font-size: 12px; color: #aaa; }
+
+/* Smooth scroll behavior for headings */
+.post-content h1,
+.post-content h2,
+.post-content h3,
+.post-content h4,
+.post-content h5,
+.post-content h6 {
+    scroll-margin-top: 100px; /* Account for fixed header */
+    position: relative;
+}
+
+/* Add subtle highlight when heading is targeted */
+.post-content h1:target,
+.post-content h2:target,
+.post-content h3:target,
+.post-content h4:target,
+.post-content h5:target,
+.post-content h6:target {
+    background: linear-gradient(90deg, rgba(255, 113, 32, 0.1) 0%, transparent 100%);
+    padding-left: 15px;
+    margin-left: -15px;
+    border-radius: 4px;
+}
+
 /* Reset the blog post layout for our new design */
 .blog-post-content {
     display: grid;
@@ -329,12 +401,32 @@
     border-left: 4px solid #FF7120;
 }
 
+/* Comment Avatar */
+.comment-avatar {
+    width: 50px;
+    height: 50px;
+    margin-right: 15px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid rgba(255, 113, 32, 0.3);
+}
+
+.comment-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Client Avatar (for comment form) */
 .client-avatar {
     width: 50px;
     height: 50px;
+    margin-right: 15px;
+    flex-shrink: 0;
     border-radius: 50%;
     overflow: hidden;
-    margin-right: 15px;
     border: 2px solid rgba(255, 113, 32, 0.3);
 }
 
@@ -342,6 +434,7 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+    display: block;
 }
 
 .client-info {
@@ -394,4 +487,346 @@
 .sticky-comments-section .comment-note {
     background-color: rgba(255, 255, 255, 0.05);
     color: rgba(255, 255, 255, 0.7);
-} 
+}
+
+/* Comment Form Enhancements */
+.comment-form .form-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.comment-form .form-row .form-group {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.comment-form .form-text {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 5px;
+}
+
+/* Comment Message Styling */
+.comment-message {
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    animation: slideIn 0.3s ease-out;
+}
+
+.comment-message-success {
+    background-color: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    color: #22c55e;
+}
+
+.comment-message-error {
+    background-color: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+}
+
+.comment-message-info {
+    background-color: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    color: #3b82f6;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Comment Actions Enhancement */
+.comment-actions {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.comment-actions button {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 5px 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.comment-actions button:hover {
+    color: #ff7120;
+    background-color: rgba(255, 113, 32, 0.1);
+}
+
+.comment-actions .like-btn.active {
+    color: #22c55e;
+}
+
+.comment-actions .dislike-btn.active {
+    color: #ef4444;
+}
+
+/* No Comments State */
+.no-comments {
+    text-align: center;
+    padding: 40px 20px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.no-comments p {
+    font-size: 16px;
+    margin: 0;
+}
+
+/* Author Badge */
+.author-badge {
+    background-color: #ff7120;
+    color: white;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Disabled Comment Form for Non-authenticated Users */
+.comment-form-disabled-input {
+    position: relative;
+    opacity: 0.7;
+}
+
+.comment-form-disabled-input .client-comment-info.disabled {
+    background-color: rgba(255, 255, 255, 0.02);
+    border-left-color: rgba(255, 113, 32, 0.3);
+}
+
+.comment-form-disabled-input .client-comment-info.disabled .client-name {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.comment-form-disabled-input .client-comment-info.disabled .client-status {
+    background-color: rgba(255, 113, 32, 0.2);
+    color: rgba(255, 113, 32, 0.8);
+}
+
+.disabled-form {
+    pointer-events: none;
+}
+
+.disabled-form .form-control:disabled {
+    background-color: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.4);
+    cursor: not-allowed;
+}
+
+.disabled-form .form-control:disabled::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.disabled-form .btn:disabled {
+    background-color: rgba(255, 113, 32, 0.3);
+    border-color: rgba(255, 113, 32, 0.3);
+    color: rgba(255, 255, 255, 0.6);
+    cursor: not-allowed;
+}
+
+.disabled-form .form-text {
+    color: rgba(255, 113, 32, 0.8);
+    font-weight: 500;
+}
+
+/* Login Overlay */
+.login-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 50, 76, 0.95);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(2px);
+}
+
+.comment-form-disabled-input:hover .login-overlay {
+    opacity: 1;
+    visibility: visible;
+}
+
+.login-overlay-content {
+    text-align: center;
+    padding: 20px;
+}
+
+.login-overlay .login-icon {
+    font-size: 48px;
+    color: rgba(255, 113, 32, 0.8);
+    margin-bottom: 15px;
+}
+
+.login-overlay-content p {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+.login-overlay .login-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.login-overlay .login-buttons .btn {
+    padding: 12px 24px;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.login-overlay .login-buttons .btn-primary {
+    background-color: #ff7120;
+    border: 2px solid #ff7120;
+    color: white;
+}
+
+.login-overlay .login-buttons .btn-primary:hover {
+    background-color: #e65c0d;
+    border-color: #e65c0d;
+    transform: translateY(-2px);
+}
+
+.login-overlay .login-buttons .btn-outline-primary {
+    background-color: transparent;
+    border: 2px solid #ff7120;
+    color: #ff7120;
+}
+
+.login-overlay .login-buttons .btn-outline-primary:hover {
+    background-color: #ff7120;
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* Status Badges */
+.status-badge {
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-left: 10px;
+}
+
+.pending-badge {
+    background-color: #ffc107;
+    color: #000;
+}
+
+/* Role Badges */
+.role-badge {
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-left: 10px;
+}
+
+.admin-badge {
+    background-color: #dc3545;
+    color: white;
+}
+
+.manager-badge {
+    background-color: #6f42c1;
+    color: white;
+}
+
+.client-badge {
+    background-color: #17a2b8;
+    color: white;
+}
+
+/* Enhanced Author Badge */
+.author-badge {
+    background-color: #ff7120;
+    color: white;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-left: 10px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .comment-form .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+    
+    .comment-form .form-row .form-group {
+        margin-bottom: 15px;
+    }
+    
+    .login-buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .login-buttons .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .login-overlay .login-buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .login-overlay .login-buttons .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .login-overlay .login-icon {
+        font-size: 36px;
+    }
+    
+    .login-overlay-content p {
+        font-size: 16px;
+    }
+}

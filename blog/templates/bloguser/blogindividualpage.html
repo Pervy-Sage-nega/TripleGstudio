@@ -8,8 +8,53 @@
   
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sustainable Construction: Building for a Better Future | Triple G BuildHub</title>
-    <meta name="description" content="Discover how sustainable construction practices are reshaping the industry, reducing environmental impact, and creating more efficient, healthier buildings.">
+    <title>{{ meta_tags.title }} | Triple G BuildHub</title>
+    <meta name="description" content="{{ meta_tags.description }}">
+    <link rel="canonical" href="{{ meta_tags.canonical_url }}">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="{{ meta_tags.og_type }}">
+    <meta property="og:url" content="{{ meta_tags.og_url }}">
+    <meta property="og:title" content="{{ meta_tags.og_title }}">
+    <meta property="og:description" content="{{ meta_tags.og_description }}">
+    <meta property="og:site_name" content="{{ meta_tags.og_site_name }}">
+    {% if meta_tags.og_image %}
+    <meta property="og:image" content="{{ meta_tags.og_image }}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    {% endif %}
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="{{ meta_tags.twitter_card }}">
+    <meta property="twitter:url" content="{{ meta_tags.og_url }}">
+    <meta property="twitter:title" content="{{ meta_tags.twitter_title }}">
+    <meta property="twitter:description" content="{{ meta_tags.twitter_description }}">
+    {% if meta_tags.twitter_image %}
+    <meta property="twitter:image" content="{{ meta_tags.twitter_image }}">
+    {% endif %}
+    
+    <!-- Article Meta -->
+    <meta property="article:author" content="{{ meta_tags.article_author }}">
+    <meta property="article:published_time" content="{{ meta_tags.article_published_time }}">
+    <meta property="article:modified_time" content="{{ meta_tags.article_modified_time }}">
+    {% if meta_tags.article_section %}
+    <meta property="article:section" content="{{ meta_tags.article_section }}">
+    {% endif %}
+    {% if meta_tags.article_tags %}
+        {% for tag in meta_tags.article_tags %}
+        <meta property="article:tag" content="{{ tag }}">
+        {% endfor %}
+    {% endif %}
+    
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {{ structured_data|safe }}
+    </script>
+    
+    <!-- Breadcrumb Structured Data -->
+    <script type="application/ld+json">
+    {{ breadcrumb_data|safe }}
+    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/home.css' %}">
     <link rel="stylesheet" href="{% static 'css/blogindividual.css' %}">
@@ -26,125 +71,124 @@
                 <article class="blog-post-main">
                     <!-- Post Header -->
                     <header class="post-header">
+                        {% if blog_post.category %}
                         <div class="post-category">
-                            <a href="#" class="category-badge">Sustainability</a>
+                            <a href="{% url 'blog:category_list' blog_post.category.slug %}" class="category-badge">{{ blog_post.category.name }}</a>
                         </div>
-                        <h1 class="post-title">Sustainable Construction: Building for a Better Future</h1>
+                        {% endif %}
+                        <h1 class="post-title">{{ blog_post.title }}</h1>
                         <div class="post-meta">
                             <div class="author-info">
-                                <img src="{% static 'images/arkitel.jpg' %}" alt="Michael Richards" class="author-avatar">
-                                <span class="author-name">Ar.Kristelle gelasque</span>
+                                <img src="{% static 'images/arkitel.jpg' %}" alt="{{ blog_post.author.get_full_name|default:blog_post.author.username }}" class="author-avatar">
+                                <span class="author-name">{{ blog_post.author.get_full_name|default:blog_post.author.username }}</span>
                             </div>
                             <div class="post-details">
-                                <span class="post-date"><i class="fas fa-calendar"></i> March 15, 2025</span>
-                                <span class="read-time"><i class="fas fa-clock"></i> 8 min read</span>
-                                <span class="post-comments"><i class="fas fa-comment"></i> 12 comments</span>
+                                <span class="post-date"><i class="fas fa-calendar"></i> {{ blog_post.published_date|date:"F j, Y" }}</span>
+                                <span class="read-time"><i class="fas fa-clock"></i> {{ blog_post.reading_time }} min read</span>
+                                <span class="post-views"><i class="fas fa-eye"></i> {{ blog_post.view_count }} views</span>
                             </div>
                         </div>
                     </header>
 
                     <!-- Featured Image -->
+                    {% if blog_post.featured_image %}
                     <div class="post-featured-image">
-                        <img src="{% static 'images/kristelle.jpg' %}" alt="Sustainable Construction Practices">
+                        <img src="{{ blog_post.featured_image.url }}" alt="{{ blog_post.title }}">
                     </div>
+                    {% endif %}
 
                     <!-- Table of Contents -->
-                    <div class="post-toc">
+                    {% if blog_post.enable_toc %}
+                    <div class="post-toc" id="postToc" style="display: none;">
                         <div class="toc-header">
                             <h3>Table of Contents</h3>
                             <button class="toc-toggle" id="tocToggle"><i class="fas fa-chevron-down"></i></button>
                         </div>
                         <ul class="toc-list" id="tocList">
-                            <li><a href="#introduction">Introduction to Sustainable Construction</a></li>
-                            <li><a href="#benefits">Key Benefits of Sustainable Buildings</a></li>
-                            <li><a href="#materials">Innovative Sustainable Materials</a></li>
-                            <li><a href="#energy">Energy Efficiency Strategies</a></li>
-                            <li><a href="#water">Water Conservation Techniques</a></li>
-                            <li><a href="#certification">Green Building Certification Systems</a></li>
-                            <li><a href="#case-studies">Case Studies in Sustainable Construction</a></li>
-                            <li><a href="#future">The Future of Sustainable Building</a></li>
-                            <li><a href="#conclusion">Conclusion</a></li>
+                            <!-- TOC items will be generated automatically by JavaScript -->
                         </ul>
                     </div>
+                    {% endif %}
 
                     <!-- Post Content -->
                     <div class="post-content">
-                        <section id="introduction">
-                            <h2>Introduction to Sustainable Construction</h2>
-                            <p>Sustainable construction represents a paradigm shift in how we design, build, and operate structures. Unlike traditional construction methods that often prioritize short-term cost savings over long-term environmental impacts, sustainable construction takes a holistic approach that considers the entire lifecycle of a building—from material sourcing and construction to operation, maintenance, and eventual demolition or repurposing.</p>
-                            
-                            <p>At its core, sustainable construction aims to minimize negative environmental impacts while maximizing resource efficiency and occupant health and comfort. This approach acknowledges that buildings are major consumers of energy and natural resources and significant contributors to greenhouse gas emissions. By reimagining the construction process through a sustainability lens, we can create structures that not only reduce environmental harm but actively contribute to ecological and social well-being.</p>
-                            
-                            <p>The principles of sustainable construction extend beyond environmental considerations to encompass economic and social dimensions as well. A truly sustainable building is not just environmentally friendly—it's also cost-effective over its lifetime and contributes positively to the health, productivity, and quality of life of its occupants and the surrounding community.</p>
-                        </section>
+                        {{ blog_post.content|safe }}
+                    </div>
 
-                        <section id="benefits">
-                            <h2>Key Benefits of Sustainable Buildings</h2>
-                            <p>The advantages of sustainable construction extend far beyond environmental benefits, creating multi-faceted value for building owners, occupants, and communities:</p>
-                            
-                            <h3>Environmental Benefits</h3>
-                            <ul>
-                                <li><strong>Reduced carbon footprint:</strong> Sustainable buildings typically emit 30-50% less carbon dioxide than conventional structures through energy efficiency measures and renewable energy integration.</li>
-                                <li><strong>Conservation of natural resources:</strong> Using recycled, reclaimed, or sustainably harvested materials preserves finite resources and reduces extraction impacts.</li>
-                                <li><strong>Waste reduction:</strong> Construction waste diversion and material efficiency strategies can reduce landfill waste by up to 90% compared to traditional construction processes.</li>
-                                <li><strong>Biodiversity protection:</strong> Green roofs, native landscaping, and habitat considerations support local ecosystems and wildlife.</li>
-                            </ul>
-                            
-                            <h3>Economic Benefits</h3>
-                            <ul>
-                                <li><strong>Lower operating costs:</strong> Energy-efficient systems and water conservation measures can reduce utility bills by 20-30% or more.</li>
-                                <li><strong>Higher property values:</strong> Studies consistently show green buildings command rental premiums of 6-10% and sales premiums of 7-15%.</li>
-                                <li><strong>Increased occupancy rates:</strong> Sustainable buildings typically have higher occupancy rates and lower tenant turnover.</li>
-                                <li><strong>Tax incentives and rebates:</strong> Many jurisdictions offer financial incentives for sustainable construction practices and certifications.</li>
-                            </ul>
-                            
-                            <div class="post-image-container">
-                                <img src="{% static 'images/image1.jpg' %}" alt="Chart showing benefits of sustainable construction">
-                                <span class="image-caption">Figure 1: Comparative benefits of sustainable vs. conventional buildings</span>
-                            </div>
-                            <div class="post-image-container">
-                                <img src="{% static 'images/image1.jpg' %}" alt="Chart showing benefits of sustainable construction">
-                                <span class="image-caption">Figure 1: Comparative benefits of sustainable vs. conventional buildings</span>
-                            </div>
-                            <div class="post-image-container">
-                                <img src="{% static 'images/image1.jpg' %}" alt="Chart showing benefits of sustainable construction">
-                                <span class="image-caption">Figure 1: Comparative benefits of sustainable vs. conventional buildings</span>
-                            </div>
-                            
-                            <h3>Health and Social Benefits</h3>
-                            <ul>
-                                <li><strong>Improved indoor air quality:</strong> Low-VOC materials and enhanced ventilation systems reduce respiratory issues and sick building syndrome.</li>
-                                <li><strong>Enhanced thermal comfort:</strong> Better insulation and HVAC design create more comfortable indoor environments.</li>
-                                <li><strong>Natural light optimization:</strong> Daylighting strategies improve mood, productivity, and sleep patterns of occupants.</li>
-                                <li><strong>Community benefits:</strong> Sustainable projects often include public spaces, support local businesses, and create educational opportunities.</li>
-                            </ul>
-                        </section>
+                    <!-- Post Tags -->
+                    {% if blog_post.tags.exists %}
+                    <div class="post-tags">
+                        <h4>Tags:</h4>
+                        <div class="tag-list">
+                            {% for tag in blog_post.tags.all %}
+                                <a href="{% url 'blog:tag_list' tag.slug %}" class="tag-item">{{ tag.name }}</a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
 
-                        <!-- Additional sections would continue here -->
-                        
-                        <section id="conclusion">
-                            <h2>Conclusion</h2>
-                            <p>Sustainable construction is no longer just an alternative approach but an imperative transformation of the building industry. As climate change concerns intensify and resources become scarcer, the principles and practices of sustainable construction provide a pathway toward resilient, efficient, and harmonious built environments.</p>
-                            
-                            <p>The industry continues to evolve rapidly, with innovations in materials, technologies, and methodologies constantly expanding the possibilities for green building. However, the successful implementation of sustainable construction requires collaboration across disciplines, supportive policy frameworks, market incentives, and consumer education.</p>
-                            
-                            <p>For construction professionals, property developers, and building owners, embracing sustainable practices represents not just an ethical choice but a strategic business decision with compelling returns on investment. As we look to the future, sustainable construction will be defined not as a specialized niche but simply as good, responsible building practice—the new standard for how we create the structures where we live, work, and play.</p>
-                            
-                            <p>By building sustainably today, we are investing in a better, healthier, and more resilient tomorrow for generations to come.</p>
-                        </section>
+                    <!-- Gallery Images -->
+                    {% if blog_post.gallery_images.exists %}
+                    <div class="post-gallery">
+                        <h4>Gallery</h4>
+                        <div class="gallery-grid">
+                            {% for image in blog_post.gallery_images.all %}
+                                <div class="gallery-item">
+                                    <div class="post-image-container">
+                                        <img src="{{ image.image.url }}" alt="{{ image.alt_text|default:image.caption }}" onclick="openLightbox('{{ image.image.url }}', '{{ image.caption }}')">
+                                        {% if image.caption %}
+                                            <span class="image-caption">{{ image.caption }}</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Social Sharing -->
+                    <div class="social-sharing">
+                        <h4>Share This Article</h4>
+                        <div class="share-buttons">
+                            <button class="share-btn facebook" data-platform="facebook" title="Share on Facebook">
+                                <i class="fab fa-facebook-f"></i>
+                                <span>Facebook</span>
+                            </button>
+                            <button class="share-btn twitter" data-platform="twitter" title="Share on Twitter">
+                                <i class="fab fa-twitter"></i>
+                                <span>Twitter</span>
+                            </button>
+                            <button class="share-btn linkedin" data-platform="linkedin" title="Share on LinkedIn">
+                                <i class="fab fa-linkedin-in"></i>
+                                <span>LinkedIn</span>
+                            </button>
+                            <button class="share-btn email" data-platform="email" title="Share via Email">
+                                <i class="fas fa-envelope"></i>
+                                <span>Email</span>
+                            </button>
+                            <button class="share-btn copy-link" data-platform="copy" title="Copy Link">
+                                <i class="fas fa-link"></i>
+                                <span>Copy Link</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Reading Progress Bar -->
+                    <div class="reading-progress">
+                        <div class="progress-bar" id="reading-progress-bar"></div>
                     </div>
 
                     <!-- Author Bio -->
                     <div class="author-bio">
-                        <img src="{% static 'images/arkitel.PNG' %}" alt="Michael Richards" class="author-avatar">
+                        <img src="{% static 'images/arkitel.PNG' %}" alt="{{ blog_post.author.get_full_name|default:blog_post.author.username }}" class="author-avatar">
                         <div class="author-details">
                             <h3>About the Author</h3>
-                            <h4>Ar.Kristelle gelasque</h4>
-                            <p>Kristelle is a LEED-accredited architect and sustainability consultant with over 15 years of experience in green building design. He has worked on award-winning sustainable projects across North America and Europe.</p>
+                            <h4>{{ blog_post.author.get_full_name|default:blog_post.author.username }}</h4>
+                            <p>{{ blog_post.author.first_name }} {{ blog_post.author.last_name }} is passionate about architecture and sustainable building practices, bringing years of experience to every project.</p>
                             <div class="author-social">
-                                <a href="#"><i class="fab fa-linkedin-in"></i></a>
-                                <a href="#"><i class="fab fa-twitter"></i></a>
-                                <a href="#"><i class="fas fa-globe"></i></a>
+                                <a href="#" target="_blank"><i class="fab fa-linkedin-in"></i></a>
+                                <a href="#" target="_blank"><i class="fab fa-twitter"></i></a>
+                                <a href="#" target="_blank"><i class="fas fa-globe"></i></a>
                             </div>
                         </div>
                     </div>
@@ -161,90 +205,191 @@
                     </div>
 
                     <!-- Related Articles -->
+                    {% if related_posts %}
                     <div class="related-articles">
                         <h3>Related Articles</h3>
                         <div class="related-posts-grid">
+                            {% for post in related_posts %}
                             <article class="related-post-card">
                                 <div class="related-post-image">
-                                    <img src="{% static 'images/image3.jpg' %}" alt="Green Building Materials">
+                                    {% if post.featured_image %}
+                                        <img src="{{ post.featured_image.url }}" alt="{{ post.title }}">
+                                    {% else %}
+                                        <img src="{% static 'images/image3.jpg' %}" alt="{{ post.title }}">
+                                    {% endif %}
                                 </div>
                                 <div class="related-post-content">
-                                    <h4><a href="#">Innovative Green Materials Transforming Construction</a></h4>
-                                    <span class="post-date">February 28, 2025</span>
+                                    <h4><a href="{% url 'blog:blog_detail' post.slug %}">{{ post.title }}</a></h4>
+                                    <span class="post-date">{{ post.published_date|date:"F j, Y" }}</span>
                                 </div>
                             </article>
-                            <article class="related-post-card">
-                                <div class="related-post-image">
-                                    <img src="{% static 'images/image5.jpg' %}" alt="Solar Integration">
-                                </div>
-                                <div class="related-post-content">
-                                    <h4><a href="#">Integrating Solar Power into Modern Building Design</a></h4>
-                                    <span class="post-date">January 15, 2025</span>
-                                </div>
-                            </article>
-                            <article class="related-post-card">
-                                <div class="related-post-image">
-                                    <img src="{% static 'images/image7.jpg' %}" alt="Zero Energy Buildings">
-                                </div>
-                                <div class="related-post-content">
-                                    <h4><a href="#">The Rise of Zero-Energy Buildings: Case Studies</a></h4>
-                                    <span class="post-date">March 5, 2025</span>
-                                </div>
-                            </article>
+                            {% endfor %}
                         </div>
                     </div>
+                    {% endif %}
 
                     <!-- Comments Section -->
                     <div class="comments-section">
-                        <h3>Comments (12)</h3>                   
-                            <div class="comment-form"> 
-                                <h4>Leave a Comment</h4>
-                                                        <div class="client-comment-info">                                                                <div class="client-avatar">                                                                        <img src="{% static 'images/engi.jpg' %}" alt="Your Profile" id="clientAvatar">                                                                </div>                                                                <div class="client-info">                                                                        <span class="client-name" id="clientName">Share your thoughts</span>                                                                </div>                                                        </div>                              
-                            <form id="blogCommentForm">                                
-                                <div class="form-group">                                    
-                                    <label for="commentContent">Your Comment</label>                                    
-                                    <textarea id="commentContent" rows="5" required></textarea>                                
-                                </div>                                
-                                <button type="submit" class="btn btn-primary">Post Comment</button>                            
-                            </form>                            
-                                                
+                        <h3>Comments ({{ comments.count }})</h3>
+                        
+                        <!-- Comment Form -->
+                        {% if user.is_authenticated %}
+                        <div class="comment-form">
+                            <h4>Leave a Comment</h4>
+                            
+                            <!-- User Profile Info -->
+                            <div class="client-comment-info">
+                                <div class="client-avatar">
+                                    {% if user.profile.profile_pic %}
+                                        <img src="{{ user.profile.profile_pic.url }}" alt="{{ user.get_full_name|default:user.username }}" id="clientAvatar">
+                                    {% elif user.adminprofile.profile_pic %}
+                                        <img src="{{ user.adminprofile.profile_pic.url }}" alt="{{ user.get_full_name|default:user.username }}" id="clientAvatar">
+                                    {% elif user.sitemanagerprofile.profile_pic %}
+                                        <img src="{{ user.sitemanagerprofile.profile_pic.url }}" alt="{{ user.get_full_name|default:user.username }}" id="clientAvatar">
+                                    {% else %}
+                                        <img src="{% static 'images/default-avatar.png' %}" alt="{{ user.get_full_name|default:user.username }}" id="clientAvatar">
+                                    {% endif %}
+                                </div>
+                                <div class="client-info">
+                                    <span class="client-name" id="clientName">{{ user.get_full_name|default:user.username }}</span>
+                                    {% if user.adminprofile %}
+                                        <span class="client-status">{{ user.adminprofile.get_admin_role_display }}</span>
+                                    {% elif user.sitemanagerprofile %}
+                                        <span class="client-status">Site Manager</span>
+                                    {% elif user.profile %}
+                                        <span class="client-status">{{ user.profile.get_role_display }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <form id="blogCommentForm" method="post" action="{% url 'blog:add_comment' post_slug=blog_post.slug %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="parent_id" id="parent_id" value="">
+                                
+                                <!-- Pre-filled user data (hidden for authenticated users) -->
+                                <input type="hidden" name="author_name" value="{{ user.get_full_name|default:user.username }}">
+                                <input type="hidden" name="author_email" value="{{ user.email }}">
+                                
+                                
+                                <div class="form-group">
+                                    <label for="commentContent">Your Comment *</label>
+                                    <textarea id="commentContent" name="content" rows="5" class="form-control" required maxlength="1000" 
+                                              placeholder="Share your thoughts about this article..."></textarea>
+                                    <small class="form-text text-muted">Maximum 1000 characters</small>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary">Post Comment</button>
+                            </form>
                         </div>
+                        {% else %}
+                        <!-- Non-authenticated user - disabled form -->
+                        <div class="comment-form comment-form-disabled-input">
+                            <h4>Leave a Comment</h4>
+                            
+                            <!-- Disabled user info -->
+                            <div class="client-comment-info disabled">
+                                <div class="client-avatar">
+                                    <img src="{% static 'images/default-avatar.png' %}" alt="Login Required" id="clientAvatar">
+                                </div>
+                                <div class="client-info">
+                                    <span class="client-name">Please log in to comment</span>
+                                    <span class="client-status">Guest User</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Disabled form -->
+                            <form class="disabled-form">
+                                <div class="form-group">
+                                    <label for="disabled_content">Your Comment *</label>
+                                    <textarea id="disabled_content" rows="5" class="form-control" disabled 
+                                              placeholder="Please log in to leave a comment and join the discussion..."></textarea>
+                                    <small class="form-text text-muted">Login required to post comments</small>
+                                </div>
+                                
+                                <button type="button" class="btn btn-primary" disabled>
+                                    <i class="fas fa-lock"></i> Login Required to Post
+                                </button>
+                            </form>
+                            
+                            <!-- Login prompt overlay -->
+                            <div class="login-overlay">
+                                <div class="login-overlay-content">
+                                    <div class="login-icon">
+                                        <i class="fas fa-user-circle"></i>
+                                    </div>
+                                    <p>Join the conversation!</p>
+                                    <div class="login-buttons">
+                                        <a href="{% url 'accounts:client_login' %}" class="btn btn-primary">
+                                            <i class="fas fa-sign-in-alt"></i> Login
+                                        </a>
+                                        <a href="{% url 'accounts:client_register' %}" class="btn btn-outline-primary">
+                                            <i class="fas fa-user-plus"></i> Register
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
                         
                         <!-- Comments List -->
                         <div class="comments-list">
-                            <!-- Comment -->
-                            <div class="comment">
-                                <div class="comment-avatar">
-                                    <img src="{% static 'images/engi.jpg' %}" alt="User Avatar">
-                                </div>
-                                <div class="comment-content">
-                                    <div class="comment-header">
-                                        <h4 class="commenter-name">Jennifer Wilson</h4>
-                                        <span class="comment-date">March 17, 2025</span>
+                            {% for comment in comments %}
+                                <div class="comment{% if comment.parent %} nested-comment{% endif %}" data-comment-id="{{ comment.id }}">
+                                    <div class="comment-avatar">
+                                        {% if comment.author %}
+                                            {% if comment.author.profile.profile_pic %}
+                                                <img src="{{ comment.author.profile.profile_pic.url }}" alt="{{ comment.author_name }}">
+                                            {% elif comment.author.adminprofile.profile_pic %}
+                                                <img src="{{ comment.author.adminprofile.profile_pic.url }}" alt="{{ comment.author_name }}">
+                                            {% elif comment.author.sitemanagerprofile.profile_pic %}
+                                                <img src="{{ comment.author.sitemanagerprofile.profile_pic.url }}" alt="{{ comment.author_name }}">
+                                            {% else %}
+                                                <img src="{% static 'images/default-avatar.png' %}" alt="{{ comment.author_name }}">
+                                            {% endif %}
+                                        {% else %}
+                                            <img src="{% static 'images/default-avatar.png' %}" alt="{{ comment.author_name }}">
+                                        {% endif %}
                                     </div>
-                                    <p>This article was incredibly informative! We're planning a new office building and were on the fence about implementing some of these sustainable practices. The ROI section really helped make our decision clearer.</p>
-                                    <div class="comment-actions">
-                                        <button class="reply-btn">Reply</button>
+                                    <div class="comment-content">
+                                        <div class="comment-header">
+                                            <h4 class="commenter-name">{{ comment.author_name }}</h4>
+                                            <span class="comment-date">{{ comment.created_at|date:"F j, Y \a\t g:i A" }}</span>
+                                            
+                                            <!-- Comment Status Badge -->
+                                            {% if comment.status == 'pending' %}
+                                                <span class="status-badge pending-badge">Pending Approval</span>
+                                            {% endif %}
+                                            
+                                            <!-- User Role Badges -->
+                                            {% if comment.author and comment.author == blog_post.author %}
+                                                <span class="author-badge">Post Author</span>
+                                            {% elif comment.author.adminprofile %}
+                                                <span class="role-badge admin-badge">{{ comment.author.adminprofile.get_admin_role_display }}</span>
+                                            {% elif comment.author.sitemanagerprofile %}
+                                                <span class="role-badge manager-badge">Site Manager</span>
+                                            {% elif comment.author.profile %}
+                                                <span class="role-badge client-badge">{{ comment.author.profile.get_role_display }}</span>
+                                            {% endif %}
+                                        </div>
+                                        <p>{{ comment.content|linebreaks }}</p>
+                                        <div class="comment-actions">
+                                            {% if user.is_authenticated %}
+                                                <button class="reply-btn" data-comment-id="{{ comment.id }}">Reply</button>
+                                            {% endif %}
+                                            <button class="like-btn" data-comment-id="{{ comment.id }}">
+                                                <i class="fas fa-thumbs-up"></i> {{ comment.likes }}
+                                            </button>
+                                            <button class="dislike-btn" data-comment-id="{{ comment.id }}">
+                                                <i class="fas fa-thumbs-down"></i> {{ comment.dislikes }}
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            
-                            <!-- Nested Comment -->
-                            <div class="comment nested-comment">
-                                <div class="comment-avatar">
-                                    <img src="{% static 'images/kristelle.jpg' %}" alt="Author Avatar">
+                            {% empty %}
+                                <div class="no-comments">
+                                    <p>No comments yet. Be the first to share your thoughts!</p>
                                 </div>
-                                <div class="comment-content">
-                                    <div class="comment-header">
-                                        <h4 class="commenter-name">Ar.Kristelle gelasque</h4>
-                                        <span class="comment-date">March 17, 2025</span>
-                                        <span class="author-badge">Author</span>
-                                    </div>
-                                    <p>Thanks Jennifer! I'm glad you found the ROI information helpful. Feel free to reach out if you have specific questions about your project. I'd be happy to point you toward some useful resources.</p>
-                                </div>
-                            </div>
-                            
-                            <!-- More comments would be here -->
+                            {% endfor %}
                         </div>
                     </div>
                 </div>
@@ -267,29 +412,35 @@
                     <div class="sidebar-widget categories-widget">
                         <h3>Categories</h3>
                         <ul class="category-list">
-                            <li><a href="#">Sustainability <span>(15)</span></a></li>
-                            <li><a href="#">Project Management <span>(8)</span></a></li>
-                            <li><a href="#">Materials & Techniques <span>(12)</span></a></li>
-                            <li><a href="#">Industry Trends <span>(10)</span></a></li>
-                            <li><a href="#">Safety Standards <span>(7)</span></a></li>
-                            <li><a href="#">Design Innovation <span>(9)</span></a></li>
+                            {% for category in categories %}
+                            <li><a href="{% url 'blog:category_list' category.slug %}">{{ category.name }} <span>({{ category.post_count }})</span></a></li>
+                            {% empty %}
+                            <li><a href="#">No categories available</a></li>
+                            {% endfor %}
                         </ul>
                     </div>
                     
                     <!-- Popular Posts -->
                     <div class="sidebar-widget popular-posts-widget">
-                        <h3>Popular Posts</h3>
+                        <h3>Recent Posts</h3>
                         <div class="popular-posts">
+                            {% for post in recent_posts %}
                             <article class="popular-post">
                                 <div class="popular-post-image">
-                                    <img src="{% static 'images/image9.jpg' %}" alt="Project Management">
+                                    {% if post.featured_image %}
+                                        <img src="{{ post.featured_image.url }}" alt="{{ post.title }}">
+                                    {% else %}
+                                        <img src="{% static 'images/image9.jpg' %}" alt="{{ post.title }}">
+                                    {% endif %}
                                 </div>
                                 <div class="popular-post-content">
-                                    <h4><a href="#">5 Project Management Tools That Actually Work</a></h4>
-                                    <span class="view-count"><i class="fas fa-eye"></i> 3.2K views</span>
+                                    <h4><a href="{% url 'blog:blog_detail' post.slug %}">{{ post.title|truncatechars:50 }}</a></h4>
+                                    <span class="view-count"><i class="fas fa-eye"></i> {{ post.view_count }} views</span>
                                 </div>
                             </article>
-                            <!-- More popular posts would be here -->
+                            {% empty %}
+                            <p>No recent posts available.</p>
+                            {% endfor %}
                         </div>
                     </div>
                     
@@ -297,14 +448,11 @@
                     <div class="sidebar-widget tags-widget">
                         <h3>Popular Tags</h3>
                         <div class="tag-cloud">
-                            <a href="#" class="tag">Sustainability</a>
-                            <a href="#" class="tag">Green Building</a>
-                            <a href="#" class="tag">LEED</a>
-                            <a href="#" class="tag">Energy Efficiency</a>
-                            <a href="#" class="tag">Renovation</a>
-                            <a href="#" class="tag">Materials</a>
-                            <a href="#" class="tag">Design</a>
-                            <a href="#" class="tag">Construction</a>
+                            {% for tag in popular_tags %}
+                            <a href="{% url 'blog:tag_list' tag.slug %}" class="tag">{{ tag.name }}</a>
+                            {% empty %}
+                            <a href="#" class="tag">No tags available</a>
+                            {% endfor %}
                         </div>
                     </div>
                 </aside>
@@ -347,6 +495,7 @@
   </footer>
 
     <script src="{% static 'js/blogindividual.js' %}"></script>
+    <script src="{% static 'js/blog-comments.js' %}"></script>
  {% endblock %}
 </body>
 </html>

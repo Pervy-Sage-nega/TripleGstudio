@@ -88,9 +88,9 @@
                 <div class="project-card" data-category="{{ project.category.slug }}" data-year="{{ project.year }}">
                     <div class="project-image">
                         {% if project.hero_image %}
-                            <img src="{{ project.hero_image.url }}" alt="{{ project.title }}" onerror="this.src='/static/images/image1.jpg'">
+                            <img src="{{ project.hero_image.url }}?v={{ project.updated_at|date:'U' }}" alt="{{ project.title }}" onerror="this.src='/static/images/image1.jpg'">
                         {% elif project.images.first %}
-                            <img src="{{ project.images.first.image.url }}" alt="{{ project.title }}" onerror="this.src='/static/images/image1.jpg'">
+                            <img src="{{ project.images.first.image.url }}?v={{ project.updated_at|date:'U' }}" alt="{{ project.title }}" onerror="this.src='/static/images/image1.jpg'">
                         {% else %}
                             <img src="{% static 'images/image1.jpg' %}" alt="{{ project.title }}">
                         {% endif %}

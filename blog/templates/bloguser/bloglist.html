@@ -42,161 +42,115 @@
                 <!-- Main Content -->
                 <div class="blog-main">
                     <!-- Featured Post -->
+                    {% if featured_posts %}
                     <section class="featured-post">
                         <h2 class="section-title">Featured Article</h2>
+                        {% for post in featured_posts|slice:":1" %}
                         <div class="featured-post-card">
                             <div class="featured-image">
-                                <img src="{% static 'images/image6.jpg' %}" alt="Sustainable Construction Practices">
-                                <div class="category-badge">Sustainability</div>
+                                {% if post.featured_image %}
+                                    <img src="{{ post.featured_image.url }}" alt="{{ post.title }}">
+                                {% else %}
+                                    <img src="{% static 'images/image6.jpg' %}" alt="{{ post.title }}">
+                                {% endif %}
+                                {% if post.category %}
+                                    <div class="category-badge">{{ post.category.name }}</div>
+                                {% endif %}
                             </div>
                             <div class="featured-content">
-                                <h3>Sustainable Construction: Building for a Better Future</h3>
+                                <h3>{{ post.title }}</h3>
                                 <div class="post-meta">
-                                    <span class="author"><i class="fas fa-user"></i> Michael Richards</span>
-                                    <span class="date"><i class="fas fa-calendar"></i> March 15, 2025</span>
-                                    <span class="read-time"><i class="fas fa-clock"></i> 8 min read</span>
+                                    <span class="author"><i class="fas fa-user"></i> {{ post.author.get_full_name|default:post.author.username }}</span>
+                                    <span class="date"><i class="fas fa-calendar"></i> {{ post.published_date|date:"F j, Y" }}</span>
+                                    <span class="read-time"><i class="fas fa-clock"></i> {{ post.reading_time }} min read</span>
                                 </div>
-                                <p>Discover how sustainable construction practices are reshaping the industry, reducing environmental impact, and creating more efficient, healthier buildings for generations to come.</p>
-                                <a href="{% url 'blog:blog_individual' blog_id=1 %}" class="btn btn-secondary">Read Article <i class="fas fa-arrow-right"></i></a>
+                                <p>{{ post.excerpt|default:post.content|truncatewords:30|striptags }}</p>
+                                <a href="{{ post.get_absolute_url }}" class="btn btn-secondary">Read Article <i class="fas fa-arrow-right"></i></a>
                             </div>
                         </div>
+                        {% endfor %}
                     </section>
+                    {% endif %}
 
                     <!-- Search and Filter Section -->
                     <section class="blog-filter-section">
-                        <div class="search-bar">
-                            <input type="text" id="blogSearch" placeholder="Search articles...">
-                            <button type="button" id="searchButton"><i class="fas fa-search"></i></button>
-                        </div>
-                        <div class="filter-options">
-                            <span class="filter-label">Filter by:</span>
-                            <div class="filter-tags">
-                                <button class="filter-tag active" data-category="all">All</button>
-                                <button class="filter-tag" data-category="industry-trends">Industry Trends</button>
-                                <button class="filter-tag" data-category="expert-advice">Expert Advice</button>
-                                <button class="filter-tag" data-category="sustainability">Sustainability</button>
-                                <button class="filter-tag" data-category="innovation">Innovation</button>
-                                <button class="filter-tag" data-category="case-studies">Case Studies</button>
+                        <form method="get" action="{% url 'blog:blog_list' %}" class="search-form">
+                            <div class="search-bar">
+                                <input type="text" id="blogSearch" name="search" placeholder="Search articles..." value="{{ search_query }}">
+                                <button type="submit" id="searchButton"><i class="fas fa-search"></i></button>
                             </div>
-                        </div>
+                            <div class="filter-options">
+                                <span class="filter-label">Filter by:</span>
+                                <div class="filter-tags">
+                                    <a href="{% url 'blog:blog_list' %}" class="filter-tag {% if not selected_category %}active{% endif %}">All</a>
+                                    {% for category in categories %}
+                                        <a href="{% url 'blog:category_list' category.slug %}" 
+                                           class="filter-tag {% if selected_category.id == category.id %}active{% endif %}">
+                                            {{ category.name }}
+                                        </a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </form>
                     </section>
 
                     <!-- Blog Posts Grid -->
                     <section class="blog-posts-grid" id="blogPostsContainer">
-                        <!-- Post 1 -->
-                        <article class="blog-card" data-category="industry-trends">
+                        {% for post in posts %}
+                        <article class="blog-card" data-category="{% if post.category %}{{ post.category.slug }}{% endif %}">
                             <div class="blog-card-image">
-                                <img src="{% static 'images/image1.jpg' %}" alt="Modular Construction">
-                                <div class="category-badge">Industry Trends</div>
+                                {% if post.featured_image %}
+                                    <img src="{{ post.featured_image.url }}" alt="{{ post.title }}">
+                                {% else %}
+                                    <img src="{% static 'images/image1.jpg' %}" alt="{{ post.title }}">
+                                {% endif %}
+                                {% if post.category %}
+                                    <div class="category-badge">{{ post.category.name }}</div>
+                                {% endif %}
                             </div>
                             <div class="blog-card-content">
-                                <h3><a href="{% url 'blog:blog_individual' blog_id=1 %}">The Rise of Modular Construction in Urban Development</a></h3>
+                                <h3><a href="{{ post.get_absolute_url }}">{{ post.title }}</a></h3>
                                 <div class="post-meta">
-                                    <span class="author"><i class="fas fa-user"></i> Sarah Johnson</span>
-                                    <span class="date"><i class="fas fa-calendar"></i> March 10, 2025</span>
+                                    <span class="author"><i class="fas fa-user"></i> {{ post.author.get_full_name|default:post.author.username }}</span>
+                                    <span class="date"><i class="fas fa-calendar"></i> {{ post.published_date|date:"F j, Y" }}</span>
                                 </div>
-                                <p>How modular construction is transforming urban development with faster build times, reduced costs, and improved quality control.</p>
-                                <a href="{% url 'blog:blog_individual' blog_id=1 %}" class="read-more">Read More <i class="fas fa-arrow-right"></i></a>
+                                <p>{{ post.excerpt|default:post.content|truncatewords:20|striptags }}</p>
+                                <a href="{{ post.get_absolute_url }}" class="read-more">Read More <i class="fas fa-arrow-right"></i></a>
                             </div>
                         </article>
-
-                        <!-- Post 2 -->
-                        <article class="blog-card" data-category="expert-advice">
-                            <div class="blog-card-image">
-                                <img src="{% static 'images/image2.jpeg' %}" alt="Project Management">
-                                <div class="category-badge">Expert Advice</div>
-                            </div>
-                            <div class="blog-card-content">
-                                <h3><a href="{% url 'blog:blog_individual' blog_id=1 %}">5 Project Management Tools Every Construction Manager Needs</a></h3>
-                                <div class="post-meta">
-                                    <span class="author"><i class="fas fa-user"></i> Robert Chen</span>
-                                    <span class="date"><i class="fas fa-calendar"></i> March 5, 2025</span>
-                                </div>
-                                <p>Essential project management tools and software that streamline workflows, improve communication, and increase efficiency on construction projects.</p>
-                                <a href="{% url 'blog:blog_individual' blog_id=1 %}" class="read-more">Read More <i class="fas fa-arrow-right"></i></a>
-                            </div>
-                        </article>
-
-                        <!-- Post 3 -->
-                        <article class="blog-card" data-category="sustainability">
-                            <div class="blog-card-image">
-                                <img src="{% static 'images/image3.jpg' %}" alt="Green Building Materials">
-                                <div class="category-badge">Sustainability</div>
-                            </div>
-                            <div class="blog-card-content">
-                                <h3><a href="{% url 'blog:blog_individual' blog_id=1 %}">Innovative Green Materials Transforming Construction</a></h3>
-                                <div class="post-meta">
-                                    <span class="author"><i class="fas fa-user"></i> Emily Zhang</span>
-                                    <span class="date"><i class="fas fa-calendar"></i> February 28, 2025</span>
-                                </div>
-                                <p>Exploring cutting-edge sustainable materials that reduce carbon footprints while maintaining structural integrity and design aesthetics.</p>
-                                <a href="{% url 'blog:blog_individual' blog_id=1 %}" class="read-more">Read More <i class="fas fa-arrow-right"></i></a>
-                            </div>
-                        </article>
-
-                        <!-- Post 4 -->
-                        <article class="blog-card" data-category="innovation">
-                            <div class="blog-card-image">
-                                <img src="{% static 'images/image4.jpg' %}" alt="Construction Technology">
-                                <div class="category-badge">Innovation</div>
-                            </div>
-                            <div class="blog-card-content">
-                                <h3><a href="{% url 'blog:blog_individual' blog_id=1 %}">How AI and Machine Learning are Revolutionizing Construction</a></h3>
-                                <div class="post-meta">
-                                    <span class="author"><i class="fas fa-user"></i> David Williams</span>
-                                    <span class="date"><i class="fas fa-calendar"></i> February 20, 2025</span>
-                                </div>
-                                <p>Artificial intelligence and machine learning applications changing how we design, build, and manage construction projects.</p>
-                                <a href="{% url 'blog:blog_individual' blog_id=1 %}" class="read-more">Read More <i class="fas fa-arrow-right"></i></a>
-                            </div>
-                        </article>
-
-                        <!-- Post 5 -->
-                        <article class="blog-card" data-category="case-studies">
-                            <div class="blog-card-image">
-                                <img src="{% static 'images/image5.jpg' %}" alt="Urban Renovation Project">
-                                <div class="category-badge">Case Studies</div>
-                            </div>
-                            <div class="blog-card-content">
-                                <h3><a href="{% url 'blog:blog_individual' blog_id=1 %}">Urban Renewal: The Transformation of Downtown Riverside</a></h3>
-                                <div class="post-meta">
-                                    <span class="author"><i class="fas fa-user"></i> Jessica Martinez</span>
-                                    <span class="date"><i class="fas fa-calendar"></i> February 15, 2025</span>
-                                </div>
-                                <p>A case study of how strategic construction and design revitalized a struggling downtown district into a thriving community hub.</p>
-                                <a href="{% url 'blog:blog_individual' blog_id=1 %}" class="read-more">Read More <i class="fas fa-arrow-right"></i></a>
-                            </div>
-                        </article>
-
-                        <!-- Post 6 -->
-                        <article class="blog-card" data-category="expert-advice">
-                            <div class="blog-card-image">
-                                <img src="{% static 'images/image7.jpg' %}" alt="Building Codes">
-                                <div class="category-badge">Expert Advice</div>
-                            </div>
-                            <div class="blog-card-content">
-                                <h3><a href="{% url 'blog:blog_individual' blog_id=1 %}">Navigating New Building Codes: What Contractors Need to Know</a></h3>
-                                <div class="post-meta">
-                                    <span class="author"><i class="fas fa-user"></i> Thomas Anderson</span>
-                                    <span class="date"><i class="fas fa-calendar"></i> February 10, 2025</span>
-                                </div>
-                                <p>Expert guidance on understanding and implementing the latest building code updates to ensure compliance and safety.</p>
-                                <a href="{% url 'blog:blog_individual' blog_id=1 %}" class="read-more">Read More <i class="fas fa-arrow-right"></i></a>
-                            </div>
-                        </article>
+                        {% empty %}
+                        <div class="no-posts">
+                            <i class="fas fa-newspaper"></i>
+                            <h3>No blog posts found</h3>
+                            <p>{% if search_query %}No posts match your search "{{ search_query }}".{% else %}No blog posts have been published yet.{% endif %}</p>
+                        </div>
+                        {% endfor %}
                     </section>
 
                     <!-- Pagination -->
+                    {% if page_obj.has_other_pages %}
                     <div class="pagination">
-                        <button class="pagination-btn active">1</button>
-                        <button class="pagination-btn">2</button>
-                        <button class="pagination-btn">3</button>
-                        <span class="pagination-ellipsis">...</span>
-                        <button class="pagination-btn">8</button>
-                        <button class="pagination-btn pagination-next">
-                            Next <i class="fas fa-chevron-right"></i>
-                        </button>
+                        {% if page_obj.has_previous %}
+                            <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category.slug }}{% endif %}" class="pagination-btn">
+                                <i class="fas fa-chevron-left"></i> Previous
+                            </a>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <span class="pagination-btn active">{{ num }}</span>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category.slug }}{% endif %}" class="pagination-btn">{{ num }}</a>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category.slug }}{% endif %}" class="pagination-btn pagination-next">
+                                Next <i class="fas fa-chevron-right"></i>
+                            </a>
+                        {% endif %}
                     </div>
+                    {% endif %}
                 </div>
                 
                 <!-- Sidebar -->
@@ -205,33 +159,33 @@
                     <div class="sidebar-widget popular-posts">
                         <h3 class="widget-title">Popular Posts</h3>
                         <ul class="popular-posts-list">
-                            <li>
-                                <div class="post-thumbnail">
-                                    <img src="{% static 'images/image8.jpg' %}" alt="Popular Post">
-                                </div>
-                                <div class="post-info">
-                                    <h4><a href="{% url 'blog:blog_individual' blog_id=1 %}">Construction Safety: Best Practices for 2025</a></h4>
-                                    <span class="post-date">March 8, 2025</span>
-                                </div>
-                            </li>
-                            <li>
-                                <div class="post-thumbnail">
-                                    <img src="{% static 'images/image9.jpg' %}" alt="Popular Post">
-                                </div>
-                                <div class="post-info">
-                                    <h4><a href="{% url 'blog:blog_individual' blog_id=1 %}">Prefabrication: The Future of Commercial Construction</a></h4>
-                                    <span class="post-date">February 25, 2025</span>
-                                </div>
-                            </li>
-                            <li>
-                                <div class="post-thumbnail">
-                                    <img src="{% static 'images/image10.jpg' %}" alt="Popular Post">
-                                </div>
-                                <div class="post-info">
-                                    <h4><a href="{% url 'blog:blog_individual' blog_id=1 %}">Designing Spaces for Mental Wellbeing</a></h4>
-                                    <span class="post-date">February 12, 2025</span>
-                                </div>
-                            </li>
+                            {% if featured_posts %}
+                                {% for post in featured_posts %}
+                                <li>
+                                    <div class="post-thumbnail">
+                                        {% if post.featured_image %}
+                                            <img src="{{ post.featured_image.url }}" alt="{{ post.title }}">
+                                        {% else %}
+                                            <img src="{% static 'images/image8.jpg' %}" alt="{{ post.title }}">
+                                        {% endif %}
+                                    </div>
+                                    <div class="post-info">
+                                        <h4><a href="{% url 'blog:blog_detail' slug=post.slug %}">{{ post.title }}</a></h4>
+                                        <span class="post-date">{{ post.published_date|date:"F j, Y" }}</span>
+                                    </div>
+                                </li>
+                                {% endfor %}
+                            {% else %}
+                                <li>
+                                    <div class="post-thumbnail">
+                                        <img src="{% static 'images/image8.jpg' %}" alt="No Posts">
+                                    </div>
+                                    <div class="post-info">
+                                        <h4><a href="#" onclick="alert('No blog posts available yet. Please create some blog posts first.')">No Popular Posts Yet</a></h4>
+                                        <span class="post-date">Create your first blog post!</span>
+                                    </div>
+                                </li>
+                            {% endif %}
                         </ul>
                     </div>
                     
@@ -239,18 +193,18 @@
                     <div class="sidebar-widget categories">
                         <h3 class="widget-title">Categories</h3>
                         <ul class="categories-list">
-                            <li><a href="#">Industry Trends <span>(12)</span></a></li>
-                            <li><a href="#">Expert Advice <span>(8)</span></a></li>
-                            <li><a href="#">Sustainability <span>(10)</span></a></li>
-                            <li><a href="#">Innovation <span>(7)</span></a></li>
-                            <li><a href="#">Case Studies <span>(5)</span></a></li>
-                            <li><a href="#">Project Management <span>(9)</span></a></li>
+                            {% if categories %}
+                                {% for category in categories %}
+                                <li><a href="{% url 'blog:category_list' slug=category.slug %}">{{ category.name }} <span>({{ category.post_count }})</span></a></li>
+                                {% endfor %}
+                            {% else %}
+                                <li><a href="#" onclick="alert('No categories available yet.')">No Categories Yet</a></li>
+                            {% endif %}
                         </ul>
                     </div>
                     
                     <!-- Newsletter Signup Widget
                     <div class="sidebar-widget newsletter">
-                        <h3 class="widget-title">Stay Informed</h3>
                         <p>Subscribe to our newsletter for the latest construction insights and industry updates.</p>
                         <form class="newsletter-form" id="newsletterForm">
                             <input type="email" placeholder="Your email address" required>
@@ -262,15 +216,13 @@
                     <div class="sidebar-widget tags">
                         <h3 class="widget-title">Popular Tags</h3>
                         <div class="tags-cloud">
-                            <a href="#" class="tag">Construction</a>
-                            <a href="#" class="tag">Design</a>
-                            <a href="#" class="tag">Sustainability</a>
-                            <a href="#" class="tag">Technology</a>
-                            <a href="#" class="tag">Architecture</a>
-                            <a href="#" class="tag">Commercial</a>
-                            <a href="#" class="tag">Residential</a>
-                            <a href="#" class="tag">Renovation</a>
-                            <a href="#" class="tag">Materials</a>
+                            {% if popular_tags %}
+                                {% for tag in popular_tags %}
+                                <a href="{% url 'blog:tag_list' slug=tag.slug %}" class="tag">{{ tag.name }}</a>
+                                {% endfor %}
+                            {% else %}
+                                <span class="tag">No tags available yet</span>
+                            {% endif %}
                         </div>
                     </div>
                 </aside>
@@ -284,7 +236,7 @@
             <div class="cta-content">
                 <h2>Ready to Start Your Next Construction Project?</h2>
                 <p>Contact our team of experts to discuss your building needs and get a customized quote.</p>
-                <a href="contacts.html" class="btn btn-primary btn-large">Contact Us Today</a>
+                <a href="{% url 'core:contact' %}" class="btn btn-primary btn-large">Contact Us Today</a>
             </div>
         </div>
     </section>

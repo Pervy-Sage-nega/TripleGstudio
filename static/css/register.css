@@ -120,7 +120,9 @@ a:hover {
     padding-left: 5px;
 }
 
-button {
+/* Scope button styles to container to avoid modal conflicts */
+.container button,
+.form-container button {
     position: relative;
     border-radius: 20px;
     border: 2px solid #FA5A02;
@@ -149,16 +151,18 @@ button {
   transform: scale(1.05);
 }
 /* Active (button press) effect */
-button:active {
+.container button:active,
+.form-container button:active {
     transform: scale(0.95);
 }
 
-/* Remove outline on focus */
-button:focus {
+.container button:focus,
+.form-container button:focus {
     outline: none;
 }
 
-button.ghost {
+.container button.ghost,
+.form-container button.ghost {
     position: relative;
     border: 2px solid #fff;
     color: #fff;
@@ -170,43 +174,50 @@ button.ghost {
 }
 
 /* Add a glowing effect on hover */
-button.ghost:hover {
+.container button.ghost:hover,
+.form-container button.ghost:hover {
     background: rgba(250, 90, 2, 1);
     border-color: #FA5A02;
     box-shadow: 0 0 10px rgba(250, 90, 2, 1);
 }
 
 /* Icon animations */
-button.ghost i {
+.container button.ghost i,
+.form-container button.ghost i {
     position: absolute;
     opacity: 0;
     transition: all 0.4s ease-in-out;
 }
 
 /* Adjust initial position of icons */
-button.ghost i.register {
+.container button.ghost i.register,
+.form-container button.ghost i.register {
     left: calc(100% - 30px);
     margin-top: 2px;
 }
 
-button.ghost i.login {
+.container button.ghost i.login,
+.form-container button.ghost i.login {
     right: calc(100% - 30px);
     margin-top: 2px;
 }
 
 /* Smooth slide-in effect on hover */
-button.ghost:hover i.register {
+.container button.ghost:hover i.register,
+.form-container button.ghost:hover i.register {
     left: calc(100% - 50px);
     opacity: 1;
 }
 
-button.ghost:hover i.login {
+.container button.ghost:hover i.login,
+.form-container button.ghost:hover i.login {
     right: calc(100% - 50px);
     opacity: 1;
 }
 
 /* Click effect */
-button.ghost:active {
+.container button.ghost:active,
+.form-container button.ghost:active {
     transform: scale(0.95);
 }
 
@@ -438,7 +449,8 @@ input::placeholder {
         margin-top: 20px;
     }
     
-    button {
+    .container button,
+    .form-container button {
         padding: 10px 30px;
     }
 }
@@ -526,85 +538,4 @@ input::placeholder {
   z-index: 1000;
   opacity: 0;
   transition: opacity 0.3s ease;
-}
-
-.modal-content {
-  background-color: #002539; /* Matching form background */
-  padding: 30px;
-  border-radius: 15px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  width: 90%;
-  max-width: 450px;
-  position: relative;
-  transform: translateY(-50px);
-  transition: transform 0.3s ease;
-}
-
-.modal-close {
-  position: absolute;
-  top: 10px;
-  right: 15px;
-  background: none;
-  border: none;
-  font-size: 28px;
-  color: #888;
-  cursor: pointer;
-  transition: color 0.2s ease;
-}
-
-.modal-close:hover {
-  color: #fff;
-}
-
-.modal-messages-container {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.modal-alert {
-  display: flex;
-  align-items: center;
-  padding: 15px;
-  border-radius: 8px;
-  font-size: 15px;
-  color: #fff;
-}
-
-.modal-icon {
-  font-family: "Font Awesome 5 Free";
-  font-weight: 900;
-  font-size: 20px;
-  margin-right: 15px;
-  width: 20px; /* Ensure alignment */
-  text-align: center;
-}
-
-.modal-alert.alert-success {
-  background-color: #28a745;
-}
-.modal-alert.alert-success .modal-icon::before {
-  content: "\f058"; /* check-circle */
-}
-
-.modal-alert.alert-error, .modal-alert.alert-danger {
-  background-color: #dc3545;
-}
-.modal-alert.alert-error .modal-icon::before, .modal-alert.alert-danger .modal-icon::before {
-  content: "\f06a"; /* exclamation-circle */
-}
-
-.modal-alert.alert-warning {
-  background-color: #ffc107;
-  color: #333;
-}
-.modal-alert.alert-warning .modal-icon::before {
-  content: "\f071"; /* exclamation-triangle */
-}
-
-.modal-alert.alert-info {
-  background-color: #17a2b8;
-}
-.modal-alert.alert-info .modal-icon::before {
-  content: "\f05a"; /* info-circle */
 }

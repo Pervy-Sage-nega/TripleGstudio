@@ -4,7 +4,7 @@ Handles routing users to appropriate interfaces based on their roles.
 """
 import logging
 from django.shortcuts import redirect
-from django.contrib import messages
+from django.core.exceptions import PermissionDenied
 from django.urls import reverse
 from django.utils.deprecation import MiddlewareMixin
 
@@ -138,7 +138,6 @@ class RoleBasedAccessMiddleware(MiddlewareMixin):
         
         # Check if path requires authentication but user is anonymous
         if user_role == 'anonymous' and self._requires_authentication(current_path):
-            messages.info(request, "Please log in to access this page.")
             return redirect('accounts:client_login')
         
         return None
@@ -174,18 +173,16 @@ class RoleBasedAccessMiddleware(MiddlewareMixin):
             'anonymous': "Please log in to access this page."
         }
         
-        message = error_messages.get(user_role, "Access denied.")
-        messages.error(request, message)
-        
-        # Redirect to appropriate area
-        try:
-            if redirect_to.startswith('/'):
-                return redirect(redirect_to)
-            else:
-                return redirect(redirect_to)
-        except:
-            # Fallback redirect
-            return redirect('core:index')
+        if user_role == 'anonymous':
+            try:
+                if redirect_to.startswith('/'):
+                    return redirect(redirect_to)
+                else:
+                    return redirect(redirect_to)
+            except:
+                return redirect('accounts:client_login')
+
+        raise PermissionDenied(error_messages.get(user_role, "Access denied."))
     
     def _get_client_ip(self, request):
         """Get client IP address for logging"""

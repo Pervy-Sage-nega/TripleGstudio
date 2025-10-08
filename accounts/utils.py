@@ -219,8 +219,8 @@ def get_user_dashboard_url(user):
     dashboard_urls = {
         'superadmin': '/admin/',
         'admin': 'admin_side:admin_home',
-        'site_manager': 'admin_side:admin_home',
-        'public': 'core:usersettings',  # Client dashboard - use existing URL
+        'site_manager': 'site:dashboard',  # Fixed: Site managers go to site diary dashboard
+        'public': 'core:index',  # Client dashboard - redirect to home page with modal
         'anonymous': 'accounts:client_login'
     }
     
@@ -378,8 +378,8 @@ def get_appropriate_redirect(user, requested_path=None):
     # Default redirects based on role
     default_redirects = {
         'superadmin': '/admin/',
-        'admin': 'portfolio:projectmanagement',
-        'site_manager': 'site:dashboard',
+        'admin': 'admin_side:admin_home',
+        'site_manager': 'site:dashboard',  # Fixed: Site managers go to site diary dashboard
         'public': 'core:usersettings',  # Client dashboard
         'anonymous': 'accounts:client_login'
     }
