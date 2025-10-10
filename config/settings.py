@@ -137,31 +137,19 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# AWS S3 Configuration for Production
-USE_S3 = os.getenv('USE_S3', 'False').lower() == 'true'
+# Render.com Media Configuration
+USE_RENDER_STATIC = os.getenv('USE_RENDER_STATIC', 'False').lower() == 'true'
 
-if USE_S3:
-    # AWS S3 Settings
-    AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
-    AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
-    AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
-    AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME', 'us-east-1')
-    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+if USE_RENDER_STATIC and not DEBUG:
+    # Production on Render - serve media files as static files
+    MEDIA_URL = '/static/media/'
+    MEDIA_ROOT = BASE_DIR / 'static' / 'media'
     
-    # S3 File Storage Settings
-    AWS_DEFAULT_ACL = 'public-read'
-    AWS_S3_OBJECT_PARAMETERS = {
-        'CacheControl': 'max-age=86400',
-    }
-    AWS_LOCATION = 'media'
-    AWS_S3_FILE_OVERWRITE = False
-    AWS_QUERYSTRING_AUTH = False
-    
-    # Use S3 for media files
-    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}/'
+    # Ensure static media is collected
+    if BASE_DIR / 'static' / 'media' not in STATICFILES_DIRS:
+        STATICFILES_DIRS.append(BASE_DIR / 'static' / 'media')
 else:
-    # Local storage for development
+    # Local development storage
     MEDIA_URL = '/media/'
     MEDIA_ROOT = BASE_DIR / 'media'
 
