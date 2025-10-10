@@ -11,6 +11,338 @@
     <link rel="stylesheet" href="{% static 'css/admincss/nav.css' %}">
     <link rel="stylesheet" href="{% static 'css/admincss/admin-nav.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* Responsive Form Layout Improvements */
+        .form-container {
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-columns {
+            display: flex;
+            gap: 1.5rem;
+            align-items: flex-start;
+        }
+
+        .form-column {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            transition: border-color 0.2s ease;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #4a90e2;
+            box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.1);
+        }
+
+        .form-group small {
+            display: block;
+            margin-top: 0.25rem;
+            color: #666;
+            font-size: 0.8rem;
+        }
+
+        /* Summary Cards Responsive */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .summary-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        /* Form Actions */
+        .form-actions {
+            margin-top: 1.5rem;
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        /* Tablet Styles (768px - 1024px) */
+        @media (max-width: 1024px) {
+            .form-columns {
+                gap: 1rem;
+            }
+            
+            .form-container {
+                padding: 1rem;
+            }
+            
+            .summary-cards {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 0.75rem;
+            }
+            
+            .summary-card {
+                padding: 1rem;
+            }
+        }
+
+        /* Mobile Styles (max-width: 768px) */
+        @media (max-width: 768px) {
+            .form-columns {
+                flex-direction: column;
+                gap: 0;
+            }
+
+            .form-column {
+                width: 100%;
+                margin-bottom: 1rem;
+            }
+
+            .form-container {
+                padding: 1rem;
+                margin-bottom: 1rem;
+            }
+
+            .form-group {
+                margin-bottom: 1rem;
+            }
+
+            .form-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+                margin-bottom: 0.5rem;
+            }
+
+            .summary-cards {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.5rem;
+            }
+
+            .summary-card {
+                padding: 0.75rem;
+                font-size: 0.9rem;
+            }
+
+            /* SEO Fieldset Mobile */
+            fieldset {
+                margin: 0.5rem 0 !important;
+                padding: 0.75rem !important;
+            }
+
+            fieldset legend {
+                font-size: 0.85rem !important;
+            }
+
+            /* Table responsive */
+            .table-responsive {
+                overflow-x: auto;
+            }
+
+            .table-responsive table {
+                min-width: 600px;
+            }
+
+            /* Milestone actions mobile */
+            .milestone-actions {
+                justify-content: center !important;
+                margin-bottom: 1rem !important;
+            }
+        }
+
+        /* Small Mobile Styles (max-width: 480px) */
+        @media (max-width: 480px) {
+            .form-container {
+                padding: 0.75rem;
+            }
+
+            .form-group input,
+            .form-group select,
+            .form-group textarea {
+                padding: 0.6rem;
+                font-size: 0.85rem;
+            }
+
+            .summary-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-card {
+                padding: 0.5rem;
+                font-size: 0.85rem;
+            }
+
+            .btn {
+                padding: 0.6rem 1rem;
+                font-size: 0.85rem;
+            }
+
+            fieldset {
+                padding: 0.5rem !important;
+            }
+        }
+
+        /* Fix inline styles conflicts */
+        .form-group input[type="number"] {
+            width: 100% !important;
+            padding: 0.75rem !important;
+            border: 1px solid #ddd !important;
+            border-radius: 4px !important;
+            font-size: 0.9rem !important;
+            transition: border-color 0.2s !important;
+        }
+
+        .form-group input[type="number"]:focus {
+            border-color: #4a90e2 !important;
+        }
+
+        /* Visibility controls */
+        .visibility-controls {
+            margin-top: 1.5rem;
+        }
+
+        .visibility-controls label {
+            display: inline-block;
+            margin-right: 2rem;
+        }
+
+        .visibility-controls .second-checkbox {
+            margin-left: 2rem;
+        }
+
+        /* Visibility controls mobile */
+        @media (max-width: 768px) {
+            .visibility-controls label {
+                display: block;
+                margin-right: 0;
+                margin-bottom: 0.5rem;
+            }
+
+            .visibility-controls .second-checkbox {
+                margin-left: 0;
+                margin-top: 0.5rem;
+            }
+        }
+        /* ====== PROJECT MILESTONES RESPONSIVENESS ====== */
+
+.project-milestones {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+/* Each milestone card or row */
+.milestone-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: #fff;
+}
+
+/* Make form fields inside milestones consistent */
+.milestone-item input,
+.milestone-item textarea,
+.milestone-item select {
+  flex: 1 1 300px;
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
+
+/* Button row */
+.milestone-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+/* Add Milestone button */
+.add-milestone-btn {
+  padding: 0.7rem 1.2rem;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.add-milestone-btn:hover {
+  background-color: #0056b3;
+}
+
+/* ====== MOBILE VIEW (Stack layout) ====== */
+@media (max-width: 768px) {
+  .milestone-item {
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .milestone-actions {
+    justify-content: center;
+  }
+
+  .add-milestone-btn {
+    width: 100%;
+    text-align: center;
+  }
+}
+    </style>
 {% endblock %}
 {% block content %}
 
@@ -34,7 +366,7 @@
 
         
         <!-- Summary Section -->
-        <div class="summary-section">
+        <div class="summary-cards">
             <div class="summary-card">
                 <i class="fas fa-folder-open summary-icon"></i>
                 <div class="summary-title">Total Projects</div>
@@ -85,9 +417,9 @@
         <div class="form-container card" id="formContainer">
             <form id="projectForm" method="post" action="{% url 'portfolio:create_project' %}" enctype="multipart/form-data">
                 {% csrf_token %}
-                <div class="form-columns" style="display: flex; gap: 2rem;">
+                <div class="form-columns">
                     <!-- Left Column -->
-                    <div class="form-column" style="flex:1; min-width:260px;">
+                    <div class="form-column">
                         <div class="form-group">
                             <label for="title">Project Title <span style="color:red">*</span></label>
                             <input type="text" id="title" name="title" required>
@@ -130,9 +462,6 @@
                             <label for="tagline">Tagline / Short Highlight</label>
                             <input type="text" id="tagline" name="tagline">
                         </div>
-                    </div>
-                    <!-- Right Column -->
-                    <div class="form-column" style="flex:1; min-width:260px;">
                         <div class="form-group">
                             <label for="hero_image">Cover Image <span style="color:red">*</span></label>
                             <input type="file" id="hero_image" name="hero_image" accept="image/png, image/jpeg" required>
@@ -145,6 +474,10 @@
                             <div id="galleryPreview" class="img-preview-grid"></div>
                             <small>Accepted: JPG, PNG, ≤ 5MB each</small>
                         </div>
+                        
+                    </div>
+                    <!-- Right Column -->
+                    <div class="form-column">
                         <div class="form-group">
                             <label for="video">Background Video (Optional)</label>
                             <input type="file" id="video" name="video" accept="video/mp4, video/webm, video/ogg">
@@ -155,6 +488,34 @@
                             <label for="description">Project Overview <span style="color:red">*</span></label>
                             <textarea id="description" name="description" rows="4" required></textarea>
                         </div>
+                        
+                        <!-- SEO Fields Section -->
+                        <fieldset style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 1rem; margin: 1rem 0; background: #fafafa;">
+                            <legend style="font-weight: 600; color: #333; padding: 0 0.5rem; font-size: 0.9rem;">
+                                <i class="fas fa-search" style="margin-right: 0.5rem; color: #4a90e2;"></i>
+                                SEO Optimization
+                            </legend>
+                            <div class="form-group">
+                                <label for="seo_meta_title">SEO Meta Title (60 chars max)</label>
+                                <input type="text" id="seo_meta_title" name="seo_meta_title" maxlength="60" placeholder="Leave blank to use project title">
+                                <small style="color: #666; font-size: 0.8rem;">
+                                    <span id="seo_title_count">0</span>/60 characters
+                                </small>
+                            </div>
+                            <div class="form-group">
+                                <label for="seo_meta_description">SEO Meta Description (160 chars max)</label>
+                                <textarea id="seo_meta_description" name="seo_meta_description" rows="2" maxlength="160" placeholder="Leave blank to auto-generate from project overview"></textarea>
+                                <small style="color: #666; font-size: 0.8rem;">
+                                    <span id="seo_desc_count">0</span>/160 characters
+                                </small>
+                            </div>
+                            <div class="form-group">
+                                <label for="hero_image_alt">Hero Image Alt Text</label>
+                                <input type="text" id="hero_image_alt" name="hero_image_alt" maxlength="200" placeholder="Describe the hero image for accessibility">
+                                <small style="color: #666; font-size: 0.8rem;">For screen readers and SEO</small>
+                            </div>
+                        </fieldset>
+                        
                         <div class="form-group">
                             <label for="location">Project Location</label>
                             <input type="text" id="location" name="location" placeholder="e.g. Manila, Philippines">
@@ -169,34 +530,40 @@
                         </div>
                     </div>
                 </div>
-                <!-- Milestones / Timeline Builder -->
-                <fieldset class="card" style="margin-top:2rem;">
-                    <legend><i class="fas fa-tasks"></i> Project Milestones</legend>
-                    
-                    <!-- Align Add Milestone button to the right -->
-                    <div class="milestone-actions" 
-                         style="display: flex; justify-content: flex-end; margin-bottom: 1rem; width: 100%;">
+
+                
+                <div class="project-milestones">
+                    <div class="milestone-item">
+                <div class="milestone-actions" 
+                         style="display: flex; justify-content: flex-end; margin-top: 1rem; width: 100%;">
                         <button type="button" class="btn btn-secondary" onclick="addMilestone()">
                             <i class="fas fa-plus"></i> Add Milestone
                         </button>
                     </div>
+                <!-- Milestones / Timeline Builder -->
+                <fieldset class="card" >
+                    <legend><i class="fas fa-tasks"></i> Project Milestones</legend>
+                    
+                    <!-- Align Add Milestone button to the right -->
+                    
                 
                     <div id="milestoneList" 
                          style="display: flex; flex-direction: column; gap: 0;"></div>
                 </fieldset>
                 <!-- Visibility Controls -->
-                <div class="form-group" style="margin-top:1.5rem;">
+                <div class="form-group visibility-controls">
                     <label><input type="checkbox" id="featured" name="featured"> Mark as Featured Project</label>
-                    <label style="margin-left:2em;"><input type="checkbox" id="publish" name="publish" checked> Publish to Public Projects Page</label>
+                    <label class="second-checkbox"><input type="checkbox" id="publish" name="publish" checked> Publish to Public Projects Page</label>
                 </div>
                 <!-- Form Buttons -->
-                <div class="form-actions" style="margin-top:1.5rem; display:flex; gap:1em; justify-content: flex-end;">
+                <div class="form-actions">
                     <button type="reset" class="btn btn-secondary"><i class="fas fa-trash"></i> Reset Form</button>
                     <button type="button" class="btn btn-primary" onclick="saveAsDraft()"><i class="fas fa-save"></i> Save as Draft</button>
                     <button type="submit" class="btn btn-primary"><i class="fas fa-upload"></i> Publish Project</button>
                 </div>
             </form>
         </div>
+    </div>
 
         <!-- Drafts Section (Hidden by default) -->
         <div class="drafts-container card" id="draftsContainer" style="display: none;">
@@ -312,6 +679,7 @@
     function editProject(projectId) {
         console.log('Edit project:', projectId);
         
+        
         // Fetch project data
         fetch(`/portfolio/get-project/${projectId}/`)
             .then(response => response.json())
@@ -336,6 +704,15 @@
                 document.getElementById('lead_architect').value = data.lead_architect || '';
                 document.getElementById('status').value = data.status || '';
                 document.getElementById('featured').checked = data.featured || false;
+                
+                // Populate SEO fields
+                document.getElementById('seo_meta_title').value = data.seo_meta_title || '';
+                document.getElementById('seo_meta_description').value = data.seo_meta_description || '';
+                document.getElementById('hero_image_alt').value = data.hero_image_alt || '';
+                
+                // Update character counts
+                updateCharacterCount('seo_meta_title', 'seo_title_count');
+                updateCharacterCount('seo_meta_description', 'seo_desc_count');
                 
                 // Clear existing milestones and add loaded ones
                 document.getElementById('milestoneList').innerHTML = '';
@@ -527,6 +904,38 @@
             
             isDraftsView = false;
         }
+    });
+
+    // SEO Character counting functions
+    function updateCharacterCount(inputId, counterId) {
+        const input = document.getElementById(inputId);
+        const counter = document.getElementById(counterId);
+        if (input && counter) {
+            counter.textContent = input.value.length;
+        }
+    }
+
+    // Add event listeners for SEO character counting
+    document.addEventListener('DOMContentLoaded', function() {
+        // SEO Meta Title character counting
+        const seoTitleInput = document.getElementById('seo_meta_title');
+        if (seoTitleInput) {
+            seoTitleInput.addEventListener('input', function() {
+                updateCharacterCount('seo_meta_title', 'seo_title_count');
+            });
+        }
+
+        // SEO Meta Description character counting
+        const seoDescInput = document.getElementById('seo_meta_description');
+        if (seoDescInput) {
+            seoDescInput.addEventListener('input', function() {
+                updateCharacterCount('seo_meta_description', 'seo_desc_count');
+            });
+        }
+
+        // Initialize character counts on page load
+        updateCharacterCount('seo_meta_title', 'seo_title_count');
+        updateCharacterCount('seo_meta_description', 'seo_desc_count');
     });
 </script>
 

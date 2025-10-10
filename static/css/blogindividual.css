@@ -6,8 +6,33 @@
     margin-bottom: 30px;
 }
 
+/* Override any inherited list styles */
+.post-toc ul,
+.post-toc ol,
+.post-toc li {
+    list-style: none !important;
+    list-style-type: none !important;
+    list-style-image: none !important;
+    list-style-position: outside !important;
+}
+
+.post-toc ul::before,
+.post-toc ol::before,
+.post-toc li::before {
+    content: none !important;
+    display: none !important;
+}
+
+.post-toc ul::marker,
+.post-toc ol::marker,
+.post-toc li::marker {
+    content: none !important;
+    display: none !important;
+}
+
 .toc-list {
-    list-style: none;
+    list-style: none !important;
+    list-style-type: none !important;
     padding: 0;
     margin: 0;
 }
@@ -15,6 +40,17 @@
 .toc-list li {
     margin: 8px 0;
     transition: all 0.3s ease;
+    list-style: none !important;
+    list-style-type: none !important;
+    position: relative;
+}
+
+.toc-list li::before {
+    content: none !important;
+}
+
+.toc-list li::marker {
+    content: none !important;
 }
 
 .toc-list a {
@@ -32,6 +68,14 @@
     background-color: rgba(255, 113, 32, 0.1);
     border-left-color: #ff7120;
     transform: translateX(5px);
+}
+
+.toc-list li:hover::before {
+    content: none !important;
+}
+
+.toc-list li:hover::marker {
+    content: none !important;
 }
 
 .toc-list a.active {

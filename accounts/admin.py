@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.html import format_html
 from django.urls import reverse
-from .models import Profile, AdminProfile, SiteManagerProfile, OneTimePassword
+from .models import Profile, AdminProfile, SiteManagerProfile, SuperAdminProfile, OneTimePassword
 
 
 @admin.register(Profile)
@@ -186,13 +186,34 @@ class SiteManagerProfileAdmin(admin.ModelAdmin):
             sitemanager_profile.approval_status = 'suspended'
             sitemanager_profile.save()
             suspended_count += 1
-            
-            # Send suspension email using utility function
             if send_admin_suspension_email(sitemanager_profile):
                 email_sent_count += 1
         
         self.message_user(request, f'{suspended_count} site manager(s) suspended. {email_sent_count} notification email(s) sent.')
     suspend_sitemanagers.short_description = "Suspend selected site manager accounts"
+
+
+@admin.register(SuperAdminProfile)
+class SuperAdminProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'title', 'phone', 'created_at')
+    search_fields = ('user__username', 'user__email', 'title')
+    readonly_fields = ('created_at', 'updated_at', 'last_login_ip')
+    
+    fieldsets = (
+        ('User Information', {
+            'fields': ('user', 'title')
+        }),
+        ('Contact Information', {
+            'fields': ('phone', 'emergency_contact')
+        }),
+        ('Additional Information', {
+            'fields': ('notes',)
+        }),
+        ('System Information', {
+            'fields': ('last_login_ip', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
 
 
 @admin.register(OneTimePassword)

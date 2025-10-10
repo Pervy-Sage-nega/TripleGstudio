@@ -21,6 +21,12 @@ class UnauthorizedAccessMiddleware:
             r'^/diary/adminside/',              # Diary admin routes
             r'^/admin/',                        # Django admin
         ]
+
+        # Django admin authentication endpoints (allowed for everyone)
+        self.admin_login_patterns = [
+            r'^/admin/login/?$',
+            r'^/admin/logout/?$',
+        ]
         
         # Define site manager/diary URL patterns (show 401.html)
         self.site_manager_patterns = [
@@ -87,34 +93,52 @@ class UnauthorizedAccessMiddleware:
         Returns True if user is trying to access protected areas without proper permissions.
         """
         if not hasattr(request, 'user') or not request.user.is_authenticated:
-            # Anonymous users trying to access protected areas
-            return self._is_protected_path(request.path)
+            path = request.path
+            if self._matches_patterns(path, self.admin_login_patterns):
+                return False
+            # Allow anonymous users to reach Django admin login pages
+            if self._matches_patterns(path, self.admin_only_patterns):
+                return False
+            # Block anonymous access to site manager areas
+            return self._matches_patterns(path, self.site_manager_patterns)
         
+        # Allow superusers to reach Django admin without interception
+        if request.user.is_superuser:
+            return False
+
         # Check if authenticated user has proper permissions
         try:
-            from accounts.models import Profile, AdminProfile
+            from accounts.models import Profile, AdminProfile, SiteManagerProfile
             
             path = request.path
             
-            # Check admin-only areas
+            # Check admin-only areas (excluding login/logout)
+            if self._matches_patterns(path, self.admin_login_patterns):
+                return False
+
             for pattern in self.admin_only_patterns:
                 if re.match(pattern, path):
                     # Only admins can access these areas
                     return not AdminProfile.objects.filter(
-                        user=request.user, 
-                        approval_status='approved'
+                        user=request.user,
+                        approval_status='approved',
+                        admin_role__in=['admin', 'manager', 'supervisor', 'staff']
                     ).exists()
             
             # Check site manager areas
             for pattern in self.site_manager_patterns:
                 if re.match(pattern, path):
                     # Site managers or admins can access these areas
-                    has_admin = AdminProfile.objects.filter(
+                    has_site_manager = SiteManagerProfile.objects.filter(
                         user=request.user, 
                         approval_status='approved'
                     ).exists()
-                    has_profile = Profile.objects.filter(user=request.user).exists()
-                    return not (has_admin or has_profile)
+                    has_admin = AdminProfile.objects.filter(
+                        user=request.user, 
+                        approval_status='approved',
+                        admin_role__in=['admin', 'manager', 'supervisor', 'staff']
+                    ).exists()
+                    return not (has_site_manager or has_admin)
                     
         except Exception:
             # If there's an error checking permissions, intercept for safety
@@ -125,10 +149,18 @@ class UnauthorizedAccessMiddleware:
     def _is_protected_path(self, path):
         """Check if the path matches any protected patterns."""
         all_patterns = self.admin_only_patterns + self.site_manager_patterns
-        return any(re.match(pattern, path) for pattern in all_patterns)
+        return self._matches_patterns(path, all_patterns)
+
+    def _matches_patterns(self, path, patterns):
+        """Return True if the path matches any regex in patterns."""
+        return any(re.match(pattern, path) for pattern in patterns)
     
     def _get_error_template_by_path(self, path):
         """Get error template based on path only."""
+        # Skip admin login/logout pages
+        if self._matches_patterns(path, self.admin_login_patterns):
+            return None
+
         # Check admin-only areas
         for pattern in self.admin_only_patterns:
             if re.match(pattern, path):
@@ -191,16 +223,19 @@ class UnauthorizedAccessMiddleware:
         if hasattr(request, 'user') and request.user.is_authenticated:
             # Try to determine user type based on their profile
             try:
-                from accounts.models import Profile, AdminProfile
+                from accounts.models import Profile, AdminProfile, SiteManagerProfile
                 
+                # Check if user has site manager profile
+                if SiteManagerProfile.objects.filter(user=request.user).exists():
+                    context['user_type'] = 'site_manager'
                 # Check if user has admin profile
-                if AdminProfile.objects.filter(user=request.user).exists():
+                elif AdminProfile.objects.filter(user=request.user).exists():
                     context['user_type'] = 'admin'
                 # Check if user has client profile
                 elif Profile.objects.filter(user=request.user).exists():
                     context['user_type'] = 'client'
                 else:
-                    context['user_type'] = 'site_manager'
+                    context['user_type'] = 'unknown'
                     
             except Exception:
                 context['user_type'] = 'unknown'

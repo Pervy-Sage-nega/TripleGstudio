@@ -57,3 +57,11 @@ class StaticBlogSitemap(Sitemap):
         # Get the latest blog post date
         latest_post = BlogPost.objects.filter(status='published').order_by('-updated_at').first()
         return latest_post.updated_at if latest_post else None
+
+
+# Sitemap registry for easy import
+blog_sitemaps = {
+    'blog_posts': BlogPostSitemap,
+    'blog_categories': BlogCategorySitemap,
+    'blog_static': StaticBlogSitemap,
+}

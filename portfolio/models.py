@@ -51,6 +51,23 @@ class Project(models.Model):
     hero_image = models.ImageField(upload_to='projects/hero/', blank=True, null=True)
     video = models.FileField(upload_to='projects/videos/', blank=True, null=True)
     
+    # SEO Fields
+    seo_meta_title = models.CharField(
+        max_length=60, 
+        blank=True, 
+        help_text="SEO optimized title (max 60 chars). Leave blank to use project title."
+    )
+    seo_meta_description = models.TextField(
+        max_length=160, 
+        blank=True, 
+        help_text="SEO meta description (max 160 chars). Leave blank to auto-generate from description."
+    )
+    hero_image_alt = models.CharField(
+        max_length=200, 
+        blank=True, 
+        help_text="Alt text for hero image (accessibility)"
+    )
+    
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

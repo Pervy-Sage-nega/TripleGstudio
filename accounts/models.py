@@ -193,6 +193,26 @@ class SiteManagerProfile(models.Model):
         self.save()
 
 
+class SuperAdminProfile(models.Model):
+    """Profile for Django superusers."""
+    
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='superadminprofile')
+    title = models.CharField(max_length=100, default='Super Administrator')
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    emergency_contact = models.CharField(max_length=100, blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
+    last_login_ip = models.GenericIPAddressField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = 'Super Admin Profile'
+        verbose_name_plural = 'Super Admin Profiles'
+        
+    def __str__(self):
+        return f"{self.user.get_full_name()} - Super Admin"
+
+
 # Signal to send email notifications when approval status changes
 @receiver(pre_save, sender=AdminProfile)
 def track_approval_status_change(sender, instance, **kwargs):

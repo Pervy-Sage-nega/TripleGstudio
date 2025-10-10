@@ -6,7 +6,65 @@
     {% block head %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project Details - Triple G Studio Design</title>
+    
+    <!-- SEO Meta Tags -->
+    <title>{{ seo_meta.title }}</title>
+    <meta name="description" content="{{ seo_meta.description }}">
+    <meta name="keywords" content="{{ seo_meta.keywords }}">
+    <link rel="canonical" href="{{ seo_meta.canonical_url }}">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="{{ seo_meta.og_title }}">
+    <meta property="og:description" content="{{ seo_meta.og_description }}">
+    <meta property="og:url" content="{{ seo_meta.og_url }}">
+    <meta property="og:type" content="{{ seo_meta.og_type }}">
+    <meta property="og:site_name" content="{{ seo_meta.og_site_name }}">
+    {% if seo_meta.og_image %}
+    <meta property="og:image" content="{{ seo_meta.og_image }}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="{{ project.hero_image_alt|default:project.title }}">
+    {% endif %}
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="{{ seo_meta.twitter_card }}">
+    <meta name="twitter:title" content="{{ seo_meta.twitter_title }}">
+    <meta name="twitter:description" content="{{ seo_meta.twitter_description }}">
+    {% if seo_meta.twitter_image %}
+    <meta name="twitter:image" content="{{ seo_meta.twitter_image }}">
+    <meta name="twitter:image:alt" content="{{ project.hero_image_alt|default:project.title }}">
+    {% endif %}
+    
+    <!-- Project-specific Meta Tags -->
+    {% if seo_meta.project_location %}
+    <meta name="project:location" content="{{ seo_meta.project_location }}">
+    {% endif %}
+    {% if seo_meta.project_year %}
+    <meta name="project:year" content="{{ seo_meta.project_year }}">
+    {% endif %}
+    {% if seo_meta.project_status %}
+    <meta name="project:status" content="{{ seo_meta.project_status }}">
+    {% endif %}
+    {% if seo_meta.project_category %}
+    <meta name="project:category" content="{{ seo_meta.project_category }}">
+    {% endif %}
+    {% if seo_meta.project_architect %}
+    <meta name="project:architect" content="{{ seo_meta.project_architect }}">
+    {% endif %}
+    
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {{ structured_data|safe }}
+    </script>
+    
+    <script type="application/ld+json">
+    {{ breadcrumb_data|safe }}
+    </script>
+    
+    <script type="application/ld+json">
+    {{ organization_data|safe }}
+    </script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
@@ -88,7 +146,8 @@
                     <div class="overview-image">
                 
                         {% if project.hero_image %}
-                            <img src="{{ project.hero_image.url }}?v={{ project.updated_at|date:'U' }}" alt="{{ project.title }} Overview" 
+                            <img src="{{ project.hero_image.url }}?v={{ project.updated_at|date:'U' }}" 
+                                 alt="{{ project.hero_image_alt|default:project.title|add:' Overview' }}" 
                                  onerror="console.log('Image failed to load: {{ project.hero_image.url }}'); this.src='{% static 'images/image1.jpg' %}';">
                         {% else %}
                             <p style="color: orange;">No hero image found, using fallback</p>

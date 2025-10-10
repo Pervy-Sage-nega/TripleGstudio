@@ -18,8 +18,19 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.contrib.sitemaps.views import sitemap
 from site_diary import views as site_diary_views
 from core.views import permission_denied_view
+
+# Import sitemaps
+from blog.sitemaps import blog_sitemaps
+from portfolio.sitemaps import portfolio_sitemaps
+
+# Combine all sitemaps
+sitemaps = {
+    **blog_sitemaps,
+    **portfolio_sitemaps,
+}
 
 urlpatterns = [
     # Put accounts URLs BEFORE admin to avoid conflicts
@@ -38,6 +49,9 @@ urlpatterns = [
     path('adminside/diaryreviewer/', site_diary_views.admindiaryreviewer, name='direct_admindiaryreviewer'),
     path('adminside/history/', site_diary_views.adminhistory, name='direct_adminhistory'),
     path('adminside/reports/', site_diary_views.adminreports, name='direct_adminreports'),
+    
+    # Sitemap URLs
+    path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
 ]
 
 if settings.DEBUG:

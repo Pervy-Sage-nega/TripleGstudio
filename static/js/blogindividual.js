@@ -500,3 +500,5 @@ function initImageZoom() {
         }
     });
 } 
+
+console.log('Blog individual JS loaded');

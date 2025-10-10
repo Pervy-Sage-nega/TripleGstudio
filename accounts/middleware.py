@@ -42,6 +42,7 @@ class RoleBasedAccessMiddleware(MiddlewareMixin):
             '/accounts/admin-auth/login/', '/accounts/admin-auth/register/',
             '/accounts/client/verify-otp/', '/accounts/admin-auth/verify-otp/',
             '/accounts/client/logout/', '/accounts/admin-auth/logout/',
+            '/admin/login/', '/admin/logout/',
         ]
         
         return any(request.path.startswith(path) for path in skip_paths)
@@ -55,17 +56,17 @@ class RoleBasedAccessMiddleware(MiddlewareMixin):
         if user.is_superuser:
             return 'superadmin'
         
-        # Check for AdminProfile
+        # Check for AdminProfile first (prioritize admin over site manager)
         if hasattr(user, 'adminprofile') and user.adminprofile.can_login():
             admin_role = user.adminprofile.admin_role
             
-            # Site Manager (site_manager role)
-            if admin_role == 'site_manager':
-                return 'site_manager'
-            
-            # Admin (admin, manager, staff roles)
-            elif admin_role in ['admin', 'manager', 'staff']:
+            # Admin (admin, manager, supervisor, staff roles)
+            if admin_role in ['admin', 'manager', 'supervisor', 'staff']:
                 return 'admin'
+        
+        # Check for SiteManagerProfile second
+        if hasattr(user, 'sitemanagerprofile') and user.sitemanagerprofile.can_login():
+            return 'site_manager'
         
         # Regular authenticated user (public/client)
         return 'public'
@@ -90,7 +91,7 @@ class RoleBasedAccessMiddleware(MiddlewareMixin):
             'admin': {
                 'allowed': [
                     '/', '/about/', '/contact/', '/project/', '/blog/',
-                    '/accounts/admin-auth/', '/portfolio/projectmanagement/',
+                    '/accounts/admin-auth/', '/adminside/', '/portfolio/projectmanagement/',
                     '/blog/blogmanagement/', '/diary/adminside/',
                 ],
                 'blocked': [

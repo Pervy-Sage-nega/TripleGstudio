@@ -8,6 +8,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
 import json
 from .models import Project, Category, ProjectImage, ProjectStat, ProjectTimeline
+from .seo import PortfolioSEOManager
 from accounts.decorators import require_admin_role, allow_public_access
 
 # Create your views here.
@@ -103,7 +104,7 @@ def project_list(request):
 
 @allow_public_access
 def project_detail(request, project_id):
-    """Display detailed view of a single project"""
+    """Display detailed view of a single project with SEO optimization"""
     # Get project with all related data in optimized queries
     project = get_object_or_404(
         Project.objects.select_related('category').prefetch_related(
@@ -117,12 +118,24 @@ def project_detail(request, project_id):
         category=project.category
     ).exclude(id=project.id).select_related('category')[:3]
     
+    # Generate SEO data
+    seo_manager = PortfolioSEOManager()
+    seo_meta = seo_manager.generate_meta_tags(project, request)
+    structured_data = seo_manager.generate_structured_data(project, request)
+    breadcrumb_data = seo_manager.generate_breadcrumb_data(project, request)
+    organization_data = seo_manager.generate_organization_data(request)
+    
     context = {
         'project': project,
         'related_projects': related_projects,
         'project_images': project.images.all(),
         'project_stats': project.stats.all(),
         'project_timeline': project.timeline.all(),
+        # SEO data
+        'seo_meta': seo_meta,
+        'structured_data': structured_data,
+        'breadcrumb_data': breadcrumb_data,
+        'organization_data': organization_data,
     }
     
     return render(request, 'portfolio/project-detail.html', context)
@@ -147,6 +160,10 @@ def create_project(request):
                 lead_architect=request.POST.get('lead_architect'),
                 status=request.POST.get('status', 'planned'),
                 featured=request.POST.get('featured') == 'on',
+                # SEO fields
+                seo_meta_title=request.POST.get('seo_meta_title', ''),
+                seo_meta_description=request.POST.get('seo_meta_description', ''),
+                hero_image_alt=request.POST.get('hero_image_alt', ''),
             )
             
             # Handle hero image upload
@@ -213,6 +230,10 @@ def edit_project(request, project_id):
             project.lead_architect = request.POST.get('lead_architect')
             project.status = request.POST.get('status', 'planned')
             project.featured = request.POST.get('featured') == 'on'
+            # SEO fields
+            project.seo_meta_title = request.POST.get('seo_meta_title', '')
+            project.seo_meta_description = request.POST.get('seo_meta_description', '')
+            project.hero_image_alt = request.POST.get('hero_image_alt', '')
             
             # Handle hero image upload
             if request.FILES.get('hero_image'):
@@ -286,6 +307,10 @@ def get_project_data(request, project_id):
             'lead_architect': project.lead_architect,
             'status': project.status,
             'featured': project.featured,
+            # SEO fields
+            'seo_meta_title': project.seo_meta_title,
+            'seo_meta_description': project.seo_meta_description,
+            'hero_image_alt': project.hero_image_alt,
             'milestones': [
                 {
                     'title': milestone.title,
