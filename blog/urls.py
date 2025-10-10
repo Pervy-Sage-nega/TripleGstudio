@@ -40,6 +40,7 @@ urlpatterns = [
     path('post/<slug:post_slug>/comments/', comment_views.get_comments, name='get_comments'),
     path('post/<slug:post_slug>/comment/add/', comment_views.add_comment, name='add_comment'),
     path('comment/<int:comment_id>/like/', comment_views.like_comment, name='like_comment'),
+    path('comment/<int:comment_id>/delete/', comment_views.delete_comment, name='delete_comment'),
     
     # Admin comment moderation
     path('admin/comments/', comment_views.moderate_comments, name='moderate_comments'),

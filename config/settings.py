@@ -140,18 +140,25 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # Render.com Media Configuration
 USE_RENDER_STATIC = os.getenv('USE_RENDER_STATIC', 'False').lower() == 'true'
 
+# Enhanced Media Configuration for Render
 if USE_RENDER_STATIC and not DEBUG:
-    # Production on Render - serve media files as static files
+    # Production on Render - serve all media as static files
     MEDIA_URL = '/static/media/'
     MEDIA_ROOT = BASE_DIR / 'static' / 'media'
     
-    # Ensure static media is collected
-    if BASE_DIR / 'static' / 'media' not in STATICFILES_DIRS:
-        STATICFILES_DIRS.append(BASE_DIR / 'static' / 'media')
+    # Ensure all media directories are collected
+    STATICFILES_DIRS = [
+        BASE_DIR / "static",
+        BASE_DIR / "static/media",
+        BASE_DIR / "static/media/videos",
+        BASE_DIR / "static/media/profile_pics",
+        BASE_DIR / "static/media/projects",
+    ]
 else:
     # Local development storage
     MEDIA_URL = '/media/'
     MEDIA_ROOT = BASE_DIR / 'media'
+    STATICFILES_DIRS = [BASE_DIR / "static"]
 
 # Login/logout URLs
 LOGIN_URL = '/accounts/sitemanager/login/'

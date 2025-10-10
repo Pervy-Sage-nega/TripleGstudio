@@ -9,8 +9,8 @@ from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_protect
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from .models import BlogPost
-from .comments import Comment, CommentManager, CommentLike
+from .models import BlogPost, Comment, CommentLike
+from .comments import CommentManager
 from .decorators import require_admin_role
 import json
 
@@ -22,98 +22,102 @@ def add_comment(request, post_slug):
     try:
         blog_post = get_object_or_404(BlogPost, slug=post_slug, status='published')
         
-        # Get form data
+        # Get comment data
         if request.content_type == 'application/json':
             data = json.loads(request.body)
+            content = data.get('content', '').strip()
+            author_name = data.get('author_name', '').strip()
+            author_email = data.get('author_email', '').strip()
+            parent_id = data.get('parent_id')
         else:
-            data = request.POST
-        
-        content = data.get('content', '').strip()
-        author_name = data.get('author_name', '').strip()
-        author_email = data.get('author_email', '').strip()
-        author_website = data.get('author_website', '').strip()
-        parent_id = data.get('parent_id')
+            content = request.POST.get('content', '').strip()
+            author_name = request.POST.get('author_name', '').strip()
+            author_email = request.POST.get('author_email', '').strip()
+            parent_id = request.POST.get('parent_id')
         
         # Validation
         if not content:
-            if request.content_type == 'application/json':
-                return JsonResponse({'success': False, 'message': 'Comment content is required.'})
-            else:
-                return redirect('blog:blog_detail', slug=post_slug)
+            raise ValueError("Comment content is required")
         
-        if not author_name:
-            if request.content_type == 'application/json':
-                return JsonResponse({'success': False, 'message': 'Name is required.'})
-            else:
-                return redirect('blog:blog_detail', slug=post_slug)
+        # For authenticated users, use their info
+        if request.user.is_authenticated:
+            if not author_name:
+                author_name = request.user.get_full_name() or request.user.username
+            if not author_email:
+                author_email = request.user.email
+        else:
+            # For anonymous users, require name and email
+            if not author_name:
+                raise ValueError("Author name is required")
+            if not author_email:
+                raise ValueError("Author email is required")
         
-        if not author_email:
-            if request.content_type == 'application/json':
-                return JsonResponse({'success': False, 'message': 'Email is required.'})
-            else:
-                return redirect('blog:blog_detail', slug=post_slug)
-        
-        if len(content) > 1000:
-            if request.content_type == 'application/json':
-                return JsonResponse({'success': False, 'message': 'Comment is too long. Maximum 1000 characters allowed.'})
-            else:
-                return redirect('blog:blog_detail', slug=post_slug)
-        
-        # Get parent comment if replying
-        parent = None
+        # Get parent comment if specified
+        parent_comment = None
         if parent_id:
             try:
-                parent = Comment.objects.get(id=parent_id, blog_post=blog_post)
+                parent_comment = Comment.objects.get(id=parent_id, blog_post=blog_post)
             except Comment.DoesNotExist:
-                if request.content_type == 'application/json':
-                    return JsonResponse({'success': False, 'message': 'Parent comment not found.'})
-                else:
-                    return redirect('blog:blog_detail', slug=post_slug)
+                parent_comment = None
         
-        # Create comment
+        # Create comment using CommentManager
         comment = CommentManager.create_comment(
             blog_post=blog_post,
             content=content,
             author_name=author_name,
             author_email=author_email,
-            author_website=author_website,
-            parent=parent,
+            parent=parent_comment,
             user=request.user if request.user.is_authenticated else None,
             request=request
         )
         
-        # Handle AJAX vs regular form submission
+        # Verify comment was actually saved
+        try:
+            saved_comment = Comment.objects.get(id=comment.id)
+        except Comment.DoesNotExist:
+            raise Exception("Comment save failed")
+        
+        # Return JSON response for AJAX requests
         if request.content_type == 'application/json':
             return JsonResponse({
                 'success': True,
+                'message': 'Comment posted successfully!' if comment.status == 'approved' else 'Comment submitted for moderation.',
                 'comment': {
                     'id': comment.id,
                     'content': comment.content,
                     'author_name': comment.author_name,
-                    'created_at': comment.created_at.strftime('%B %d, %Y at %I:%M %p'),
                     'status': comment.status,
-                    'is_reply': comment.is_reply,
-                    'parent_id': comment.parent_id if comment.parent else None,
-                } if comment.status == 'approved' else None
+                    'created_at': comment.created_at.strftime('%B %d, %Y at %I:%M %p'),
+                    'parent_id': comment.parent.id if comment.parent else None
+                }
             })
         else:
-            # Regular form submission - redirect back to blog post
-            return redirect('blog:blog_detail', slug=blog_post.slug)
+            # No success message - just redirect back to post
+            return redirect('blog:blog_detail', slug=post_slug)
         
     except Exception as e:
         if request.content_type == 'application/json':
             return JsonResponse({
                 'success': False,
-                'message': 'An error occurred while posting your comment. Please try again.'
+                'message': str(e) if isinstance(e, ValueError) else 'An error occurred while posting your comment. Please try again.'
             })
         else:
+            messages.error(request, str(e) if isinstance(e, ValueError) else 'An error occurred while posting your comment.')
             return redirect('blog:blog_detail', slug=post_slug)
 
 
 @require_http_methods(["POST"])
 def like_comment(request, comment_id):
     """Like or dislike a comment"""
+    print(f"like_comment called with comment_id: {comment_id}, type: {type(comment_id)}")
+    
+    # Disable mock response for real functionality
+    # if str(comment_id) == '999':
+    #     print("Returning mock response for comment 999")
+    #     return JsonResponse({'success': True, 'action': 'added', 'likes': 6, 'dislikes': 2})
+    
     try:
+        
         comment = get_object_or_404(Comment, id=comment_id, status='approved')
         is_like = request.POST.get('is_like', 'true').lower() == 'true'
         
@@ -165,7 +169,6 @@ def like_comment(request, comment_id):
             action = 'added'
         
         comment.save()
-        
         return JsonResponse({
             'success': True,
             'action': action,
@@ -174,10 +177,54 @@ def like_comment(request, comment_id):
         })
         
     except Exception as e:
+        print(f"Error in like_comment: {str(e)}")
         return JsonResponse({
             'success': False,
-            'message': 'An error occurred. Please try again.'
+            'message': f'Error: {str(e)}'
         })
+
+
+@csrf_protect
+@require_http_methods(["POST", "DELETE"])
+def delete_comment(request, comment_id):
+    """Delete a comment (only by the author)"""
+    try:
+        comment = get_object_or_404(Comment, id=comment_id)
+        
+        # Check if user is the author of the comment
+        if not request.user.is_authenticated:
+            return JsonResponse({
+                'success': False,
+                'message': 'You must be logged in to delete comments.'
+            }, status=401)
+        
+        if comment.author != request.user:
+            return JsonResponse({
+                'success': False,
+                'message': 'You can only delete your own comments.'
+            }, status=403)
+        
+        # Store comment info before deletion
+        comment_id = comment.id
+        is_reply = comment.parent is not None
+        parent_id = comment.parent.id if comment.parent else None
+        
+        # Delete the comment
+        comment.delete()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Comment deleted successfully.',
+            'comment_id': comment_id,
+            'is_reply': is_reply,
+            'parent_id': parent_id
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error deleting comment: {str(e)}'
+        }, status=500)
 
 
 @require_admin_role

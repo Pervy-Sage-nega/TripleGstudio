@@ -12,116 +12,6 @@ from django.utils.html import strip_tags
 import uuid
 
 
-class Comment(models.Model):
-    """Blog comment model with moderation support"""
-    
-    STATUS_CHOICES = [
-        ('pending', 'Pending Moderation'),
-        ('approved', 'Approved'),
-        ('rejected', 'Rejected'),
-        ('spam', 'Spam'),
-    ]
-    
-    # Content
-    blog_post = models.ForeignKey('BlogPost', on_delete=models.CASCADE, related_name='comments')
-    content = models.TextField(max_length=1000)
-    
-    # Author information
-    author = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
-    author_name = models.CharField(max_length=100)
-    author_email = models.EmailField(validators=[EmailValidator()])
-    author_website = models.URLField(blank=True)
-    
-    # Threading support
-    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='replies')
-    
-    # Moderation
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
-    moderated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='moderated_comments')
-    moderated_at = models.DateTimeField(null=True, blank=True)
-    moderation_note = models.TextField(blank=True)
-    
-    # Metadata
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    ip_address = models.GenericIPAddressField(null=True, blank=True)
-    user_agent = models.TextField(blank=True)
-    
-    # Spam detection
-    spam_score = models.FloatField(default=0.0)
-    is_spam = models.BooleanField(default=False)
-    
-    # Engagement
-    likes = models.PositiveIntegerField(default=0)
-    dislikes = models.PositiveIntegerField(default=0)
-    
-    class Meta:
-        ordering = ['created_at']
-        verbose_name = 'Comment'
-        verbose_name_plural = 'Comments'
-        indexes = [
-            models.Index(fields=['blog_post', 'status', 'created_at']),
-            models.Index(fields=['status', 'created_at']),
-            models.Index(fields=['parent']),
-        ]
-    
-    def __str__(self):
-        return f"Comment by {self.author_name} on {self.blog_post.title}"
-    
-    def get_absolute_url(self):
-        return f"{self.blog_post.get_absolute_url()}#comment-{self.id}"
-    
-    @property
-    def is_reply(self):
-        return self.parent is not None
-    
-    @property
-    def reply_count(self):
-        return self.replies.filter(status='approved').count()
-    
-    def approve(self, moderator=None):
-        """Approve the comment"""
-        self.status = 'approved'
-        self.moderated_by = moderator
-        self.moderated_at = timezone.now()
-        self.save()
-    
-    def reject(self, moderator=None, note=''):
-        """Reject the comment"""
-        self.status = 'rejected'
-        self.moderated_by = moderator
-        self.moderated_at = timezone.now()
-        self.moderation_note = note
-        self.save()
-    
-    def mark_as_spam(self, moderator=None):
-        """Mark comment as spam"""
-        self.status = 'spam'
-        self.is_spam = True
-        self.moderated_by = moderator
-        self.moderated_at = timezone.now()
-        self.save()
-
-
-class CommentLike(models.Model):
-    """Comment like/dislike tracking"""
-    
-    comment = models.ForeignKey(Comment, on_delete=models.CASCADE, related_name='comment_likes')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
-    ip_address = models.GenericIPAddressField(null=True, blank=True)
-    is_like = models.BooleanField()  # True for like, False for dislike
-    created_at = models.DateTimeField(auto_now_add=True)
-    
-    class Meta:
-        unique_together = ['comment', 'user', 'ip_address']
-        verbose_name = 'Comment Like'
-        verbose_name_plural = 'Comment Likes'
-    
-    def __str__(self):
-        action = "liked" if self.is_like else "disliked"
-        return f"Comment {action} by {self.user or self.ip_address}"
-
-
 class CommentModerationRule(models.Model):
     """Automatic comment moderation rules"""
     
@@ -164,6 +54,8 @@ class CommentManager:
     def create_comment(blog_post, content, author_name, author_email, 
                       author_website='', parent=None, user=None, request=None):
         """Create a new comment with automatic moderation"""
+        from .models import Comment
+        
         
         # Clean content
         content = strip_tags(content).strip()
@@ -350,23 +242,41 @@ class CommentManager:
     @staticmethod
     def get_comment_tree(blog_post):
         """Get hierarchical comment tree for a blog post"""
+        from .models import Comment
         comments = Comment.objects.filter(
             blog_post=blog_post,
             status__in=['approved', 'pending']  # Show both approved and pending for now
         ).select_related('author').order_by('created_at')
         
-        # Build comment tree
+        print(f"=== get_comment_tree for {blog_post} ===")
+        print(f"Total comments found: {comments.count()}")
+        
+        # Build comment tree - Process all comments first
         comment_dict = {}
         root_comments = []
         
+        # First pass: Create dictionary and initialize replies_list
         for comment in comments:
             comment_dict[comment.id] = comment
             comment.replies_list = []
-            
+            print(f"Comment {comment.id}: '{comment.content[:50]}...' parent_id={comment.parent_id}")
+        
+        # Second pass: Build the tree structure
+        for comment in comments:
             if comment.parent_id:
+                # This is a reply
                 if comment.parent_id in comment_dict:
                     comment_dict[comment.parent_id].replies_list.append(comment)
+                    print(f"Added reply {comment.id} to parent {comment.parent_id}")
+                else:
+                    print(f"WARNING: Parent {comment.parent_id} not found for comment {comment.id}")
             else:
+                # This is a root comment
                 root_comments.append(comment)
+                print(f"Added root comment {comment.id}")
+        
+        print(f"Root comments: {len(root_comments)}")
+        for root in root_comments:
+            print(f"Root {root.id} has {len(root.replies_list)} replies")
         
         return root_comments

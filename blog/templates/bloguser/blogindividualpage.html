@@ -267,8 +267,8 @@
                                 <input type="hidden" name="parent_id" id="parent_id" value="">
                                 
                                 <!-- Pre-filled user data (hidden for authenticated users) -->
-                                <input type="hidden" name="author_name" value="{{ user.get_full_name|default:user.username }}">
-                                <input type="hidden" name="author_email" value="{{ user.email }}">
+                                <input type="hidden" name="author_name" id="authorName" value="{{ user.get_full_name|default:user.username }}">
+                                <input type="hidden" name="author_email" id="authorEmail" value="{{ user.email }}">
                                 
                                 
                                 <div class="form-group">
@@ -382,9 +382,68 @@
                                             <button class="dislike-btn" data-comment-id="{{ comment.id }}">
                                                 <i class="fas fa-thumbs-down"></i> {{ comment.dislikes }}
                                             </button>
+                                            {% if user.is_authenticated and comment.author == user %}
+                                                <button class="delete-btn" data-comment-id="{{ comment.id }}" title="Delete comment">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            {% endif %}
                                         </div>
                                     </div>
                                 </div>
+                                
+                                <!-- Display nested replies -->
+                                {% for reply in comment.replies_list %}
+                                    <div class="comment nested-comment" data-comment-id="{{ reply.id }}">
+                                        <div class="comment-avatar">
+                                            {% if reply.author %}
+                                                {% if reply.author.profile.profile_pic %}
+                                                    <img src="{{ reply.author.profile.profile_pic.url }}" alt="{{ reply.author_name }}">
+                                                {% elif reply.author.adminprofile.profile_pic %}
+                                                    <img src="{{ reply.author.adminprofile.profile_pic.url }}" alt="{{ reply.author_name }}">
+                                                {% elif reply.author.sitemanagerprofile.profile_pic %}
+                                                    <img src="{{ reply.author.sitemanagerprofile.profile_pic.url }}" alt="{{ reply.author_name }}">
+                                                {% else %}
+                                                    <img src="{% static 'images/default-avatar.png' %}" alt="{{ reply.author_name }}">
+                                                {% endif %}
+                                            {% else %}
+                                                <img src="{% static 'images/default-avatar.png' %}" alt="{{ reply.author_name }}">
+                                            {% endif %}
+                                        </div>
+                                        <div class="comment-content">
+                                            <div class="comment-header">
+                                                <h4 class="commenter-name">{{ reply.author_name }}</h4>
+                                                <span class="comment-date">{{ reply.created_at|date:"F j, Y \a\t g:i A" }}</span>
+                                                
+                                                <!-- Comment Status Badge -->
+                                                {% if reply.status == 'pending' %}
+                                                    <span class="status-badge pending-badge">Pending Approval</span>
+                                                {% endif %}
+                                                
+                                                <!-- User Role Badges -->
+                                                {% if reply.author and reply.author == blog_post.author %}
+                                                    <span class="status-badge author-badge">Author</span>
+                                                {% endif %}
+                                            </div>
+                                            <p>{{ reply.content|linebreaks }}</p>
+                                            <div class="comment-actions">
+                                                {% if user.is_authenticated %}
+                                                    <button class="reply-btn" data-comment-id="{{ reply.id }}">Reply</button>
+                                                {% endif %}
+                                                <button class="like-btn" data-comment-id="{{ reply.id }}">
+                                                    <i class="fas fa-thumbs-up"></i> {{ reply.likes }}
+                                                </button>
+                                                <button class="dislike-btn" data-comment-id="{{ reply.id }}">
+                                                    <i class="fas fa-thumbs-down"></i> {{ reply.dislikes }}
+                                                </button>
+                                                {% if user.is_authenticated and reply.author == user %}
+                                                    <button class="delete-btn" data-comment-id="{{ reply.id }}" title="Delete reply">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
                             {% empty %}
                                 <div class="no-comments">
                                     <p>No comments yet. Be the first to share your thoughts!</p>
