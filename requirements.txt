@@ -4,8 +4,9 @@ psycopg2-binary==2.9.10
 sqlparse==0.5.3
 tzdata==2025.2
 gunicorn
-dj-database-url
+python-dotenv
 whitenoise
 django-axes>=6.0
 pillow
-python-dotenv
+django-storages==1.14.2
+boto3==1.34.0
