@@ -28,6 +28,12 @@ class Profile(models.Model):
         
     def __str__(self):
         return f"{self.user.username} - {self.role}"
+    
+    def get_profile_image_url(self):
+        """Return profile image URL or default image"""
+        if self.profile_pic:
+            return self.profile_pic.url
+        return '/static/images/default-profile.png'
 
 
 class OneTimePassword(models.Model):
@@ -82,6 +88,9 @@ class AdminProfile(models.Model):
     portfolio_links = models.TextField(blank=True, null=True)
     specialization = models.CharField(max_length=200, blank=True, null=True)
     
+    # Profile picture
+    profile_pic = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
+    
     # Email verification fields
     email_verified = models.BooleanField(default=False)
     email_verified_at = models.DateTimeField(blank=True, null=True)
@@ -127,6 +136,12 @@ class AdminProfile(models.Model):
         """Lock account for specified duration"""
         self.account_locked_until = timezone.now() + timedelta(minutes=duration_minutes)
         self.save()
+    
+    def get_profile_image_url(self):
+        """Return profile image URL or default image"""
+        if self.profile_pic:
+            return self.profile_pic.url
+        return '/static/images/default-profile.png'
 
 
 class SiteManagerProfile(models.Model):
@@ -145,6 +160,9 @@ class SiteManagerProfile(models.Model):
     emergency_contact = models.CharField(max_length=100, blank=True, null=True)
     hire_date = models.DateField(blank=True, null=True)
     company_department = models.CharField(max_length=100, blank=True, null=True)
+    
+    # Profile picture
+    profile_pic = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
     
     # Email verification fields
     email_verified = models.BooleanField(default=False)
@@ -191,6 +209,12 @@ class SiteManagerProfile(models.Model):
         """Lock account for specified duration"""
         self.account_locked_until = timezone.now() + timedelta(minutes=duration_minutes)
         self.save()
+    
+    def get_profile_image_url(self):
+        """Return profile image URL or default image"""
+        if self.profile_pic:
+            return self.profile_pic.url
+        return '/static/images/default-profile.png'
 
 
 class SuperAdminProfile(models.Model):
@@ -201,6 +225,9 @@ class SuperAdminProfile(models.Model):
     phone = models.CharField(max_length=20, blank=True, null=True)
     emergency_contact = models.CharField(max_length=100, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
+    
+    # Profile picture
+    profile_pic = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
     last_login_ip = models.GenericIPAddressField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -211,6 +238,12 @@ class SuperAdminProfile(models.Model):
         
     def __str__(self):
         return f"{self.user.get_full_name()} - Super Admin"
+    
+    def get_profile_image_url(self):
+        """Return profile image URL or default image"""
+        if self.profile_pic:
+            return self.profile_pic.url
+        return '/static/images/default-profile.png'
 
 
 # Signal to send email notifications when approval status changes

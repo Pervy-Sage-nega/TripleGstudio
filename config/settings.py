@@ -89,7 +89,10 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# Database
+# Database configuration
+# Production: Render.com PostgreSQL
+# Development: SQLite
+
 DATABASES = {
     'default': {
         'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
@@ -172,12 +175,17 @@ CSRF_COOKIE_SECURE = True
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Authentication backends
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesStandaloneBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
 
+# Axes Security Configuration
 AXES_FAILURE_LIMIT = 5  # lock out after 5 attempts
 AXES_COOLOFF_TIME = 1  # lockout period in hours
 AXES_LOCKOUT_TEMPLATE = 'client/lockout.html'  # create a lockout page
 
-# Optional: lockout by username and IP
-AXES_ONLY_USER_FAILURES = False
+# Axes lockout configuration (updated for django-axes 5.0+)
 AXES_LOCK_OUT_AT_FAILURE = True
 AXES_RESET_ON_SUCCESS = True

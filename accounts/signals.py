@@ -24,9 +24,10 @@ def _ensure_superuser_profile(user: User) -> None:
 @receiver(post_save, sender=User)
 def create_related_profiles(sender, instance: User, created: bool, **kwargs) -> None:
     """Ensure every user has the appropriate profile records."""
-    if created and not instance.is_superuser:
-        Profile.objects.get_or_create(user=instance)
-
+    # Only create profiles for superusers automatically
+    # Other profile types (Admin, SiteManager, Client) should be created explicitly
+    # when users register for those specific roles
+    
     _ensure_superuser_profile(instance)
 
 

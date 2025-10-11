@@ -1,12 +1,7 @@
 {% extends 'layout.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    {% block head %}
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+
+{% block head %}
     <!-- SEO Meta Tags -->
     <title>{{ seo_meta.title }}</title>
     <meta name="description" content="{{ seo_meta.description }}">
@@ -70,10 +65,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/home.css' %}">
     <link rel="stylesheet" href="{% static 'css/project-detail.css' %}">
-    {% endblock %}
-</head>
-    <!-- Navigation -->
-    {% block body %}
+{% endblock %}
+
+{% block body %}
     
     <!-- Hero Section with Video Background -->
     <section class="project-hero">
@@ -264,6 +258,4 @@
 
     <script src="{% static 'js/project-detail.js' %}"></script>
     <script src="{% static 'js/chatbot.js' %}"></script>
-    {% endblock %}
-</body>
-</html>
+{% endblock %}

@@ -1,6 +1,7 @@
 
 {% extends 'layout.html' %}
 {% load static %}
+{% load profile_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -79,7 +80,7 @@
                         <h1 class="post-title">{{ blog_post.title }}</h1>
                         <div class="post-meta">
                             <div class="author-info">
-                                <img src="{% static 'images/arkitel.jpg' %}" alt="{{ blog_post.author.get_full_name|default:blog_post.author.username }}" class="author-avatar">
+                                <img src="{% profile_image_url blog_post.author %}" alt="{{ blog_post.author.get_full_name|default:blog_post.author.username }}" class="author-avatar">
                                 <span class="author-name">{{ blog_post.author.get_full_name|default:blog_post.author.username }}</span>
                             </div>
                             <div class="post-details">
@@ -180,7 +181,7 @@
 
                     <!-- Author Bio -->
                     <div class="author-bio">
-                        <img src="{% static 'images/arkitel.PNG' %}" alt="{{ blog_post.author.get_full_name|default:blog_post.author.username }}" class="author-avatar">
+                        <img src="{% profile_image_url blog_post.author %}" alt="{{ blog_post.author.get_full_name|default:blog_post.author.username }}" class="author-avatar">
                         <div class="author-details">
                             <h3>About the Author</h3>
                             <h4>{{ blog_post.author.get_full_name|default:blog_post.author.username }}</h4>
@@ -240,15 +241,7 @@
                             <!-- User Profile Info -->
                             <div class="client-comment-info">
                                 <div class="client-avatar">
-                                    {% if user.profile.profile_pic %}
-                                        <img src="{{ user.profile.profile_pic.url }}" alt="{{ user.get_full_name|default:user.username }}" id="clientAvatar">
-                                    {% elif user.adminprofile.profile_pic %}
-                                        <img src="{{ user.adminprofile.profile_pic.url }}" alt="{{ user.get_full_name|default:user.username }}" id="clientAvatar">
-                                    {% elif user.sitemanagerprofile.profile_pic %}
-                                        <img src="{{ user.sitemanagerprofile.profile_pic.url }}" alt="{{ user.get_full_name|default:user.username }}" id="clientAvatar">
-                                    {% else %}
-                                        <img src="{% static 'images/default-avatar.png' %}" alt="{{ user.get_full_name|default:user.username }}" id="clientAvatar">
-                                    {% endif %}
+                                    <img src="{% profile_image_url user %}" alt="{{ user.get_full_name|default:user.username }}" id="clientAvatar">
                                 </div>
                                 <div class="client-info">
                                     <span class="client-name" id="clientName">{{ user.get_full_name|default:user.username }}</span>
@@ -337,17 +330,9 @@
                                 <div class="comment{% if comment.parent %} nested-comment{% endif %}" data-comment-id="{{ comment.id }}">
                                     <div class="comment-avatar">
                                         {% if comment.author %}
-                                            {% if comment.author.profile.profile_pic %}
-                                                <img src="{{ comment.author.profile.profile_pic.url }}" alt="{{ comment.author_name }}">
-                                            {% elif comment.author.adminprofile.profile_pic %}
-                                                <img src="{{ comment.author.adminprofile.profile_pic.url }}" alt="{{ comment.author_name }}">
-                                            {% elif comment.author.sitemanagerprofile.profile_pic %}
-                                                <img src="{{ comment.author.sitemanagerprofile.profile_pic.url }}" alt="{{ comment.author_name }}">
-                                            {% else %}
-                                                <img src="{% static 'images/default-avatar.png' %}" alt="{{ comment.author_name }}">
-                                            {% endif %}
+                                            <img src="{% profile_image_url comment.author %}" alt="{{ comment.author_name }}">
                                         {% else %}
-                                            <img src="{% static 'images/default-avatar.png' %}" alt="{{ comment.author_name }}">
+                                            <img src="{% static 'images/arkitel.PNG' %}" alt="{{ comment.author_name }}">
                                         {% endif %}
                                     </div>
                                     <div class="comment-content">
@@ -396,17 +381,9 @@
                                     <div class="comment nested-comment" data-comment-id="{{ reply.id }}">
                                         <div class="comment-avatar">
                                             {% if reply.author %}
-                                                {% if reply.author.profile.profile_pic %}
-                                                    <img src="{{ reply.author.profile.profile_pic.url }}" alt="{{ reply.author_name }}">
-                                                {% elif reply.author.adminprofile.profile_pic %}
-                                                    <img src="{{ reply.author.adminprofile.profile_pic.url }}" alt="{{ reply.author_name }}">
-                                                {% elif reply.author.sitemanagerprofile.profile_pic %}
-                                                    <img src="{{ reply.author.sitemanagerprofile.profile_pic.url }}" alt="{{ reply.author_name }}">
-                                                {% else %}
-                                                    <img src="{% static 'images/default-avatar.png' %}" alt="{{ reply.author_name }}">
-                                                {% endif %}
+                                                <img src="{% profile_image_url reply.author %}" alt="{{ reply.author_name }}">
                                             {% else %}
-                                                <img src="{% static 'images/default-avatar.png' %}" alt="{{ reply.author_name }}">
+                                                <img src="{% static 'images/default-profile.PNG' %}" alt="{{ reply.author_name }}">
                                             {% endif %}
                                         </div>
                                         <div class="comment-content">

@@ -12,10 +12,10 @@
 <body>
   {% include 'client/_modal_messages.html' %}
    <nav class="navbar">
-    <div class="logo-container">
-      <img class="logo" src="{% static 'images/logostick.png' %}" alt="Logo">
-      <div class="logo1">TRIPLE<a>G.</a></div>
-    </div>
+    <div class="logo-container" onclick="window.location.href='{% url 'core:index' %}'">
+    <img class="logo" src="{% static 'images/logostick.png' %}" alt="Logo">
+    <div class="logo1">TRIPLE<a>G.</a></div>
+  </div>
     <ul class="nav-links" id="navLinks">
       <li><a href="{% url 'core:index' %}">Home</a></li>
       <li><a href="{% url 'blog:bloglist' %}">Blog</a></li>

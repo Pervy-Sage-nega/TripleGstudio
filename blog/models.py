@@ -193,12 +193,7 @@ class BlogPost(models.Model):
         word_count = len(self.content.split())
         minutes = max(1, round(word_count / 200))
         return minutes
-    
-    def increment_view_count(self):
-        """Increment view count for analytics"""
-        self.view_count += 1
-        self.save(update_fields=['view_count'])
-    
+        
     def get_related_posts(self, limit=3):
         """Get related posts based on category and tags"""
         related = BlogPost.objects.filter(

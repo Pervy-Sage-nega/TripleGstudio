@@ -1,5 +1,6 @@
 {% extends 'layout.html' %}
 {% load static %}
+{% load profile_tags %}
 
 {% block head %}
   {{ block.super }}
@@ -116,11 +117,7 @@
 
           <div class="profile-preview">
             <div class="profile-avatar">
-              {% if profile and profile.profile_pic %}
-                <img src="{{ profile.profile_pic.url }}" alt="Profile Picture" id="profileImage">
-              {% else %}
-                <img src="{% static 'images/profile.avif' %}" alt="Profile Picture" id="profileImage">
-              {% endif %}
+              <img src="{% profile_image_url user %}" alt="Profile Picture" id="profileImage">
               <div class="avatar-upload-overlay">
                 <i class="fas fa-camera"></i>
               </div>
