@@ -4,6 +4,8 @@
   <div class="custom-modal-content">
     <button class="custom-modal-close" aria-label="Close modal">&times;</button>
     {% for message in messages %}
+      {% if forloop.last %}
+      <!-- Only show the latest/most recent message -->
       <div class="custom-modal-body custom-alert-{{ message.tags }}">
         <div class="custom-modal-icon">
           {% if message.tags == 'success' %}
@@ -40,6 +42,7 @@
           {% endif %}
         </div>
       </div>
+      {% endif %}
     {% endfor %}
   </div>
 </div>

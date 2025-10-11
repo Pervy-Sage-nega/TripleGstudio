@@ -1,5 +1,9 @@
 {% extends 'base_auth.html' %}
 {% load static %}
+
+{% block modal_messages %}
+    {% include 'admin/_modal_messages.html' %}
+{% endblock %}
 {% block title %}Login | Triple G BuildHub{% endblock %}
 {% block sidebar_content %}
     <h1>Welcome Back to BuildHub</h1>

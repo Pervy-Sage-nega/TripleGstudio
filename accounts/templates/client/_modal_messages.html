@@ -3,42 +3,45 @@
 <!-- Modal Backdrop -->
 <div id="customModalOverlay" class="modal-backdrop active" role="dialog" aria-modal="true">
   {% for message in messages %}
-  <div class="modal">
-    <!-- Close Button -->
-    <button class="close-btn custom-modal-close" aria-label="Close modal">
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor">
-        <path d="M15 5L5 15M5 5L15 15" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-    </button>
+    {% if forloop.last %}
+    <!-- Only show the latest/most recent message -->
+    <div class="modal">
+      <!-- Close Button -->
+      <button class="close-btn custom-modal-close" aria-label="Close modal">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor">
+          <path d="M15 5L5 15M5 5L15 15" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
 
-    <div class="modal-content">
-      <!-- Icon Section -->
-      <div class="icon-section">
-        <div class="icon-container custom-modal-icon">
-          {% if message.tags == 'success' %}
-            <i class="lni lni-checkmark-circle"></i>
-          {% elif message.tags == 'info' %}
-            <i class="lni lni-information"></i>
-          {% elif message.tags == 'warning' %}
-            <i class="lni lni-warning"></i>
-          {% elif message.tags == 'error' %}
-            <i class="lni lni-cross-circle"></i>
-          {% endif %}
+      <div class="modal-content">
+        <!-- Icon Section -->
+        <div class="icon-section">
+          <div class="icon-container custom-modal-icon">
+            {% if message.tags == 'success' %}
+              <i class="lni lni-checkmark-circle"></i>
+            {% elif message.tags == 'info' %}
+              <i class="lni lni-information"></i>
+            {% elif message.tags == 'warning' %}
+              <i class="lni lni-warning"></i>
+            {% elif message.tags == 'error' %}
+              <i class="lni lni-cross-circle"></i>
+            {% endif %}
+          </div>
+          <h2 class="modal-title">{{ message.tags|title }}</h2>
         </div>
-        <h2 class="modal-title">{{ message.tags|title }}</h2>
-      </div>
 
-      <!-- Content Section -->
-      <div class="content-section">
-        <p class="modal-description custom-modal-text">{{ message }}</p>
-        
-        <div class="modal-buttons custom-modal-actions">
-          <button type="button" class="custom-btn-cancel">Cancel</button>
-          <button type="button" class="custom-btn-confirm">Confirm</button>
+        <!-- Content Section -->
+        <div class="content-section">
+          <p class="modal-description custom-modal-text">{{ message }}</p>
+          
+          <div class="modal-buttons custom-modal-actions">
+            <button type="button" class="custom-btn-cancel">Cancel</button>
+            <button type="button" class="custom-btn-confirm">Confirm</button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
+    {% endif %}
   {% endfor %}
 </div>
 {% endif %}

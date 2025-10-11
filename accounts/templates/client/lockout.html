@@ -1,5 +1,9 @@
 {% extends 'base_auth.html' %}
 {% block title %}Account Locked | Triple G BuildHub{% endblock %}
+
+{% block modal_messages %}
+    {% include 'client/_modal_messages.html' %}
+{% endblock %}
 {% block form_content %}
 <div class="custom-modal-overlay custom-visible" role="dialog" aria-modal="true">
   <div class="custom-modal-content">

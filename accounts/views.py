@@ -220,6 +220,10 @@ def client_login_view(request):
             
             if user is not None:
                 if user.is_active:
+                    # Clear any existing messages (like logout messages)
+                    storage = messages.get_messages(request)
+                    storage.used = True
+                    
                     login(request, user)
                     # The success message will be shown on the home page after redirect
                     messages.success(request, f"Welcome back, {user.first_name}!")
@@ -345,6 +349,10 @@ def admin_login_view(request):
                         # Set session expiry based on remember me
                         if not remember:
                             request.session.set_expiry(0)  # Session expires when browser closes
+                        
+                        # Clear any existing messages (like logout messages)
+                        storage = messages.get_messages(request)
+                        storage.used = True
                         
                         login(request, auth_user)
                         messages.success(request, f"Welcome back, {auth_user.get_full_name()}!")
@@ -533,6 +541,10 @@ def sitemanager_login_view(request):
                     
                     # Check if site manager is approved
                     if sitemanager_profile.approval_status == 'approved':
+                        # Clear any existing messages (like logout messages)
+                        storage = messages.get_messages(request)
+                        storage.used = True
+                        
                         # Login successful
                         login(request, auth_user)
                         messages.success(request, f'Welcome back, {auth_user.get_full_name()}!')

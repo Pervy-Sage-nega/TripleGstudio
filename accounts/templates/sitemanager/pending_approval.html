@@ -1,6 +1,10 @@
 {% extends "base_auth.html" %}
 {% load static %}
 
+{% block modal_messages %}
+    {% include 'admin/_modal_messages.html' %}
+{% endblock %}
+
 {% block title %}Account Pending Approval - Site Manager{% endblock %}
 
 {% block sidebar_content %}

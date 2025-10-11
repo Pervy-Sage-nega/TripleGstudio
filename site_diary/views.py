@@ -600,9 +600,62 @@ def project_detail(request, project_id):
         return redirect('site:dashboard')
 
 @login_required
+@require_site_manager_role
 def settings(request):
-    """User settings and preferences"""
-    return render(request, 'site_diary/settings.html')
+    """Site Manager settings and preferences"""
+    from accounts.models import SiteManagerProfile
+    from accounts.forms import ProfileUpdateForm
+    from django.contrib.auth.forms import PasswordChangeForm
+    
+    # Get or create site manager profile
+    try:
+        site_manager_profile = request.user.sitemanagerprofile
+    except SiteManagerProfile.DoesNotExist:
+        messages.error(request, 'Site Manager profile not found.')
+        return redirect('site:dashboard')
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'update_profile':
+            # Handle profile update
+            user = request.user
+            user.first_name = request.POST.get('firstName', '')
+            user.last_name = request.POST.get('lastName', '')
+            user.email = request.POST.get('email', '')
+            
+            # Update site manager profile fields
+            site_manager_profile.phone = request.POST.get('phone', '')
+            site_manager_profile.emergency_contact = request.POST.get('emergency_contact', '')
+            
+            # Handle profile picture upload
+            if 'profile_pic' in request.FILES:
+                site_manager_profile.profile_pic = request.FILES['profile_pic']
+            
+            try:
+                user.save()
+                site_manager_profile.save()
+                messages.success(request, 'Profile updated successfully!')
+            except Exception as e:
+                messages.error(request, f'Error updating profile: {str(e)}')
+        
+        elif action == 'change_password':
+            # Handle password change
+            password_form = PasswordChangeForm(request.user, request.POST)
+            if password_form.is_valid():
+                password_form.save()
+                messages.success(request, 'Password changed successfully!')
+            else:
+                for error in password_form.errors.values():
+                    messages.error(request, error[0])
+        
+        return redirect('site:settings')
+    
+    context = {
+        'user': request.user,
+        'site_manager_profile': site_manager_profile,
+    }
+    return render(request, 'site_diary/settings.html', context)
 
 @require_admin_role
 def adminclientproject(request):

@@ -1,8 +1,9 @@
 {% extends "site_diary/layout_format.html" %}
 {% load static %}
+{% load profile_tags %}
 
 {% block head %}
-    <title>Triple G BuildHub - Architect Settings</title>
+    <title>Triple G BuildHub - Site Manager Settings</title>
     <link rel="stylesheet" href="{% static 'css/sitecss/global-footer.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/settings.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/dashboard.css' %}">
@@ -17,7 +18,7 @@
         <div class="settings-sidebar">
             <div class="settings-title">
                 <i class="fas fa-cog"></i>
-                <span>Architect Settings</span>
+                <span>Site Manager Settings</span>
             </div>
             <ul class="settings-menu">
                 <li class="settings-menu-item active" data-section="account">
@@ -52,58 +53,77 @@
                     <p class="settings-section-desc">Manage your profile information and contact details</p>
                 </div>
 
-                <div class="success-message" id="accountSuccess">
-                    <i class="fas fa-check-circle"></i> Your account settings have been updated successfully.
-                </div>
+                <!-- Display Django Messages -->
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="success-message" style="display: block;">
+                            <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-triangle{% else %}info-circle{% endif %}"></i> 
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
 
-                <div class="profile-preview">
-                    <div class="profile-avatar">
-                        <img src="{% static 'images/arkiii.jpg' %}" alt="Logo" class="logo" id="profileImage">
+                <form method="post" enctype="multipart/form-data" id="profileForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_profile">
+                    
+                    <div class="profile-preview">
+                        <div class="profile-avatar">
+                            <img src="{% profile_image_url user %}" alt="Profile Picture" class="logo" id="profileImage">
+                        </div>
+                        <div class="profile-info">
+                            <div class="profile-name">{{ user.get_full_name|default:user.username }}</div>
+                            <div class="profile-email">{{ user.email }}</div>
+                            <div class="profile-role">Site Manager</div>
+                            <label for="avatar-upload" class="upload-btn">
+                                <i class="fas fa-camera"></i> Change Photo
+                            </label>
+                            <input type="file" name="profile_pic" id="avatar-upload" style="display: none;" accept="image/*">
+                        </div>
                     </div>
-                    <div class="profile-info">
-                        <div class="profile-name">John Doe</div>
-                        <div class="profile-email">johndoe@example.com</div>
-                        <div class="profile-role">Architect</div>
-                        <label for="avatar-upload" class="upload-btn">
-                            <i class="fas fa-camera"></i> Change Photo
-                        </label>
-                        <input type="file" id="avatar-upload" style="display: none;" accept="image/*">
-                    </div>
-                </div>
 
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="firstName" class="form-label">First Name</label>
-                        <input type="text" id="firstName" class="form-input" value="John" required>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="firstName" class="form-label">First Name</label>
+                            <input type="text" name="firstName" id="firstName" class="form-input" value="{{ user.first_name }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="lastName" class="form-label">Last Name</label>
+                            <input type="text" name="lastName" id="lastName" class="form-input" value="{{ user.last_name }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email" class="form-label">Email Address</label>
+                            <input type="email" name="email" id="email" class="form-input" value="{{ user.email }}" required>
+                            <div class="input-error" id="emailError">Please enter a valid email address.</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone" class="form-label">Phone Number</label>
+                            <input type="tel" name="phone" id="phone" class="form-input" value="{{ site_manager_profile.phone|default:'' }}" pattern="[\+]?[(]?[0-9]{1,3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}">
+                            <div class="input-error" id="phoneError">Please enter a valid phone number.</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="emergency_contact" class="form-label">Emergency Contact</label>
+                            <input type="text" name="emergency_contact" id="emergency_contact" class="form-input" value="{{ site_manager_profile.emergency_contact|default:'' }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="jobTitle" class="form-label">Job Title</label>
+                            <input type="text" id="jobTitle" class="form-input" value="Site Manager" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="department" class="form-label">Department</label>
+                            <input type="text" id="department" class="form-input" value="{{ site_manager_profile.department|default:'Site Management' }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="employee_id" class="form-label">Employee ID</label>
+                            <input type="text" id="employee_id" class="form-input" value="{{ site_manager_profile.employee_id|default:'Not Assigned' }}" readonly>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="lastName" class="form-label">Last Name</label>
-                        <input type="text" id="lastName" class="form-input" value="Doe" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="email" class="form-label">Email Address</label>
-                        <input type="email" id="email" class="form-input" value="johndoe@example.com" required>
-                        <div class="input-error" id="emailError">Please enter a valid email address.</div>
-                    </div>
-                    <div class="form-group">
-                        <label for="phone" class="form-label">Phone Number</label>
-                        <input type="tel" id="phone" class="form-input" value="+1 (555) 123-4567" pattern="[\+]?[(]?[0-9]{1,3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}" required>
-                        <div class="input-error" id="phoneError">Please enter a valid phone number.</div>
-                    </div>
-                    <div class="form-group">
-                        <label for="jobTitle" class="form-label">Job Title</label>
-                        <input type="text" id="jobTitle" class="form-input" value="Architect" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label for="department" class="form-label">Department</label>
-                        <input type="text" id="department" class="form-input" value="Design" readonly>
-                    </div>
-                </div>
 
-                <div class="action-buttons">
-                    <button class="btn btn-secondary" id="resetAccount">Cancel</button>
-                    <button class="btn btn-primary" id="saveAccount">Save Changes</button>
-                </div>
+                    <div class="action-buttons">
+                        <button type="button" class="btn btn-secondary" id="resetAccount">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="saveAccount">Save Changes</button>
+                    </div>
+                </form>
             </div>
 
             <!-- Notifications Section -->
@@ -186,31 +206,31 @@
                     <p class="settings-section-desc">Manage your password and account security settings</p>
                 </div>
 
-                <div class="success-message" id="securitySuccess">
-                    <i class="fas fa-check-circle"></i> Security settings have been updated successfully.
-                </div>
+                <form method="post" id="passwordForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="change_password">
 
-                <div class="form-group">
-                    <label for="currentPassword" class="form-label">Current Password</label>
-                    <input type="password" id="currentPassword" class="form-input" placeholder="Enter your current password" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="newPassword" class="form-label">New Password</label>
-                    <input type="password" id="newPassword" class="form-input" placeholder="Enter new password">
-                    <div class="password-strength">
-                        <div class="password-strength-bar" id="passwordStrength"></div>
+                    <div class="form-group">
+                        <label for="old_password" class="form-label">Current Password</label>
+                        <input type="password" name="old_password" id="old_password" class="form-input" placeholder="Enter your current password" required>
                     </div>
-                    <div class="password-requirements">
-                        Password must be at least 8 characters and include uppercase, lowercase, number, and special character
-                    </div>
-                </div>
 
-                <div class="form-group">
-                    <label for="confirmPassword" class="form-label">Confirm New Password</label>
-                    <input type="password" id="confirmPassword" class="form-input" placeholder="Confirm new password">
-                    <div class="input-error" id="passwordMatchError">Passwords do not match.</div>
-                </div>
+                    <div class="form-group">
+                        <label for="new_password1" class="form-label">New Password</label>
+                        <input type="password" name="new_password1" id="new_password1" class="form-input" placeholder="Enter new password" required>
+                        <div class="password-strength">
+                            <div class="password-strength-bar" id="passwordStrength"></div>
+                        </div>
+                        <div class="password-requirements">
+                            Password must be at least 8 characters and include uppercase, lowercase, number, and special character
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="new_password2" class="form-label">Confirm New Password</label>
+                        <input type="password" name="new_password2" id="new_password2" class="form-input" placeholder="Confirm new password" required>
+                        <div class="input-error" id="passwordMatchError">Passwords do not match.</div>
+                    </div>
 
                 <div class="toggle-container">
                     <div>
@@ -234,10 +254,11 @@
                     </label>
                 </div>
 
-                <div class="action-buttons">
-                    <button class="btn btn-secondary" id="resetSecurity">Cancel</button>
-                    <button class="btn btn-primary" id="saveSecurity">Update Password</button>
-                </div>
+                    <div class="action-buttons">
+                        <button type="button" class="btn btn-secondary" id="resetSecurity">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="saveSecurity">Update Password</button>
+                    </div>
+                </form>
             </div>
 
             <!-- Permissions Overview Section (New) -->
@@ -252,7 +273,21 @@
                         <i class="fas fa-id-badge"></i>
                         <div class="info-content">
                             <h4>Current Role</h4>
-                            <p>Architect</p>
+                            <p>Site Manager</p>
+                        </div>
+                    </div>
+                    <div class="info-box">
+                        <i class="fas fa-calendar-check"></i>
+                        <div class="info-content">
+                            <h4>Approval Status</h4>
+                            <p>{{ site_manager_profile.get_approval_status_display }}</p>
+                        </div>
+                    </div>
+                    <div class="info-box">
+                        <i class="fas fa-building"></i>
+                        <div class="info-content">
+                            <h4>Department</h4>
+                            <p>{{ site_manager_profile.department|default:'Site Management' }}</p>
                         </div>
                     </div>
                 </div>
@@ -270,27 +305,35 @@
                             <td><span class="permission-allowed"><i class="fas fa-check"></i> Allowed</span></td>
                         </tr>
                         <tr>
-                            <td>Edit Project Milestones</td>
+                            <td>Manage Site Diary</td>
+                            <td><span class="permission-allowed"><i class="fas fa-check"></i> Allowed</span></td>
+                        </tr>
+                        <tr>
+                            <td>View Project Reports</td>
+                            <td><span class="permission-allowed"><i class="fas fa-check"></i> Allowed</span></td>
+                        </tr>
+                        <tr>
+                            <td>Upload Site Photos</td>
+                            <td><span class="permission-allowed"><i class="fas fa-check"></i> Allowed</span></td>
+                        </tr>
+                        <tr>
+                            <td>Track Labor & Materials</td>
+                            <td><span class="permission-allowed"><i class="fas fa-check"></i> Allowed</span></td>
+                        </tr>
+                        <tr>
+                            <td>Manage Equipment Logs</td>
+                            <td><span class="permission-allowed"><i class="fas fa-check"></i> Allowed</span></td>
+                        </tr>
+                        <tr>
+                            <td>Export Site Data</td>
+                            <td><span class="permission-allowed"><i class="fas fa-check"></i> Allowed</span></td>
+                        </tr>
+                        <tr>
+                            <td>Admin Panel Access</td>
                             <td><span class="permission-denied"><i class="fas fa-times"></i> Not Allowed</span></td>
                         </tr>
                         <tr>
-                            <td>View Reports & Analytics</td>
-                            <td><span class="permission-allowed"><i class="fas fa-check"></i> Allowed</span></td>
-                        </tr>
-                        <tr>
-                            <td>Create Blog Posts</td>
-                            <td><span class="permission-allowed"><i class="fas fa-check"></i> Allowed</span></td>
-                        </tr>
-                        <tr>
-                            <td>Approve Client Requests</td>
-                            <td><span class="permission-denied"><i class="fas fa-times"></i> Not Allowed</span></td>
-                        </tr>
-                        <tr>
-                            <td>Upload Project Images</td>
-                            <td><span class="permission-allowed"><i class="fas fa-check"></i> Allowed</span></td>
-                        </tr>
-                        <tr>
-                            <td>Modify Budget Information</td>
+                            <td>User Management</td>
                             <td><span class="permission-denied"><i class="fas fa-times"></i> Not Allowed</span></td>
                         </tr>
                     </tbody>
@@ -360,6 +403,69 @@
 
     <script src="{% static 'js/sitejs/settings.js' %}"></script>
     <script src="{% static 'js/sitejs/mobile-btn.js' %}"></script>
+    
+    <script>
+        // Profile image preview
+        document.getElementById('avatar-upload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('profileImage').src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Auto-hide messages after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            const messages = document.querySelectorAll('.success-message');
+            messages.forEach(function(message) {
+                if (message.style.display === 'block') {
+                    setTimeout(function() {
+                        message.style.display = 'none';
+                    }, 5000);
+                }
+            });
+        });
+
+        // Password strength indicator
+        document.getElementById('new_password1').addEventListener('input', function(e) {
+            const password = e.target.value;
+            const strengthBar = document.getElementById('passwordStrength');
+            let strength = 0;
+            
+            if (password.length >= 8) strength++;
+            if (/[a-z]/.test(password)) strength++;
+            if (/[A-Z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            if (/[^A-Za-z0-9]/.test(password)) strength++;
+            
+            const percentage = (strength / 5) * 100;
+            strengthBar.style.width = percentage + '%';
+            
+            if (strength < 2) {
+                strengthBar.style.backgroundColor = '#ff4757';
+            } else if (strength < 4) {
+                strengthBar.style.backgroundColor = '#ffa502';
+            } else {
+                strengthBar.style.backgroundColor = '#2ed573';
+            }
+        });
+
+        // Password match validation
+        document.getElementById('new_password2').addEventListener('input', function(e) {
+            const password1 = document.getElementById('new_password1').value;
+            const password2 = e.target.value;
+            const errorDiv = document.getElementById('passwordMatchError');
+            
+            if (password2 && password1 !== password2) {
+                errorDiv.style.display = 'block';
+            } else {
+                errorDiv.style.display = 'none';
+            }
+        });
+    </script>
     {% include "site_diary/navtemplate/layoutfooter.html" %}
 {% endblock %}
 

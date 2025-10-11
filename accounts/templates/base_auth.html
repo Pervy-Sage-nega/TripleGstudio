@@ -11,8 +11,9 @@
     {% block extra_head %}{% endblock %}
 </head>
 <body>
-    {% include 'client/_modal_messages.html' %}
-    {% include 'admin/_modal_messages.html' %}
+    {% block modal_messages %}
+        <!-- Modal will be included by specific templates based on user type -->
+    {% endblock %}
     <div class="auth-container">
         <div class="auth-sidebar">
             <div class="sidebar-logo">
