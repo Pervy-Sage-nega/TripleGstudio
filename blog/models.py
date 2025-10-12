@@ -67,6 +67,7 @@ class BlogPost(models.Model):
     
     STATUS_CHOICES = [
         ('draft', 'Draft'),
+        ('pending', 'Pending Review'),
         ('published', 'Published'),
         ('archived', 'Archived'),
     ]

@@ -140,6 +140,7 @@
                         <label for="blogStatus">Status</label>
                         <select id="blogStatus" name="status" class="form-control">
                             <option value="draft" {% if not edit_blog or edit_blog.status == 'draft' %}selected{% endif %}>Draft</option>
+                            <option value="pending" {% if edit_blog.status == 'pending' %}selected{% endif %}>Pending Review</option>
                             <option value="published" {% if edit_blog.status == 'published' %}selected{% endif %}>Published</option>
                         </select>
                     </div>
@@ -275,8 +276,8 @@
                         <button type="button" id="saveDraftBtn" class="btn btn-secondary" onclick="saveDraft()">
                             <i class="fas fa-save"></i> Save as Draft
                         </button>
-                        <button type="submit" id="submitBtn" class="btn btn-primary">
-                            <i class="fas fa-paper-plane"></i> Create Blog Post
+                        <button type="button" id="submitBtn" class="btn btn-primary" onclick="submitForReview()">
+                            <i class="fas fa-paper-plane"></i> Submit for Review
                         </button>
                     </div>
                 </form>
@@ -341,6 +342,12 @@
         function saveDraft() {
             // Set status to draft and submit form
             document.getElementById('blogStatus').value = 'draft';
+            document.getElementById('blogForm').submit();
+        }
+
+        function submitForReview() {
+            // Set status to pending and submit form for admin review
+            document.getElementById('blogStatus').value = 'pending';
             document.getElementById('blogForm').submit();
         }
 
@@ -486,11 +493,12 @@
                     const galleryItem = document.createElement('div');
                     galleryItem.className = 'gallery-item';
                     
+                    const itemIndex = galleryPreview.children.length;
                     galleryItem.innerHTML = `
                         <img src="${e.target.result}" alt="Gallery image preview">
                         <div class="gallery-item-controls">
-                            <input type="text" placeholder="Caption" name="new_gallery_caption[]" onchange="updatePreviewGallery()">
-                            <input type="text" placeholder="Alt text" name="new_gallery_alt[]" onchange="updatePreviewGallery()">
+                            <input type="text" placeholder="Caption" name="new_gallery_caption[${itemIndex}]" onchange="updatePreviewGallery()">
+                            <input type="text" placeholder="Alt text" name="new_gallery_alt[${itemIndex}]" onchange="updatePreviewGallery()">
                             <button type="button" class="btn-remove-gallery" onclick="removeGalleryItem(this)">
                                 <i class="fas fa-trash"></i>
                             </button>

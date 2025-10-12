@@ -82,6 +82,58 @@ window.viewBlog = function(blogId) {
     blogPreviewModal.style.display = 'flex';
 };
 
+window.editBlog = function(blogId) {
+    // Redirect to the edit page for the blog post
+    window.location.href = `/diary/createblog/?edit=${blogId}`;
+};
+
+window.showAllTags = function(blogId, blogTitle) {
+    // Get the tags data for this blog
+    const tagsData = document.getElementById(`blogTags${blogId}`);
+    if (!tagsData) {
+        console.error('Tags data not found for blog ID:', blogId);
+        return;
+    }
+    
+    // Get the modal elements
+    const modal = document.getElementById('allTagsModal');
+    const titleElement = document.getElementById('tagsModalTitle');
+    const containerElement = document.getElementById('tagsModalContainer');
+    
+    if (!modal || !titleElement || !containerElement) {
+        console.error('Tags modal elements not found');
+        return;
+    }
+    
+    // Set the blog title
+    titleElement.textContent = `Tags for: ${blogTitle}`;
+    
+    // Copy all tags to the modal
+    containerElement.innerHTML = tagsData.innerHTML;
+    
+    // Show the modal
+    modal.style.display = 'flex';
+};
+
+window.closeAllTagsModal = function() {
+    const modal = document.getElementById('allTagsModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+};
+
+// Close tags modal when clicking outside
+document.addEventListener('DOMContentLoaded', function() {
+    const tagsModal = document.getElementById('allTagsModal');
+    if (tagsModal) {
+        tagsModal.addEventListener('click', function(e) {
+            if (e.target === tagsModal) {
+                closeAllTagsModal();
+            }
+        });
+    }
+});
+
 window.deleteBlog = function(blogId) {
     if (!confirm('Are you sure you want to delete this blog post? This action cannot be undone.')) {
         return;
