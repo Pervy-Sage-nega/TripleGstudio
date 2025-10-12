@@ -548,7 +548,8 @@
 }
 
 .btn-primary:hover {
-    background-color: var(--accent-color);
+    background-color: #2f5659;
+     color: white;
 }
 
 .btn-secondary {

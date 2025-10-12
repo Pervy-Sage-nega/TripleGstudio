@@ -76,11 +76,29 @@
   border-radius: 8px;
   overflow: hidden;
   box-shadow: var(--shadow);
-  transition: transform 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
 }
 
 .blog-card:hover {
   transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.blog-card[onclick] {
+  cursor: pointer;
+}
+
+.blog-card[onclick]:hover::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(60, 110, 113, 0.05);
+  pointer-events: none;
+  z-index: 1;
 }
 
 .blog-card-header {

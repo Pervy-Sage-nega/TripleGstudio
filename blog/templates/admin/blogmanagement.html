@@ -205,7 +205,7 @@
                 <!-- Grid View -->
                 <div class="grid-view" id="gridView" style="display: none;">
                     {% for blog in blog_posts %}
-                    <div class="blog-card" data-id="{{ blog.id }}">
+                    <div class="blog-card" data-id="{{ blog.id }}" onclick="viewBlog({{ blog.id }})" style="cursor: pointer;" title="Click to view blog preview">
                         <div class="blog-card-header">
                             <div class="blog-card-status status-{{ blog.status }}">{{ blog.get_status_display }}</div>
                             {% if blog.featured_image %}
@@ -228,7 +228,7 @@
                                 {% endfor %}
                             </div>
                         </div>
-                        <div class="blog-card-actions">
+                        <div class="blog-card-actions" onclick="event.stopPropagation()">
                             <button class="btn btn-primary" onclick="viewBlog({{ blog.id }})"><i class="fas fa-eye"></i> View</button>
                             <button class="btn btn-success" onclick="editBlog({{ blog.id }})"><i class="fas fa-edit"></i> Edit</button>
                             <button class="btn btn-danger" onclick="deleteBlog({{ blog.id }})"><i class="fas fa-trash"></i> Delete</button>
