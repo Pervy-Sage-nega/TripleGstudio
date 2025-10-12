@@ -1,9 +1,9 @@
 {% load static %}
 <!-- Admin Navigation Bar -->
 <nav class="navbar">
-    <div class="logo-container">
+    <div class="logo-container" onclick="window.location.href='{% url 'admin_side:admin_home' %}'">
         <img class="logo" src="{% static 'images/logostick.png' %}" alt="Logo">
-        <div class="logo1">TRIPLE<a href="#">G</a></div>
+        <div class="logo1">TRIPLE<a>G.</a></div>
     </div>
     <ul class="nav-links" id="navLinks">
         <li><a href="{% url 'admin_side:admin_home' %}">Dashboard</a></li>
