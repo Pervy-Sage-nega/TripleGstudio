@@ -1,50 +1,62 @@
 /**
- * Triple G BuildHub Loading Screen - Enhanced Version
- * A robust loading screen component with Lottie animation, progress tracking,
- * and comprehensive error handling
+ * Triple G BuildHub Loading Screen - Real Functional Loader
+ * Tracks actual resource loading progress including images, CSS, JS, and fonts
  */
 class TripleGLoader {
     constructor() {
         this.progress = 0;
-        this.minLoadTime = 3000; // Minimum display time (ms)
-        this.maxLoadTime = 8000; // Maximum time before force complete
+        this.minLoadTime = 1500; // Minimum display time (ms)
+        this.maxLoadTime = 10000; // Maximum time before force complete
         this.loaderContainer = null;
         this.progressBar = null;
         this.startTime = null;
         this.initiated = false;
-        this.lottieInstance = null;
-        this.lottieContainer = null;
-        // Lottie removed: fallback to spinner
         this.loadingMessage = null;
-        this.pageLoaded = false;
-        this.lottieLoaded = true;
-        this.fallbackUsed = true;
-        this.retryCount = 0;
-        this.maxRetries = 2;
+        
+        // Real loading tracking
+        this.totalResources = 0;
+        this.loadedResources = 0;
+        this.resourceTypes = {
+            images: { loaded: 0, total: 0 },
+            stylesheets: { loaded: 0, total: 0 },
+            scripts: { loaded: 0, total: 0 },
+            fonts: { loaded: 0, total: 0 }
+        };
+        
+        // Loading states
+        this.domReady = false;
+        this.resourcesLoaded = false;
+        this.fontsLoaded = false;
+        
+        // Performance tracking
+        this.loadingStages = {
+            'DOM Ready': false,
+            'Images Loaded': false,
+            'Stylesheets Loaded': false,
+            'Scripts Loaded': false,
+            'Fonts Loaded': false
+        };
     }
 
     /**
-     * Initialize the loading screen
+     * Initialize the real loading screen
      */
     init() {
         if (this.initiated) return;
         this.initiated = true;
         this.startTime = performance.now();
 
+        console.log(' TripleG Loader: Starting real resource tracking...');
+        
         this.createLoaderUI();
         this.setupEventListeners();
-        
-        // Start both Lottie and progress systems in parallel
-        // Lottie removed
-        this.useFallbackAnimation();
-        this.startProgressSystem();
+        this.startResourceTracking();
+        this.createFallbackAnimation();
         
         // Safety timeout in case something hangs
         this.safetyTimeout = setTimeout(() => {
-            if (!this.pageLoaded) {
-                console.warn('Loader timeout reached - forcing completion');
-                this.completeLoading();
-            }
+            console.warn(' Loader timeout reached - forcing completion');
+            this.completeLoading();
         }, this.maxLoadTime);
     }
 
@@ -123,84 +135,292 @@ class TripleGLoader {
         this.loadingMessage.textContent = 'Loading creative assets...';
         this.loaderContainer.appendChild(this.loadingMessage);
         
+        // Debug console (for development)
+        this.createDebugConsole();
+        
         // Lock body scroll
         document.body.style.overflow = 'hidden';
     }
 
     /**
-     * Set up event listeners
+     * Set up comprehensive event listeners for real loading tracking
      */
     setupEventListeners() {
+        // DOM Content Loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            this.domReady = true;
+            this.loadingStages['DOM Ready'] = true;
+            this.updateLoadingMessage('DOM Ready - Scanning resources...');
+            console.log(' DOM Ready');
+            this.scanAndTrackResources();
+        });
+
+        // Window Load (all resources loaded)
         window.addEventListener('load', () => {
-            this.pageLoaded = true;
+            this.resourcesLoaded = true;
+            this.updateLoadingMessage('All resources loaded!');
+            console.log(' Window Load Event');
             this.checkCompletion();
         });
 
-        document.addEventListener('DOMContentLoaded', () => {
-            this.updateLoadingMessage('Preparing experience...');
-        });
+        // Track font loading
+        if (document.fonts) {
+            document.fonts.ready.then(() => {
+                this.fontsLoaded = true;
+                this.loadingStages['Fonts Loaded'] = true;
+                this.resourceTypes.fonts.loaded = this.resourceTypes.fonts.total;
+                console.log(' Fonts Loaded');
+                this.updateProgress();
+            });
+        } else {
+            // Fallback for browsers without font loading API
+            setTimeout(() => {
+                this.fontsLoaded = true;
+                this.loadingStages['Fonts Loaded'] = true;
+            }, 1000);
+        }
     }
 
     /**
-     * Load Lottie animation with fallback handling
+     * Create animated spinner
      */
-
-    /**
-     * Load Lottie library
-     */
-
-    /**
-     * Initialize Lottie animation with retry logic
-     */
-
-    /**
-     * Fallback animation when Lottie fails
-     */
-    useFallbackAnimation() {
-        this.fallbackUsed = true;
+    createFallbackAnimation() {
         this.lottieContainer.innerHTML = `
             <div class="fallback-animation">
                 <div class="spinner"></div>
+                <div class="loading-dots">
+                    <span></span><span></span><span></span>
+                </div>
             </div>
         `;
-        this.updateLoadingMessage('Loading content...');
-        this.lottieLoaded = true; // Mark as loaded to continue progress
-        this.checkCompletion();
     }
 
     /**
-     * Start the progress tracking system
+     * Start real resource tracking
      */
-    startProgressSystem() {
-        this.updateProgress(0);
+    startResourceTracking() {
+        this.updateProgress();
         
-        // Simulate progress updates
+        // Update progress every 100ms
         this.progressInterval = setInterval(() => {
-            const elapsed = performance.now() - this.startTime;
-            const targetProgress = Math.min(0.9, elapsed / (this.minLoadTime * 0.8));
-            
-            if (this.progress < targetProgress) {
-                this.updateProgress(this.progress + 0.01);
-            }
-            
-            // Check if we should complete based on load state
+            this.updateProgress();
             this.checkCompletion();
-        }, 50);
+        }, 100);
     }
 
     /**
-     * Update progress bar and related UI
+     * Scan and track all page resources
      */
-    updateProgress(value) {
-        this.progress = Math.min(1, Math.max(0, value));
+    scanAndTrackResources() {
+        // Track images
+        this.trackImages();
+        // Track stylesheets
+        this.trackStylesheets();
+        // Track scripts
+        this.trackScripts();
+        // Track fonts
+        this.trackFonts();
+        
+        console.log(' Resource Summary:', this.resourceTypes);
+    }
+
+    /**
+     * Track image loading
+     */
+    trackImages() {
+        const images = document.querySelectorAll('img');
+        this.resourceTypes.images.total = images.length;
+        
+        if (images.length === 0) {
+            this.loadingStages['Images Loaded'] = true;
+            return;
+        }
+        
+        images.forEach((img, index) => {
+            if (img.complete) {
+                this.resourceTypes.images.loaded++;
+            } else {
+                img.addEventListener('load', () => {
+                    this.resourceTypes.images.loaded++;
+                    console.log(` Image ${index + 1}/${images.length} loaded`);
+                    if (this.resourceTypes.images.loaded === this.resourceTypes.images.total) {
+                        this.loadingStages['Images Loaded'] = true;
+                        console.log(' All Images Loaded');
+                    }
+                });
+                img.addEventListener('error', () => {
+                    this.resourceTypes.images.loaded++; // Count errors as "loaded"
+                    console.warn(` Image ${index + 1} failed to load`);
+                });
+            }
+        });
+        
+        if (this.resourceTypes.images.loaded === this.resourceTypes.images.total) {
+            this.loadingStages['Images Loaded'] = true;
+        }
+    }
+
+    /**
+     * Track stylesheet loading
+     */
+    trackStylesheets() {
+        const stylesheets = document.querySelectorAll('link[rel="stylesheet"]');
+        this.resourceTypes.stylesheets.total = stylesheets.length;
+        
+        if (stylesheets.length === 0) {
+            this.loadingStages['Stylesheets Loaded'] = true;
+            return;
+        }
+        
+        stylesheets.forEach((link, index) => {
+            if (link.sheet) {
+                this.resourceTypes.stylesheets.loaded++;
+            } else {
+                link.addEventListener('load', () => {
+                    this.resourceTypes.stylesheets.loaded++;
+                    console.log(` Stylesheet ${index + 1}/${stylesheets.length} loaded`);
+                    if (this.resourceTypes.stylesheets.loaded === this.resourceTypes.stylesheets.total) {
+                        this.loadingStages['Stylesheets Loaded'] = true;
+                        console.log(' All Stylesheets Loaded');
+                    }
+                });
+                link.addEventListener('error', () => {
+                    this.resourceTypes.stylesheets.loaded++;
+                    console.warn(` Stylesheet ${index + 1} failed to load`);
+                });
+            }
+        });
+        
+        if (this.resourceTypes.stylesheets.loaded === this.resourceTypes.stylesheets.total) {
+            this.loadingStages['Stylesheets Loaded'] = true;
+        }
+    }
+
+    /**
+     * Track script loading
+     */
+    trackScripts() {
+        const scripts = document.querySelectorAll('script[src]');
+        this.resourceTypes.scripts.total = scripts.length;
+        
+        if (scripts.length === 0) {
+            this.loadingStages['Scripts Loaded'] = true;
+            return;
+        }
+        
+        scripts.forEach((script, index) => {
+            if (script.readyState === 'loaded' || script.readyState === 'complete') {
+                this.resourceTypes.scripts.loaded++;
+            } else {
+                script.addEventListener('load', () => {
+                    this.resourceTypes.scripts.loaded++;
+                    console.log(` Script ${index + 1}/${scripts.length} loaded`);
+                    if (this.resourceTypes.scripts.loaded === this.resourceTypes.scripts.total) {
+                        this.loadingStages['Scripts Loaded'] = true;
+                        console.log(' All Scripts Loaded');
+                    }
+                });
+                script.addEventListener('error', () => {
+                    this.resourceTypes.scripts.loaded++;
+                    console.warn(` Script ${index + 1} failed to load`);
+                });
+            }
+        });
+        
+        if (this.resourceTypes.scripts.loaded === this.resourceTypes.scripts.total) {
+            this.loadingStages['Scripts Loaded'] = true;
+        }
+    }
+
+    /**
+     * Track font loading
+     */
+    trackFonts() {
+        // Count Google Fonts and other web fonts
+        const fontLinks = document.querySelectorAll('link[href*="fonts.googleapis.com"], link[href*="fonts.gstatic.com"]');
+        this.resourceTypes.fonts.total = Math.max(1, fontLinks.length); // At least 1 for system fonts
+        
+        if (fontLinks.length === 0) {
+            this.resourceTypes.fonts.loaded = 1;
+            this.loadingStages['Fonts Loaded'] = true;
+        }
+    }
+
+    /**
+     * Calculate and update real progress based on loaded resources
+     */
+    updateProgress() {
+        // Calculate total progress based on different resource types
+        const weights = {
+            dom: 0.2,        // 20% for DOM ready
+            images: 0.3,     // 30% for images
+            stylesheets: 0.2, // 20% for CSS
+            scripts: 0.2,    // 20% for JS
+            fonts: 0.1       // 10% for fonts
+        };
+        
+        let totalProgress = 0;
+        
+        // DOM Ready
+        if (this.domReady) {
+            totalProgress += weights.dom;
+        }
+        
+        // Images
+        if (this.resourceTypes.images.total > 0) {
+            totalProgress += weights.images * (this.resourceTypes.images.loaded / this.resourceTypes.images.total);
+        } else {
+            totalProgress += weights.images; // No images to load
+        }
+        
+        // Stylesheets
+        if (this.resourceTypes.stylesheets.total > 0) {
+            totalProgress += weights.stylesheets * (this.resourceTypes.stylesheets.loaded / this.resourceTypes.stylesheets.total);
+        } else {
+            totalProgress += weights.stylesheets;
+        }
+        
+        // Scripts
+        if (this.resourceTypes.scripts.total > 0) {
+            totalProgress += weights.scripts * (this.resourceTypes.scripts.loaded / this.resourceTypes.scripts.total);
+        } else {
+            totalProgress += weights.scripts;
+        }
+        
+        // Fonts
+        if (this.resourceTypes.fonts.total > 0) {
+            totalProgress += weights.fonts * (this.resourceTypes.fonts.loaded / this.resourceTypes.fonts.total);
+        } else {
+            totalProgress += weights.fonts;
+        }
+        
+        this.progress = Math.min(1, Math.max(0, totalProgress));
         this.progressBar.style.width = `${this.progress * 100}%`;
         
-        // Update loading message based on progress
-        if (this.progress < 0.3) {
-            this.updateLoadingMessage('Initializing...');
-        } else if (this.progress < 0.6) {
-            this.updateLoadingMessage('Loading assets...');
-        } else if (this.progress < 0.9) {
+        // Update loading message based on current stage
+        this.updateLoadingMessageByStage();
+        
+        // Log progress for debugging
+        if (Math.floor(this.progress * 100) % 10 === 0) {
+            console.log(` Loading Progress: ${Math.floor(this.progress * 100)}%`);
+        }
+    }
+
+    /**
+     * Update loading message based on current loading stage
+     */
+    updateLoadingMessageByStage() {
+        if (!this.domReady) {
+            this.updateLoadingMessage('Preparing page structure...');
+        } else if (!this.loadingStages['Stylesheets Loaded']) {
+            this.updateLoadingMessage(`Loading styles... (${this.resourceTypes.stylesheets.loaded}/${this.resourceTypes.stylesheets.total})`);
+        } else if (!this.loadingStages['Images Loaded']) {
+            this.updateLoadingMessage(`Loading images... (${this.resourceTypes.images.loaded}/${this.resourceTypes.images.total})`);
+        } else if (!this.loadingStages['Scripts Loaded']) {
+            this.updateLoadingMessage(`Loading scripts... (${this.resourceTypes.scripts.loaded}/${this.resourceTypes.scripts.total})`);
+        } else if (!this.loadingStages['Fonts Loaded']) {
+            this.updateLoadingMessage('Loading fonts...');
+        } else {
             this.updateLoadingMessage('Finalizing...');
         }
     }
@@ -215,17 +435,29 @@ class TripleGLoader {
     }
 
     /**
-     * Check if loading should complete
+     * Check if loading should complete based on real resource loading
      */
     checkCompletion() {
         const elapsed = performance.now() - this.startTime;
         const minTimeReached = elapsed >= this.minLoadTime;
-        const resourcesReady = this.pageLoaded && this.lottieLoaded;
         
-        if (minTimeReached && resourcesReady) {
+        // Check if all critical resources are loaded
+        const allStagesComplete = Object.values(this.loadingStages).every(stage => stage === true);
+        const resourcesReady = this.resourcesLoaded || allStagesComplete;
+        
+        // Complete if minimum time reached AND resources are ready
+        if (minTimeReached && resourcesReady && this.progress >= 0.95) {
+            console.log(' Loading Complete! All resources loaded.');
             this.completeLoading();
-        } else if (this.progress >= 0.99) {
-            // Emergency completion if progress somehow reaches end
+        }
+        // Emergency completion if taking too long
+        else if (elapsed >= this.maxLoadTime) {
+            console.warn(' Force completing due to timeout');
+            this.completeLoading();
+        }
+        // Complete if progress is essentially done
+        else if (this.progress >= 0.99 && minTimeReached) {
+            console.log(' Loading Complete! Progress reached 99%');
             this.completeLoading();
         }
     }
@@ -235,10 +467,18 @@ class TripleGLoader {
      */
     completeLoading() {
         clearInterval(this.progressInterval);
+        clearInterval(this.debugInterval);
         clearTimeout(this.safetyTimeout);
         
         // Quickly fill any remaining progress
-        this.updateProgress(1);
+        this.progress = 1;
+        this.progressBar.style.width = '100%';
+        this.updateLoadingMessage('Complete!');
+        
+        // Clean up debug console
+        if (this.debugConsole) {
+            this.debugConsole.remove();
+        }
         
         // Hide the loader
         setTimeout(() => {
@@ -269,11 +509,59 @@ class TripleGLoader {
     }
 
     /**
+     * Create debug console for development
+     */
+    createDebugConsole() {
+        // Only show debug in development (check for localhost or specific flag)
+        const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.tripleGDebug;
+        
+        if (!isDev) return;
+        
+        this.debugConsole = document.createElement('div');
+        this.debugConsole.className = 'loader-debug active';
+        this.debugConsole.innerHTML = `
+            <div><strong>TripleG Loader Debug</strong></div>
+            <div id="debug-progress">Progress: 0%</div>
+            <div id="debug-stage">Stage: Initializing</div>
+            <div id="debug-resources">Resources: 0/0</div>
+            <div id="debug-time">Time: 0ms</div>
+        `;
+        document.body.appendChild(this.debugConsole);
+        
+        // Update debug info every 100ms
+        this.debugInterval = setInterval(() => {
+            this.updateDebugInfo();
+        }, 100);
+    }
+    
+    /**
+     * Update debug console information
+     */
+    updateDebugInfo() {
+        if (!this.debugConsole) return;
+        
+        const elapsed = performance.now() - this.startTime;
+        const totalResources = Object.values(this.resourceTypes).reduce((sum, type) => sum + type.total, 0);
+        const loadedResources = Object.values(this.resourceTypes).reduce((sum, type) => sum + type.loaded, 0);
+        
+        const currentStage = Object.keys(this.loadingStages).find(stage => !this.loadingStages[stage]) || 'Complete';
+        
+        document.getElementById('debug-progress').textContent = `Progress: ${Math.floor(this.progress * 100)}%`;
+        document.getElementById('debug-stage').textContent = `Stage: ${currentStage}`;
+        document.getElementById('debug-resources').textContent = `Resources: ${loadedResources}/${totalResources}`;
+        document.getElementById('debug-time').textContent = `Time: ${Math.floor(elapsed)}ms`;
+    }
+
+    /**
      * Force hide the loader in emergency situations
      */
     forceHide() {
         clearInterval(this.progressInterval);
+        clearInterval(this.debugInterval);
         clearTimeout(this.safetyTimeout);
+        if (this.debugConsole) {
+            this.debugConsole.remove();
+        }
         this.hideLoader();
     }
 }

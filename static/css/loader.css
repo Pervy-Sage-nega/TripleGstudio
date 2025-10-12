@@ -22,6 +22,8 @@
 .tripleG-loader-hidden {
     opacity: 0;
     pointer-events: none;
+    transform: scale(0.95);
+    transition: opacity 0.6s ease, transform 0.6s ease;
 }
 
 /* Animated Background */
@@ -176,10 +178,12 @@
 .tripleG-loading-message {
     font-family: 'Poppins', sans-serif;
     font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(255, 255, 255, 0.8);
     margin-top: 15px;
     text-align: center;
     animation: fadeInOut 2s infinite alternate;
+    min-height: 20px;
+    transition: all 0.3s ease;
 }
 
 @keyframes fadeInOut {
@@ -228,4 +232,157 @@
     .tripleG-progress-container {
         width: 220px;
     }
+}
+
+/* Enhanced Fallback Animation */
+.fallback-animation {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+}
+
+/* Spinner Animation */
+.spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid rgba(255, 113, 32, 0.2);
+    border-top: 4px solid #FF7120;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+    box-shadow: 0 0 20px rgba(255, 113, 32, 0.3);
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Loading Dots Animation */
+.loading-dots {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.loading-dots span {
+    width: 8px;
+    height: 8px;
+    background-color: #FF7120;
+    border-radius: 50%;
+    animation: loadingDots 1.4s infinite ease-in-out both;
+    box-shadow: 0 0 10px rgba(255, 113, 32, 0.5);
+}
+
+.loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+.loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+.loading-dots span:nth-child(3) { animation-delay: 0s; }
+
+@keyframes loadingDots {
+    0%, 80%, 100% {
+        transform: scale(0.8);
+        opacity: 0.5;
+    }
+    40% {
+        transform: scale(1.2);
+        opacity: 1;
+    }
+}
+
+/* Enhanced Progress Bar with Real-time Updates */
+.tripleG-progress-bar {
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 15px rgba(255, 113, 32, 0.3);
+}
+
+.tripleG-progress-bar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.4) 50%,
+        transparent 100%
+    );
+    animation: progressPulse 2s infinite;
+}
+
+@keyframes progressPulse {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* Debug Console Styles (for development) */
+.loader-debug {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    font-family: monospace;
+    font-size: 12px;
+    z-index: 10000;
+    max-width: 300px;
+    display: none; /* Hidden by default */
+}
+
+.loader-debug.active {
+    display: block;
+}
+
+/* Page reveal animation after loader completes */
+body.page-loaded {
+    animation: pageReveal 0.8s ease-out;
+}
+
+@keyframes pageReveal {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Enhanced progress bar glow effect */
+.tripleG-progress-bar {
+    box-shadow: 0 0 20px rgba(255, 113, 32, 0.4);
+    transition: box-shadow 0.3s ease;
+}
+
+/* Resource loading indicators */
+.resource-indicator {
+    position: absolute;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 2;
+}
+
+.resource-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+}
+
+.resource-dot.loaded {
+    background: #FF7120;
+    box-shadow: 0 0 8px rgba(255, 113, 32, 0.6);
+    transform: scale(1.2);
 }
