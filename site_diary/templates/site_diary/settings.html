@@ -4,9 +4,38 @@
 
 {% block head %}
     <title>Triple G BuildHub - Site Manager Settings</title>
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <link rel="stylesheet" href="{% static 'css/sitecss/global-footer.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/settings.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/dashboard.css' %}">
+    
+    <style>
+        /* Ensure FontAwesome icons are visible in buttons */
+        .btn i {
+            margin-right: 8px;
+            font-size: 14px;
+            display: inline-block;
+            width: auto;
+            text-align: center;
+        }
+        
+        .backup-btn i {
+            margin-right: 5px;
+            font-size: 12px;
+        }
+        
+        /* Fix any potential icon hiding issues */
+        .fas, .fa {
+            font-family: "Font Awesome 6 Free" !important;
+            font-weight: 900 !important;
+            font-style: normal !important;
+            display: inline-block !important;
+        }
+    </style>
+  
    
 {% endblock %}
 
@@ -41,6 +70,10 @@
                     <i class="fas fa-database"></i>
                     <span>Backup & Data</span>
                 </li>
+                <li class="settings-menu-item" data-section="logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </li>
             </ul>
         </div>
 
@@ -63,13 +96,17 @@
                     {% endfor %}
                 {% endif %}
 
-                <form method="post" enctype="multipart/form-data" id="profileForm">
+                <form method="post" action="{% url 'site_diary:settings' %}" enctype="multipart/form-data" id="profileForm">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="update_profile">
                     
                     <div class="profile-preview">
                         <div class="profile-avatar">
-                            <img src="{% profile_image_url user %}" alt="Profile Picture" class="logo" id="profileImage">
+                            {% if site_manager_profile.profile_pic %}
+                                <img src="{{ site_manager_profile.profile_pic.url }}" alt="Profile Picture" class="logo" id="profileImage">
+                            {% else %}
+                                <img src="{% static 'images/default-profile.png' %}" alt="Default Profile Picture" class="logo" id="profileImage">
+                            {% endif %}
                         </div>
                         <div class="profile-info">
                             <div class="profile-name">{{ user.get_full_name|default:user.username }}</div>
@@ -120,8 +157,12 @@
                     </div>
 
                     <div class="action-buttons">
-                        <button type="button" class="btn btn-secondary" id="resetAccount">Cancel</button>
-                        <button type="submit" class="btn btn-primary" id="saveAccount">Save Changes</button>
+                        <button type="button" class="btn btn-secondary" id="resetAccount">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="saveAccount">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
                     </div>
                 </form>
             </div>
@@ -137,66 +178,75 @@
                     <i class="fas fa-check-circle"></i> Notification settings have been updated successfully.
                 </div>
 
-                <div class="toggle-container">
-                    <div>
-                        <div class="toggle-label">Receive Daily Log Alerts</div>
-                        <div class="toggle-description">Get notified when new daily logs are submitted or require approval</div>
-                    </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox" checked>
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
+                <form method="post" id="notificationsForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_notifications">
 
-                <div class="toggle-container">
-                    <div>
-                        <div class="toggle-label">Project Milestone Updates</div>
-                        <div class="toggle-description">Receive notifications when project milestones are updated or completed</div>
+                    <div class="toggle-container">
+                        <div>
+                            <div class="toggle-label">Receive Daily Log Alerts</div>
+                            <div class="toggle-description">Get notified when new daily logs are submitted or require approval</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="daily_log_alerts" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
                     </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox" checked>
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
 
-                <div class="toggle-container">
-                    <div>
-                        <div class="toggle-label">Report Export Confirmations</div>
-                        <div class="toggle-description">Get notified when reports are successfully generated and exported</div>
+                    <div class="toggle-container">
+                        <div>
+                            <div class="toggle-label">Project Milestone Updates</div>
+                            <div class="toggle-description">Receive notifications when project milestones are updated or completed</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="milestone_updates" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
                     </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
 
-                <div class="toggle-container">
-                    <div>
-                        <div class="toggle-label">Weekly Site Summary</div>
-                        <div class="toggle-description">Receive a weekly summary of all site activities</div>
+                    <div class="toggle-container">
+                        <div>
+                            <div class="toggle-label">Report Export Confirmations</div>
+                            <div class="toggle-description">Get notified when reports are successfully generated and exported</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="report_confirmations">
+                            <span class="toggle-slider"></span>
+                        </label>
                     </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox" checked>
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
 
-                <div class="notification-level">
-                    <div class="notification-level-info">
-                        <div class="notification-level-title">Notification Delivery</div>
-                        <div class="notification-level-desc">Choose how you want to receive notifications</div>
+                    <div class="toggle-container">
+                        <div>
+                            <div class="toggle-label">Weekly Site Summary</div>
+                            <div class="toggle-description">Receive a weekly summary of all site activities</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="weekly_summary" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
                     </div>
-                    <select class="form-select" style="width: 140px;">
-                        <option value="email">Email Only</option>
-                        <option value="in-app" selected>In-App Only</option>
-                        <option value="both">Both</option>
-                    </select>
-                </div>
 
-                <div class="action-buttons">
-                    <button class="btn btn-secondary" id="resetNotifications">Cancel</button>
-                    <button class="btn btn-primary" id="saveNotifications">Save Preferences</button>
-                </div>
+                    <div class="notification-level">
+                        <div class="notification-level-info">
+                            <div class="notification-level-title">Notification Delivery</div>
+                            <div class="notification-level-desc">Choose how you want to receive notifications</div>
+                        </div>
+                        <select name="notification_delivery" class="form-select" style="width: 140px;">
+                            <option value="email">Email Only</option>
+                            <option value="in-app" selected>In-App Only</option>
+                            <option value="both">Both</option>
+                        </select>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button type="button" class="btn btn-secondary" id="resetNotifications">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="saveNotifications">
+                            <i class="fas fa-bell"></i> Save Preferences
+                        </button>
+                    </div>
+                </form>
             </div>
 
             <!-- Password & Security Section -->
@@ -255,8 +305,12 @@
                 </div>
 
                     <div class="action-buttons">
-                        <button type="button" class="btn btn-secondary" id="resetSecurity">Cancel</button>
-                        <button type="submit" class="btn btn-primary" id="saveSecurity">Update Password</button>
+                        <button type="button" class="btn btn-secondary" id="resetSecurity">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="saveSecurity">
+                            <i class="fas fa-key"></i> Update Password
+                        </button>
                     </div>
                 </form>
             </div>
@@ -359,11 +413,16 @@
                 <div class="backup-item">
                     <div class="backup-info">
                         <h4>Export Project Data</h4>
-                        <p>Download your project data in CSV or PDF format</p>
+                        <p>Download your project data in CSV format</p>
                     </div>
                     <div class="backup-actions">
-                        <button class="backup-btn backup-btn-download" id="exportCSV">CSV</button>
-                        <button class="backup-btn backup-btn-download" id="exportPDF">PDF</button>
+                        <form method="post" style="display: inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="export_csv">
+                            <button type="submit" class="backup-btn backup-btn-download" id="exportCSV">
+                                <i class="fas fa-file-csv"></i> CSV
+                            </button>
+                        </form>
                     </div>
                 </div>
 
@@ -373,29 +432,118 @@
                         <p>Download all your diary entries and reports</p>
                     </div>
                     <div class="backup-actions">
-                        <button class="backup-btn backup-btn-download" id="exportDiary">Export</button>
+                        <form method="post" style="display: inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="export_diary">
+                            <button type="submit" class="backup-btn backup-btn-download" id="exportDiary">
+                                <i class="fas fa-download"></i> Export
+                            </button>
+                        </form>
                     </div>
                 </div>
 
-                <div class="toggle-container">
-                    <div>
-                        <div class="toggle-label">Automatic Local Backup</div>
-                        <div class="toggle-description">Keep a backup of your work on your device</div>
+                <form method="post" id="backupForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_backup">
+
+                    <div class="toggle-container">
+                        <div>
+                            <div class="toggle-label">Automatic Local Backup</div>
+                            <div class="toggle-description">Keep a backup of your work on your device</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="auto_backup" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
                     </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox" checked>
-                        <span class="toggle-slider"></span>
-                    </label>
+
+                    <div class="form-group">
+                        <label for="backupFrequency" class="form-label">Local Backup Frequency</label>
+                        <select name="backup_frequency" id="backupFrequency" class="form-select">
+                            <option value="daily" selected>Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="manual">Manual Only</option>
+                        </select>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button type="button" class="btn btn-secondary" id="resetBackup">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="saveBackup">
+                            <i class="fas fa-database"></i> Save Settings
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Logout Section -->
+            <div class="settings-section" id="logout">
+                <div class="settings-header">
+                    <h2 class="settings-section-title">Site Manager Logout</h2>
+                    <p class="settings-section-desc">Securely log out from your site manager account</p>
                 </div>
 
-                <div class="form-group">
-                    <label for="backupFrequency" class="form-label">Local Backup Frequency</label>
-                    <select id="backupFrequency" class="form-select">
-                        <option value="daily" selected>Daily</option>
-                        <option value="weekly">Weekly</option>
-                        <option value="monthly">Monthly</option>
-                        <option value="manual">Manual Only</option>
-                    </select>
+                <!-- Session Information -->
+                <div class="session-info">
+                    <div class="info-box">
+                        <i class="fas fa-user-circle"></i>
+                        <div class="info-content">
+                            <h4>Current Session</h4>
+                            <p><strong>Site Manager:</strong> {{ user.get_full_name|default:user.username }}</p>
+                            <p><strong>Role:</strong> {{ site_manager_profile.get_admin_role_display|default:"Site Manager" }}</p>
+                            <p><strong>Last Login:</strong> {{ user.last_login|date:"M d, Y H:i" }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Security Notice -->
+                <div class="security-notice">
+                    <div class="info-box warning">
+                        <i class="fas fa-shield-alt"></i>
+                        <div class="info-content">
+                            <h4>Security Information</h4>
+                            <p>When you logout, the following actions will occur:</p>
+                            <ul class="security-list">
+                                <li><i class="fas fa-times-circle"></i> End your current site manager session</li>
+                                <li><i class="fas fa-trash-alt"></i> Clear all cached site data</li>
+                                <li><i class="fas fa-lock"></i> Prevent access to site manager pages</li>
+                                <li><i class="fas fa-sign-in-alt"></i> Redirect to site manager login page</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Logout Confirmation -->
+                <div class="logout-confirmation">
+                    <div class="toggle-container">
+                        <div>
+                            <div class="toggle-label">Clear Browser Data</div>
+                            <div class="toggle-description">Also clear saved form data and temporary files from browser</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="clearBrowserData" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <form method="post" action="{% url 'site_diary:site_manager_logout' %}" id="logoutForm">
+                        {% csrf_token %}
+                        <input type="hidden" name="clear_browser_data" id="clearBrowserDataValue" value="on">
+                        <button type="submit" class="btn btn-danger logout-btn" data-action="logout">
+                            <i class="fas fa-sign-out-alt"></i> Logout from Site Manager Panel
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Security Note -->
+                <div class="security-note">
+                    <i class="fas fa-info-circle"></i>
+                    <span>For security reasons, always log out when finished with site management tasks, especially on shared computers.</span>
                 </div>
             </div>
         </div>
@@ -405,14 +553,55 @@
     <script src="{% static 'js/sitejs/mobile-btn.js' %}"></script>
     
     <script>
-        // Profile image preview
+        // Profile image preview with validation
         document.getElementById('avatar-upload').addEventListener('change', function(e) {
             const file = e.target.files[0];
+            const profileImage = document.getElementById('profileImage');
+            
             if (file) {
+                // Validate file type
+                const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+                if (!validTypes.includes(file.type)) {
+                    alert('Please select a valid image file (JPEG, PNG, GIF, or WebP)');
+                    this.value = '';
+                    return;
+                }
+                
+                // Validate file size (max 5MB)
+                const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+                if (file.size > maxSize) {
+                    alert('Image file size must be less than 5MB');
+                    this.value = '';
+                    return;
+                }
+                
+                // Show loading state
+                profileImage.style.opacity = '0.5';
+                
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    document.getElementById('profileImage').src = e.target.result;
+                    profileImage.src = e.target.result;
+                    profileImage.style.opacity = '1';
+                    
+                    // Show success message
+                    const uploadBtn = document.querySelector('.upload-btn');
+                    const originalText = uploadBtn.innerHTML;
+                    uploadBtn.innerHTML = '<i class="fas fa-check"></i> Image Selected';
+                    uploadBtn.style.backgroundColor = '#28a745';
+                    
+                    // Reset button after 2 seconds
+                    setTimeout(() => {
+                        uploadBtn.innerHTML = originalText;
+                        uploadBtn.style.backgroundColor = '';
+                    }, 2000);
                 };
+                
+                reader.onerror = function() {
+                    profileImage.style.opacity = '1';
+                    alert('Error reading the image file. Please try again.');
+                    e.target.value = '';
+                };
+                
                 reader.readAsDataURL(file);
             }
         });
@@ -465,6 +654,28 @@
                 errorDiv.style.display = 'none';
             }
         });
+
+        // Logout functionality
+        document.getElementById('logoutForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (confirm('Are you sure you want to logout from the Site Manager panel?')) {
+                // Update the clear browser data value based on checkbox
+                const clearBrowserData = document.getElementById('clearBrowserData').checked;
+                document.getElementById('clearBrowserDataValue').value = clearBrowserData ? 'on' : 'off';
+                
+                // Submit the form
+                this.submit();
+            }
+        });
+
+        // Clear browser data checkbox sync
+        document.getElementById('clearBrowserData').addEventListener('change', function() {
+            document.getElementById('clearBrowserDataValue').value = this.checked ? 'on' : 'off';
+        });
+
+        // Only keep logout-specific functionality here
+        // Other form handling is done by the external settings.js file
     </script>
     {% include "site_diary/navtemplate/layoutfooter.html" %}
 {% endblock %}

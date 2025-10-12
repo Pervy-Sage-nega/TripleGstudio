@@ -19,6 +19,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.sitemaps.views import sitemap
+from django.views.generic import RedirectView
 from site_diary import views as site_diary_views
 from core.views import permission_denied_view
 
@@ -52,6 +53,9 @@ urlpatterns = [
     
     # Sitemap URLs
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
+    
+    # Favicon
+    path('favicon.ico', RedirectView.as_view(url=settings.STATIC_URL + 'images/logostick.png')),
 ]
 
 if settings.DEBUG:

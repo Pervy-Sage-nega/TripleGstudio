@@ -1,3 +1,4 @@
+
 document.addEventListener('DOMContentLoaded', function() {
     // Mobile menu functionality
     const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
@@ -132,18 +133,60 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Profile image upload
+    // Profile image upload with validation
     const avatarUpload = document.getElementById('avatar-upload');
     const profileImage = document.getElementById('profileImage');
     
     if(avatarUpload && profileImage) {
         avatarUpload.addEventListener('change', function(event) {
             const file = event.target.files[0];
+            
             if(file) {
+                // Validate file type
+                const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+                if (!validTypes.includes(file.type)) {
+                    alert('Please select a valid image file (JPEG, PNG, GIF, or WebP)');
+                    this.value = '';
+                    return;
+                }
+                
+                // Validate file size (max 5MB)
+                const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+                if (file.size > maxSize) {
+                    alert('Image file size must be less than 5MB');
+                    this.value = '';
+                    return;
+                }
+                
+                // Show loading state
+                profileImage.style.opacity = '0.5';
+                
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     profileImage.src = e.target.result;
-                }
+                    profileImage.style.opacity = '1';
+                    
+                    // Show success message
+                    const uploadBtn = document.querySelector('.upload-btn');
+                    if (uploadBtn) {
+                        const originalText = uploadBtn.innerHTML;
+                        uploadBtn.innerHTML = '<i class="fas fa-check"></i> Image Selected';
+                        uploadBtn.style.backgroundColor = '#28a745';
+                        
+                        // Reset button after 2 seconds
+                        setTimeout(() => {
+                            uploadBtn.innerHTML = originalText;
+                            uploadBtn.style.backgroundColor = '';
+                        }, 2000);
+                    }
+                };
+                
+                reader.onerror = function() {
+                    profileImage.style.opacity = '1';
+                    alert('Error reading the image file. Please try again.');
+                    event.target.value = '';
+                };
+                
                 reader.readAsDataURL(file);
             }
         });
@@ -166,30 +209,58 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Success message handling
-    const saveButtons = document.querySelectorAll('.btn-primary');
+    // Handle specific form submissions instead of generic .btn-primary
+    // This prevents conflicts between different save buttons
     
-    saveButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
-            // Prevent default form submission for demo
-            e.preventDefault();
+    // Add form submit listener for debugging
+    const profileForm = document.getElementById('profileForm');
+    if (profileForm) {
+        profileForm.addEventListener('submit', function(e) {
+            console.log('DEBUG: Form submit event triggered');
+            console.log('DEBUG: Form action:', this.action);
+            console.log('DEBUG: Form method:', this.method);
+            console.log('DEBUG: Form data:', new FormData(this));
+        });
+    }
+    
+    // Direct button click handler for profile form
+    const saveAccountBtn = document.getElementById('saveAccount');
+    if (saveAccountBtn) {
+        saveAccountBtn.addEventListener('click', function(e) {
+            e.preventDefault(); // Prevent default to handle validation first
+            console.log('DEBUG: Direct save account button clicked');
             
-            // Find the parent section
-            const section = this.closest('.settings-section');
-            // Find the success message in this section
-            const successMessage = section.querySelector('.success-message');
-            
-            if(successMessage) {
-                // Show success message
-                successMessage.style.display = 'block';
+            const form = document.getElementById('profileForm');
+            if (form) {
+                // Validate form fields
+                const firstName = document.getElementById('firstName');
+                const lastName = document.getElementById('lastName');
+                const email = document.getElementById('email');
                 
-                // Hide after 3 seconds
-                setTimeout(() => {
-                    successMessage.style.display = 'none';
-                }, 3000);
+                if (firstName && lastName && email) {
+                    if (!firstName.value.trim() || !lastName.value.trim() || !email.value.trim()) {
+                        alert('Please fill in all required fields (First Name, Last Name, Email)');
+                        return;
+                    }
+                    
+                    // Email validation
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test(email.value.trim())) {
+                        alert('Please enter a valid email address');
+                        return;
+                    }
+                }
+                
+                // Add loading state to button
+                const originalText = this.textContent;
+                this.textContent = 'Saving...';
+                this.disabled = true;
+                
+                console.log('DEBUG: Manually submitting form');
+                form.submit();
             }
         });
-    });
+    }
     
     // Two-factor authentication toggle
     const twoFactorToggle = document.getElementById('twoFactorToggle');

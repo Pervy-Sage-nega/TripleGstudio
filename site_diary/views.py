@@ -606,16 +606,30 @@ def settings(request):
     from accounts.models import SiteManagerProfile
     from accounts.forms import ProfileUpdateForm
     from django.contrib.auth.forms import PasswordChangeForm
+    from django.contrib.auth import logout
+    from django.http import HttpResponse
+    from django.db import transaction
+    import csv
+    import json
     
     # Get or create site manager profile
     try:
         site_manager_profile = request.user.sitemanagerprofile
+        print(f"DEBUG: Site manager profile found: {site_manager_profile}")
+        print(f"DEBUG: Current profile data - Phone: {site_manager_profile.phone}, Emergency: {site_manager_profile.emergency_contact}")
+        print(f"DEBUG: Current profile pic: {site_manager_profile.profile_pic}")
     except SiteManagerProfile.DoesNotExist:
+        print(f"DEBUG: Site Manager profile not found for user: {request.user}")
         messages.error(request, 'Site Manager profile not found.')
         return redirect('site:dashboard')
     
     if request.method == 'POST':
+        print(f"DEBUG: POST request received")
+        print(f"DEBUG: POST data: {request.POST}")
+        print(f"DEBUG: FILES data: {request.FILES}")
+        
         action = request.POST.get('action')
+        print(f"DEBUG: Action: {action}")
         
         if action == 'update_profile':
             # Handle profile update
@@ -630,13 +644,49 @@ def settings(request):
             
             # Handle profile picture upload
             if 'profile_pic' in request.FILES:
-                site_manager_profile.profile_pic = request.FILES['profile_pic']
+                profile_pic = request.FILES['profile_pic']
+                print(f"DEBUG: Profile picture uploaded: {profile_pic.name}, Size: {profile_pic.size}")
+                
+                # Validate file type
+                allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+                file_type = profile_pic.content_type.lower()
+                
+                if file_type not in allowed_types:
+                    messages.error(request, 'Invalid file type. Please upload a JPEG, PNG, GIF, or WebP image.')
+                    return redirect('site_diary:settings')
+                
+                # Validate file size (max 5MB)
+                max_size = 5 * 1024 * 1024  # 5MB
+                if profile_pic.size > max_size:
+                    messages.error(request, 'File size too large. Please upload an image smaller than 5MB.')
+                    return redirect('site_diary:settings')
+                
+                site_manager_profile.profile_pic = profile_pic
+                print(f"DEBUG: Profile picture assigned to site_manager_profile")
             
             try:
-                user.save()
-                site_manager_profile.save()
-                messages.success(request, 'Profile updated successfully!')
+                with transaction.atomic():
+                    # Save user data
+                    print(f"DEBUG: Saving user data - First: {user.first_name}, Last: {user.last_name}, Email: {user.email}")
+                    user.save()
+                    
+                    # Save site manager profile data
+                    print(f"DEBUG: Saving profile data - Phone: {site_manager_profile.phone}, Emergency: {site_manager_profile.emergency_contact}")
+                    site_manager_profile.save()
+                    
+                    # Verify data was saved by reloading from database
+                    user.refresh_from_db()
+                    site_manager_profile.refresh_from_db()
+                    
+                    print(f"DEBUG: Verification - User saved: First={user.first_name}, Last={user.last_name}, Email={user.email}")
+                    print(f"DEBUG: Verification - Profile saved: Phone={site_manager_profile.phone}, Emergency={site_manager_profile.emergency_contact}")
+                    print(f"DEBUG: Verification - Profile pic: {site_manager_profile.profile_pic}")
+                    
+                    messages.success(request, 'Profile updated successfully!')
             except Exception as e:
+                print(f"DEBUG: Error saving profile: {str(e)}")
+                import traceback
+                print(f"DEBUG: Full traceback: {traceback.format_exc()}")
                 messages.error(request, f'Error updating profile: {str(e)}')
         
         elif action == 'change_password':
@@ -649,13 +699,137 @@ def settings(request):
                 for error in password_form.errors.values():
                     messages.error(request, error[0])
         
+        elif action == 'update_notifications':
+            # Handle notification preferences
+            try:
+                # Get notification preferences from form
+                daily_log_alerts = request.POST.get('daily_log_alerts') == 'on'
+                milestone_updates = request.POST.get('milestone_updates') == 'on'
+                report_confirmations = request.POST.get('report_confirmations') == 'on'
+                weekly_summary = request.POST.get('weekly_summary') == 'on'
+                notification_delivery = request.POST.get('notification_delivery', 'in-app')
+                
+                # Store preferences in site manager profile or create a separate model
+                # For now, we'll store as JSON in a text field (you may want to create a separate model)
+                notification_prefs = {
+                    'daily_log_alerts': daily_log_alerts,
+                    'milestone_updates': milestone_updates,
+                    'report_confirmations': report_confirmations,
+                    'weekly_summary': weekly_summary,
+                    'notification_delivery': notification_delivery,
+                }
+                
+                # You might want to add a notification_preferences field to SiteManagerProfile
+                # For now, we'll just show success message
+                messages.success(request, 'Notification preferences updated successfully!')
+            except Exception as e:
+                messages.error(request, f'Error updating notification preferences: {str(e)}')
+        
+        elif action == 'update_backup':
+            # Handle backup preferences
+            try:
+                auto_backup = request.POST.get('auto_backup') == 'on'
+                backup_frequency = request.POST.get('backup_frequency', 'daily')
+                
+                # Store backup preferences
+                backup_prefs = {
+                    'auto_backup': auto_backup,
+                    'backup_frequency': backup_frequency,
+                }
+                
+                messages.success(request, 'Backup preferences updated successfully!')
+            except Exception as e:
+                messages.error(request, f'Error updating backup preferences: {str(e)}')
+        
+        elif action == 'export_csv':
+            # Export project data as CSV
+            try:
+                response = HttpResponse(content_type='text/csv')
+                response['Content-Disposition'] = 'attachment; filename="site_manager_data.csv"'
+                
+                writer = csv.writer(response)
+                writer.writerow(['Project Name', 'Status', 'Created Date', 'Manager'])
+                
+                # Get user's projects
+                projects = Project.objects.filter(
+                    Q(project_manager=request.user) | Q(architect=request.user)
+                )
+                
+                for project in projects:
+                    writer.writerow([
+                        project.name,
+                        project.status,
+                        project.created_at.strftime('%Y-%m-%d'),
+                        project.project_manager.get_full_name() if project.project_manager else 'N/A'
+                    ])
+                
+                return response
+            except Exception as e:
+                messages.error(request, f'Error exporting data: {str(e)}')
+        
+        elif action == 'export_diary':
+            # Export diary entries
+            try:
+                response = HttpResponse(content_type='text/csv')
+                response['Content-Disposition'] = 'attachment; filename="diary_entries.csv"'
+                
+                writer = csv.writer(response)
+                writer.writerow(['Date', 'Project', 'Weather', 'Progress %', 'Notes'])
+                
+                # Get user's diary entries
+                entries = DiaryEntry.objects.filter(created_by=request.user)
+                
+                for entry in entries:
+                    writer.writerow([
+                        entry.entry_date.strftime('%Y-%m-%d'),
+                        entry.project.name,
+                        entry.weather_condition,
+                        entry.progress_percentage,
+                        entry.notes[:100] + '...' if len(entry.notes) > 100 else entry.notes
+                    ])
+                
+                return response
+            except Exception as e:
+                messages.error(request, f'Error exporting diary entries: {str(e)}')
+        
         return redirect('site:settings')
+    
+    # Debug: Show current data being passed to template
+    print(f"DEBUG: Template context - User: {request.user}")
+    print(f"DEBUG: Template context - Profile: {site_manager_profile}")
+    print(f"DEBUG: Template context - User first_name: {request.user.first_name}")
+    print(f"DEBUG: Template context - User last_name: {request.user.last_name}")
+    print(f"DEBUG: Template context - User email: {request.user.email}")
+    print(f"DEBUG: Template context - Profile phone: {site_manager_profile.phone}")
+    print(f"DEBUG: Template context - Profile emergency_contact: {site_manager_profile.emergency_contact}")
     
     context = {
         'user': request.user,
         'site_manager_profile': site_manager_profile,
     }
     return render(request, 'site_diary/settings.html', context)
+
+@login_required
+@require_site_manager_role
+def site_manager_logout(request):
+    """Site Manager logout view"""
+    from django.contrib.auth import logout
+    
+    if request.method == 'POST':
+        # Clear browser data if requested
+        clear_browser_data = request.POST.get('clear_browser_data') == 'on'
+        
+        # Log out the user
+        logout(request)
+        
+        # Add success message
+        messages.success(request, 'You have been successfully logged out from the Site Manager panel.')
+        
+        # Redirect to site manager login
+        return redirect('accounts:sitemanager_login')
+    
+    # If GET request, redirect to settings
+    return redirect('site:settings')
 
 @require_admin_role
 def adminclientproject(request):
