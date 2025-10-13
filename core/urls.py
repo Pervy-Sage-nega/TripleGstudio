@@ -5,7 +5,9 @@ from . import views
 app_name = 'core'
 
 def user_dashboard_redirect(request):
-    """Redirect /user/ to /usersettings/ for backward compatibility"""
+    """Redirect /user/ to client dashboard for all authenticated users"""
+    if request.user.is_authenticated:
+        return redirect('core:clientdashboard')
     return redirect('core:usersettings')
 
 urlpatterns = [
@@ -14,5 +16,6 @@ urlpatterns = [
     path('contact/', views.contact, name='contact'),
     path('project/', views.project, name='project'),
     path('usersettings/', views.usersettings, name='usersettings'),
+    path('clientdashboard/', views.clientdashboard, name='clientdashboard'),
     path('user/', user_dashboard_redirect, name='user_dashboard'),  # Redirect for backward compatibility
 ]
