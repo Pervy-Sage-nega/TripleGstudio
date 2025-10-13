@@ -3,6 +3,7 @@ from . import views, api
 
 urlpatterns = [
     path('projectmanagement/', views.projectmanagement, name='projectmanagement'),
+    path('projecttable/', views.projecttable, name='projecttable'),
     
     # Project CRUD operations
     path('create/', views.create_project, name='create_project'),

@@ -16,6 +16,19 @@ from accounts.decorators import require_admin_role, allow_public_access
 @require_admin_role
 def projectmanagement(request):
     """Admin project management view"""
+    # Check if editing a specific project
+    edit_project_id = request.GET.get('edit')
+    edit_project = None
+    
+    if edit_project_id:
+        try:
+            edit_project = Project.objects.select_related('category').prefetch_related(
+                'images', 'stats', 'timeline'
+            ).get(id=edit_project_id)
+        except Project.DoesNotExist:
+            messages.error(request, 'Project not found.')
+            return redirect('portfolio:projectmanagement')
+    
     # Get all projects with related data for admin management
     projects = Project.objects.select_related('category').prefetch_related(
         'images', 'stats', 'timeline'
@@ -23,6 +36,45 @@ def projectmanagement(request):
     
     # Get statistics for dashboard
     total_projects = projects.count()
+    draft_projects = projects.filter(status='draft').count()
+    completed_projects = projects.filter(status='completed').count()
+    ongoing_projects = projects.filter(status='ongoing').count()
+    planned_projects = projects.filter(status='planned').count()
+    featured_projects = projects.filter(featured=True).count()
+    
+    # Get draft projects for the drafts section
+    draft_project_list = projects.filter(status='draft').order_by('-updated_at')
+    
+    # Get categories for filtering
+    categories = Category.objects.all().order_by('name')
+    
+    context = {
+        'projects': projects,
+        'all_projects': projects,  # Add all_projects for the unified table
+        'categories': categories,
+        'total_projects': total_projects,
+        'draft_projects': draft_projects,
+        'draft_project_list': draft_project_list,
+        'completed_projects': completed_projects,
+        'ongoing_projects': ongoing_projects,
+        'planned_projects': planned_projects,
+        'featured_projects': featured_projects,
+        'edit_project': edit_project,  # Add the project being edited
+    }
+    
+    return render(request, 'admin/projectmanagement.html', context)
+
+@require_admin_role
+def projecttable(request):
+    """Admin project table view"""
+    # Get all projects with related data for table management
+    projects = Project.objects.select_related('category').prefetch_related(
+        'images', 'stats', 'timeline'
+    ).order_by('-created_at')
+    
+    # Get statistics for dashboard
+    total_projects = projects.count()
+    draft_projects = projects.filter(status='draft').count()
     completed_projects = projects.filter(status='completed').count()
     ongoing_projects = projects.filter(status='ongoing').count()
     planned_projects = projects.filter(status='planned').count()
@@ -33,15 +85,17 @@ def projectmanagement(request):
     
     context = {
         'projects': projects,
+        'all_projects': projects,  # For the unified table
         'categories': categories,
         'total_projects': total_projects,
+        'draft_projects': draft_projects,
         'completed_projects': completed_projects,
         'ongoing_projects': ongoing_projects,
         'planned_projects': planned_projects,
         'featured_projects': featured_projects,
     }
     
-    return render(request, 'admin/projectmanagement.html', context)
+    return render(request, 'admin/projectmanagetable.html', context)
 
 
 @allow_public_access

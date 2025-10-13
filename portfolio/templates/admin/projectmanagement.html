@@ -4,345 +4,16 @@
 {% block extra_head %}
     <link rel="stylesheet" href="{% static 'css/admincss/header.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/dashboard.css' %}">
+    
     <link rel="stylesheet" href="{% static 'css/sitecss/reports.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/history.css' %}">
-    <link rel="stylesheet" href="{% static 'css/admincss/projectmanagement.css' %}">
     <link rel="stylesheet" href="{% static 'css/admincss/blogmanagement.css' %}">
-    <link rel="stylesheet" href="{% static 'css/admincss/nav.css' %}">
-    <link rel="stylesheet" href="{% static 'css/admincss/admin-nav.css' %}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <style>
-        /* Responsive Form Layout Improvements */
-        .form-container {
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .form-columns {
-            display: flex;
-            gap: 1.5rem;
-            align-items: flex-start;
-        }
-
-        .form-column {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: #333;
-        }
-
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 0.9rem;
-            transition: border-color 0.2s ease;
-            box-sizing: border-box;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #4a90e2;
-            box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.1);
-        }
-
-        .form-group small {
-            display: block;
-            margin-top: 0.25rem;
-            color: #666;
-            font-size: 0.8rem;
-        }
-
-        /* Summary Cards Responsive */
-        .summary-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .summary-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-
-        /* Form Actions */
-        .form-actions {
-            margin-top: 1.5rem;
-            display: flex;
-            gap: 1rem;
-            justify-content: flex-end;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 4px;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-        }
-
-        /* Tablet Styles (768px - 1024px) */
-        @media (max-width: 1024px) {
-            .form-columns {
-                gap: 1rem;
-            }
-            
-            .form-container {
-                padding: 1rem;
-            }
-            
-            .summary-cards {
-                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-                gap: 0.75rem;
-            }
-            
-            .summary-card {
-                padding: 1rem;
-            }
-        }
-
-        /* Mobile Styles (max-width: 768px) */
-        @media (max-width: 768px) {
-            .form-columns {
-                flex-direction: column;
-                gap: 0;
-            }
-
-            .form-column {
-                width: 100%;
-                margin-bottom: 1rem;
-            }
-
-            .form-container {
-                padding: 1rem;
-                margin-bottom: 1rem;
-            }
-
-            .form-group {
-                margin-bottom: 1rem;
-            }
-
-            .form-actions {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .btn {
-                width: 100%;
-                justify-content: center;
-                margin-bottom: 0.5rem;
-            }
-
-            .summary-cards {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 0.5rem;
-            }
-
-            .summary-card {
-                padding: 0.75rem;
-                font-size: 0.9rem;
-            }
-
-            /* SEO Fieldset Mobile */
-            fieldset {
-                margin: 0.5rem 0 !important;
-                padding: 0.75rem !important;
-            }
-
-            fieldset legend {
-                font-size: 0.85rem !important;
-            }
-
-            /* Table responsive */
-            .table-responsive {
-                overflow-x: auto;
-            }
-
-            .table-responsive table {
-                min-width: 600px;
-            }
-
-            /* Milestone actions mobile */
-            .milestone-actions {
-                justify-content: center !important;
-                margin-bottom: 1rem !important;
-            }
-        }
-
-        /* Small Mobile Styles (max-width: 480px) */
-        @media (max-width: 480px) {
-            .form-container {
-                padding: 0.75rem;
-            }
-
-            .form-group input,
-            .form-group select,
-            .form-group textarea {
-                padding: 0.6rem;
-                font-size: 0.85rem;
-            }
-
-            .summary-cards {
-                grid-template-columns: 1fr;
-            }
-
-            .summary-card {
-                padding: 0.5rem;
-                font-size: 0.85rem;
-            }
-
-            .btn {
-                padding: 0.6rem 1rem;
-                font-size: 0.85rem;
-            }
-
-            fieldset {
-                padding: 0.5rem !important;
-            }
-        }
-
-        /* Fix inline styles conflicts */
-        .form-group input[type="number"] {
-            width: 100% !important;
-            padding: 0.75rem !important;
-            border: 1px solid #ddd !important;
-            border-radius: 4px !important;
-            font-size: 0.9rem !important;
-            transition: border-color 0.2s !important;
-        }
-
-        .form-group input[type="number"]:focus {
-            border-color: #4a90e2 !important;
-        }
-
-        /* Visibility controls */
-        .visibility-controls {
-            margin-top: 1.5rem;
-        }
-
-        .visibility-controls label {
-            display: inline-block;
-            margin-right: 2rem;
-        }
-
-        .visibility-controls .second-checkbox {
-            margin-left: 2rem;
-        }
-
-        /* Visibility controls mobile */
-        @media (max-width: 768px) {
-            .visibility-controls label {
-                display: block;
-                margin-right: 0;
-                margin-bottom: 0.5rem;
-            }
-
-            .visibility-controls .second-checkbox {
-                margin-left: 0;
-                margin-top: 0.5rem;
-            }
-        }
-        /* ====== PROJECT MILESTONES RESPONSIVENESS ====== */
-
-.project-milestones {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-top: 2rem;
-}
-
-/* Each milestone card or row */
-.milestone-item {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 1rem;
-  padding: 1rem;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  background: #fff;
-}
-
-/* Make form fields inside milestones consistent */
-.milestone-item input,
-.milestone-item textarea,
-.milestone-item select {
-  flex: 1 1 300px;
-  width: 100%;
-  padding: 0.6rem 0.8rem;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 0.95rem;
-  box-sizing: border-box;
-}
-
-/* Button row */
-.milestone-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 1rem;
-}
-
-/* Add Milestone button */
-.add-milestone-btn {
-  padding: 0.7rem 1.2rem;
-  background-color: #007bff;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.add-milestone-btn:hover {
-  background-color: #0056b3;
-}
-
-/* ====== MOBILE VIEW (Stack layout) ====== */
-@media (max-width: 768px) {
-  .milestone-item {
-    flex-direction: column;
-    gap: 0.8rem;
-  }
-
-  .milestone-actions {
-    justify-content: center;
-  }
-
-  .add-milestone-btn {
-    width: 100%;
-    text-align: center;
-  }
-}
-    </style>
+    <link rel="stylesheet" href="{% static 'css/admincss/nav.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/admincss/projectmanagement.css' %}">
+    
+     
 {% endblock %}
 {% block content %}
 
@@ -358,8 +29,8 @@
                 <h1>Project Portfolio Management</h1>
             </div>
             <div class="export-options">
-                <button class="btn btn-secondary" id="draftsBtn"><i class="fas fa-file-alt"></i> Drafts</button>
-                <button class="btn btn-primary" id="refreshBtn"><i class="fas fa-sync-alt"></i> Refresh</button>
+                <a href="{% url 'portfolio:projecttable' %}" class="btn btn-secondary"><i class="fas fa-table"></i> Table</a>
+                <button class="btn btn-info" id="refreshBtn"><i class="fas fa-sync-alt"></i> Refresh</button>
             </div>
         </div>
         <p style="margin-bottom:2rem; color:#777; font-size:1rem;">Manage project entries that will be publicly visible in the Triple G Studio project showcase.</p>
@@ -367,7 +38,7 @@
         
         <!-- Summary Section -->
         <div class="summary-cards">
-            <div class="summary-card">
+            <div class="summary-card" onclick="filterProjects('all')" style="cursor: pointer;" title="View all projects">
                 <i class="fas fa-folder-open summary-icon"></i>
                 <div class="summary-title">Total Projects</div>
                 <div class="summary-value" id="totalProjects">{{ total_projects }}</div>
@@ -376,7 +47,7 @@
                 </div>
             </div>
             
-            <div class="summary-card success">
+            <div class="summary-card success" onclick="filterProjects('completed')" style="cursor: pointer;" title="View completed projects">
                 <i class="fas fa-check-circle summary-icon"></i>
                 <div class="summary-title">Completed</div>
                 <div class="summary-value" id="completedProjects">{{ completed_projects }}</div>
@@ -385,7 +56,7 @@
                 </div>
             </div>
             
-            <div class="summary-card warning">
+            <div class="summary-card warning" onclick="filterProjects('ongoing')" style="cursor: pointer;" title="View ongoing projects">
                 <i class="fas fa-clock summary-icon"></i>
                 <div class="summary-title">Ongoing</div>
                 <div class="summary-value" id="ongoingProjects">{{ ongoing_projects }}</div>
@@ -394,7 +65,7 @@
                 </div>
             </div>
             
-            <div class="summary-card info">
+            <div class="summary-card info" onclick="filterProjects('planned')" style="cursor: pointer;" title="View planned projects">
                 <i class="fas fa-calendar-alt summary-icon"></i>
                 <div class="summary-title">Planned</div>
                 <div class="summary-value" id="plannedProjects">{{ planned_projects }}</div>
@@ -403,7 +74,7 @@
                 </div>
             </div>
             
-            <div class="summary-card danger">
+            <div class="summary-card danger" onclick="filterProjects('featured')" style="cursor: pointer;" title="View featured projects">
                 <i class="fas fa-star summary-icon"></i>
                 <div class="summary-title">Featured</div>
                 <div class="summary-value" id="featuredProjects">{{ featured_projects }}</div>
@@ -413,6 +84,9 @@
             </div>
         </div>
        
+        <!-- Project Management View Wrapper -->
+        <div id="pmViewWrapper">
+        
         <!-- Project Entry Form -->
         <div class="form-container card" id="formContainer">
             <form id="projectForm" method="post" action="{% url 'portfolio:create_project' %}" enctype="multipart/form-data">
@@ -542,11 +216,8 @@
                     </div>
                 <!-- Milestones / Timeline Builder -->
                 <fieldset class="card" >
-                    <legend><i class="fas fa-tasks"></i> Project Milestones</legend>
-                    
-                    <!-- Align Add Milestone button to the right -->
-                    
-                
+                    <legend><i class="fas fa-tasks"></i> Project Milestones</legend>           
+                    <!-- Align Add Milestone button to the right -->                  
                     <div id="milestoneList" 
                          style="display: flex; flex-direction: column; gap: 0;"></div>
                 </fieldset>
@@ -556,6 +227,7 @@
                     <label class="second-checkbox"><input type="checkbox" id="publish" name="publish" checked> Publish to Public Projects Page</label>
                 </div>
                 <!-- Form Buttons -->
+                <input type="hidden" id="hiddenStatus" name="status" value="">
                 <div class="form-actions">
                     <button type="reset" class="btn btn-secondary"><i class="fas fa-trash"></i> Reset Form</button>
                     <button type="button" class="btn btn-primary" onclick="saveAsDraft()"><i class="fas fa-save"></i> Save as Draft</button>
@@ -563,105 +235,13 @@
                 </div>
             </form>
         </div>
-    </div>
 
-        <!-- Drafts Section (Hidden by default) -->
-        <div class="drafts-container card" id="draftsContainer" style="display: none;">
-            <div class="drafts-header" style="margin-bottom: 1.5rem;">
-                <h2 style="color: #333; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-                    <i class="fas fa-file-alt"></i>
-                    Draft Projects
-                </h2>
-                <p style="color: #666; margin: 0.5rem 0 0 0; font-size: 0.9rem;">
-                    Projects saved as drafts that are not yet published to the public portfolio.
-                </p>
-            </div>
-            
-            <div class="drafts-table-responsive">
-                <table style="width: 100%; border-collapse: collapse;">
-                    <thead>
-                        <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
-                            <th style="padding: 1rem; text-align: left; font-weight: 600; color: #dee2e6;">Title</th>
-                            <th style="padding: 1rem; text-align: left; font-weight: 600; color: #dee2e6;">Category</th>
-                            <th style="padding: 1rem; text-align: left; font-weight: 600; color: #dee2e6;">Last Modified</th>
-                            <th style="padding: 1rem; text-align: left; font-weight: 600; color: #dee2e6;">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Draft projects would be populated here -->
-                        <tr>
-                            <td colspan="4" style="padding: 3rem; text-align: center; color: #666;">
-                                <i class="fas fa-file-alt" style="font-size: 2rem; margin-bottom: 1rem; display: block; color: #ccc;"></i>
-                                <p style="margin: 0; font-size: 1.1rem;">No draft projects found.</p>
-                                <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem;">Create a project and save it as draft to see it here.</p>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
        
-        <!-- Table View (history style) -->
-        <div class="table-view" id="tableView" style="display:block;">
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Title</th>
-                            <th>Status</th>
-                            <th>Visibility</th>
-                            <th>Completion Date</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for project in projects %}
-                        <tr>
-                            <td class="table-project-name">{{ project.title }}</td>
-                            <td>
-                                <span class="status-badge status-{{ project.status }}">
-                                    {{ project.get_status_display }}
-                                </span>
-                            </td>
-                            <td>
-                                {% if project.featured %}
-                                    <span class="visibility-badge featured">Featured</span>
-                                {% else %}
-                                    <span class="visibility-badge public">Public</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ project.completion_date|date:"M d, Y" }}</td>
-                            <td>
-                                <div class="table-actions">
-                                    <button class="action-btn edit" title="Edit Project" data-project-id="{{ project.id }}" onclick="editProject(this.dataset.projectId)">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="action-btn view" title="View Details" onclick="window.open('{{ project.get_absolute_url }}', '_blank')">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="action-btn delete" title="Delete Project" data-project-id="{{ project.id }}" onclick="deleteProject(this.dataset.projectId)">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="5" class="text-center">
-                                <p style="padding: 2rem; color: #666;">
-                                    <i class="fas fa-folder-open" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
-                                    No projects found. Create your first project using the form above.
-                                </p>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+        
         </div>
-        <!-- End Table View -->
+        <!-- End Project Management View Wrapper -->
     </div>
-    <!-- Modals (confirmation, success/failure) -->
+{{ ... }}
     <div class="modal" id="actionModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -674,273 +254,250 @@
     </div>
     {% endblock %}
 {% block extra_scripts %}
+<script src="{% static 'js/adminjs/projectmanagement.js' %}"></script>
+<script src="{% static 'js/adminjs/mobile-btn.js' %}"></script>
+
+{% if edit_project %}
 <script>
-    // Basic JavaScript functions to prevent errors
-    function editProject(projectId) {
-        console.log('Edit project:', projectId);
-        
-        
-        // Fetch project data
-        fetch(`/portfolio/get-project/${projectId}/`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    alert('Error loading project: ' + data.error);
-                    return;
-                }
-                
-                // Update form action for editing
-                document.getElementById('projectForm').action = `/portfolio/edit/${projectId}/`;
-                
-                // Populate form fields
-                document.getElementById('title').value = data.title || '';
-                document.getElementById('description').value = data.description || '';
-                document.getElementById('category').value = data.category || '';
-                document.getElementById('year').value = data.year || '';
-                document.getElementById('location').value = data.location || '';
-                document.getElementById('size').value = data.size || '';
-                document.getElementById('duration').value = data.duration || '';
-                document.getElementById('completion_date').value = data.completion_date || '';
-                document.getElementById('lead_architect').value = data.lead_architect || '';
-                document.getElementById('status').value = data.status || '';
-                document.getElementById('featured').checked = data.featured || false;
-                
-                // Populate SEO fields
-                document.getElementById('seo_meta_title').value = data.seo_meta_title || '';
-                document.getElementById('seo_meta_description').value = data.seo_meta_description || '';
-                document.getElementById('hero_image_alt').value = data.hero_image_alt || '';
-                
-                // Update character counts
-                updateCharacterCount('seo_meta_title', 'seo_title_count');
-                updateCharacterCount('seo_meta_description', 'seo_desc_count');
-                
-                // Clear existing milestones and add loaded ones
-                document.getElementById('milestoneList').innerHTML = '';
-                if (data.milestones && data.milestones.length > 0) {
-                    data.milestones.forEach((milestone, index) => {
-                        addMilestone();
-                        const milestoneCards = document.querySelectorAll('.milestone-card');
-                        const lastCard = milestoneCards[milestoneCards.length - 1];
-                        
-                        lastCard.querySelector('input[name="milestone_title[]"]').value = milestone.title;
-                        lastCard.querySelector('input[name="milestone_date[]"]').value = milestone.date;
-                        lastCard.querySelector('textarea[name="milestone_description[]"]').value = milestone.description;
-                    });
-                }
-                
-                // Scroll to form
-                document.getElementById('formContainer').scrollIntoView({ behavior: 'smooth' });
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error loading project data');
-            });
-    }
+// Auto-populate form fields when editing a project
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Populating form for editing project:', {{ edit_project.id }});
     
-    function deleteProject(projectId) {
-        console.log('Delete project:', projectId);
-        if (confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
-            // Create a form to submit DELETE request
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = `/portfolio/delete/${projectId}/`;
-            
-            // Add CSRF token
-            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-            const csrfInput = document.createElement('input');
-            csrfInput.type = 'hidden';
-            csrfInput.name = 'csrfmiddlewaretoken';
-            csrfInput.value = csrfToken;
-            form.appendChild(csrfInput);
-            
-            // Submit form
-            document.body.appendChild(form);
-            form.submit();
-        }
-    }
+    // Basic project information
+    document.getElementById('title').value = '{{ edit_project.title|escapejs }}';
+    document.getElementById('lead_architect').value = '{{ edit_project.lead_architect|escapejs|default:"" }}';
+    document.getElementById('duration').value = '{{ edit_project.duration|escapejs|default:"" }}';
+    document.getElementById('size').value = '{{ edit_project.size|escapejs|default:"" }}';
+    document.getElementById('tagline').value = '{{ edit_project.tagline|escapejs|default:"" }}';
+    document.getElementById('description').value = '{{ edit_project.description|escapejs|default:"" }}';
+    document.getElementById('location').value = '{{ edit_project.location|escapejs|default:"" }}';
+    document.getElementById('sustainability').value = '{{ edit_project.sustainability|escapejs|default:"" }}';
     
-    function addMilestone() {
-        const milestoneList = document.getElementById('milestoneList');
-        const milestoneCount = milestoneList.children.length;
-        
-        const milestoneCard = document.createElement('div');
-        milestoneCard.className = 'milestone-card';
-        milestoneCard.style.cssText = `
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        `;
-        
-        milestoneCard.innerHTML = `
-            <div style="background: #fff; border-radius: 6px; padding: 1.25rem; border: 1px solid #e9ecef;">
-                <div style="margin-bottom: 1.25rem;">
-                    <h4 style="margin: 0; color: #495057; font-size: 1rem; font-weight: 600;">Milestone ${milestoneCount + 1}</h4>
-                </div>
-                
-                <div style="margin-bottom: 1rem;">
-                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #495057;">Title</label>
-                    <input type="text" name="milestone_title[]" style="width: 100%; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 4px; font-size: 0.9rem;" placeholder="e.g., Foundation Complete">
-                </div>
-                
-                <div style="margin-bottom: 1rem;">
-                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #495057;">Date</label>
-                    <input type="date" name="milestone_date[]" style="width: 100%; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 4px; font-size: 0.9rem;">
-                </div>
-                
-                <div style="margin-bottom: 1.25rem;">
-                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #495057;">Description</label>
-                    <textarea name="milestone_description[]" rows="3" style="width: 100%; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 4px; resize: vertical; font-size: 0.9rem;" placeholder="Brief description of this milestone..."></textarea>
-                </div>
-                
-                <div style="border-top: 1px solid #e9ecef; padding-top: 1rem; display: flex; justify-content: flex-end;">
-                    <button type="button" class="btn btn-outline-danger btn-sm remove-milestone" onclick="removeMilestone(this)" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
-                        <i class="fas fa-trash"></i> Remove
-                    </button>
-                </div>
-            </div>
-        `;
-        
-        milestoneList.appendChild(milestoneCard);
-    }
+    // SEO fields
+    document.getElementById('seo_meta_title').value = '{{ edit_project.seo_meta_title|escapejs|default:"" }}';
+    document.getElementById('seo_meta_description').value = '{{ edit_project.seo_meta_description|escapejs|default:"" }}';
+    document.getElementById('hero_image_alt').value = '{{ edit_project.hero_image_alt|escapejs|default:"" }}';
     
-    function removeMilestone(button) {
-        const milestoneCard = button.closest('.milestone-card');
-        milestoneCard.remove();
+    // Year field
+    {% if edit_project.year %}
+    document.getElementById('year').value = {{ edit_project.year }};
+    {% endif %}
+    
+    // Completion date
+    {% if edit_project.completion_date %}
+    document.getElementById('completion_date').value = '{{ edit_project.completion_date|date:"Y-m-d" }}';
+    {% endif %}
+    
+    // Category selection
+    {% if edit_project.category %}
+    document.getElementById('category').value = '{{ edit_project.category.id }}';
+    {% endif %}
+    
+    // Status selection
+    {% if edit_project.status %}
+    document.getElementById('status').value = '{{ edit_project.status }}';
+    {% endif %}
+    
+    // Checkboxes
+    {% if edit_project.featured %}
+    document.getElementById('featured').checked = true;
+    {% endif %}
+    
+    // Set publish checkbox based on project status (if not draft, it's published)
+    {% if edit_project.status != 'draft' %}
+    document.getElementById('publish').checked = true;
+    {% else %}
+    document.getElementById('publish').checked = false;
+    {% endif %}
+    
+    // Handle image previews for existing project
+    {% if edit_project.hero_image %}
+    displayImagePreview('{{ edit_project.hero_image.url }}', 'coverPreview');
+    {% endif %}
+    
+    {% if edit_project.images.all %}
+    const galleryPreview = document.getElementById('galleryPreview');
+    if (galleryPreview) {
+        galleryPreview.innerHTML = '';
+        {% for image in edit_project.images.all %}
+        displayGalleryImage('{{ image.image.url }}');
+        {% endfor %}
+    }
+    {% endif %}
+    
+    // Handle video preview for existing project
+    {% if edit_project.video %}
+    displayVideoPreview('{{ edit_project.video.url }}', 'videoPreview');
+    {% endif %}
+    
+    // Populate milestones if they exist
+    {% if edit_project.timeline.all %}
+    const milestoneList = document.getElementById('milestoneList');
+    if (milestoneList) {
+        milestoneList.innerHTML = '';
         
-        // Renumber remaining milestones
-        const milestoneCards = document.querySelectorAll('.milestone-card');
-        milestoneCards.forEach((card, index) => {
-            const header = card.querySelector('h4');
-            header.textContent = `Milestone ${index + 1}`;
+        // Create milestones directly without relying on external functions
+        const milestoneData = [
+            {% for milestone in edit_project.timeline.all %}
+            {
+                title: '{{ milestone.title|escapejs }}',
+                description: '{{ milestone.description|escapejs }}',
+                date: '{{ milestone.date|date:"Y-m-d" }}'
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+        
+        // Create milestone cards directly
+        milestoneData.forEach((milestone, index) => {
+            createMilestoneCard(milestone.title, milestone.description, milestone.date, index);
         });
     }
+    {% endif %}
     
-    function saveAsDraft() {
-        console.log('Save as draft');
-        // Change form action to save as draft
-        const form = document.getElementById('projectForm');
-        const originalAction = form.action;
-        form.action = '/portfolio/save-draft/';
-        
-        // Submit the form
-        form.submit();
-        
-        // Restore original action
-        form.action = originalAction;
+    // Update form action to edit instead of create
+    const form = document.getElementById('projectForm');
+    form.action = '{% url "portfolio:edit_project" edit_project.id %}';
+    
+    // Update form title/heading to indicate editing
+    const formContainer = document.querySelector('.form-container.card');
+    if (formContainer) {
+        const existingTitle = formContainer.querySelector('h2, h3, .form-title');
+        if (!existingTitle) {
+            const titleElement = document.createElement('h3');
+            titleElement.className = 'form-title';
+            titleElement.innerHTML = '<i class="fas fa-edit"></i> Editing: {{ edit_project.title|escapejs }}';
+            titleElement.style.cssText = 'margin-bottom: 1rem; color: #3c6e71; border-bottom: 2px solid #3c6e71; padding-bottom: 0.5rem;';
+            formContainer.insertBefore(titleElement, formContainer.firstChild);
+        }
     }
     
-    function closeModal() {
-        document.getElementById('actionModal').style.display = 'none';
-    }
+    // Update character counters for SEO fields
+    updateSEOCounters();
     
-    // Function to reset form for new project
-    function resetFormForNew() {
-        const form = document.getElementById('projectForm');
-        form.action = '/portfolio/create/';
-        form.reset();
-        document.getElementById('milestoneList').innerHTML = '';
-    }
+    console.log('Form populated successfully for project editing');
+});
 
-    // Video preview functionality
-    document.getElementById('video').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        const preview = document.getElementById('videoPreview');
+// Helper functions for image and milestone handling
+function displayImagePreview(imageUrl, containerId) {
+    const container = document.getElementById(containerId);
+    if (container) {
+        container.innerHTML = `
+            <div class="preview-item">
+                <img src="${imageUrl}" alt="Preview" style="max-width: 200px; max-height: 150px; border-radius: 4px;">
+                <p style="margin: 0.5rem 0; font-size: 0.8rem; color: #666;">Current image</p>
+            </div>
+        `;
+    }
+}
+
+function displayGalleryImage(imageUrl) {
+    const galleryPreview = document.getElementById('galleryPreview');
+    if (galleryPreview) {
+        const imageDiv = document.createElement('div');
+        imageDiv.className = 'gallery-preview-item';
+        imageDiv.innerHTML = `
+            <img src="${imageUrl}" alt="Gallery Image" style="width: 100px; height: 100px; object-fit: cover; border-radius: 4px; margin: 0.25rem;">
+        `;
+        galleryPreview.appendChild(imageDiv);
+    }
+}
+
+function displayVideoPreview(videoUrl, containerId) {
+    const container = document.getElementById(containerId);
+    if (container) {
+        container.innerHTML = `
+            <div class="preview-item">
+                <video controls style="max-width: 200px; max-height: 150px; border-radius: 4px;">
+                    <source src="${videoUrl}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                <p style="margin: 0.5rem 0; font-size: 0.8rem; color: #666;">Current video</p>
+            </div>
+        `;
+    }
+}
+
+function createMilestoneCard(title, description, date, index) {
+    const milestoneList = document.getElementById('milestoneList');
+    if (!milestoneList) return;
+    
+    const milestoneCard = document.createElement('div');
+    milestoneCard.className = 'milestone-card';
+    milestoneCard.style.cssText = `
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    `;
+    
+    milestoneCard.innerHTML = `
+        <div style="background: #fff; border-radius: 6px; padding: 1.25rem; border: 1px solid #e9ecef;">
+            <div style="margin-bottom: 1.25rem;">
+                <h4 style="margin: 0; color: #495057; font-size: 1rem; font-weight: 600;">Milestone ${index + 1}</h4>
+            </div>
+            
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #495057;">Title</label>
+                <input type="text" name="milestone_title[]" value="${title}" style="width: 100%; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 4px; font-size: 0.9rem;" placeholder="e.g., Foundation Complete">
+            </div>
+            
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #495057;">Date</label>
+                <input type="date" name="milestone_date[]" value="${date}" style="width: 100%; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 4px; font-size: 0.9rem;">
+            </div>
+            
+            <div style="margin-bottom: 1.25rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #495057;">Description</label>
+                <textarea name="milestone_description[]" rows="3" style="width: 100%; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 4px; resize: vertical; font-size: 0.9rem;" placeholder="Brief description of this milestone...">${description}</textarea>
+            </div>
+            
+            <div style="border-top: 1px solid #e9ecef; padding-top: 1rem; display: flex; justify-content: flex-end;">
+                <button type="button" class="btn btn-outline-danger btn-sm remove-milestone" onclick="removeMilestone(this)" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                    <i class="fas fa-trash"></i> Remove
+                </button>
+            </div>
+        </div>
+    `;
+    
+    milestoneList.appendChild(milestoneCard);
+}
+
+function addMilestoneWithData(title, description, date) {
+    // Use the existing addMilestone function first
+    if (typeof window.addMilestone === 'function') {
+        window.addMilestone();
         
-        if (file) {
-            const video = document.createElement('video');
-            video.src = URL.createObjectURL(file);
-            video.controls = true;
-            video.style.maxWidth = '100%';
-            video.style.height = 'auto';
+        // Then populate the newly created milestone with data
+        const milestoneCards = document.querySelectorAll('.milestone-card');
+        const lastCard = milestoneCards[milestoneCards.length - 1];
+        
+        if (lastCard) {
+            const titleInput = lastCard.querySelector('input[name*="title"]');
+            const descInput = lastCard.querySelector('textarea[name*="description"]');
+            const dateInput = lastCard.querySelector('input[name*="date"]');
             
-            preview.innerHTML = '';
-            preview.appendChild(video);
-        } else {
-            preview.innerHTML = '';
-        }
-    });
-
-    // Refresh button functionality
-    document.getElementById('refreshBtn').addEventListener('click', function() {
-        location.reload();
-    });
-
-    // Drafts/Form toggle functionality
-    let isDraftsView = false;
-    const draftsBtn = document.getElementById('draftsBtn');
-    const formContainer = document.getElementById('formContainer');
-    const draftsContainer = document.getElementById('draftsContainer');
-    const tableView = document.getElementById('tableView');
-
-    draftsBtn.addEventListener('click', function() {
-        if (!isDraftsView) {
-            // Switch to Drafts view
-            formContainer.style.display = 'none';
-            tableView.style.display = 'none';
-            draftsContainer.style.display = 'block';
-            
-            // Update button
-            draftsBtn.innerHTML = '<i class="fas fa-plus"></i> Form';
-            draftsBtn.classList.remove('btn-secondary');
-            draftsBtn.classList.add('btn-success');
-            
-            isDraftsView = true;
-        } else {
-            // Switch back to Form view
-            formContainer.style.display = 'block';
-            tableView.style.display = 'block';
-            draftsContainer.style.display = 'none';
-            
-            // Reset form for new project
-            resetFormForNew();
-            
-            // Update button
-            draftsBtn.innerHTML = '<i class="fas fa-file-alt"></i> Drafts';
-            draftsBtn.classList.remove('btn-success');
-            draftsBtn.classList.add('btn-secondary');
-            
-            isDraftsView = false;
-        }
-    });
-
-    // SEO Character counting functions
-    function updateCharacterCount(inputId, counterId) {
-        const input = document.getElementById(inputId);
-        const counter = document.getElementById(counterId);
-        if (input && counter) {
-            counter.textContent = input.value.length;
+            if (titleInput) titleInput.value = title;
+            if (descInput) descInput.value = description;
+            if (dateInput) dateInput.value = date;
         }
     }
+}
 
-    // Add event listeners for SEO character counting
-    document.addEventListener('DOMContentLoaded', function() {
-        // SEO Meta Title character counting
-        const seoTitleInput = document.getElementById('seo_meta_title');
-        if (seoTitleInput) {
-            seoTitleInput.addEventListener('input', function() {
-                updateCharacterCount('seo_meta_title', 'seo_title_count');
-            });
-        }
-
-        // SEO Meta Description character counting
-        const seoDescInput = document.getElementById('seo_meta_description');
-        if (seoDescInput) {
-            seoDescInput.addEventListener('input', function() {
-                updateCharacterCount('seo_meta_description', 'seo_desc_count');
-            });
-        }
-
-        // Initialize character counts on page load
-        updateCharacterCount('seo_meta_title', 'seo_title_count');
-        updateCharacterCount('seo_meta_description', 'seo_desc_count');
-    });
+function updateSEOCounters() {
+    const seoTitle = document.getElementById('seo_meta_title');
+    const seoDesc = document.getElementById('seo_meta_description');
+    const titleCount = document.getElementById('seo_title_count');
+    const descCount = document.getElementById('seo_desc_count');
+    
+    if (seoTitle && titleCount) {
+        titleCount.textContent = seoTitle.value.length;
+    }
+    if (seoDesc && descCount) {
+        descCount.textContent = seoDesc.value.length;
+    }
+}
 </script>
-
-   
-    <script src="{% static 'js/adminjs/mobile-btn.js' %}"></script>
+{% endif %}
 {% endblock %}
-</body>
-</html>
