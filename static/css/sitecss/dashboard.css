@@ -369,6 +369,36 @@ body {
     background-color: #2a5254;
 }
 
+.btn-secondary {
+    background-color: var(--accent-color);
+    border: none;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #1e3a4f;
+}
+
+.card-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.card-actions .btn {
+    padding: 6px 10px;
+    font-size: 12px;
+    flex: none;
+}
+
+.filter-controls {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
 /* Performance Analytics */
 .performance-analytics {
     padding: 15px 20px;
@@ -418,6 +448,45 @@ body {
     }
 }
 
+@media (max-width: 768px) {
+    .card-actions {
+        grid-template-columns: 1fr;
+        gap: 5px;
+    }
+    
+    .filter-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+}
+
+/* No Projects State */
+.no-projects {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+}
+
+.no-projects p {
+    font-size: 16px;
+    color: var(--mid-gray);
+    margin: 0;
+}
+
+.no-projects a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.no-projects a:hover {
+    color: var(--accent-color);
+}
+
 @media (max-width: 480px) {
     .container {
         padding: 0 15px;
@@ -431,16 +500,21 @@ body {
         grid-template-columns: 1fr;
     }
 
-    .filter-controls {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
     .search-input {
         width: 100%;
     }
 
-    .card-actions {
+    .dashboard-controls {
         flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+
+    .filter-controls {
+        justify-content: stretch;
+    }
+
+    .filter-dropdown {
+        flex: 1;
     }
 }

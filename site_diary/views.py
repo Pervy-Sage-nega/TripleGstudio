@@ -103,7 +103,7 @@ def diary(request):
 
 @login_required
 def dashboard(request):
-    """Dashboard with project overview and statistics"""
+    """Site Manager Dashboard with comprehensive project overview"""
     # Get user's projects
     if request.user.is_staff:
         projects = Project.objects.all()
@@ -112,31 +112,63 @@ def dashboard(request):
             Q(project_manager=request.user) | Q(architect=request.user)
         )
     
-    # Recent diary entries
-    recent_entries = DiaryEntry.objects.filter(
-        project__in=projects
-    ).select_related('project', 'created_by').order_by('-created_at')[:5]
+    # Enhanced project data with progress and analytics
+    project_data = []
+    # Mock progress values for demonstration
+    mock_progress = [65, 40, 85, 25, 55, 75, 30, 90, 45, 60]
     
-    # Statistics
+    for i, project in enumerate(projects):
+        # Get latest diary entry for progress
+        latest_entry = DiaryEntry.objects.filter(project=project).order_by('-entry_date').first()
+        
+        # Calculate project analytics
+        project_entries = DiaryEntry.objects.filter(project=project)
+        labor_entries = LaborEntry.objects.filter(diary_entry__in=project_entries)
+        delay_entries = DelayEntry.objects.filter(diary_entry__in=project_entries)
+        
+        # Budget calculations
+        total_labor_cost = sum(labor.total_cost for labor in labor_entries)
+        budget_used_percentage = min((total_labor_cost / 1000000) * 100, 100) if total_labor_cost else (mock_progress[i % len(mock_progress)] * 0.8)
+        
+        # Use mock data if no diary entries exist
+        progress = latest_entry.progress_percentage if latest_entry else mock_progress[i % len(mock_progress)]
+        current_phase = latest_entry.work_description[:50] if latest_entry else f"Phase {min(int(progress/25) + 1, 4)} - {'Planning' if progress < 25 else 'Foundation' if progress < 50 else 'Structure' if progress < 75 else 'Finishing'}"
+        
+        project_info = {
+            'id': project.id,
+            'name': project.name,
+            'client_name': project.client_name,
+            'location': project.location,
+            'status': project.status,
+            'progress': progress,
+            'current_phase': current_phase,
+            'start_date': project.created_at,
+            'target_completion': project.created_at + timedelta(days=365),
+            'budget_used': budget_used_percentage,
+            'schedule_status': 'On Track' if delay_entries.count() < 3 else 'Minor Delays' if delay_entries.count() < 6 else 'At Risk',
+            'delay_count': delay_entries.count(),
+            'image': getattr(project, 'image', None),
+        }
+        project_data.append(project_info)
+    
+    # Dashboard statistics
     total_projects = projects.count()
     active_projects = projects.filter(status='active').count()
-    completed_projects = projects.filter(status='completed').count()
-    total_entries = DiaryEntry.objects.filter(project__in=projects).count()
-    
-    # Recent delays
-    recent_delays = DelayEntry.objects.filter(
-        diary_entry__project__in=projects
-    ).select_related('diary_entry__project').order_by('-diary_entry__entry_date')[:5]
+    on_schedule = sum(1 for p in project_data if p['schedule_status'] == 'On Track')
+    at_risk = sum(1 for p in project_data if p['schedule_status'] == 'At Risk')
+    completed_this_month = projects.filter(
+        status='completed',
+        updated_at__gte=timezone.now() - timedelta(days=30)
+    ).count()
     
     context = {
-        'projects': projects[:5],  # Show only 5 recent projects
-        'recent_entries': recent_entries,
-        'recent_delays': recent_delays,
+        'projects': project_data,
         'stats': {
             'total_projects': total_projects,
             'active_projects': active_projects,
-            'completed_projects': completed_projects,
-            'total_entries': total_entries,
+            'on_schedule': on_schedule,
+            'at_risk': at_risk,
+            'completed_this_month': completed_this_month,
         }
     }
     return render(request, 'site_diary/dashboard.html', context)
@@ -587,17 +619,111 @@ def reports(request):
 
 @login_required
 def project_detail(request, project_id):
-    """Project detail view - temporary placeholder"""
+    """Comprehensive Project Detail View for Site Managers"""
     try:
         project = get_object_or_404(Project, id=project_id)
-        context = {
-            'project': project,
+        
+        # Verify user has access to this project
+        if not request.user.is_staff:
+            user_projects = Project.objects.filter(
+                Q(project_manager=request.user) | Q(architect=request.user)
+            )
+            if project not in user_projects:
+                messages.error(request, 'You do not have access to this project.')
+                return redirect('site_diary:dashboard')
+        
+        # Get project entries and related data
+        project_entries = DiaryEntry.objects.filter(project=project).order_by('-entry_date')
+        labor_entries = LaborEntry.objects.filter(diary_entry__in=project_entries)
+        material_entries = MaterialEntry.objects.filter(diary_entry__in=project_entries)
+        equipment_entries = EquipmentEntry.objects.filter(diary_entry__in=project_entries)
+        delay_entries = DelayEntry.objects.filter(diary_entry__in=project_entries)
+        
+        # Calculate project metrics with mock data fallback
+        latest_entry = project_entries.first()
+        # Mock progress based on project ID for demonstration
+        mock_progress_map = {1: 65, 2: 40, 3: 85, 4: 25, 5: 55}
+        progress = latest_entry.progress_percentage if latest_entry else mock_progress_map.get(project.id, 50)
+        
+        # Budget calculations with error handling
+        try:
+            total_labor_cost = sum(labor.total_cost for labor in labor_entries)
+            total_material_cost = sum(material.total_cost for material in material_entries)
+            total_equipment_cost = sum(equipment.total_rental_cost for equipment in equipment_entries)
+        except (AttributeError, TypeError):
+            total_labor_cost = total_material_cost = total_equipment_cost = 0
+        
+        total_spent = total_labor_cost + total_material_cost + total_equipment_cost
+        total_budget = getattr(project, 'budget', 2500000) or 2500000
+        remaining_budget = max(0, total_budget - total_spent)
+        
+        # Recent diary entries for summary
+        recent_diary_entries = project_entries[:3]
+        
+        # Resource statistics
+        total_workers = labor_entries.aggregate(total=Sum('workers_count'))['total'] or 0
+        equipment_count = equipment_entries.values('equipment_type').distinct().count()
+        delay_count = delay_entries.count()
+        
+        # Project timeline/milestones (mock data - replace with actual model)
+        project_timeline = [
+            {
+                'title': 'Project Planning',
+                'date': project.created_at,
+                'description': 'Initial planning, permits, and design finalization.',
+                'completed': True
+            },
+            {
+                'title': 'Foundation Work',
+                'date': project.created_at + timedelta(days=30),
+                'description': 'Excavation, foundation laying, and structural groundwork.',
+                'completed': progress > 25
+            },
+            {
+                'title': 'Structural Construction',
+                'date': project.created_at + timedelta(days=120),
+                'description': 'Main structure, steel framework, and concrete work.',
+                'completed': progress > 65
+            },
+            {
+                'title': 'Finishing Work',
+                'date': project.created_at + timedelta(days=300),
+                'description': 'Interior finishing, utilities installation, and final inspections.',
+                'completed': progress > 90
+            }
+        ]
+        
+        # Enhanced project data
+        project_data = {
+            'id': project.id,
+            'name': project.name,
+            'code': f"{project.name[:2].upper()}-{project.created_at.year}-{project.id:03d}",
+            'status': project.status,
+            'client_name': project.client_name,
+            'client_email': project.client_email if hasattr(project, 'client_email') else 'contact@client.com',
+            'client_phone': project.client_phone if hasattr(project, 'client_phone') else '+1 (555) 123-4567',
+            'start_date': project.created_at.strftime('%b %d, %Y'),
+            'target_completion': (project.created_at + timedelta(days=365)).strftime('%b %d, %Y'),
+            'current_phase': latest_entry.work_description[:50] if latest_entry else f"Phase {min(int(progress/25) + 1, 4)} - {'Planning' if progress < 25 else 'Foundation' if progress < 50 else 'Structure' if progress < 75 else 'Finishing'}",
+            'progress': progress,
+            'total_budget': f"{total_budget:,}",
+            'total_spent': f"{total_spent:,}",
+            'remaining_budget': f"{remaining_budget:,}",
+            'labor_count': total_workers,
+            'equipment_count': equipment_count,
+            'delays_count': delay_count,
         }
-        return render(request, 'site_diary/project_detail.html', context)
-    except:
-        # Fallback - redirect to dashboard if project doesn't exist
-        messages.info(request, 'Project details are not available yet.')
-        return redirect('site:dashboard')
+        
+        context = {
+            'project': project_data,
+            'recent_diary_entries': recent_diary_entries,
+            'project_timeline': project_timeline,
+        }
+        return render(request, 'site_diary/project-detail.html', context)
+        
+    except Exception as e:
+        messages.error(request, f'Error loading project details: {str(e)}')
+        return redirect('site_diary:dashboard')
 
 @login_required
 @require_site_manager_role
@@ -900,5 +1026,78 @@ def adminreports(request):
     return render(request, 'admin/adminreports.html')
 
 @login_required
+def generate_project_report(request, project_id):
+    """Generate project report - API endpoint"""
+    if request.method == 'POST':
+        try:
+            project = get_object_or_404(Project, id=project_id)
+            
+            # Verify user has access
+            if not request.user.is_staff:
+                user_projects = Project.objects.filter(
+                    Q(project_manager=request.user) | Q(architect=request.user)
+                )
+                if project not in user_projects:
+                    return JsonResponse({'error': 'Access denied'}, status=403)
+            
+            # Mock report generation - replace with actual report logic
+            report_data = {
+                'project_name': project.name,
+                'generated_at': timezone.now().isoformat(),
+                'status': 'success',
+                'download_url': f'/reports/project_{project_id}_{timezone.now().strftime("%Y%m%d")}.pdf'
+            }
+            
+            return JsonResponse(report_data)
+            
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+@login_required
 def sitedraft(request):
     return render(request, 'site_diary/sitedraft.html')
+
+# API endpoint for dashboard filtering
+@login_required
+def api_filter_projects(request):
+    """API endpoint for filtering projects on dashboard"""
+    if request.method == 'GET':
+        category = request.GET.get('category', '')
+        status = request.GET.get('status', '')
+        search = request.GET.get('search', '')
+        
+        # Get user's projects
+        if request.user.is_staff:
+            projects = Project.objects.all()
+        else:
+            projects = Project.objects.filter(
+                Q(project_manager=request.user) | Q(architect=request.user)
+            )
+        
+        # Apply filters
+        if category:
+            projects = projects.filter(category=category)
+        if status:
+            projects = projects.filter(status=status)
+        if search:
+            projects = projects.filter(
+                Q(name__icontains=search) | Q(client_name__icontains=search)
+            )
+        
+        # Format response
+        project_data = []
+        for project in projects:
+            latest_entry = DiaryEntry.objects.filter(project=project).order_by('-entry_date').first()
+            project_data.append({
+                'id': project.id,
+                'name': project.name,
+                'client_name': project.client_name,
+                'status': project.status,
+                'progress': latest_entry.progress_percentage if latest_entry else 0,
+            })
+        
+        return JsonResponse({'projects': project_data})
+    
+    return JsonResponse({'error': 'Method not allowed'}, status=405)

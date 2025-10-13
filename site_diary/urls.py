@@ -13,7 +13,13 @@ urlpatterns = [
     path('settings/', views.settings, name='settings'),
     path('logout/', views.site_manager_logout, name='site_manager_logout'),
     path('sitedraft/', views.sitedraft, name='sitedraft'),
+    
+    # Project management
     path('project/<int:project_id>/', views.project_detail, name='project_detail'),
+    
+    # API endpoints
+    path('api/generate-report/<int:project_id>/', views.generate_project_report, name='generate_project_report'),
+    path('api/filter-projects/', views.api_filter_projects, name='api_filter_projects'),
     
     # Admin views
     path('admin/clientproject/', views.adminclientproject, name='adminclientproject'),
