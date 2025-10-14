@@ -12,6 +12,7 @@ from django.contrib.auth.models import User
 from django.db.models import Count
 from django.contrib.sessions.models import Session
 from .decorators import require_admin_role, ajax_require_admin_role
+from accounts.activity_tracker import UserActivityTracker
 import json
 from datetime import timedelta
 
@@ -95,6 +96,8 @@ def admin_logout(request):
         try:
             admin_profile = AdminProfile.objects.get(user=request.user)
             was_admin = True
+            # Mark user as offline
+            UserActivityTracker.mark_user_offline(request.user)
         except AdminProfile.DoesNotExist:
             pass
     
@@ -126,21 +129,8 @@ def check_session(request):
     })
 
 def is_user_online(user):
-    """Check if user is online based on active sessions"""
-    if not user.is_authenticated:
-        return False
-    
-    # Check for active sessions in the last 5 minutes
-    cutoff = timezone.now() - timedelta(minutes=5)
-    active_sessions = Session.objects.filter(
-        expire_date__gte=timezone.now()
-    )
-    
-    for session in active_sessions:
-        data = session.get_decoded()
-        if data.get('_auth_user_id') == str(user.id):
-            return True
-    return False
+    """Check if user is online using the activity tracker"""
+    return UserActivityTracker.is_user_online(user)
 
 @require_admin_role
 def admin_user_list(request):
@@ -308,6 +298,32 @@ def generate_employee_id(request):
             return JsonResponse({'success': False, 'message': 'Invalid user type'})
         
         return JsonResponse({'success': True, 'employee_id': emp_id})
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
+
+@ajax_require_admin_role
+@require_http_methods(["GET"])
+def get_users_online_status(request):
+    """Get real-time online status for all users"""
+    try:
+        clients = User.objects.filter(profile__isnull=False).values_list('id', flat=True)
+        site_managers = User.objects.filter(sitemanagerprofile__isnull=False).values_list('id', flat=True)
+        
+        online_status = {}
+        
+        for user_id in list(clients) + list(site_managers):
+            try:
+                user = User.objects.get(id=user_id)
+                online_status[str(user_id)] = UserActivityTracker.is_user_online(user)
+            except User.DoesNotExist:
+                continue
+        
+        return JsonResponse({
+            'success': True,
+            'online_status': online_status,
+            'timestamp': timezone.now().isoformat()
+        })
         
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)})

@@ -61,6 +61,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'accounts.online_middleware.OnlineStatusMiddleware',  # Track user online status
     'core.middleware.UnauthorizedAccessMiddleware',  # Custom 401 error handling - BEFORE messages
     'django.contrib.messages.middleware.MessageMiddleware',
     'accounts.middleware.RoleBasedAccessMiddleware',  # Role-based access control
@@ -189,3 +190,15 @@ AXES_LOCKOUT_TEMPLATE = 'client/lockout.html'  # create a lockout page
 # Axes lockout configuration (updated for django-axes 5.0+)
 AXES_LOCK_OUT_AT_FAILURE = True
 AXES_RESET_ON_SUCCESS = True
+
+# Cache configuration for online status tracking
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+        'TIMEOUT': 300,  # 5 minutes
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,
+        }
+    }
+}

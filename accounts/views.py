@@ -14,6 +14,7 @@ from datetime import timedelta
 from .forms import ClientRegisterForm, OTPForm, AdminRegisterForm, AdminLoginForm, AdminOTPForm
 from .models import OneTimePassword, AdminProfile, SiteManagerProfile, Profile
 from .utils import get_user_role, get_user_dashboard_url, get_appropriate_redirect
+from .activity_tracker import UserActivityTracker
 @csrf_protect
 @never_cache
 @transaction.atomic
@@ -241,6 +242,8 @@ def client_login_view(request):
 
 # Client Logout
 def client_logout_view(request):
+    if request.user.is_authenticated:
+        UserActivityTracker.mark_user_offline(request.user)
     logout(request)
     messages.info(request, "You have been successfully logged out.")
     return redirect('accounts:client_login')
@@ -500,6 +503,7 @@ def admin_resend_otp(request):
 def admin_logout_view(request):
     """Admin logout"""
     if request.user.is_authenticated and hasattr(request.user, 'adminprofile'):
+        UserActivityTracker.mark_user_offline(request.user)
         logout(request)
         messages.info(request, "You have been successfully logged out from admin panel.")
     return redirect('accounts:admin_login')
@@ -736,6 +740,7 @@ def sitemanager_pending_approval(request):
 def sitemanager_logout_view(request):
     """Site Manager logout"""
     if request.user.is_authenticated and hasattr(request.user, 'sitemanagerprofile'):
+        UserActivityTracker.mark_user_offline(request.user)
         logout(request)
         messages.info(request, "You have been successfully logged out.")
     return redirect('accounts:sitemanager_login')

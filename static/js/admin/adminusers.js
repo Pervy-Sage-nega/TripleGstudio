@@ -6,6 +6,80 @@ document.addEventListener('DOMContentLoaded', function() {
     const tableBody = document.getElementById('usersTableBody');
     const rows = tableBody.querySelectorAll('tr');
 
+    // Real-time online status tracking
+    let onlineStatusInterval;
+    
+    function startOnlineStatusTracking() {
+        updateOnlineStatus();
+        onlineStatusInterval = setInterval(updateOnlineStatus, 30000); // Update every 30 seconds
+    }
+    
+    function updateOnlineStatus() {
+        fetch('/admin-panel/users/online-status/', {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateOnlineIndicators(data.online_status);
+            }
+        })
+        .catch(error => {
+            console.error('Error updating online status:', error);
+        });
+    }
+    
+    function updateOnlineIndicators(onlineStatus) {
+        rows.forEach(row => {
+            const userAvatar = row.querySelector('.user-avatar');
+            const onlineText = row.querySelector('.online-text');
+            const onlineIndicator = row.querySelector('.online-indicator');
+            
+            if (userAvatar) {
+                const userId = row.querySelector('.action-btn')?.dataset.userId;
+                if (userId && onlineStatus.hasOwnProperty(userId)) {
+                    const isOnline = onlineStatus[userId];
+                    
+                    // Update online indicator
+                    if (isOnline) {
+                        if (!onlineIndicator) {
+                            const indicator = document.createElement('div');
+                            indicator.className = 'online-indicator';
+                            indicator.title = 'Online';
+                            userAvatar.appendChild(indicator);
+                        }
+                        if (!onlineText) {
+                            const text = document.createElement('small');
+                            text.className = 'online-text';
+                            text.textContent = 'Online';
+                            userAvatar.parentNode.querySelector('div:last-child').appendChild(text);
+                        }
+                    } else {
+                        if (onlineIndicator) {
+                            onlineIndicator.remove();
+                        }
+                        if (onlineText) {
+                            onlineText.remove();
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Start tracking when page loads
+    startOnlineStatusTracking();
+    
+    // Stop tracking when page unloads
+    window.addEventListener('beforeunload', function() {
+        if (onlineStatusInterval) {
+            clearInterval(onlineStatusInterval);
+        }
+    });
+
     function filterTable() {
         const searchTerm = searchInput.value.toLowerCase();
         const roleValue = roleFilter.value;
