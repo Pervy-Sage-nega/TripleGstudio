@@ -126,6 +126,10 @@ def client_resend_otp(request):
 @transaction.atomic
 @csrf_protect
 def client_login_view(request):
+    # Redirect already authenticated clients
+    if request.user.is_authenticated and hasattr(request.user, 'profile'):
+        return redirect(get_user_dashboard_url(request.user))
+    
     reg_messages = []
     if request.method == "POST":
         # Check if this is a registration attempt
@@ -306,6 +310,12 @@ def admin_register_view(request):
 @never_cache
 def admin_login_view(request):
     """Admin login with enhanced security checks"""
+    # Redirect already authenticated admin users
+    if request.user.is_authenticated and hasattr(request.user, 'adminprofile'):
+        admin_profile = request.user.adminprofile
+        if admin_profile.can_login():
+            return redirect(get_user_dashboard_url(request.user))
+    
     print(f"[DEBUG] admin_login_view called! Method: {request.method}")
     print(f"[DEBUG] Request path: {request.path}")
     print(f"[DEBUG] Request META: {request.META.get('HTTP_HOST', 'No host')}")
@@ -513,6 +523,12 @@ def admin_logout_view(request):
 @never_cache
 def sitemanager_login_view(request):
     """Site Manager login view with authentication logic"""
+    # Redirect already authenticated site managers
+    if request.user.is_authenticated and hasattr(request.user, 'sitemanagerprofile'):
+        sitemanager_profile = request.user.sitemanagerprofile
+        if sitemanager_profile.can_login():
+            return redirect(get_user_dashboard_url(request.user))
+    
     print(f"[DEBUG] sitemanager_login_view called - Method: {request.method}")
     
     if request.method == 'POST':
