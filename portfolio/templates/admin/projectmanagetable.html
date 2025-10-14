@@ -51,26 +51,34 @@
                 <span>All Projects</span>
             </div>
             
-            <!-- Filter Buttons -->
-            <div class="filter-buttons" style="margin: 1rem 0;">
-                <button class="filter-btn active" data-filter="all" title="Show all projects" style="background: #3c6e71; color: white; border-color: #3c6e71;">
-                    <i class="fas fa-list"></i> All
-                </button>
-                <button class="filter-btn" data-filter="draft" title="Show draft projects">
-                    <i class="fas fa-file-alt"></i> Draft
-                </button>
-                <button class="filter-btn" data-filter="planned" title="Show planned projects">
-                    <i class="fas fa-calendar-alt"></i> Planned
-                </button>
-                <button class="filter-btn" data-filter="ongoing" title="Show ongoing projects">
-                    <i class="fas fa-clock"></i> Ongoing
-                </button>
-                <button class="filter-btn" data-filter="completed" title="Show completed projects">
-                    <i class="fas fa-check-circle"></i> Completed
-                </button>
-                <button class="filter-btn" data-filter="featured" title="Show featured projects">
-                    <i class="fas fa-star"></i> Featured
-                </button>
+            <!-- Search and Filter Controls -->
+            <div class="search-filter-controls" style="margin: 1rem 0;">
+                <div class="search-container">
+                    <div class="search-input-wrapper">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="projectSearch" class="search-input" placeholder="Search projects…">
+                    </div>
+                </div>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="all" title="Show all projects" style="background: #3c6e71; color: white; border-color: #3c6e71;">
+                        <i class="fas fa-list"></i> All
+                    </button>
+                    <button class="filter-btn" data-filter="draft" title="Show draft projects">
+                        <i class="fas fa-file-alt"></i> Draft
+                    </button>
+                    <button class="filter-btn" data-filter="planned" title="Show planned projects">
+                        <i class="fas fa-calendar-alt"></i> Planned
+                    </button>
+                    <button class="filter-btn" data-filter="ongoing" title="Show ongoing projects">
+                        <i class="fas fa-clock"></i> Ongoing
+                    </button>
+                    <button class="filter-btn" data-filter="completed" title="Show completed projects">
+                        <i class="fas fa-check-circle"></i> Completed
+                    </button>
+                    <button class="filter-btn" data-filter="featured" title="Show featured projects">
+                        <i class="fas fa-star"></i> Featured
+                    </button>
+                </div>
             </div>
             
             <!-- View Toggle -->
@@ -356,6 +364,39 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     console.log('Filter buttons initialized:', document.querySelectorAll('.filter-btn').length);
+    
+    // Search functionality
+    const searchInput = document.getElementById('projectSearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase().trim();
+            searchProjects(searchTerm);
+        });
+        console.log('Search input initialized');
+    }
+    
+    // Search projects function
+    function searchProjects(searchTerm) {
+        const tableRows = document.querySelectorAll('.project-row');
+        const gridCards = document.querySelectorAll('.project-card');
+        
+        // Search in table rows
+        tableRows.forEach(row => {
+            const title = row.querySelector('.table-project-name')?.textContent.toLowerCase() || '';
+            const status = row.querySelector('.status-badge')?.textContent.toLowerCase() || '';
+            const shouldShow = !searchTerm || title.includes(searchTerm) || status.includes(searchTerm);
+            row.style.display = shouldShow ? '' : 'none';
+        });
+        
+        // Search in grid cards
+        gridCards.forEach(card => {
+            const title = card.querySelector('.blog-card-title')?.textContent.toLowerCase() || '';
+            const status = card.querySelector('.blog-card-status')?.textContent.toLowerCase() || '';
+            const info = card.querySelector('.blog-card-info')?.textContent.toLowerCase() || '';
+            const shouldShow = !searchTerm || title.includes(searchTerm) || status.includes(searchTerm) || info.includes(searchTerm);
+            card.style.display = shouldShow ? '' : 'none';
+        });
+    }
     
     // Initialize with 'all' filter
     filterProjects('all');

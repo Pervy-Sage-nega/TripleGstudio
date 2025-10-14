@@ -32,34 +32,7 @@
                 <button class="btn btn-secondary"><i class="fas fa-print"></i> Print</button>
             </div>
         </div>
-        
-        <!-- Improved Filter + Search + Button Controls -->
-        <div class="filter-search-controls">
-            <div class="filter-group">
-                <select id="filter-category" class="filter-dropdown">
-                    <option value="">All Categories</option>
-                    {% for category in all_categories %}
-                    <option value="{{ category.slug }}">{{ category.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            
-            <div class="filter-group">
-                <select id="filter-status" class="filter-dropdown">
-                    <option value="">All Statuses</option>
-                    <option value="draft">Drafts</option>
-                    <option value="published">Published</option>
-                    <option value="archived">Archived</option>
-                </select>
-            </div>
-            
-            <div class="search-group">
-                <i class="fas fa-search"></i>
-                <input type="text" id="search" placeholder="Search drafts..." class="search-input">
-            </div>
-            
-           
-        </div>
+   
         
         <!-- Compact Summary Section -->
         <div class="summary-section">
@@ -124,6 +97,36 @@
                     </button>                   
                 </div>
             </div>
+                 
+        <!-- Improved Filter + Search + Button Controls -->
+        <div class="filter-search-controls">
+            <div class="filter-section">
+                <div class="filter-group">
+                    <select id="filter-category" class="filter-dropdown">
+                        <option value="">All Categories</option>
+                        {% for category in all_categories %}
+                        <option value="{{ category.slug }}">{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <select id="filter-status" class="filter-dropdown">
+                        <option value="">All Statuses</option>
+                        <option value="draft">Drafts</option>
+                        <option value="published">Published</option>
+                        <option value="archived">Archived</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="search-section">
+                <div class="search-input-wrapper">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="search" placeholder="Search projects…" class="search-input">
+                </div>
+            </div>
+        </div>
             
             <div class="content-container">
                 <!-- Table View -->
