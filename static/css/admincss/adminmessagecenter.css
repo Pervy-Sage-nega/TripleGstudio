@@ -94,6 +94,7 @@ h1, h2, h3, .page-header-title, .section-title,
 
 .status-archived-icon {
     background-color: #607d8b;
+        color: white;
 }
 
 .status-info h3 {

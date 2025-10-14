@@ -1,0 +1,285 @@
+{% extends 'admin-nav-footer-template/base.html' %}
+{% load static %}
+
+{% block title %}User Management | Triple G BuildHub{% endblock %}
+
+{% block extra_head %}
+    <link rel="stylesheet" href="{% static 'css/admincss/projectmanagement.css' %}">
+   
+    <link rel="stylesheet" href="{% static 'css/admincss/adminusers_additions.css' %}">
+      <link rel="stylesheet" href="{% static 'css/admincss/nav.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admincss/header.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/settings.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/dashboard.css' %}">
+    
+    <link rel="stylesheet" href="{% static 'css/sitecss/history.css' %}">
+   <link rel="stylesheet" href="{% static 'css/admincss/adminusers.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/blog-ui-fixes.css' %}">
+  
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .header-content {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            width: 100% !important;
+            gap: 20px !important;
+        }
+        .page-title {
+            flex: 0 0 auto !important;
+        }
+        .export-options {
+            flex: 0 0 auto !important;
+        }
+        .filter-header, .search-box, .filter-options {
+            margin-bottom: 0px !important;
+            margin-top: 0px !important;
+        }
+        .search-input {
+            height: 40px;
+        }
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 15px !important;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="page-title">
+                <i class="fas fa-users"></i>
+                <h1>User Management</h1>
+            </div>
+            <div class="export-options">
+                <a href="{% url 'chatbot:adminmessagecenter' %}" class="btn btn-secondary">
+                    <i class="fas fa-comments"></i> Message Center
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Cards -->
+    <div class="status-tracker">
+        <div class="status-card">
+            <div class="status-icon status-client-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="status-info">
+                <h3>{{ total_clients }}</h3>
+                <p>Total Clients</p>
+            </div>
+        </div>
+        <div class="status-card">
+            <div class="status-icon status-admin-icon">
+                <i class="fas fa-user-tie"></i>
+            </div>
+            <div class="status-info">
+                <h3>{{ active_site_managers }}</h3>
+                <p>Active Site Managers</p>
+            </div>
+        </div>
+        <div class="status-card">
+            <div class="status-icon status-pending-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="status-info">
+                <h3>{{ pending_site_managers }}</h3>
+                <p>Pending Approvals</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Container -->
+    <div class="filter-container">
+        <div class="filter-header">
+            <div class="filter-title">
+                <i class="fas fa-filter"></i>
+                <span>Filter Users</span>
+            </div>
+        </div>
+
+        <div class="search-box">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" class="search-input" id="searchInput" placeholder="Search by name or email...">
+        </div>
+
+        <div class="filter-options">
+            <div class="filter-group">
+                <label for="roleFilter">Role</label>
+                <select id="roleFilter">
+                    <option value="">All Roles</option>
+                    <option value="client">Client</option>
+                    <option value="sitemanager">Site Manager</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="statusFilter">Status</label>
+                <select id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="pending">Pending</option>
+                    <option value="suspended">Suspended</option>
+                    <option value="denied">Denied</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="card">
+        <div class="table-responsive">
+        <table class="users-table">
+            <thead>
+                <tr>
+                    <th>
+                        <div class="th-content">
+                            User
+                            <i class="fas fa-sort" data-sort="name"></i>
+                        </div>
+                    </th>
+                    <th>
+                        <div class="th-content">
+                            Email
+                            <i class="fas fa-sort" data-sort="email"></i>
+                        </div>
+                    </th>
+                    <th>
+                        <div class="th-content">
+                            Role
+                            <i class="fas fa-sort" data-sort="role"></i>
+                        </div>
+                    </th>
+                    <th>
+                        <div class="th-content">
+                            Status
+                            <i class="fas fa-sort" data-sort="status"></i>
+                        </div>
+                    </th>
+                    <th>
+                        <div class="th-content">
+                            Date Joined
+                            <i class="fas fa-sort" data-sort="date"></i>
+                        </div>
+                    </th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="usersTableBody">
+                {% for user_data in users %}
+                <tr data-role="{{ user_data.role }}" data-status="{{ user_data.status }}">
+                    <td>
+                        <div class="user-info">
+                            <div class="user-avatar">
+                                {% if user_data.profile_pic %}
+                                    <img src="{{ user_data.profile_pic }}" alt="Profile">
+                                {% else %}
+                                    <i class="fas fa-user"></i>
+                                {% endif %}
+                                {% if user_data.is_online %}
+                                    <div class="online-indicator" title="Online"></div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <div class="user-name">{{ user_data.full_name }}</div>
+                                {% if user_data.is_online %}
+                                    <small class="online-text">Online</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ user_data.email }}</td>
+                    <td>
+                        <span class="role-badge role-{{ user_data.role }}">
+                            {{ user_data.role_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="status-badge status-{{ user_data.status }}">
+                            {{ user_data.status_display }}
+                        </span>
+                    </td>
+                    <td>{{ user_data.date_joined|date:"M d, Y" }}</td>
+                    <td>
+                        <div class="action-buttons-cell">
+                            <button class="action-btn view" title="View Details" data-user-id="{{ user_data.user_id }}">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            {% if user_data.role == 'sitemanager' and user_data.status == 'pending' %}
+                                <button class="action-btn approve" title="Approve" data-user-id="{{ user_data.user_id }}">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <button class="action-btn reject" title="Deny" data-user-id="{{ user_data.user_id }}">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            {% elif user_data.status == 'active' %}
+                                <button class="action-btn deactivate" title="Suspend" data-user-id="{{ user_data.user_id }}">
+                                    <i class="fas fa-ban"></i>
+                                </button>
+                            {% elif user_data.status == 'suspended' %}
+                                <button class="action-btn activate" title="Reactivate" data-user-id="{{ user_data.user_id }}">
+                                    <i class="fas fa-check-circle"></i>
+                                </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 40px;">
+                        <i class="fas fa-users" style="font-size: 48px; color: #ccc; margin-bottom: 16px;"></i>
+                        <p>No users found</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+</div>
+
+<!-- User Detail Modal -->
+<div class="modal" id="userDetailModal">
+    <div class="modal-content large-modal">
+        <div class="modal-header">
+            <h3>User Details</h3>
+            <button class="modal-close" id="closeUserModal">&times;</button>
+        </div>
+        <div class="modal-body" id="userDetailContent">
+            <!-- Content loaded via AJAX -->
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="closeModalBtn">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal" id="confirmationModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="confirmTitle">Confirm Action</h3>
+            <button class="modal-close" id="closeConfirmModal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p id="confirmMessage">Are you sure you want to perform this action?</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="cancelAction">Cancel</button>
+            <button class="btn btn-primary" id="confirmAction">Confirm</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'js/admin/adminusers.js' %}"></script>
+<script src="{% static 'js/adminjs/mobile-btn.js' %}"></script>
+<script src="{% static 'js/adminjs/admin-logout.js' %}"></script>
+{% endblock %}

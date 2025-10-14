@@ -5,6 +5,7 @@ from django.dispatch import receiver
 from django.utils import timezone
 from datetime import timedelta
 import random
+import string
 
 
 class Profile(models.Model):
@@ -142,6 +143,39 @@ class AdminProfile(models.Model):
         if self.profile_pic:
             return self.profile_pic.url
         return '/static/images/default-profile.png'
+    
+    @classmethod
+    def generate_employee_id(cls, prefix='TG'):
+        """Generate unique employee ID with format: TG-YYYY-NNNN"""
+        year = timezone.now().year
+        
+        # Find the highest existing number for this year
+        existing_ids = cls.objects.filter(
+            employee_id__startswith=f'{prefix}-{year}-'
+        ).values_list('employee_id', flat=True)
+        
+        numbers = []
+        for emp_id in existing_ids:
+            try:
+                number = int(emp_id.split('-')[-1])
+                numbers.append(number)
+            except (ValueError, IndexError):
+                continue
+        
+        next_number = max(numbers, default=0) + 1
+        return f'{prefix}-{year}-{next_number:04d}'
+    
+    def save(self, *args, **kwargs):
+        # Validate employee_id format if provided
+        if self.employee_id and not self._is_valid_employee_id(self.employee_id):
+            raise ValueError('Employee ID must follow format: TG-YYYY-NNNN')
+        super().save(*args, **kwargs)
+    
+    def _is_valid_employee_id(self, emp_id):
+        """Validate employee ID format"""
+        import re
+        pattern = r'^[A-Z]{2}-\d{4}-\d{4}$'
+        return bool(re.match(pattern, emp_id))
 
 
 class SiteManagerProfile(models.Model):
@@ -215,6 +249,39 @@ class SiteManagerProfile(models.Model):
         if self.profile_pic:
             return self.profile_pic.url
         return '/static/images/default-profile.png'
+    
+    @classmethod
+    def generate_employee_id(cls, prefix='SM'):
+        """Generate unique employee ID with format: SM-YYYY-NNNN"""
+        year = timezone.now().year
+        
+        # Find the highest existing number for this year
+        existing_ids = cls.objects.filter(
+            employee_id__startswith=f'{prefix}-{year}-'
+        ).values_list('employee_id', flat=True)
+        
+        numbers = []
+        for emp_id in existing_ids:
+            try:
+                number = int(emp_id.split('-')[-1])
+                numbers.append(number)
+            except (ValueError, IndexError):
+                continue
+        
+        next_number = max(numbers, default=0) + 1
+        return f'{prefix}-{year}-{next_number:04d}'
+    
+    def save(self, *args, **kwargs):
+        # Validate employee_id format if provided
+        if self.employee_id and not self._is_valid_employee_id(self.employee_id):
+            raise ValueError('Employee ID must follow format: SM-YYYY-NNNN')
+        super().save(*args, **kwargs)
+    
+    def _is_valid_employee_id(self, emp_id):
+        """Validate employee ID format"""
+        import re
+        pattern = r'^[A-Z]{2}-\d{4}-\d{4}$'
+        return bool(re.match(pattern, emp_id))
 
 
 class SuperAdminProfile(models.Model):
