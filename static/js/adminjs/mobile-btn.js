@@ -13,6 +13,27 @@ function initializeMobileNavigation() {
         return;
     }
     
+    // Set active states based on current URL
+    const currentPath = window.location.pathname;
+    
+    // Check for portfolio section
+    if (currentPath.includes('/portfolio/') || currentPath.includes('/blog/')) {
+        const portfolioDropdown = document.querySelector('[data-section="portfolio"]');
+        if (portfolioDropdown) portfolioDropdown.classList.add('active');
+    }
+    
+    // Check for site diary section
+    if (currentPath.includes('/site/') || currentPath.includes('/diary/')) {
+        const siteDropdown = document.querySelector('[data-section="site"]');
+        if (siteDropdown) siteDropdown.classList.add('active');
+    }
+    
+    // Check for admin tools section
+    if (currentPath.includes('/admin/users/') || currentPath.includes('/chatbot/') || currentPath.includes('/admin/settings/')) {
+        const adminDropdown = document.querySelector('[data-section="admin"]');
+        if (adminDropdown) adminDropdown.classList.add('active');
+    }
+    
     // Mobile menu toggle
     mobileMenuBtn.addEventListener('click', function(e) {
         e.stopPropagation();

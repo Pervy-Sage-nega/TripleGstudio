@@ -1,15 +1,16 @@
-{% extends "site_diary/layout_format.html" %}
+{% extends "admin-nav-footer-template/layoutnav.html" %}
 {% load static %}
 
-{% block head %}
-    <title>Triple G BuildHub - Dashboard</title>
+{% block title %}Triple G BuildHub - Dashboard{% endblock %}
+
+{% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/sitecss/global-footer.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/dashboard.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/createblog.css' %}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/admincss/nav.css' %}">
 {% endblock %}
 
-{% block body %}
+{% block content %}
     <div class="container">
         <!-- Dashboard Header -->
         <div class="dashboard-header">
