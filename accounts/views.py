@@ -229,6 +229,13 @@ def client_login_view(request):
                     storage = messages.get_messages(request)
                     storage.used = True
                     
+                    # Handle remember me
+                    remember = request.POST.get('remember')
+                    if remember:
+                        request.session.set_expiry(1209600)  # 2 weeks
+                    else:
+                        request.session.set_expiry(0)  # Session expires when browser closes
+                    
                     login(request, user)
                     # The success message will be shown on the home page after redirect
                     messages.success(request, f"Welcome back, {user.first_name}!")
@@ -360,7 +367,9 @@ def admin_login_view(request):
                         admin_profile.save()
                         
                         # Set session expiry based on remember me
-                        if not remember:
+                        if remember:
+                            request.session.set_expiry(1209600)  # 2 weeks
+                        else:
                             request.session.set_expiry(0)  # Session expires when browser closes
                         
                         # Clear any existing messages (like logout messages)
@@ -564,6 +573,13 @@ def sitemanager_login_view(request):
                         # Clear any existing messages (like logout messages)
                         storage = messages.get_messages(request)
                         storage.used = True
+                        
+                        # Handle remember me
+                        remember = request.POST.get('remember')
+                        if remember:
+                            request.session.set_expiry(1209600)  # 2 weeks
+                        else:
+                            request.session.set_expiry(0)  # Session expires when browser closes
                         
                         # Login successful
                         login(request, auth_user)
