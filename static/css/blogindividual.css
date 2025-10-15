@@ -1012,6 +1012,10 @@
         width: 100%;
         justify-content: center;
     }
+     .back-to-blog {
+        top: 4rem;
+        left: 0.75rem;
+    }
     
     .login-overlay .login-buttons {
         flex-direction: column;

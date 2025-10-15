@@ -236,13 +236,18 @@ h1, h2, h3, h4, h5, h6 {
     margin-bottom: 1.5rem;
     font-size: 1.1rem;
     color: var(--text-secondary);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 .project-stats {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 1.5rem;
     margin-top: 2rem;
+    width: 100%;
+    max-width: 100%;
 }
 
 .stat-item {

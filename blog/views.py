@@ -552,10 +552,16 @@ def tag_list(request, slug):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
+    # Get popular tags
+    popular_tags = Tag.objects.annotate(
+        post_count=Count('blog_posts', filter=Q(blog_posts__status='published'))
+    ).filter(post_count__gt=0).order_by('-post_count')[:20]
+    
     context = {
         'tag': tag,
         'page_obj': page_obj,
         'posts': page_obj.object_list,
+        'popular_tags': popular_tags,
     }
     
     return render(request, 'bloguser/tag_list.html', context)

@@ -43,6 +43,13 @@ class TripleGLoader {
      */
     init() {
         if (this.initiated) return;
+        
+        // Check if loader has already been shown in this session
+        if (sessionStorage.getItem('tripleGLoaderShown')) {
+            console.log(' TripleG Loader: Skipping - already shown this session');
+            return;
+        }
+        
         this.initiated = true;
         this.startTime = performance.now();
 
@@ -451,6 +458,9 @@ class TripleGLoader {
     completeLoading() {
         clearInterval(this.progressInterval);
         clearTimeout(this.safetyTimeout);
+        
+        // Mark loader as shown for this session
+        sessionStorage.setItem('tripleGLoaderShown', 'true');
         
         // Quickly fill any remaining progress
         this.progress = 1;

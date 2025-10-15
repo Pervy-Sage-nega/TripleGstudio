@@ -45,7 +45,7 @@
     align-items: center;
     font-family: 'Helvetica Neue', Arial, sans-serif;
     padding: 10px 40px;
-    background-color: var(--nav-bg);
+    background-color: rgba(0, 28, 43, 0.95)!important;
     z-index: 1000;
     backdrop-filter: blur(10px);
 }
