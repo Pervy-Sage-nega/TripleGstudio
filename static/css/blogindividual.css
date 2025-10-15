@@ -93,6 +93,13 @@
 .toc-h5 { font-weight: 400; font-size: 12px; color: #999; }
 .toc-h6 { font-weight: 400; font-size: 12px; color: #aaa; }
 
+/* Post content word wrapping */
+.post-content {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
 /* Smooth scroll behavior for headings */
 .post-content h1,
 .post-content h2,
