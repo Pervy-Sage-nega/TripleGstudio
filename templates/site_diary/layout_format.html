@@ -22,8 +22,41 @@ You can customize this as needed for your project.
     {% block head %}{% endblock %}
 </head>
 <body>
-    {% include "site_diary/navtemplate/layout.html" %}
-    <main>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="logo-container" onclick="window.location.href='{% url 'site:dashboard' %}'">
+            <img class="logo" src="{% static 'images/logostick.png' %}" alt="Logo">
+            <div class="logo1">TRIPLE<a>G</a></div>
+        </div>
+        
+        <ul class="nav-links" id="navLinks">
+            <li><a href="{% url 'site:dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">Dashboard</a></li>
+            <li><a href="{% url 'chatbot:chatbot' %}" class="{% if 'chatbot' in request.resolver_match.namespace %}active{% endif %}">Message Center</a></li>
+            <li><a href="{% url 'site:newproject' %}" class="{% if request.resolver_match.url_name == 'newproject' %}active{% endif %}">Create Project</a></li>
+            <li class="dropdown {% if request.resolver_match.url_name in 'createblog,drafts' %}active{% endif %}">
+                <a href="#" class="dropbtn">Blog ▾</a>
+                <div class="dropdown-content">
+                    <a href="{% url 'site:createblog' %}" class="{% if request.resolver_match.url_name == 'createblog' %}active{% endif %}">Create Blog</a>
+                    <a href="{% url 'site:drafts' %}" class="{% if request.resolver_match.url_name == 'drafts' %}active{% endif %}">Drafts</a>
+                </div>
+            </li>
+            <li class="dropdown {% if request.resolver_match.url_name in 'diary,sitedraft,history,reports' %}active{% endif %}">
+                <a href="#" class="dropbtn">Site Diary ▾</a>
+                <div class="dropdown-content">
+                    <a href="{% url 'site:diary' %}" class="{% if request.resolver_match.url_name == 'diary' %}active{% endif %}">New Entry</a>
+                    <a href="{% url 'site:sitedraft' %}" class="{% if request.resolver_match.url_name == 'sitedraft' %}active{% endif %}">Drafts</a>
+                    <a href="{% url 'site:history' %}" class="{% if request.resolver_match.url_name == 'history' %}active{% endif %}">History</a>
+                    <a href="{% url 'site:reports' %}" class="{% if request.resolver_match.url_name == 'reports' %}active{% endif %}">Reports</a>
+                </div>
+            </li>
+            <li><a href="{% url 'site:settings' %}" class="{% if request.resolver_match.url_name == 'settings' %}active{% endif %}">Settings</a></li>
+        </ul>
+        <button class="mobile-menu-btn" id="mobileMenuBtn">
+            <i class="fas fa-bars"></i>
+        </button>
+    </nav>
+
+    <main class="main-content">
         {% block body %}{% endblock %}
     </main>
     <script src="{% static 'js/adminjs/mobile-btn.js' %}"></script>

@@ -101,7 +101,7 @@
 
 .nav-links a {
   text-decoration: none;
-  color: #fff;
+  color: #fff !important;
   font-weight: 500;
   position: relative;
   padding: 5px 0;
@@ -119,10 +119,14 @@
   transition: all 0.4s ease;
   transform: translateX(-50%);
 }
+.a:hover{
+  color: #fff !important;
+}
 
 .nav-links a:hover::after,
 .nav-links a.active::after {
   width: 100%;
+   
 }
 
 

@@ -20,7 +20,7 @@ from .forms import (
 )
 
 # Create your views here.
-@login_required
+@require_site_manager_role
 def diary(request):
     """Create new diary entry with all related data"""
     if request.method == 'POST':
@@ -101,7 +101,7 @@ def diary(request):
     }
     return render(request, 'site_diary/diary.html', context)
 
-@login_required
+@require_site_manager_role
 def dashboard(request):
     """Site Manager Dashboard with comprehensive project overview"""
     # Get user's projects
@@ -177,7 +177,7 @@ def dashboard(request):
 def chatbot(request):
     return render(request, 'chatbot/chatbot.html')
 
-@login_required
+@require_site_manager_role
 def newproject(request):
     """Create new project"""
     if request.method == 'POST':
@@ -397,7 +397,7 @@ def drafts(request):
     
     return render(request, 'blogcreation/drafts.html', context)
 
-@login_required
+@require_site_manager_role
 def history(request):
     """View diary entry history with search and filtering"""
     # Get user's projects
@@ -438,7 +438,7 @@ def history(request):
     }
     return render(request, 'site_diary/history.html', context)
 
-@login_required
+@require_site_manager_role
 def reports(request):
     """Generate comprehensive reports and analytics with database data"""
     # Get user's projects
@@ -617,7 +617,7 @@ def reports(request):
     return render(request, 'site_diary/reports.html', context)
 
 
-@login_required
+@require_site_manager_role
 def project_detail(request, project_id):
     """Comprehensive Project Detail View for Site Managers"""
     try:
@@ -1025,7 +1025,7 @@ def adminreports(request):
     """Admin reports view"""
     return render(request, 'admin/adminreports.html')
 
-@login_required
+@require_site_manager_role
 def generate_project_report(request, project_id):
     """Generate project report - API endpoint"""
     if request.method == 'POST':
@@ -1055,12 +1055,12 @@ def generate_project_report(request, project_id):
     
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
-@login_required
+@require_site_manager_role
 def sitedraft(request):
     return render(request, 'site_diary/sitedraft.html')
 
 # API endpoint for dashboard filtering
-@login_required
+@require_site_manager_role
 def api_filter_projects(request):
     """API endpoint for filtering projects on dashboard"""
     if request.method == 'GET':
