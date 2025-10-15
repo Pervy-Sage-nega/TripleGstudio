@@ -104,20 +104,13 @@ def diary(request):
 @require_site_manager_role
 def dashboard(request):
     """Site Manager Dashboard with comprehensive project overview"""
-    print(f"DEBUG: Dashboard accessed by user: {request.user}")
-    print(f"DEBUG: User is_staff: {request.user.is_staff}")
-    
     # Get user's projects
     if request.user.is_staff:
         projects = Project.objects.all()
-        print(f"DEBUG: Staff user - getting all projects")
     else:
         projects = Project.objects.filter(
             Q(project_manager=request.user) | Q(architect=request.user)
         )
-        print(f"DEBUG: Non-staff user - filtering projects")
-    
-    print(f"DEBUG: Found {projects.count()} projects")
     
     # Enhanced project data with progress and analytics
     project_data = []
@@ -168,33 +161,6 @@ def dashboard(request):
         updated_at__gte=timezone.now() - timedelta(days=30)
     ).count()
     
-    # If no projects exist, create some sample data for display
-    if not project_data:
-        print("DEBUG: No projects found, creating sample data")
-        project_data = [
-            {
-                'id': 1,
-                'name': 'Sample Project 1',
-                'client_name': 'Sample Client',
-                'location': 'Sample Location',
-                'status': 'active',
-                'progress': 65,
-                'current_phase': 'Foundation work in progress',
-                'start_date': timezone.now().date(),
-                'target_completion': timezone.now().date() + timedelta(days=365),
-                'budget_used': 45,
-                'schedule_status': 'On Track',
-                'delay_count': 0,
-                'image': None,
-            }
-        ]
-        # Update stats for sample data
-        total_projects = 1
-        active_projects = 1
-        on_schedule = 1
-        at_risk = 0
-        completed_this_month = 0
-    
     context = {
         'projects': project_data,
         'stats': {
@@ -203,14 +169,8 @@ def dashboard(request):
             'on_schedule': on_schedule,
             'at_risk': at_risk,
             'completed_this_month': completed_this_month,
-        },
-        'debug_info': {
-            'user': str(request.user),
-            'is_staff': request.user.is_staff,
-            'projects_count': projects.count(),
         }
     }
-    print(f"DEBUG: Context created with {len(project_data)} projects")
     return render(request, 'site_diary/dashboard.html', context)
 
 @require_site_manager_role

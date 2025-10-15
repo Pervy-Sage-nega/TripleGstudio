@@ -11,13 +11,6 @@
 {% endblock %}
 
 {% block body %}
-    <!-- Debug Information -->
-    {% if debug_info %}
-        <div style="background: #f0f0f0; padding: 10px; margin: 10px 0; border: 1px solid #ccc;">
-            <strong>Debug Info:</strong> User: {{ debug_info.user }}, Staff: {{ debug_info.is_staff }}, Projects: {{ debug_info.projects_count }}
-        </div>
-    {% endif %}
-    
     <div class="container">
         <!-- Dashboard Header -->
         <div class="dashboard-header">
