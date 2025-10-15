@@ -16,6 +16,8 @@ urlpatterns = [
     
     # Project management
     path('project/<int:project_id>/', views.project_detail, name='project_detail'),
+    path('print/<int:project_id>/', views.print_preview, name='print_preview'),
+    path('sample-print/', views.sample_print, name='sample_print'),
     
     # API endpoints
     path('api/generate-report/<int:project_id>/', views.generate_project_report, name='generate_project_report'),

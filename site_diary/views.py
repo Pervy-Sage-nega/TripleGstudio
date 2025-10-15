@@ -1060,6 +1060,28 @@ def sitedraft(request):
     return render(request, 'site_diary/sitedraft.html')
 
 # API endpoint for dashboard filtering
+def print_preview(request, project_id):
+    """Print preview for construction report"""
+    project = get_object_or_404(Project, id=project_id)
+    
+    # Verify user has access
+    if not request.user.is_staff:
+        user_projects = Project.objects.filter(
+            Q(project_manager=request.user) | Q(architect=request.user)
+        )
+        if project not in user_projects:
+            messages.error(request, 'You do not have access to this project.')
+            return redirect('site_diary:dashboard')
+    
+    # Get latest diary entry for this project
+    diary_entry = DiaryEntry.objects.filter(project=project).order_by('-entry_date').first()
+    
+    context = {
+        'project': project,
+        'diary_entry': diary_entry,
+    }
+    return render(request, 'site_diary/printlayout.html', context)
+
 @require_site_manager_role
 def api_filter_projects(request):
     """API endpoint for filtering projects on dashboard"""
@@ -1101,3 +1123,71 @@ def api_filter_projects(request):
         return JsonResponse({'projects': project_data})
     
     return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+def sample_print(request):
+    """Sample print preview with mock data - no authentication required"""
+    from datetime import date
+    
+    # Mock project data
+    class MockProject:
+        name = "Metro Plaza Tower"
+        client_name = "Metro Development Corp"
+        location = "Central Business District, Manila"
+        status = "active"
+        
+        def get_status_display(self):
+            return "Active"
+    
+    # Mock diary entry data
+    class MockDiaryEntry:
+        entry_date = date.today()
+        weather_condition = "sunny"
+        temperature_high = 32
+        temperature_low = 24
+        progress_percentage = 65
+        work_description = "Continued concrete pouring for foundation work. Completed rebar installation for columns A1-A5. Structural steel delivery scheduled for tomorrow. Quality inspections passed for all completed sections."
+        quality_issues = "No quality issues reported"
+        safety_incidents = "No safety incidents reported"
+        general_notes = "Weather conditions favorable for construction activities. All safety protocols followed. Material deliveries on schedule."
+        
+        class MockCreatedBy:
+            def get_full_name(self):
+                return "John Smith"
+        
+        created_by = MockCreatedBy()
+        
+        class MockMaterialEntries:
+            def all(self):
+                return [
+                    type('MockMaterial', (), {
+                        'material_name': 'Concrete',
+                        'quantity_delivered': 15,
+                        'unit': 'm³'
+                    }),
+                    type('MockMaterial', (), {
+                        'material_name': 'Steel Rebar',
+                        'quantity_delivered': 2500,
+                        'unit': 'kg'
+                    }),
+                    type('MockMaterial', (), {
+                        'material_name': 'Cement',
+                        'quantity_delivered': 150,
+                        'unit': 'bags'
+                    })
+                ]
+        
+        material_entries = MockMaterialEntries()
+    
+    class MockProjectManager:
+        def get_full_name(self):
+            return "Maria Rodriguez"
+    
+    project = MockProject()
+    project.project_manager = MockProjectManager()
+    diary_entry = MockDiaryEntry()
+    
+    context = {
+        'project': project,
+        'diary_entry': diary_entry,
+    }
+    return render(request, 'site_diary/printlayout.html', context)
