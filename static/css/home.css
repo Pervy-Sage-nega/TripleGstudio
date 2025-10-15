@@ -24,6 +24,13 @@
   --nav-text: #FFFFFF;
 }
 
+body {
+    overflow-x: hidden;
+    width: 100%;
+    font-family: 'Poppins', sans-serif;
+    background-color: #00273C;
+    color: #FFFFFF;
+}
 /* Home Section Styles */
 .home {
   position: relative;
