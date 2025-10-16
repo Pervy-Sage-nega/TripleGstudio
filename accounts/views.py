@@ -15,6 +15,126 @@ from .forms import ClientRegisterForm, OTPForm, AdminRegisterForm, AdminLoginFor
 from .models import OneTimePassword, AdminProfile, SiteManagerProfile, Profile
 from .utils import get_user_role, get_user_dashboard_url, get_appropriate_redirect
 from .activity_tracker import UserActivityTracker
+
+# Forgot password views
+def admin_forgot_password(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        try:
+            user = User.objects.get(email=email, is_staff=True)
+            if hasattr(user, 'adminprofile'):
+                code = OneTimePassword.generate_code()
+                OneTimePassword.objects.update_or_create(user=user, defaults={"code": code})
+                send_mail(
+                    "Password Reset - Triple G BuildHub",
+                    f"Your password reset code is {code}. It will expire in 10 minutes.",
+                    settings.DEFAULT_FROM_EMAIL,
+                    [user.email],
+                    fail_silently=False,
+                )
+                messages.success(request, "Password reset code sent to your email.")
+                request.session['reset_user_email'] = email
+                return redirect('accounts:admin_reset_password')
+        except User.DoesNotExist:
+            pass
+        messages.error(request, "Email not found.")
+    return render(request, 'admin/forgot_password.html')
+
+def sitemanager_forgot_password(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        try:
+            user = User.objects.get(email=email)
+            if hasattr(user, 'sitemanagerprofile'):
+                code = OneTimePassword.generate_code()
+                OneTimePassword.objects.update_or_create(user=user, defaults={"code": code})
+                send_mail(
+                    "Password Reset - Triple G BuildHub",
+                    f"Your password reset code is {code}. It will expire in 10 minutes.",
+                    settings.DEFAULT_FROM_EMAIL,
+                    [user.email],
+                    fail_silently=False,
+                )
+                messages.success(request, "Password reset code sent to your email.")
+                request.session['reset_user_email'] = email
+                return redirect('accounts:sitemanager_reset_password')
+        except User.DoesNotExist:
+            pass
+        messages.error(request, "Email not found.")
+    return render(request, 'sitemanager/forgot_password.html')
+
+def admin_reset_password(request):
+    email = request.session.get('reset_user_email')
+    if not email:
+        messages.error(request, "Session expired. Please request a new reset code.")
+        return redirect('accounts:admin_forgot_password')
+    
+    if request.method == 'POST':
+        code = request.POST.get('code')
+        new_password = request.POST.get('new_password')
+        confirm_password = request.POST.get('confirm_password')
+        
+        if new_password != confirm_password:
+            messages.error(request, "Passwords do not match.")
+            return render(request, 'admin/reset_password.html', {'email': email})
+        
+        try:
+            user = User.objects.get(email=email, is_staff=True)
+            otp_obj = OneTimePassword.objects.get(user=user, code=code)
+            
+            if otp_obj.is_expired():
+                messages.error(request, "Reset code has expired. Please request a new one.")
+                return redirect('accounts:admin_forgot_password')
+            
+            user.set_password(new_password)
+            user.save()
+            otp_obj.delete()
+            del request.session['reset_user_email']
+            
+            messages.success(request, "Password reset successfully. Please login with your new password.")
+            return redirect('accounts:admin_login')
+            
+        except (User.DoesNotExist, OneTimePassword.DoesNotExist):
+            messages.error(request, "Invalid reset code.")
+    
+    return render(request, 'admin/reset_password.html', {'email': email})
+
+def sitemanager_reset_password(request):
+    email = request.session.get('reset_user_email')
+    if not email:
+        messages.error(request, "Session expired. Please request a new reset code.")
+        return redirect('accounts:sitemanager_forgot_password')
+    
+    if request.method == 'POST':
+        code = request.POST.get('code')
+        new_password = request.POST.get('new_password')
+        confirm_password = request.POST.get('confirm_password')
+        
+        if new_password != confirm_password:
+            messages.error(request, "Passwords do not match.")
+            return render(request, 'sitemanager/reset_password.html', {'email': email})
+        
+        try:
+            user = User.objects.get(email=email)
+            otp_obj = OneTimePassword.objects.get(user=user, code=code)
+            
+            if otp_obj.is_expired():
+                messages.error(request, "Reset code has expired. Please request a new one.")
+                return redirect('accounts:sitemanager_forgot_password')
+            
+            user.set_password(new_password)
+            user.save()
+            otp_obj.delete()
+            del request.session['reset_user_email']
+            
+            messages.success(request, "Password reset successfully. Please login with your new password.")
+            return redirect('accounts:sitemanager_login')
+            
+        except (User.DoesNotExist, OneTimePassword.DoesNotExist):
+            messages.error(request, "Invalid reset code.")
+    
+    return render(request, 'sitemanager/reset_password.html', {'email': email})
+
 @csrf_protect
 @never_cache
 @transaction.atomic
@@ -425,17 +545,6 @@ def admin_login_view(request):
     else:
         form = AdminLoginForm()
     
-    print(f"[DEBUG] Rendering custom_admin_login.html template")
-    print(f"[DEBUG] Template dirs: {settings.TEMPLATES[0]['DIRS']}")
-    
-    # Try to render with explicit template path to avoid conflicts
-    from django.template.loader import get_template
-    try:
-        template = get_template('admin/custom_admin_login.html')
-        print(f"[DEBUG] Found template: {template.origin.name}")
-    except Exception as e:
-        print(f"[DEBUG] Template error: {e}")
-    
     return render(request, 'admin/custom_admin_login.html', {'form': form})
 
 
@@ -776,3 +885,64 @@ def sitemanager_logout_view(request):
         logout(request)
         messages.info(request, "You have been successfully logged out.")
     return redirect('accounts:sitemanager_login')
+
+def client_forgot_password(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        try:
+            user = User.objects.filter(email=email).filter(profile__isnull=False).first()
+            if user:
+                code = OneTimePassword.generate_code()
+                OneTimePassword.objects.update_or_create(user=user, defaults={"code": code})
+                send_mail(
+                    "Password Reset - Triple G BuildHub",
+                    f"Your password reset code is {code}. It will expire in 10 minutes.",
+                    settings.DEFAULT_FROM_EMAIL,
+                    [user.email],
+                    fail_silently=False,
+                )
+                messages.success(request, "Password reset code sent to your email.")
+                request.session['reset_user_email'] = email
+                return redirect('accounts:client_reset_password')
+        except Exception:
+            pass
+        messages.error(request, "Email not found.")
+    return render(request, 'client/forgot_password.html')
+
+def client_reset_password(request):
+    email = request.session.get('reset_user_email')
+    if not email:
+        messages.error(request, "Session expired. Please request a new reset code.")
+        return redirect('accounts:client_forgot_password')
+    
+    if request.method == 'POST':
+        code = request.POST.get('code')
+        new_password = request.POST.get('new_password')
+        confirm_password = request.POST.get('confirm_password')
+        
+        if new_password != confirm_password:
+            messages.error(request, "Passwords do not match.")
+            return render(request, 'client/reset_password.html', {'email': email})
+        
+        try:
+            user = User.objects.filter(email=email).filter(profile__isnull=False).first()
+            if user:
+                otp_obj = OneTimePassword.objects.get(user=user, code=code)
+                
+                if otp_obj.is_expired():
+                    messages.error(request, "Reset code has expired. Please request a new one.")
+                    return redirect('accounts:client_forgot_password')
+                
+                user.set_password(new_password)
+                user.save()
+                otp_obj.delete()
+                del request.session['reset_user_email']
+                
+                messages.success(request, "Password reset successfully. Please login with your new password.")
+                return redirect('accounts:client_login')
+            else:
+                messages.error(request, "Invalid reset code.")
+        except OneTimePassword.DoesNotExist:
+            messages.error(request, "Invalid reset code.")
+    
+    return render(request, 'client/reset_password.html', {'email': email})

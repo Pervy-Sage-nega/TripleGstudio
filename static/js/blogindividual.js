@@ -19,6 +19,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize image zoom functionality
     initImageZoom();
+    
+    // Initialize social sharing
+    initSocialSharing();
 });
 
 /**
@@ -500,5 +503,103 @@ function initImageZoom() {
         }
     });
 } 
+
+/**
+ * Initialize social sharing functionality
+ */
+function initSocialSharing() {
+    const shareButtons = document.querySelectorAll('.share-btn');
+    
+    shareButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const platform = this.getAttribute('data-platform');
+            const url = encodeURIComponent(window.location.href);
+            const title = encodeURIComponent(document.title);
+            const description = encodeURIComponent(document.querySelector('meta[name="description"]')?.content || '');
+            
+            let shareUrl = '';
+            
+            switch(platform) {
+                case 'facebook':
+                    shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
+                    break;
+                case 'twitter':
+                    shareUrl = `https://twitter.com/intent/tweet?url=${url}&text=${title}`;
+                    break;
+                case 'linkedin':
+                    shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${url}`;
+                    break;
+                case 'email':
+                    shareUrl = `mailto:?subject=${title}&body=Check out this article: ${url}`;
+                    break;
+                case 'copy':
+                    copyToClipboard(window.location.href);
+                    return;
+            }
+            
+            if (shareUrl) {
+                window.open(shareUrl, '_blank', 'width=600,height=400,scrollbars=yes,resizable=yes');
+            }
+        });
+    });
+}
+
+/**
+ * Copy text to clipboard
+ */
+function copyToClipboard(text) {
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => {
+            showCopySuccess();
+        }).catch(() => {
+            fallbackCopyToClipboard(text);
+        });
+    } else {
+        fallbackCopyToClipboard(text);
+    }
+}
+
+/**
+ * Fallback copy method for older browsers
+ */
+function fallbackCopyToClipboard(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        document.execCommand('copy');
+        showCopySuccess();
+    } catch (err) {
+        console.error('Failed to copy text: ', err);
+        alert('Failed to copy link. Please copy manually: ' + text);
+    }
+    
+    document.body.removeChild(textArea);
+}
+
+/**
+ * Show copy success message
+ */
+function showCopySuccess() {
+    const copyBtn = document.querySelector('.share-btn[data-platform="copy"]');
+    if (copyBtn) {
+        const originalText = copyBtn.innerHTML;
+        copyBtn.innerHTML = '<i class="fas fa-check"></i><span>Copied!</span>';
+        copyBtn.classList.add('copied');
+        
+        setTimeout(() => {
+            copyBtn.innerHTML = originalText;
+            copyBtn.classList.remove('copied');
+        }, 2000);
+    }
+}
 
 console.log('Blog individual JS loaded');

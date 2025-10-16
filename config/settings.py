@@ -53,10 +53,12 @@ INSTALLED_APPS = [
     # Third-party apps
     'axes',
     'storages',
+    'csp',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'csp.middleware.CSPMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -208,5 +210,27 @@ CACHES = {
         'OPTIONS': {
             'MAX_ENTRIES': 1000,
         }
+    }
+}
+
+# Security Headers
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
+X_FRAME_OPTIONS = 'DENY'
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+
+# Content Security Policy (django-csp 4.0 format)
+CONTENT_SECURITY_POLICY = {
+    'DIRECTIVES': {
+        'base-uri': ("'self'",),
+        'connect-src': ("'self'", 'https://cdn.jsdelivr.net'),
+        'default-src': ("'self'",),
+        'font-src': ("'self'", 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com'),
+        'form-action': ("'self'",),
+        'frame-src': ("'none'",),
+        'img-src': ("'self'", 'data:', 'https:', 'http:'),
+        'object-src': ("'none'",),
+        'script-src': ("'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com', 'https://code.jquery.com'),
+        'style-src': ("'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com')
     }
 }

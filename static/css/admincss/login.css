@@ -224,7 +224,7 @@ h1{
 }
 
 /* Left-side icons (like lock, user, etc.) */
-.input-with-icon i:not(.select-arrow) {
+.input-with-icon i:not(.select-arrow):not(.fa-eye):not(.fa-eye-slash) {
     position: absolute;
     left: 12px;
     top: 50%;
@@ -252,7 +252,7 @@ h1{
 /* Inputs & selects */
 .input-with-icon input,
 .input-with-icon select {
-    width: 106%;
+    width: 100%;
     padding: 10px 40px 10px 40px; /* space on left & right for icons */
     border: 1px solid #ccc;
     border-radius: 8px;

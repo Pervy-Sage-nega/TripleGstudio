@@ -992,6 +992,18 @@
     margin-left: 10px;
 }
 
+/* Social Sharing Copy Success State */
+.share-btn.copied {
+    background-color: #22c55e !important;
+    border-color: #22c55e !important;
+    color: white !important;
+    transform: scale(1.05);
+}
+
+.share-btn.copied:hover {
+    background-color: #16a34a !important;
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
     .comment-form .form-row {

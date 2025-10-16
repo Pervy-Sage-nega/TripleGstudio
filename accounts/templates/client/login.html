@@ -8,7 +8,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <title>Double Slider Login | Registration Form</title>
-  <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet">
+  <link href="{% static 'lineicons/lineicons.css' %}" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'fontawesome/css/all.min.css' %}">
   <link rel="stylesheet" href="{% static 'css/register.css' %}">
   <link rel="stylesheet" href="{% static 'css/sitecss/modal_messages.css' %}">
   <link rel="stylesheet" href="{% static 'css/loader.css' %}">
@@ -30,22 +31,20 @@
      
       <input type="text" id="login-username" name="username" placeholder="Email or Username" required />
       <input type="password" id="login-password" name="password" placeholder="Password" required />
+      <i class="fas fa-eye password-eye" id="loginPasswordToggle"></i>
+      <div class="error-message" id="loginError" style="display: none;"></div>
       <div class="content">
         <div class="checkbox">
           <input type="checkbox" name="remember" id="login-remember" />
           <label for="remember-me">Remember me</label>
         </div>
         <div class="pass-link">
-          <a href="#">Forgot your password?</a>
+          <a href="{% url 'accounts:client_forgot_password' %}">Forgot your password?</a>
         </div>
       </div>
       <button type="submit">Login</button>
-      <span>or use your account</span>
-      <div class="social-container">
-        <a href="#" class="social"><i class="lni lni-facebook-fill"></i></a>
-        <a href="#" class="social"><i class="lni lni-google"></i></a>
-        <a href="#" class="social"><i class="lni lni-linkedin-original"></i></a>
-      </div>
+    
+      
       <!-- Mobile/Tablet Toggle Button -->
       <div class="mobile-toggle-wrapper login-toggle">
         <button type="button" class="mobile-toggle-btn" id="loginToRegisterBtn">
@@ -63,13 +62,10 @@
       <input type="text" id="register-lastname" name="last_name" placeholder="Lastname" required />
       <input type="email" id="register-email" name="email" placeholder="Email" required />
       <input type="password" id="register-password" name="reg_password" placeholder="Password" required />
+      <i class="fas fa-eye password-eye" id="registerPasswordToggle"></i>
       <button type="submit" name="register">Register</button>
-      <span>or use your account</span>
-      <div class="social-container">
-        <a href="#" class="social"><i class="lni lni-facebook-fill"></i></a>
-        <a href="#" class="social"><i class="lni lni-google"></i></a>
-        <a href="#" class="social"><i class="lni lni-linkedin-original"></i></a>
-      </div>
+     
+     
       <!-- Mobile/Tablet Toggle Button -->
       <div class="mobile-toggle-wrapper register-toggle">
         <button type="button" class="mobile-toggle-btn" id="registerToLoginBtn">

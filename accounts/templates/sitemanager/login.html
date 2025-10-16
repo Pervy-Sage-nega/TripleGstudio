@@ -21,6 +21,7 @@
 
     <div class="auth-form-wrapper">
         <div class="auth-form-header">
+            <h2>Site Manager Sign In</h2>
             <p>Enter your credentials to access your account</p>
         </div>
         
@@ -54,14 +55,11 @@
                     <input type="checkbox" id="remember" name="remember">
                     <label for="remember">Remember me</label>
                 </div>
-                <a href="#" class="forgot-password">Forgot password?</a>
+                <a href="{% url 'accounts:sitemanager_forgot_password' %}" class="forgot-password">Forgot password?</a>
             </div>
             <button type="submit" class="btn btn-primary login-btn">Sign In</button>
-            <div class="auth-divider"><span>Or</span></div>
-            <div class="alternative-logins">
-                <button type="button" class="btn btn-outline social-login"><i class="fab fa-google"></i><span>Sign in with Google</span></button>
-                <button type="button" class="btn btn-outline social-login"><i class="fab fa-microsoft"></i><span>Sign in with Microsoft</span></button>
-            </div>
+          
+           
         </form>
         <div class="auth-form-footer">
             <p>Don't have an account? <a href="{% url 'accounts:sitemanager_register' %}">Register here</a></p>

@@ -10,12 +10,12 @@
   <link rel="shortcut icon" type="image/png" href="{% static 'images/logostick.png' %}">
   <!-- Valorant Style CSS -->
   <link rel="stylesheet" href="{% static 'css/sitecss/global-header.css' %}">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="{% static 'fontawesome/css/all.min.css' %}">
   {% block head %} 
     <!-- Modal Message CSS -->
     <link rel="stylesheet" href="{% static 'css/sitecss/modal_messages.css' %}">
     <!-- Lineicons for modal icons -->
-    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link href="{% static 'lineicons/lineicons.css' %}" rel="stylesheet" />
   {% endblock %}
 </head>
 <body>

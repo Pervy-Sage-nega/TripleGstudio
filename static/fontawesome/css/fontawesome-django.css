@@ -1,0 +1,121 @@
+/*!
+ * Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com
+ * License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License)
+ * Copyright 2022 Fonticons, Inc.
+ */
+
+/* Font Face Definitions with Django Static URLs */
+@font-face {
+    font-family: "Font Awesome 6 Free";
+    font-style: normal;
+    font-weight: 900;
+    font-display: block;
+    src: url('/static/fontawesome/webfonts/fa-solid-900.woff2') format("woff2"),
+         url('/static/fontawesome/webfonts/fa-solid-900.ttf') format("truetype");
+}
+
+@font-face {
+    font-family: "Font Awesome 6 Free";
+    font-style: normal;
+    font-weight: 400;
+    font-display: block;
+    src: url('/static/fontawesome/webfonts/fa-regular-400.woff2') format("woff2"),
+         url('/static/fontawesome/webfonts/fa-regular-400.ttf') format("truetype");
+}
+
+@font-face {
+    font-family: "Font Awesome 6 Brands";
+    font-style: normal;
+    font-weight: 400;
+    font-display: block;
+    src: url('/static/fontawesome/webfonts/fa-brands-400.woff2') format("woff2"),
+         url('/static/fontawesome/webfonts/fa-brands-400.ttf') format("truetype");
+}
+
+/* Font Awesome Core Styles */
+.fa {
+    font-family: var(--fa-style-family, "Font Awesome 6 Free");
+    font-weight: var(--fa-style, 900);
+}
+
+.fa, .fa-brands, .fa-duotone, .fa-light, .fa-regular, .fa-solid, .fa-thin, .fab, .fad, .fal, .far, .fas, .fat {
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+    display: var(--fa-display, inline-block);
+    font-style: normal;
+    font-variant: normal;
+    line-height: 1;
+    text-rendering: auto;
+}
+
+/* Font Classes */
+.fa-solid, .fas { 
+    font-family: "Font Awesome 6 Free"; 
+    font-weight: 900; 
+}
+
+.fa-regular, .far { 
+    font-family: "Font Awesome 6 Free"; 
+    font-weight: 400; 
+}
+
+.fa-brands, .fab { 
+    font-family: "Font Awesome 6 Brands"; 
+    font-weight: 400; 
+}
+
+/* Icon Definitions */
+.fa-envelope:before { content: "\f0e0"; }
+.fa-lock:before { content: "\f023"; }
+.fa-eye:before { content: "\f06e"; }
+.fa-calendar-check:before { content: "\f274"; }
+.fa-tasks:before { content: "\f0ae"; }
+.fa-chart-line:before { content: "\f201"; }
+.fa-exclamation-circle:before { content: "\f06a"; }
+.fa-google:before { content: "\f1a0"; }
+.fa-microsoft:before { content: "\f3ca"; }
+.fa-user:before { content: "\f007"; }
+.fa-phone:before { content: "\f095"; }
+.fa-building:before { content: "\f1ad"; }
+.fa-briefcase:before { content: "\f0b1"; }
+.fa-graduation-cap:before { content: "\f19d"; }
+.fa-id-card:before { content: "\f2c2"; }
+.fa-map-marker-alt:before { content: "\f3c5"; }
+.fa-calendar:before { content: "\f133"; }
+.fa-clock:before { content: "\f017"; }
+.fa-check:before { content: "\f00c"; }
+.fa-times:before { content: "\f00d"; }
+.fa-plus:before { content: "\002b"; }
+.fa-minus:before { content: "\f068"; }
+.fa-edit:before { content: "\f044"; }
+.fa-trash:before { content: "\f1f8"; }
+.fa-save:before { content: "\f0c7"; }
+.fa-download:before { content: "\f019"; }
+.fa-upload:before { content: "\f093"; }
+.fa-search:before { content: "\f002"; }
+.fa-filter:before { content: "\f0b0"; }
+.fa-sort:before { content: "\f0dc"; }
+.fa-home:before { content: "\f015"; }
+.fa-cog:before { content: "\f013"; }
+.fa-sign-out-alt:before { content: "\f2f5"; }
+.fa-bell:before { content: "\f0f3"; }
+.fa-comment:before { content: "\f075"; }
+.fa-heart:before { content: "\f004"; }
+.fa-star:before { content: "\f005"; }
+.fa-thumbs-up:before { content: "\f164"; }
+.fa-thumbs-down:before { content: "\f165"; }
+.fa-share:before { content: "\f064"; }
+.fa-print:before { content: "\f02f"; }
+.fa-file:before { content: "\f15b"; }
+.fa-folder:before { content: "\f07b"; }
+.fa-image:before { content: "\f03e"; }
+.fa-video:before { content: "\f03d"; }
+.fa-music:before { content: "\f001"; }
+.fa-play:before { content: "\f04b"; }
+.fa-pause:before { content: "\f04c"; }
+.fa-stop:before { content: "\f04d"; }
+.fa-forward:before { content: "\f04e"; }
+.fa-backward:before { content: "\f04a"; }
+.fa-volume-up:before { content: "\f028"; }
+.fa-volume-down:before { content: "\f027"; }
+.fa-volume-off:before { content: "\f026"; }

@@ -132,6 +132,16 @@ class BlogPost(models.Model):
         ]
     
     def save(self, *args, **kwargs):
+        # Sanitize content before saving
+        from .utils import sanitize_content, contains_suspicious_content
+        
+        if self.content:
+            self.content = sanitize_content(self.content)
+            
+            # Auto-flag suspicious content for review
+            if contains_suspicious_content(self.content) and self.status == 'published':
+                self.status = 'pending'
+        
         # Auto-generate slug from title
         if not self.slug:
             self.slug = slugify(self.title)
