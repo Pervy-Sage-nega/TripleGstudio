@@ -1,6 +1,7 @@
 
 {% extends 'layout.html' %}
 {% load static %}
+{% load blog_filters %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -65,7 +66,7 @@
                                     <span class="date"><i class="fas fa-calendar"></i> {{ post.published_date|date:"F j, Y" }}</span>
                                     <span class="read-time"><i class="fas fa-clock"></i> {{ post.reading_time }} min read</span>
                                 </div>
-                                <p>{{ post.excerpt|default:post.content|truncatewords:30|striptags }}</p>
+                                <p>{{ post.excerpt|default:post.content|unescape_html|truncatewords:30|striptags }}</p>
                                 <a href="{{ post.get_absolute_url }}" class="btn btn-secondary">Read Article <i class="fas fa-arrow-right"></i></a>
                             </div>
                         </div>
@@ -115,7 +116,7 @@
                                     <span class="author"><i class="fas fa-user"></i> {{ post.author.get_full_name|default:post.author.username }}</span>
                                     <span class="date"><i class="fas fa-calendar"></i> {{ post.published_date|date:"F j, Y" }}</span>
                                 </div>
-                                <p>{{ post.excerpt|default:post.content|truncatewords:20|striptags }}</p>
+                                <p>{{ post.excerpt|default:post.content|unescape_html|truncatewords:20|striptags }}</p>
                                 <a href="{{ post.get_absolute_url }}" class="read-more">Read More <i class="fas fa-arrow-right"></i></a>
                             </div>
                         </article>
@@ -243,41 +244,11 @@
     </section>
 
     
-  <footer class="footer">
-    <div class="footer-content">
-      <div class="footer-left">
-        <h1>TRIPLE G STUDIO</h1>
-        <h2>WHERE UNIQUE DESIGNS AND CONSTRUCTION ARE BEING DEVELOPED</h2>
-        <p>WE ARE HERE TO CHANGE THE WORLD SOMETHING DESCRIPTION</p>
-        <div class="contact-details">
-          <p>LOCATION DETAILS:</p>
-          <p>COORDINATES</p>
-          <p>TripleGStudio@gmail.com</p>
-          <p>📞 091231876231826</p>
-        </div>
-      </div>
-      <div class="footer-right">
-        <div class="socials">
-           <a href="https://twitter.com" target="_blank" class="social-link">
-            <i class="fab fa-twitter"></i>
-           </a>
-           <a href="https://instagram.com" target="_blank" class="social-link">
-            <i class="fab fa-instagram"></i>
-           </a>
-           <a href="https://facebook.com" target="_blank" class="social-link">
-            <i class="fab fa-facebook"></i>
-           </a>
-        </div>
-        <div class="footer-logo">
-          <img src="{% static 'images/kristelle.jpg' %}" alt="Logo" class="logo-img">
-        </div>
-      </div>
-    </div>
-      </footer>
+  
 
     <script src="{% static 'js/main.js' %}"></script>
     <script src="{% static 'js/bloglist.js' %}"></script>
-   ''
+ 
 </body>
 {% endblock %}
 </html>

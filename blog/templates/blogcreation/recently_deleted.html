@@ -1,0 +1,227 @@
+{% extends "site_diary/layout_format.html" %}
+{% load static %}
+
+{% block head %}
+    <title>Recently Deleted - Triple G BuildHub</title>
+    <link rel="stylesheet" href="{% static 'css/sitecss/global-header.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/global-footer.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/drafts.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/blog-ui-fixes.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}
+
+{% block body %}
+    <div id="header-placeholder"></div>
+
+    <div class="container">
+        <div class="page-header">
+            <div class="page-title">
+                <i class="fas fa-trash-restore"></i>
+                <h1>Recently Deleted</h1>
+            </div>
+            <div class="header-actions">
+                <a href="{% url 'site_diary:drafts' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Drafts
+                </a>
+            </div>
+        </div>
+
+        <div class="drafts-section">
+            <div class="section-header">
+                <h2>Recently Deleted Blog Posts</h2>
+                <p class="section-description">Restore or permanently delete your blog posts</p>
+            </div>
+
+            <div class="table-responsive">
+                <table id="deleted-posts-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Category</th>
+                            <th>Deleted Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for blog in deleted_posts %}
+                        <tr>
+                            <td>
+                                <div class="post-title">
+                                    {{ blog.title }}
+                                    {% if blog.featured_image %}
+                                    <span class="has-image-indicator" title="Has featured image">
+                                        <i class="fas fa-image"></i>
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>{{ blog.category.name|default:"Uncategorized" }}</td>
+                            <td>{{ blog.deleted_at|date:"M d, Y H:i" }}</td>
+                            <td>
+                                <span class="status-badge status-deleted">Deleted</span>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="action-btn restore-btn" 
+                                            onclick="confirmRestore({{ blog.id }}, '{{ blog.title|escapejs }}')" 
+                                            title="Restore">
+                                        <i class="fas fa-undo"></i>
+                                    </button>
+                                    <button class="action-btn permanent-delete-btn" 
+                                            onclick="confirmPermanentDelete({{ blog.id }}, '{{ blog.title|escapejs }}')" 
+                                            title="Permanently Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="no-results-row">
+                                <div class="no-results">
+                                    <i class="fas fa-inbox"></i>
+                                    <h3>No Recently Deleted Posts</h3>
+                                    <p>You don't have any recently deleted blog posts.</p>
+                                    <a href="{% url 'site_diary:drafts' %}" class="btn btn-primary">
+                                        <i class="fas fa-arrow-left"></i> Back to Drafts
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Restore Confirmation Modal -->
+    <div id="restoreModal" class="modal">
+        <div class="modal-content confirmation-modal">
+            <span class="close-modal">&times;</span>
+            <div class="modal-icon">
+                <i class="fas fa-undo"></i>
+            </div>
+            <h2 class="modal-title">Restore Blog Post</h2>
+            <p class="modal-message">Are you sure you want to restore "<span id="restore-blog-title"></span>"?</p>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="restore-cancel-btn">Cancel</button>
+                <button class="btn btn-success" id="restore-confirm-btn">Restore</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Permanent Delete Confirmation Modal -->
+    <div id="permanentDeleteModal" class="modal">
+        <div class="modal-content confirmation-modal">
+            <span class="close-modal">&times;</span>
+            <div class="modal-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h2 class="modal-title">Permanently Delete</h2>
+            <p class="modal-message">Are you sure you want to permanently delete "<span id="delete-blog-title"></span>"? This action cannot be undone.</p>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="delete-cancel-btn">Cancel</button>
+                <button class="btn btn-danger" id="delete-confirm-btn">Permanently Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <style>
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            padding: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            color: var(--dark-gray);
+            transition: background-color 0.3s ease, color 0.3s ease;
+            text-decoration: none;
+        }
+
+        .action-btn:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .restore-btn:hover {
+            color: var(--success-color);
+        }
+
+        .permanent-delete-btn:hover {
+            color: var(--danger-color);
+        }
+
+        .status-deleted {
+            background: var(--danger-color);
+            color: white;
+        }
+    </style>
+
+    <script>
+        let currentBlogId = null;
+
+        function confirmRestore(blogId, blogTitle) {
+            currentBlogId = blogId;
+            document.getElementById('restore-blog-title').textContent = blogTitle;
+            document.getElementById('restoreModal').classList.add('active');
+        }
+
+        function confirmPermanentDelete(blogId, blogTitle) {
+            currentBlogId = blogId;
+            document.getElementById('delete-blog-title').textContent = blogTitle;
+            document.getElementById('permanentDeleteModal').classList.add('active');
+        }
+
+        // Modal event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Close modal buttons
+            document.querySelectorAll('.close-modal').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.modal').forEach(modal => {
+                        modal.classList.remove('active');
+                    });
+                });
+            });
+
+            // Cancel buttons
+            document.getElementById('restore-cancel-btn').addEventListener('click', function() {
+                document.getElementById('restoreModal').classList.remove('active');
+            });
+
+            document.getElementById('delete-cancel-btn').addEventListener('click', function() {
+                document.getElementById('permanentDeleteModal').classList.remove('active');
+            });
+
+            // Confirm buttons
+            document.getElementById('restore-confirm-btn').addEventListener('click', function() {
+                if (currentBlogId) {
+                    window.location.href = `{% url 'site_diary:restore_blog' 0 %}`.replace('0', currentBlogId);
+                }
+            });
+
+            document.getElementById('delete-confirm-btn').addEventListener('click', function() {
+                if (currentBlogId) {
+                    window.location.href = `{% url 'site_diary:permanent_delete_blog' 0 %}`.replace('0', currentBlogId);
+                }
+            });
+
+            // Close modal when clicking outside
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        modal.classList.remove('active');
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock %}

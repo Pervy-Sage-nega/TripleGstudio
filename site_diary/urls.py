@@ -34,4 +34,8 @@ urlpatterns = [
     path('chatbot/', views.chatbot, name='chatbot'),
     path('createblog/', views.createblog, name='createblog'),
     path('drafts/', views.drafts, name='drafts'),
+    path('delete-blog/<int:blog_id>/', views.delete_blog, name='delete_blog'),
+    path('recently-deleted/', views.recently_deleted, name='recently_deleted'),
+    path('restore-blog/<int:blog_id>/', views.restore_blog, name='restore_blog'),
+    path('permanent-delete/<int:blog_id>/', views.permanent_delete_blog, name='permanent_delete_blog'),
 ]

@@ -89,6 +89,16 @@
                 <button id="projectsGridViewBtn" class="view-btn" title="Grid View">
                     <i class="fas fa-th-large"></i> Grid View
                 </button>
+                <div class="bulk-actions">
+                    <select id="bulkAction" class="filter-dropdown">
+                        <option value="">Select Action</option>
+                        <option value="draft">Draft Selected</option>
+                        <option value="publish">Publish Selected</option>
+                        <option value="unpublish">Unpublish Selected</option>
+                        <option value="delete">Delete Selected</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="processBulkAction()">Proceed</button>
+                </div>
             </div>
         </div>
         
@@ -103,6 +113,7 @@
                         <th>Visibility</th>
                         <th>Completion Date</th>
                         <th>Actions</th>
+                        <th>Select</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -135,10 +146,13 @@
                                 </button>
                             </div>
                         </td>
+                        <td>
+                            <input type="checkbox" class="project-checkbox" value="{{ project.id }}">
+                        </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="5" class="no-results">
+                        <td colspan="6" class="no-results">
                             <i class="fas fa-folder-open"></i>
                             <h3>No Projects Found</h3>
                             <p>Create your first project using the form.</p>
@@ -209,6 +223,38 @@
         <!-- End Project Management View Wrapper -->
     </div>
 
+
+<style>
+.view-toggle {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.bulk-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+}
+.btn{
+    margin-top: 0px !important;
+}
+
+.bulk-actions .filter-dropdown {
+    margin: 0;
+}
+
+.bulk-actions .btn {
+    margin: 0;
+    white-space: nowrap;
+}
+
+.project-checkbox {
+    margin: 0;
+    cursor: pointer;
+}
+</style>
 
 {% endblock %}
 
@@ -473,6 +519,75 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         console.log('Refresh button listener added');
     }
+    
+    // Process bulk action function
+    window.processBulkAction = function() {
+        const action = document.getElementById('bulkAction').value;
+        const selectedIds = Array.from(document.querySelectorAll('.project-checkbox:checked')).map(cb => cb.value);
+        
+        if (!action) {
+            alert('Please select an action.');
+            return;
+        }
+        
+        if (selectedIds.length === 0) {
+            alert('Please select at least one project.');
+            return;
+        }
+        
+        if (action === 'draft') {
+            if (confirm(`Are you sure you want to set ${selectedIds.length} project(s) to draft?`)) {
+                bulkUpdateStatus(selectedIds, 'draft');
+            }
+        } else if (action === 'publish') {
+            if (confirm(`Are you sure you want to publish ${selectedIds.length} project(s)?`)) {
+                bulkUpdateStatus(selectedIds, 'completed');
+            }
+        } else if (action === 'unpublish') {
+            if (confirm(`Are you sure you want to unpublish ${selectedIds.length} project(s)?`)) {
+                bulkUpdateStatus(selectedIds, 'draft');
+            }
+        } else if (action === 'delete') {
+            if (confirm(`Are you sure you want to delete ${selectedIds.length} project(s)? This action cannot be undone.`)) {
+                selectedIds.forEach(id => {
+                    deleteProject(id);
+                });
+            }
+        }
+    };
+    
+    // Bulk update status function
+    window.bulkUpdateStatus = function(projectIds, status) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/portfolio/bulk-update-status/';
+        
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (csrfToken) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrfmiddlewaretoken';
+            csrfInput.value = csrfToken.value;
+            form.appendChild(csrfInput);
+        }
+        
+        const statusInput = document.createElement('input');
+        statusInput.type = 'hidden';
+        statusInput.name = 'status';
+        statusInput.value = status;
+        form.appendChild(statusInput);
+        
+        projectIds.forEach(id => {
+            const idInput = document.createElement('input');
+            idInput.type = 'hidden';
+            idInput.name = 'project_ids';
+            idInput.value = id;
+            form.appendChild(idInput);
+        });
+        
+        document.body.appendChild(form);
+        form.submit();
+    };
     
     // Initialize with table view
     showTableView();

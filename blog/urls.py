@@ -8,9 +8,13 @@ app_name = 'blog'
 urlpatterns = [
     # Admin views
     path('admin/management/', views.blog_management, name='blogmanagement'),
+    path('admin/recently-deleted/', views.admin_recently_deleted, name='admin_recently_deleted'),
+    path('admin/restore/<int:post_id>/', views.admin_restore_blog, name='admin_restore_blog'),
+    path('admin/permanent-delete/<int:post_id>/', views.admin_permanent_delete_blog, name='admin_permanent_delete_blog'),
     path('admin/approve/<int:post_id>/', views.approve_blog_post, name='approve_blog_post'),
     path('admin/reject/<int:post_id>/', views.reject_blog_post, name='reject_blog_post'),
     path('admin/change-status/<int:post_id>/', views.change_blog_status, name='change_blog_status'),
+    path('admin/toggle-featured/<int:post_id>/', views.admin_toggle_featured, name='admin_toggle_featured'),
     
     # Site manager views
     path('drafts/', views.blog_drafts, name='blog_drafts'),

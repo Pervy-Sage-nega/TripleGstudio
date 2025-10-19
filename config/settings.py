@@ -227,7 +227,7 @@ CONTENT_SECURITY_POLICY = {
         'default-src': ("'self'",),
         'font-src': ("'self'", 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com'),
         'form-action': ("'self'",),
-        'frame-src': ("'none'",),
+        'frame-src': ('https://www.google.com', 'https://maps.google.com'),
         'img-src': ("'self'", 'data:', 'https:', 'http:'),
         'object-src': ("'none'",),
         'script-src': ("'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com', 'https://code.jquery.com'),

@@ -1,5 +1,6 @@
 {% extends "site_diary/layout_format.html" %}
 {% load static %}
+{% load blog_filters %}
 
 {% block head %}
     <title>Create Blog - Triple G BuildHub</title>
@@ -28,6 +29,13 @@
             margin: 18px 0;
             box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
         }
+        
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
     </style>
     <div class="container">
         <!-- Page Header -->
@@ -38,10 +46,16 @@
             </div>
             <div class="user-info">
                 <div class="user-greeting">
-                    <div class="user-name">John Doe</div>
-                    <div class="user-role">Architect</div>
+                    <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
+                    <div class="user-role">Site Manager</div>
                 </div>
-                <div class="user-avatar">JD</div>
+                <div class="user-avatar">
+                    {% if user.sitemanagerprofile.profile_pic %}
+                        <img src="{{ user.sitemanagerprofile.profile_pic.url }}" alt="{{ user.get_full_name|default:user.username }}">
+                    {% else %}
+                        {{ user.get_full_name|default:user.username|slice:":2"|upper }}
+                    {% endif %}
+                </div>
             </div>
         </div>
 
@@ -292,11 +306,15 @@
                     <h2 id="previewTitle">Your Blog Title Will Appear Here</h2>
                     <div class="preview-meta">
                         <span class="preview-category"><i class="fas fa-folder"></i> <span id="previewCategory">Category</span></span>
-                        <span class="preview-author"><i class="fas fa-user"></i> Architect</span>
+                        <span class="preview-author"><i class="fas fa-user"></i> Site Manager</span>
                         <span class="preview-time"><i class="far fa-clock"></i> <span id="previewReadingTime">5</span> min read</span>
                     </div>
                     <div class="preview-image-container">
-                        <img id="previewImage" src="../userside/css/images/image1.jpg" alt="Featured image preview">
+                        {% if edit_blog and edit_blog.featured_image %}
+                            <img id="previewImage" src="{{ edit_blog.featured_image.url }}" alt="Featured image preview">
+                        {% else %}
+                            <img id="previewImage" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='200' viewBox='0 0 400 200'%3E%3Crect width='400' height='200' fill='%23f0f0f0'/%3E%3Ctext x='200' y='100' text-anchor='middle' dy='.3em' fill='%23999'%3ENo Image Selected%3C/text%3E%3C/svg%3E" alt="No image selected">
+                        {% endif %}
                     </div>
                     <div id="previewContent" class="preview-content">
                         <p>Your blog content will appear here as you type. This preview helps you see how your post will look when published.</p>
@@ -336,6 +354,7 @@
     </div>
     {% include "admin-nav-footer-template/layoutfooter.html" %}
     <script src="{% static 'js/sitejs/createblog.js' %}"></script>
+    <script src="{% static 'js/sitejs/paste-cleaner.js' %}"></script>
     
     <script>
         // Django integration for blog creation
@@ -379,8 +398,16 @@
         document.addEventListener('DOMContentLoaded', function() {
             const editor = document.getElementById('blogContentEditor');
             if (editor) {
-                editor.innerHTML = `{{ edit_blog.content|escapejs }}`;
+                editor.innerHTML = `{{ edit_blog.content|unescape_html|escapejs }}`;
             }
+            
+            // Load featured image if exists
+            {% if edit_blog.featured_image %}
+            const previewImage = document.getElementById('previewImage');
+            if (previewImage) {
+                previewImage.src = '{{ edit_blog.featured_image.url }}';
+            }
+            {% endif %}
         });
         {% endif %}
 

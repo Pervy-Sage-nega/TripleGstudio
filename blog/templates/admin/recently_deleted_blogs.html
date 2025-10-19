@@ -1,0 +1,227 @@
+{% extends 'admin-nav-footer-template/base.html' %}
+{% load static %}
+{% block title %}Recently Deleted Blogs | Triple G BuildHub{% endblock %}
+{% block extra_head %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recently Deleted Blogs | Triple G BuildHub</title>
+    <link rel="stylesheet" href="{% static 'css/admincss/nav.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admincss/header.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/reports.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/history.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admincss/blogmanagement.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/blog-ui-fixes.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}
+{% block content %}
+    <div class="container">
+        <div class="page-header">
+            <div class="page-title">
+                <i class="fas fa-trash-restore"></i>
+                <h1>Recently Deleted Blogs</h1>
+            </div>
+            <div class="export-options">
+                <a href="{% url 'blog:blogmanagement' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Blog Management
+                </a>
+              
+            </div>
+        </div>
+
+        <div class="summary-section">
+            <div class="summary-card danger">
+                <div class="summary-icon">
+                    <i class="fas fa-trash-restore"></i>
+                </div>
+                <div class="summary-content">
+                    <div class="summary-title">Deleted Posts</div>
+                    <div class="summary-value">{{ deleted_posts.count }}</div>
+                    <div class="summary-change">Recently deleted blogs</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="blog-management-section">
+            <div class="section-header">
+                <div class="section-title">
+                    <i class="fas fa-list"></i>
+                    <span>Recently Deleted Blog Posts</span>
+                </div>
+                <div class="bulk-actions">
+                    <select id="bulkAction" class="filter-dropdown">
+                        <option value="">Select Action</option>
+                        <option value="restore">Restore Selected</option>
+                        <option value="delete">Delete Selected</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="processBulkAction()">Proceed</button>
+                </div>
+            </div>
+
+            <div class="content-container">
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Author</th>
+                                <th>Category</th>
+                                <th>Deleted Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for blog in deleted_posts %}
+                            <tr class="blog-item" data-id="{{ blog.id }}">
+                                <td class="blog-title">{{ blog.title }}</td>
+                                <td>{{ blog.author.get_full_name|default:blog.author.username }}</td>
+                                <td>{{ blog.category.name|default:"Uncategorized" }}</td>
+                                <td>{{ blog.deleted_at|date:"Y-m-d H:i" }}</td>
+                                <td class="actions">
+                                    <div class="action-container">
+                                        <div class="action-buttons">
+                                            <button class="action-btn" title="Restore" onclick="restoreDeletedBlog({{ blog.id }})">
+                                                <i class="fas fa-trash-restore"></i>
+                                            </button>
+                                            <button class="action-btn delete" title="Permanently Delete" onclick="permanentDeleteBlog({{ blog.id }})">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                        <input type="checkbox" class="blog-checkbox" value="{{ blog.id }}">
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="no-results">
+                                    <i class="fas fa-inbox"></i>
+                                    <h3>No Recently Deleted Blogs</h3>
+                                    <p>No blogs have been recently deleted.</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        table .actions {
+            margin: 0 auto !important;
+            text-align: left !important;
+            vertical-align: middle !important;
+            
+        }
+        table .action-container {
+            display: flex !important;
+            align-items: center !important;
+            gap: 12px !important;
+            
+        }
+        table .action-buttons {
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            margin: 0 0 auto !important;
+        }
+        table .action-btn {
+            margin: 0 !important;
+         
+        }
+        table .blog-checkbox {
+            margin: 0 !important;
+        }
+        .summary-section {
+            display: block;
+            grid-template-columns: none;
+            gap: 15px;
+            margin-bottom: 25px;
+            align-items: center;
+            justify-content: start;
+        }
+        
+        .bulk-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .bulk-actions .filter-dropdown {
+            margin: 0;
+        }
+        .btn{
+            margin-top: 0 !important;
+        }
+        
+        .bulk-actions .btn {
+            margin: 0;
+            white-space: nowrap;
+        }
+    </style>
+
+    <script>
+        function restoreDeletedBlog(blogId) {
+            if (!confirm('Are you sure you want to restore this blog?')) {
+                return;
+            }
+            window.location.href = `/blog/admin/restore/${blogId}/`;
+        }
+
+        function permanentDeleteBlog(blogId) {
+            if (!confirm('Are you sure you want to permanently delete this blog? This action cannot be undone.')) {
+                return;
+            }
+            window.location.href = `/blog/admin/permanent-delete/${blogId}/`;
+        }
+
+
+
+
+
+        function processBulkAction() {
+            const action = document.getElementById('bulkAction').value;
+            const selectedIds = Array.from(document.querySelectorAll('.blog-checkbox:checked')).map(cb => cb.value);
+            
+            if (!action) {
+                alert('Please select an action.');
+                return;
+            }
+            
+            if (selectedIds.length === 0) {
+                alert('Please select at least one blog post.');
+                return;
+            }
+            
+            if (action === 'restore') {
+                if (confirm(`Are you sure you want to restore ${selectedIds.length} blog post(s)?`)) {
+                    selectedIds.forEach(id => {
+                        window.location.href = `/blog/admin/restore/${id}/`;
+                    });
+                }
+            } else if (action === 'delete') {
+                if (confirm(`Are you sure you want to permanently delete ${selectedIds.length} blog post(s)? This action cannot be undone.`)) {
+                    selectedIds.forEach(id => {
+                        window.location.href = `/blog/admin/permanent-delete/${id}/`;
+                    });
+                }
+            }
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+{% endblock %}

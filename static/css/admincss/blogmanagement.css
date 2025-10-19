@@ -352,6 +352,18 @@
   color: var(--danger-color);
 }
 
+.action-btn.feature {
+  color: var(--mid-gray);
+}
+
+.action-btn.feature:hover {
+  color: #f39c12;
+}
+
+.action-btn.feature.featured {
+  color: #f1c40f;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .grid-view {

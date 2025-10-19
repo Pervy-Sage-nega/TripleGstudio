@@ -121,6 +121,10 @@ class BlogPost(models.Model):
     # Analytics
     view_count = models.IntegerField(default=0)
     
+    # Soft delete
+    is_deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    
     class Meta:
         verbose_name = "Blog Post"
         verbose_name_plural = "Blog Posts"

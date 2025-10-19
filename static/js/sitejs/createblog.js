@@ -966,4 +966,40 @@ function closeModal() {
     if (modal) {
         modal.classList.remove('active');
     }
+}
+
+/**
+ * Clean pasted content from Word/Google Docs
+ */
+function cleanPastedContent(html) {
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    
+    // Remove Google Docs spans
+    const googleDocsSpans = tempDiv.querySelectorAll('span[id*="docs-internal-guid"]');
+    googleDocsSpans.forEach(span => {
+        span.replaceWith(...span.childNodes);
+    });
+    
+    // Clean all elements
+    const allElements = tempDiv.querySelectorAll('*');
+    allElements.forEach(element => {
+        element.removeAttribute('style');
+        element.removeAttribute('class');
+        element.removeAttribute('id');
+        
+        const allowedTags = ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 'h2', 'h3', 'ul', 'ol', 'li', 'hr'];
+        
+        if (!allowedTags.includes(element.tagName.toLowerCase())) {
+            if (element.textContent.trim()) {
+                const p = document.createElement('p');
+                p.textContent = element.textContent;
+                element.replaceWith(p);
+            } else {
+                element.remove();
+            }
+        }
+    });
+    
+    return tempDiv.innerHTML;
 } 

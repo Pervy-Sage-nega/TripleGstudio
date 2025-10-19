@@ -243,8 +243,17 @@ document.addEventListener("DOMContentLoaded", initSmoothScroll);
   readMoreBtns.forEach(btn => {
     btn.addEventListener('click', function() {
       const teamMember = this.closest('.team-member');
+      const memberBio = teamMember.querySelector('.member-bio');
+      
       teamMember.classList.toggle('active');
-      this.textContent = teamMember.classList.contains('active') ? 'Read Less' : 'Read More';
+      
+      if (teamMember.classList.contains('active')) {
+        this.textContent = 'Read Less';
+        memberBio.style.maxHeight = memberBio.scrollHeight + 'px';
+      } else {
+        this.textContent = 'Read More';
+        memberBio.style.maxHeight = '0';
+      }
     });
   });
   

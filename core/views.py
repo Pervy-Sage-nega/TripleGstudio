@@ -12,14 +12,14 @@ from portfolio.models import Project, Category
 
 @allow_public_access
 def home(request):
-    # Get projects with related data for homepage
-    projects = Project.objects.select_related('category').prefetch_related('images').order_by('-featured', '-completion_date')
+    # Get published projects with related data for homepage (exclude drafts)
+    projects = Project.objects.select_related('category').prefetch_related('images').exclude(status='draft').order_by('-featured', '-completion_date')
     
     # Get categories for filters
     categories = Category.objects.all().order_by('name')
     
-    # Get unique years for year filter
-    years = Project.objects.values_list('year', flat=True).distinct().order_by('-year')
+    # Get unique years for year filter (exclude drafts)
+    years = Project.objects.exclude(status='draft').values_list('year', flat=True).distinct().order_by('-year')
     
     # Get recent projects (first 6 for carousel)
     recent_projects = projects[:6]

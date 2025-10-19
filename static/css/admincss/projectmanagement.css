@@ -46,7 +46,7 @@ header p {
 }
 
 .form-container {
-  max-width: 1200px !important;
+  max-width: 1400px !important;
   margin: 0 auto;
 }
 .table-view{
@@ -353,7 +353,7 @@ input:checked + .slider:before {
 
    /* Responsive Form Layout Improvements */
         .form-container {
-            padding: 1.5rem;
+      
             margin-bottom: 2rem;
         }
 

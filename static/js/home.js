@@ -65,24 +65,29 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
   
-    let scrollAmount = 0; // Track current scroll position
-    const imgWidth = images.length > 0 ? images[0].clientWidth + 10 : 160; // Account for gap
-    const maxScroll = recentProjects.scrollWidth - recentProjects.clientWidth; // Max scroll limit
-  
     // Function for ultra-smooth scrolling
     function smoothScroll(direction) {
+      if (!recentProjects) return;
+      
+      // Recalculate dimensions each time
+      const imgWidth = images.length > 0 ? images[0].offsetWidth + 10 : 160;
+      const maxScroll = recentProjects.scrollWidth - recentProjects.clientWidth;
+      
       let start = recentProjects.scrollLeft;
       let end = direction === "prev" ? start - imgWidth : start + imgWidth;
   
       // Prevent over-scrolling
       end = Math.max(0, Math.min(end, maxScroll));
+      
+      // If no scroll needed, return
+      if (start === end) return;
   
       let startTime = null;
   
       function scrollAnimation(timestamp) {
         if (!startTime) startTime = timestamp;
         let progress = timestamp - startTime;
-        let ease = Math.min(progress / 300, 1); // 300ms smooth transition
+        let ease = Math.min(progress / 150, 1); // 150ms smooth transition
   
         recentProjects.scrollLeft = start + (end - start) * ease;
   
@@ -95,13 +100,18 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   
     // Previous Button: Smooth Scroll Left
-    prevBtn.addEventListener("click", () => {
-      smoothScroll("prev");
-    });
+    if (prevBtn) {
+      prevBtn.addEventListener("click", () => {
+        smoothScroll("prev");
+      });
+    }
+    
     // Next Button: Smooth Scroll Right
-    nextBtn.addEventListener("click", () => {
-      smoothScroll("next");
-    });
+    if (nextBtn) {
+      nextBtn.addEventListener("click", () => {
+        smoothScroll("next");
+      });
+    }
   
     // Function to change main image and background
     window.changeMainImage = function (imageSrc) {

@@ -106,8 +106,8 @@ def project_list(request):
     category_filter = request.GET.get('category', 'all')
     search_query = request.GET.get('search', '').strip()
     
-    # Start with all projects, optimizing queries
-    projects = Project.objects.select_related('category').prefetch_related('images')
+    # Start with published projects only (exclude drafts), optimizing queries
+    projects = Project.objects.select_related('category').prefetch_related('images').exclude(status='draft')
     
     # Apply filters
     if year_filter != 'all':
@@ -159,18 +159,18 @@ def project_list(request):
 @allow_public_access
 def project_detail(request, project_id):
     """Display detailed view of a single project with SEO optimization"""
-    # Get project with all related data in optimized queries
+    # Get project with all related data in optimized queries (exclude drafts from public access)
     project = get_object_or_404(
         Project.objects.select_related('category').prefetch_related(
             'images', 'stats', 'timeline'
-        ),
+        ).exclude(status='draft'),
         id=project_id
     )
     
-    # Get related projects (same category, excluding current)
+    # Get related projects (same category, excluding current and drafts)
     related_projects = Project.objects.filter(
         category=project.category
-    ).exclude(id=project.id).select_related('category')[:3]
+    ).exclude(id=project.id).exclude(status='draft').select_related('category')[:3]
     
     # Generate SEO data
     seo_manager = PortfolioSEOManager()
@@ -392,4 +392,32 @@ def save_draft(request):
     except Exception as e:
         messages.error(request, f'Error saving draft: {str(e)}')
         return redirect('portfolio:projectmanagement')
+
+@require_admin_role
+@require_http_methods(["POST"])
+def bulk_update_status(request):
+    """Bulk update project status"""
+    try:
+        project_ids = request.POST.getlist('project_ids')
+        status = request.POST.get('status')
+        
+        if not project_ids or not status:
+            messages.error(request, 'Invalid request parameters.')
+            return redirect('portfolio:projecttable')
+        
+        updated_count = Project.objects.filter(id__in=project_ids).update(status=status)
+        
+        status_display = {
+            'draft': 'Draft',
+            'planned': 'Planned', 
+            'ongoing': 'Ongoing',
+            'completed': 'Published'
+        }.get(status, status.title())
+        
+        messages.success(request, f'Successfully updated {updated_count} project(s) to {status_display} status.')
+        
+    except Exception as e:
+        messages.error(request, f'Error updating projects: {str(e)}')
+    
+    return redirect('portfolio:projecttable')
 

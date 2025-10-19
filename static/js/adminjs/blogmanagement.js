@@ -42,13 +42,16 @@ window.viewBlog = function(blogId) {
     
     blogPreviewContent.innerHTML = selectedBlog.innerHTML;
     
-    // Get current blog status
+    // Get current blog status from status badge
     let status = 'draft';
-    const blogRow = document.querySelector(`tr .status-select[data-id="${blogId}"]`) || 
-                   document.querySelector(`.blog-card .status-select[data-id="${blogId}"]`);
-    if (blogRow) {
-        status = blogRow.value;
+    const statusBadge = document.querySelector(`tr[data-id="${blogId}"] .status-badge`) || 
+                       document.querySelector(`.blog-card[data-id="${blogId}"] .status-badge`);
+    if (statusBadge) {
+        const statusText = statusBadge.textContent.toLowerCase().trim();
+        status = statusText;
     }
+    
+    console.log('Detected status for blog', blogId, ':', status);
     
     // Clear previous action buttons
     blogPreviewActions.innerHTML = '';
@@ -72,6 +75,52 @@ window.viewBlog = function(blogId) {
         
         blogPreviewActions.appendChild(approveButton);
         blogPreviewActions.appendChild(rejectButton);
+    } else if (status === 'published') {
+        const unpublishButton = document.createElement('button');
+        unpublishButton.className = 'btn btn-warning';
+        unpublishButton.innerHTML = '<i class="fas fa-eye-slash"></i> Unpublish';
+        unpublishButton.addEventListener('click', () => {
+            unpublishBlog(blogId);
+            closeBlogPreview();
+        });
+        
+        const archiveButton = document.createElement('button');
+        archiveButton.className = 'btn btn-secondary';
+        archiveButton.innerHTML = '<i class="fas fa-archive"></i> Archive';
+        archiveButton.addEventListener('click', () => {
+            archiveBlog(blogId);
+            closeBlogPreview();
+        });
+        
+        blogPreviewActions.appendChild(unpublishButton);
+        blogPreviewActions.appendChild(archiveButton);
+    } else if (status === 'pending' || status === 'pending review') {
+        const approveButton = document.createElement('button');
+        approveButton.className = 'btn btn-success';
+        approveButton.innerHTML = '<i class="fas fa-check"></i> Approve & Publish';
+        approveButton.addEventListener('click', () => {
+            approveBlog(blogId);
+            closeBlogPreview();
+        });
+        
+        const rejectButton = document.createElement('button');
+        rejectButton.className = 'btn btn-warning';
+        rejectButton.innerHTML = '<i class="fas fa-times"></i> Reject with Comment';
+        rejectButton.addEventListener('click', () => {
+            showRejectionModal(blogId);
+        });
+        
+        const archiveButton = document.createElement('button');
+        archiveButton.className = 'btn btn-secondary';
+        archiveButton.innerHTML = '<i class="fas fa-archive"></i> Archive';
+        archiveButton.addEventListener('click', () => {
+            archiveBlog(blogId);
+            closeBlogPreview();
+        });
+        
+        blogPreviewActions.appendChild(approveButton);
+        blogPreviewActions.appendChild(rejectButton);
+        blogPreviewActions.appendChild(archiveButton);
     }
     
     // Add close button
@@ -82,10 +131,7 @@ window.viewBlog = function(blogId) {
     blogPreviewModal.style.display = 'flex';
 };
 
-window.editBlog = function(blogId) {
-    // Redirect to the edit page for the blog post
-    window.location.href = `/diary/createblog/?edit=${blogId}`;
-};
+
 
 window.showAllTags = function(blogId, blogTitle) {
     // Get the tags data for this blog
@@ -631,6 +677,24 @@ document.addEventListener('DOMContentLoaded', function() {
         changeStatusTo(blogId, 'published');
     };
     
+    // Unpublish blog functionality
+    window.unpublishBlog = function(blogId) {
+        if (!confirm('Are you sure you want to unpublish this blog post? It will be moved back to draft status.')) {
+            return;
+        }
+        
+        changeStatusTo(blogId, 'draft');
+    };
+    
+    // Archive blog functionality
+    window.archiveBlog = function(blogId) {
+        if (!confirm('Are you sure you want to archive this blog post?')) {
+            return;
+        }
+        
+        changeStatusTo(blogId, 'archived');
+    };
+    
     // Reject blog functionality
     window.rejectBlog = function(blogId) {
         if (!confirm('Are you sure you want to reject this blog post and send it back to draft?')) {
@@ -718,6 +782,55 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Toggle feature functionality
+    window.toggleFeature = function(blogId) {
+        const csrftoken = getCookie('csrftoken');
+        
+        fetch(`/blog/admin/toggle-featured/${blogId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update feature button in table view
+                const tableBtn = document.querySelector(`tr[data-id="${blogId}"] .action-btn.feature`);
+                if (tableBtn) {
+                    if (data.featured) {
+                        tableBtn.classList.add('featured');
+                        tableBtn.title = 'Unfeature';
+                    } else {
+                        tableBtn.classList.remove('featured');
+                        tableBtn.title = 'Feature';
+                    }
+                }
+                
+                // Update feature button in grid view
+                const gridBtn = document.querySelector(`.blog-card[data-id="${blogId}"] .btn:nth-child(2)`);
+                if (gridBtn) {
+                    if (data.featured) {
+                        gridBtn.className = 'btn btn-warning';
+                        gridBtn.innerHTML = '<i class="fas fa-star"></i> Unfeature';
+                    } else {
+                        gridBtn.className = 'btn btn-secondary';
+                        gridBtn.innerHTML = '<i class="fas fa-star"></i> Feature';
+                    }
+                }
+                
+                showNotification('Feature Updated', data.message);
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating feature status.');
+        });
+    };
+    
     // Delete blog functionality
     window.deleteBlog = function(blogId) {
         if (!confirm('Are you sure you want to delete this blog post? This action cannot be undone.')) {
@@ -731,7 +844,7 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch(`/blog/delete/${blogId}/`, {
             method: 'POST',
             headers: {
-                'X-CSRFToken': csrftoken,
+                'X-CSrfToken': csrftoken,
                 'X-Requested-With': 'XMLHttpRequest'
             }
         })

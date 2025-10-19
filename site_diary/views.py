@@ -370,11 +370,12 @@ def drafts(request):
     # Import blog models
     from blog.models import BlogPost, Category
     
-    # Get all blog posts by current user (proper user isolation)
+    # Get all blog posts by current user (proper user isolation) - exclude deleted
     user_blog_posts = BlogPost.objects.select_related(
         'author', 'category'
     ).prefetch_related('tags').filter(
-        author=request.user  # Critical: Only show posts by the logged-in user
+        author=request.user,  # Critical: Only show posts by the logged-in user
+        is_deleted=False  # Exclude soft deleted posts
     ).order_by('-created_date')
     
     # Get statistics for the current user only
@@ -396,6 +397,72 @@ def drafts(request):
     }
     
     return render(request, 'blogcreation/drafts.html', context)
+
+@require_site_manager_role
+def delete_blog(request, blog_id):
+    """Soft delete a blog post"""
+    from blog.models import BlogPost
+    
+    try:
+        blog_post = BlogPost.objects.get(id=blog_id, author=request.user, is_deleted=False)
+        blog_post.is_deleted = True
+        blog_post.deleted_at = timezone.now()
+        blog_post.save()
+        messages.success(request, f'Blog post "{blog_post.title}" moved to recently deleted.')
+    except BlogPost.DoesNotExist:
+        messages.error(request, 'Blog post not found or already deleted.')
+    
+    return redirect('site_diary:drafts')
+
+@require_site_manager_role
+def recently_deleted(request):
+    """Show recently deleted blog posts"""
+    from blog.models import BlogPost
+    
+    # Get deleted blog posts by current user
+    deleted_posts = BlogPost.objects.select_related(
+        'author', 'category'
+    ).prefetch_related('tags').filter(
+        author=request.user,
+        is_deleted=True
+    ).order_by('-deleted_at')
+    
+    context = {
+        'deleted_posts': deleted_posts,
+    }
+    
+    return render(request, 'blogcreation/recently_deleted.html', context)
+
+@require_site_manager_role
+def restore_blog(request, blog_id):
+    """Restore a soft deleted blog post"""
+    from blog.models import BlogPost
+    
+    try:
+        blog_post = BlogPost.objects.get(id=blog_id, author=request.user, is_deleted=True)
+        blog_post.is_deleted = False
+        blog_post.deleted_at = None
+        blog_post.save()
+        messages.success(request, f'Blog post "{blog_post.title}" restored successfully.')
+    except BlogPost.DoesNotExist:
+        messages.error(request, 'Blog post not found or not deleted.')
+    
+    return redirect('site_diary:recently_deleted')
+
+@require_site_manager_role
+def permanent_delete_blog(request, blog_id):
+    """Permanently delete a blog post"""
+    from blog.models import BlogPost
+    
+    try:
+        blog_post = BlogPost.objects.get(id=blog_id, author=request.user, is_deleted=True)
+        blog_title = blog_post.title
+        blog_post.delete()
+        messages.success(request, f'Blog post "{blog_title}" permanently deleted.')
+    except BlogPost.DoesNotExist:
+        messages.error(request, 'Blog post not found or not in deleted state.')
+    
+    return redirect('site_diary:recently_deleted')
 
 @require_site_manager_role
 def history(request):

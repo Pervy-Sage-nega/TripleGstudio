@@ -11,6 +11,7 @@ urlpatterns = [
     path('delete/<int:project_id>/', views.delete_project, name='delete_project'),
     path('get-project/<int:project_id>/', views.get_project_data, name='get_project_data'),
     path('save-draft/', views.save_draft, name='save_draft'),
+    path('bulk-update-status/', views.bulk_update_status, name='bulk_update_status'),
     
     # Public views
     path('', views.project_list, name='project_list'),

@@ -10,7 +10,7 @@ from django.views.decorators.cache import cache_page
 from django.utils.decorators import method_decorator
 from django.utils import timezone
 from .models import BlogPost, Category, Tag, BlogImage
-from accounts.decorators import require_site_manager_role, require_admin_role, allow_public_access
+from accounts.decorators import require_site_manager_role, require_admin_role, allow_public_access, admin_or_site_manager_required
 from .seo import SEOManager
 
 # Create your views here.
@@ -22,13 +22,15 @@ from .seo import SEOManager
 @require_admin_role
 def blog_management(request):
     """Admin dashboard for blog management - Excludes drafts, shows pending/published/archived"""
-    # Get posts excluding drafts (admins only see submitted posts)
+    # Get posts excluding drafts and deleted posts (admins only see submitted posts)
     all_blog_posts = BlogPost.objects.select_related(
         'author', 'category'
-    ).prefetch_related('tags', 'gallery_images').exclude(status='draft').order_by('-created_date')
+    ).prefetch_related('tags', 'gallery_images').exclude(
+        status='draft'
+    ).filter(is_deleted=False).order_by('-created_date')
     
     # Get statistics for dashboard (including drafts for stats only)
-    all_posts_for_stats = BlogPost.objects.all()
+    all_posts_for_stats = BlogPost.objects.filter(is_deleted=False)
     total_posts = all_posts_for_stats.count()
     published_posts = all_posts_for_stats.filter(status='published').count()
     draft_posts = all_posts_for_stats.filter(status='draft').count()
@@ -57,6 +59,52 @@ def blog_management(request):
     return render(request, 'admin/blogmanagement.html', context)
 
 
+@require_admin_role
+def admin_recently_deleted(request):
+    """Admin view for recently deleted blog posts"""
+    # Get all deleted blog posts
+    deleted_posts = BlogPost.objects.select_related(
+        'author', 'category'
+    ).prefetch_related('tags').filter(
+        is_deleted=True
+    ).order_by('-deleted_at')
+    
+    context = {
+        'deleted_posts': deleted_posts,
+    }
+    
+    return render(request, 'admin/recently_deleted_blogs.html', context)
+
+
+@require_admin_role
+def admin_restore_blog(request, post_id):
+    """Admin restore a soft deleted blog post"""
+    try:
+        blog_post = BlogPost.objects.get(id=post_id, is_deleted=True)
+        blog_post.is_deleted = False
+        blog_post.deleted_at = None
+        blog_post.save()
+        messages.success(request, f'Blog post "{blog_post.title}" restored successfully.')
+    except BlogPost.DoesNotExist:
+        messages.error(request, 'Blog post not found or not deleted.')
+    
+    return redirect('blog:admin_recently_deleted')
+
+
+@require_admin_role
+def admin_permanent_delete_blog(request, post_id):
+    """Admin permanently delete a blog post"""
+    try:
+        blog_post = BlogPost.objects.get(id=post_id, is_deleted=True)
+        blog_title = blog_post.title
+        blog_post.delete()
+        messages.success(request, f'Blog post "{blog_title}" permanently deleted.')
+    except BlogPost.DoesNotExist:
+        messages.error(request, 'Blog post not found or not in deleted state.')
+    
+    return redirect('blog:admin_recently_deleted')
+
+
 @require_site_manager_role
 def create_blog_post(request):
     """Create a new blog post"""
@@ -72,6 +120,10 @@ def create_blog_post(request):
             featured = request.POST.get('featured') == 'on'
             seo_meta_title = request.POST.get('seo_meta_title', '')
             seo_meta_description = request.POST.get('seo_meta_description', '')
+            
+            # Unescape HTML entities in content
+            import html
+            content = html.unescape(content) if content else ''
             
             # Create blog post
             blog_post = BlogPost.objects.create(
@@ -173,8 +225,13 @@ def edit_blog_post(request, post_id):
     if request.method == 'POST':
         try:
             # Update blog post fields
+            content = request.POST.get('content')
+            # Unescape HTML entities in content
+            import html
+            content = html.unescape(content) if content else ''
+            
             blog_post.title = request.POST.get('title')
-            blog_post.content = request.POST.get('content')
+            blog_post.content = content
             blog_post.excerpt = request.POST.get('excerpt', '')
             blog_post.status = request.POST.get('status', 'draft')
             blog_post.featured = request.POST.get('featured') == 'on'
@@ -288,20 +345,22 @@ def edit_blog_post(request, post_id):
     return render(request, 'blogcreation/createblog.html', context)
 
 
-@require_site_manager_role
+@admin_or_site_manager_required
 def delete_blog_post(request, post_id):
-    """Delete a blog post"""
-    blog_post = get_object_or_404(BlogPost, id=post_id)
+    """Soft delete a blog post"""
+    blog_post = get_object_or_404(BlogPost, id=post_id, is_deleted=False)
     
     if request.method == 'POST':
         title = blog_post.title
-        blog_post.delete()
-        messages.success(request, f'Blog post "{title}" deleted successfully!')
+        blog_post.is_deleted = True
+        blog_post.deleted_at = timezone.now()
+        blog_post.save()
+        messages.success(request, f'Blog post "{title}" moved to recently deleted!')
         
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
                 'success': True,
-                'message': f'Blog post "{title}" deleted successfully!'
+                'message': f'Blog post "{title}" moved to recently deleted!'
             })
         
         return redirect('blog:blog_drafts')
@@ -338,11 +397,12 @@ def get_blog_post_data(request, post_id):
 @require_site_manager_role
 def blog_drafts(request):
     """Site manager's drafts page - shows all their blog posts (drafts and published)"""
-    # Get all blog posts by current user
+    # Get all blog posts by current user excluding deleted ones
     user_blog_posts = BlogPost.objects.select_related(
         'author', 'category'
     ).prefetch_related('tags').filter(
-        author=request.user
+        author=request.user,
+        is_deleted=False
     ).order_by('-created_date')
     
     # Get statistics
@@ -420,7 +480,7 @@ def blog_list(request):
         posts = posts.order_by('-published_date')
     
     # Pagination
-    paginator = Paginator(posts, 12)  # 12 posts per page
+    paginator = Paginator(posts, 10)  # 10 posts per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
@@ -862,5 +922,26 @@ def change_blog_status(request, post_id):
                 
         except Exception as e:
             return JsonResponse({'success': False, 'message': str(e)})
+    
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+
+@require_admin_role
+@require_http_methods(["POST"])
+def admin_toggle_featured(request, post_id):
+    """Admin endpoint to toggle blog post featured status"""
+    try:
+        blog_post = get_object_or_404(BlogPost, id=post_id)
+        blog_post.featured = not blog_post.featured
+        blog_post.save()
+        
+        return JsonResponse({
+            'success': True,
+            'featured': blog_post.featured,
+            'message': f'Post {"featured" if blog_post.featured else "unfeatured"} successfully!'
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
     
     return JsonResponse({'success': False, 'message': 'Invalid request method'})

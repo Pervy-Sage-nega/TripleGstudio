@@ -270,12 +270,24 @@ function extractBlogDataFromTableRow(row) {
  */
 function initSearchAndFilter() {
     const categoryFilter = document.querySelector('#category-filter, select[name="category"]');
+    const statusFilter = document.querySelector('#status-filter, select[name="status"]');
     const searchInput = document.querySelector('#search-input, input[type="search"], input[placeholder*="Search"]');
     
-    if (categoryFilter || searchInput) {
+    if (categoryFilter || statusFilter || searchInput) {
         const filterAndSearch = () => {
             const category = categoryFilter ? categoryFilter.value : '';
+            const status = statusFilter ? statusFilter.value : '';
             const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            
+            // Map filter values to Django's get_status_display values (capitalized)
+            const statusDisplayMap = {
+                'published': 'published',
+                'archived': 'archived', 
+                'draft': 'draft',
+                'rejected': 'rejected'
+            };
+            
+
             
             // Get all draft cards and table rows
             const draftCards = document.querySelectorAll('.draft-card');
@@ -288,46 +300,76 @@ function initSearchAndFilter() {
                 const title = card.querySelector('.draft-title, .card-title')?.textContent.toLowerCase() || '';
                 const excerpt = card.querySelector('.draft-excerpt, .card-excerpt')?.textContent.toLowerCase() || '';
                 const cardCategory = card.querySelector('.draft-category, .card-category')?.textContent || '';
+                const cardStatusElement = card.querySelector('.status-badge');
+                const cardStatus = cardStatusElement ? cardStatusElement.textContent.toLowerCase().trim() : '';
+                
                 const tags = Array.from(card.querySelectorAll('.draft-tag, .tag')).map(tag => tag.textContent.toLowerCase());
                 
-                const categoryMatch = !category || category === '' || cardCategory.toLowerCase().includes(category.toLowerCase());
+
+                
+                // For category: if filter has value, find matching category by name
+                let categoryMatch = !category || category === '';
+                if (category && category !== '') {
+                    // Get category name from dropdown option text
+                    const selectedOption = categoryFilter.querySelector(`option[value="${category}"]`);
+                    const categoryName = selectedOption ? selectedOption.textContent.trim() : '';
+                    categoryMatch = cardCategory.toLowerCase() === categoryName.toLowerCase();
+                }
+                const statusMatch = !status || status === '' || cardStatus === statusDisplayMap[status];
                 const searchMatch = !searchTerm || 
                     title.includes(searchTerm) || 
                     excerpt.includes(searchTerm) ||
                     tags.some(tag => tag.includes(searchTerm));
                 
-                if (categoryMatch && searchMatch) {
-                    card.style.display = 'block';
+                if (categoryMatch && statusMatch && searchMatch) {
+                    card.style.display = '';
                     visibleCount++;
+                    console.log('Showing card:', title);
                 } else {
                     card.style.display = 'none';
+                    console.log('Hiding card:', title, 'Category:', categoryMatch, 'Status:', statusMatch, 'Search:', searchMatch);
                 }
             });
             
             // Filter table rows
             tableRows.forEach(row => {
-                if (row.cells.length < 2) return;
+                if (row.cells.length < 4) return;
                 
                 const title = row.cells[0]?.textContent.toLowerCase() || '';
-                const rowCategory = row.cells[1]?.textContent.toLowerCase() || '';
+                const rowCategory = row.cells[1]?.textContent.trim() || '';
+                const rowStatusElement = row.cells[3]?.querySelector('.status-badge');
+                const rowStatus = rowStatusElement ? rowStatusElement.textContent.toLowerCase().trim() : '';
                 
-                const categoryMatch = !category || category === '' || rowCategory.includes(category.toLowerCase());
+                // For category: if filter has value, find matching category by name
+                let categoryMatch = !category || category === '';
+                if (category && category !== '') {
+                    // Get category name from dropdown option text
+                    const selectedOption = categoryFilter.querySelector(`option[value="${category}"]`);
+                    const categoryName = selectedOption ? selectedOption.textContent.trim() : '';
+                    categoryMatch = rowCategory.toLowerCase() === categoryName.toLowerCase();
+                }
+                
+                const statusMatch = !status || status === '' || rowStatus === statusDisplayMap[status];
                 const searchMatch = !searchTerm || title.includes(searchTerm);
                 
-                if (categoryMatch && searchMatch) {
-                    row.style.display = 'table-row';
+                if (categoryMatch && statusMatch && searchMatch) {
+                    row.style.display = '';
                 } else {
                     row.style.display = 'none';
                 }
             });
             
             // Show/hide no results message
+            console.log('Total visible cards:', visibleCount);
             updateNoResultsMessage(visibleCount);
         };
         
         // Add event listeners
         if (categoryFilter) {
             categoryFilter.addEventListener('change', filterAndSearch);
+        }
+        if (statusFilter) {
+            statusFilter.addEventListener('change', filterAndSearch);
         }
         if (searchInput) {
             searchInput.addEventListener('input', filterAndSearch);

@@ -18,8 +18,8 @@ def project_list_api(request):
         page = int(request.GET.get('page', 1))
         per_page = int(request.GET.get('per_page', 12))
         
-        # Start with all projects
-        projects = Project.objects.select_related('category')
+        # Start with published projects only (exclude drafts)
+        projects = Project.objects.select_related('category').exclude(status='draft')
         
         # Apply filters
         if year_filter != 'all':
@@ -100,7 +100,7 @@ def project_detail_api(request, project_id):
     try:
         project = Project.objects.select_related('category').prefetch_related(
             'images', 'stats', 'timeline'
-        ).get(id=project_id)
+        ).exclude(status='draft').get(id=project_id)
         
         # Serialize project with all related data
         project_data = {
@@ -180,7 +180,7 @@ def categories_api(request):
                 'id': cat.id,
                 'name': cat.name,
                 'slug': cat.slug,
-                'project_count': cat.projects.count()
+                'project_count': cat.projects.exclude(status='draft').count()
             }
             for cat in categories
         ]

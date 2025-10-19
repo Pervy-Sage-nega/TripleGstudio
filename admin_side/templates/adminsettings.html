@@ -60,40 +60,48 @@
                     <i class="fas fa-check-circle"></i> Your account settings have been updated successfully.
                 </div>
 
-                <div class="profile-preview">
-                    <div class="profile-avatar">
-                        <img src="{{ user.adminprofile.get_profile_image_url }}" alt="Admin Profile" class="logo" id="profileImage">
+                <form method="post" action="{% url 'admin_side:admin_settings' %}" enctype="multipart/form-data" id="profileForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_profile">
+                    
+                    <div class="profile-preview">
+                        <div class="profile-avatar">
+                            {% if user.adminprofile.profile_pic %}
+                                <img src="{{ user.adminprofile.profile_pic.url }}" alt="Admin Profile" class="logo" id="profileImage">
+                            {% else %}
+                                <img src="{% static 'images/default-profile.png' %}" alt="Default Profile" class="logo" id="profileImage">
+                            {% endif %}
+                        </div>
+                        <div class="profile-info">
+                            <div class="profile-name">{{ user.get_full_name|default:user.username }}</div>
+                            <div class="profile-email">{{ user.email }}</div>
+                            <div class="profile-role">{{ user.adminprofile.get_admin_role_display|default:"Administrator" }}</div>
+                            <label for="avatar-upload" class="upload-btn">
+                                <i class="fas fa-camera"></i> Change Photo
+                            </label>
+                            <input type="file" name="profile_pic" id="avatar-upload" style="display: none;" accept="image/*">
+                        </div>
                     </div>
-                    <div class="profile-info">
-                        <div class="profile-name">{{ user.get_full_name|default:user.username }}</div>
-                        <div class="profile-email">{{ user.email }}</div>
-                        <div class="profile-role">{{ user.adminprofile.get_admin_role_display|default:"Administrator" }}</div>
-                        <label for="avatar-upload" class="upload-btn">
-                            <i class="fas fa-camera"></i> Change Photo
-                        </label>
-                        <input type="file" id="avatar-upload" style="display: none;" accept="image/*">
-                    </div>
-                </div>
 
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="firstName" class="form-label">First Name</label>
-                        <input type="text" id="firstName" class="form-input" value="{{ user.first_name }}" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="lastName" class="form-label">Last Name</label>
-                        <input type="text" id="lastName" class="form-input" value="{{ user.last_name }}" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="email" class="form-label">Email Address</label>
-                        <input type="email" id="email" class="form-input" value="{{ user.email }}" required>
-                        <div class="input-error" id="emailError">Please enter a valid email address.</div>
-                    </div>
-                    <div class="form-group">
-                        <label for="phone" class="form-label">Phone Number</label>
-                        <input type="tel" id="phone" class="form-input" value="{{ user.adminprofile.phone|default:'' }}" pattern="[\+]?[(]?[0-9]{1,3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}">
-                        <div class="input-error" id="phoneError">Please enter a valid phone number.</div>
-                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="firstName" class="form-label">First Name</label>
+                            <input type="text" name="firstName" id="firstName" class="form-input" value="{{ user.first_name }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="lastName" class="form-label">Last Name</label>
+                            <input type="text" name="lastName" id="lastName" class="form-input" value="{{ user.last_name }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email" class="form-label">Email Address</label>
+                            <input type="email" name="email" id="email" class="form-input" value="{{ user.email }}" required>
+                            <div class="input-error" id="emailError">Please enter a valid email address.</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone" class="form-label">Phone Number</label>
+                            <input type="tel" name="phone" id="phone" class="form-input" value="{{ user.adminprofile.phone|default:'' }}" pattern="[\+]?[(]?[0-9]{1,3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}">
+                            <div class="input-error" id="phoneError">Please enter a valid phone number.</div>
+                        </div>
                     <div class="form-group">
                         <label for="jobTitle" class="form-label">Admin Role</label>
                         <input type="text" id="jobTitle" class="form-input" value="{{ user.adminprofile.get_admin_role_display|default:'Administrator' }}" readonly>
@@ -104,10 +112,11 @@
                     </div>
                 </div>
 
-                <div class="action-buttons">
-                    <button class="btn btn-secondary" id="resetAccount">Cancel</button>
-                    <button class="btn btn-primary" id="saveAccount">Save Changes</button>
-                </div>
+                    <div class="action-buttons">
+                        <button type="button" class="btn btn-secondary" id="resetAccount">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="saveAccount">Save Changes</button>
+                    </div>
+                </form>
             </div>
 
             <!-- Notifications Section -->

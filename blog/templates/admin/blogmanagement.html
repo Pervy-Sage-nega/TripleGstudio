@@ -1,5 +1,6 @@
 {% extends 'admin-nav-footer-template/base.html' %}
 {% load static %}
+{% load blog_filters %}
 {% block title %}Admin Project Portfolio Management | Triple G BuildHub{% endblock %}
 {% block extra_head %}
     <meta charset="UTF-8">
@@ -27,9 +28,12 @@
             
             <div class="export-options">
                 <button class="btn btn-primary" id="refreshBtn"><i class="fas fa-sync-alt"></i> Refresh</button>
-                <button class="btn btn-primary"><i class="fas fa-file-pdf"></i> PDF</button>
-                <button class="btn btn-primary"><i class="fas fa-file-csv"></i> CSV</button>
+                
                 <button class="btn btn-secondary"><i class="fas fa-print"></i> Print</button>
+                
+                <button class="view-btn" onclick="window.location.href='{% url 'blog:admin_recently_deleted' %}'" title="Recently Deleted">
+                    <i class="fas fa-trash-restore"></i> Recently Deleted
+                </button>
             </div>
         </div>
    
@@ -180,7 +184,7 @@
                                 <td class="actions">
                                     <div class="action-buttons">
                                         <button class="action-btn view" title="View in Modal" onclick="viewBlog({{ blog.id }})"><i class="fas fa-eye"></i></button>
-                                        <button class="action-btn edit" title="Edit Post" onclick="editBlog({{ blog.id }})"><i class="fas fa-edit"></i></button>
+                                        <button class="action-btn feature {% if blog.featured %}featured{% endif %}" title="{% if blog.featured %}Unfeature{% else %}Feature{% endif %}" onclick="toggleFeature({{ blog.id }})"><i class="fas fa-star"></i></button>
                                         <button class="action-btn delete" title="Delete" onclick="deleteBlog({{ blog.id }})"><i class="fas fa-trash"></i></button>
                                     </div>
                                 </td>
@@ -230,7 +234,7 @@
                         </div>
                         <div class="blog-card-actions" onclick="event.stopPropagation()">
                             <button class="btn btn-primary" onclick="viewBlog({{ blog.id }})"><i class="fas fa-eye"></i> View</button>
-                            <button class="btn btn-success" onclick="editBlog({{ blog.id }})"><i class="fas fa-edit"></i> Edit</button>
+                            <button class="btn {% if blog.featured %}btn-warning{% else %}btn-secondary{% endif %}" onclick="toggleFeature({{ blog.id }})"><i class="fas fa-star"></i> {% if blog.featured %}Unfeature{% else %}Feature{% endif %}</button>
                             <button class="btn btn-danger" onclick="deleteBlog({{ blog.id }})"><i class="fas fa-trash"></i> Delete</button>
                         </div>
                     </div>
@@ -270,7 +274,7 @@
         {% endif %}
         
         <div class="blog-preview-content">
-            {{ blog.content|safe }}
+            {{ blog.content|unescape_html|safe }}
         </div>
         
         {% if blog.gallery_images.exists %}
