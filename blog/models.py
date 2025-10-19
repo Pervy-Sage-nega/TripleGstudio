@@ -172,6 +172,11 @@ class BlogPost(models.Model):
             self.reading_time = self.calculate_reading_time()
         
         super().save(*args, **kwargs)
+        
+        # Update tag usage counts after saving
+        for tag in self.tags.all():
+            tag.usage_count = tag.blog_posts.filter(status='published').count()
+            tag.save()
     
     def calculate_reading_time(self):
         """Calculate estimated reading time based on word count"""
@@ -230,6 +235,20 @@ class BlogPost(models.Model):
             related = related.union(tag_related)
         
         return related[:limit]
+    
+    def get_featured_image_url(self):
+        """Get featured image URL or fallback"""
+        if self.featured_image:
+            return self.featured_image.url
+        return None
+    
+    def get_gallery_images(self):
+        """Get all gallery images ordered by display order"""
+        return self.gallery_images.all().order_by('order', 'id')
+    
+    def get_content_images(self):
+        """Get all content images"""
+        return self.content_images.all()
 
 
 class Comment(models.Model):
@@ -381,3 +400,20 @@ class BlogImage(models.Model):
     
     def __str__(self):
         return f"Image for {self.blog_post.title}"
+
+
+class ContentImage(models.Model):
+    """Images inserted within blog content"""
+    blog_post = models.ForeignKey(BlogPost, on_delete=models.CASCADE, related_name='content_images')
+    image = models.ImageField(upload_to='blog/content/')
+    alt_text = models.CharField(max_length=200, blank=True, help_text="Alt text for accessibility")
+    caption = models.CharField(max_length=200, blank=True, help_text="Image caption")
+    uploaded_date = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = "Content Image"
+        verbose_name_plural = "Content Images"
+        ordering = ['-uploaded_date']
+    
+    def __str__(self):
+        return f"Content image for {self.blog_post.title}"

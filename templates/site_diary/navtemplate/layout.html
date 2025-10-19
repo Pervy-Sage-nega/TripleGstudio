@@ -23,8 +23,8 @@
              <li class="dropdown {% if request.resolver_match.url_name in 'createblog,drafts' %}active{% endif %}">
                  <a href="#" class="dropbtn">Blog ▾</a>
                  <div class="dropdown-content">
-                     <a href="{% url 'site_diary:createblog' %}" class="{% if request.resolver_match.url_name == 'createblog' %}active{% endif %}">Create Blog</a>
-                     <a href="{% url 'site_diary:drafts' %}" class="{% if request.resolver_match.url_name == 'drafts' %}active{% endif %}">Drafts</a>
+                     <a href="{% url 'blog:createblog' %}" class="{% if request.resolver_match.url_name == 'createblog' %}active{% endif %}">Create Blog</a>
+                     <a href="{% url 'blog:drafts' %}" class="{% if request.resolver_match.url_name == 'drafts' %}active{% endif %}">Drafts</a>
                  </div>
              </li>
              <li class="dropdown {% if request.resolver_match.url_name in 'diary,sitedraft,history,reports' %}active{% endif %}">

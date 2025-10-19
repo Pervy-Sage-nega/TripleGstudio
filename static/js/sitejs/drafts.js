@@ -493,7 +493,7 @@ function showPreviewModal(draft) {
         editBtn.onclick = () => {
             closeModal(modal);
             // Use Django URL pattern for editing
-            window.location.href = `/diary/createblog/?edit=${draft.id}`;
+            window.location.href = `/blog/createblog/?edit=${draft.id}`;
         };
     }
     
@@ -521,7 +521,7 @@ function showDeleteModal(draft) {
     
     if (confirm(`Are you sure you want to delete "${draft.title}"? This action cannot be undone.`)) {
         // Use Django delete URL - adjust based on your URL pattern
-        window.location.href = `/diary/delete-blog/${draft.id}/`;
+        window.location.href = `/blog/delete-blog/${draft.id}/`;
     }
 }
 
@@ -536,7 +536,7 @@ function showSubmitModal(draft) {
     
     if (confirm(`Submit "${draft.title}" for admin approval?`)) {
         // Use Django submit URL - adjust based on your URL pattern
-        window.location.href = `/diary/submit-blog/${draft.id}/`;
+        window.location.href = `/blog/submit-blog/${draft.id}/`;
     }
 }
 

@@ -9,7 +9,7 @@ from django.views.decorators.http import require_http_methods
 from django.views.decorators.cache import cache_page
 from django.utils.decorators import method_decorator
 from django.utils import timezone
-from .models import BlogPost, Category, Tag, BlogImage
+from .models import BlogPost, Category, Tag, BlogImage, ContentImage
 from accounts.decorators import require_site_manager_role, require_admin_role, allow_public_access, admin_or_site_manager_required
 from .seo import SEOManager
 
@@ -106,8 +106,31 @@ def admin_permanent_delete_blog(request, post_id):
 
 
 @require_site_manager_role
-def create_blog_post(request):
-    """Create a new blog post"""
+def createblog(request):
+    """Create blog post - handles both GET (form display) and POST (form submission)"""
+    # Handle delete operation
+    if request.GET.get('delete'):
+        try:
+            blog_id = int(request.GET.get('delete'))
+            blog_post = BlogPost.objects.get(id=blog_id, author=request.user)
+            blog_title = blog_post.title
+            blog_post.delete()
+            messages.success(request, f'Blog post "{blog_title}" deleted successfully!')
+            return redirect('blog:drafts')
+        except (BlogPost.DoesNotExist, ValueError):
+            messages.error(request, 'Blog post not found or you do not have permission to delete it.')
+            return redirect('blog:drafts')
+    
+    # Handle edit operation
+    edit_blog = None
+    if request.GET.get('edit'):
+        try:
+            blog_id = int(request.GET.get('edit'))
+            edit_blog = BlogPost.objects.prefetch_related('tags').get(id=blog_id, author=request.user)
+        except (BlogPost.DoesNotExist, ValueError):
+            messages.error(request, 'Blog post not found or you do not have permission to edit it.')
+            return redirect('blog:drafts')
+    
     if request.method == 'POST':
         try:
             # Extract form data
@@ -115,27 +138,46 @@ def create_blog_post(request):
             content = request.POST.get('content')
             excerpt = request.POST.get('excerpt', '')
             category_id = request.POST.get('category')
-            tag_names = request.POST.get('tags', '').split(',')
+            # Check if this is an edit operation
+            edit_id = request.POST.get('edit_id')
+            
+            tags_raw = request.POST.get('tags', '')
+            
+            tag_names = tags_raw.split(',')
             status = request.POST.get('status', 'draft')
             featured = request.POST.get('featured') == 'on'
             seo_meta_title = request.POST.get('seo_meta_title', '')
             seo_meta_description = request.POST.get('seo_meta_description', '')
-            
-            # Unescape HTML entities in content
-            import html
-            content = html.unescape(content) if content else ''
-            
-            # Create blog post
-            blog_post = BlogPost.objects.create(
-                title=title,
-                content=content,
-                excerpt=excerpt,
-                author=request.user,
-                status=status,
-                featured=featured,
-                seo_meta_title=seo_meta_title,
-                seo_meta_description=seo_meta_description,
-            )
+            featured_image_alt = request.POST.get('featured_image_alt', '')
+            if edit_id:
+                # Update existing blog post
+                try:
+                    blog_post = BlogPost.objects.get(id=edit_id, author=request.user)
+                    blog_post.title = title
+                    blog_post.content = content
+                    blog_post.excerpt = excerpt
+                    blog_post.status = status
+                    blog_post.featured = featured
+                    blog_post.seo_meta_title = seo_meta_title
+                    blog_post.seo_meta_description = seo_meta_description
+                    blog_post.featured_image_alt = featured_image_alt
+                    blog_post.save()
+                except BlogPost.DoesNotExist:
+                    messages.error(request, 'Blog post not found or you do not have permission to edit it.')
+                    return redirect('blog:drafts')
+            else:
+                # Create new blog post with proper user isolation
+                blog_post = BlogPost.objects.create(
+                    title=title,
+                    content=content,
+                    excerpt=excerpt,
+                    author=request.user,  # Critical: Set the author to logged-in user
+                    status=status,
+                    featured=featured,
+                    seo_meta_title=seo_meta_title,
+                    seo_meta_description=seo_meta_description,
+                    featured_image_alt=featured_image_alt,
+                )
             
             # Set category if provided
             if category_id:
@@ -146,72 +188,104 @@ def create_blog_post(request):
                 except Category.DoesNotExist:
                     pass
             
-            # Handle tags
+            # Handle tags - clear existing tags first for edit operations
+            if edit_id:
+                blog_post.tags.clear()
+            
             for tag_name in tag_names:
                 tag_name = tag_name.strip()
                 if tag_name:
                     tag, created = Tag.objects.get_or_create(name=tag_name)
                     blog_post.tags.add(tag)
-            
             # Handle featured image
             if 'featured_image' in request.FILES:
                 blog_post.featured_image = request.FILES['featured_image']
+                blog_post.save()
             
-            # Handle featured image alt text
-            featured_image_alt = request.POST.get('featured_image_alt', '')
-            if featured_image_alt:
-                blog_post.featured_image_alt = featured_image_alt
-            
-            blog_post.save()
-            
-            # Handle gallery images with captions and alt text
-            gallery_images = request.FILES.getlist('gallery_images')
-            for i, image_file in enumerate(gallery_images):
-                # Get caption and alt text if provided
-                caption = request.POST.get(f'gallery_caption_{i}', '')
-                alt_text = request.POST.get(f'gallery_alt_{i}', '')
+            # Handle gallery images
+            if 'gallery_images' in request.FILES:
+                gallery_files = request.FILES.getlist('gallery_images')
                 
-                BlogImage.objects.create(
-                    blog_post=blog_post,
-                    image=image_file,
-                    caption=caption,
-                    alt_text=alt_text,
-                    order=i
-                )
+                for i, gallery_file in enumerate(gallery_files):
+                    # Get caption and alt text for new images
+                    caption = request.POST.get(f'new_gallery_caption[{i}]', '')
+                    alt_text = request.POST.get(f'new_gallery_alt[{i}]', '')
+                    
+                    BlogImage.objects.create(
+                        blog_post=blog_post,
+                        image=gallery_file,
+                        caption=caption,
+                        alt_text=alt_text,
+                        order=i
+                    )
             
-            # Redirect based on status
+            # Handle content images (images inserted in blog content)
+            if 'content_images' in request.FILES:
+                content_files = request.FILES.getlist('content_images')
+                
+                for i, content_file in enumerate(content_files):
+                    caption = request.POST.get(f'content_image_caption[{i}]', '')
+                    alt_text = request.POST.get(f'content_image_alt[{i}]', '')
+                    
+                    ContentImage.objects.create(
+                        blog_post=blog_post,
+                        image=content_file,
+                        caption=caption,
+                        alt_text=alt_text
+                    )
+            
+            # Handle existing gallery image updates and deletions
+            if edit_id:
+                # Handle gallery image deletions first
+                for key, value in request.POST.items():
+                    if key.startswith('delete_gallery_image_') and value == 'true':
+                        image_id = key.replace('delete_gallery_image_', '')
+                        try:
+                            gallery_image = BlogImage.objects.get(id=image_id, blog_post=blog_post)
+                            gallery_image.delete()
+                        except BlogImage.DoesNotExist:
+                            pass
+                
+                # Update existing gallery images (captions and alt text)
+                for key, value in request.POST.items():
+                    if key.startswith('gallery_caption_'):
+                        image_id = key.replace('gallery_caption_', '')
+                        try:
+                            gallery_image = BlogImage.objects.get(id=image_id, blog_post=blog_post)
+                            gallery_image.caption = value
+                            gallery_image.save()
+                        except BlogImage.DoesNotExist:
+                            pass
+                    elif key.startswith('gallery_alt_'):
+                        image_id = key.replace('gallery_alt_', '')
+                        try:
+                            gallery_image = BlogImage.objects.get(id=image_id, blog_post=blog_post)
+                            gallery_image.alt_text = value
+                            gallery_image.save()
+                        except BlogImage.DoesNotExist:
+                            pass
+            
+            # Success message and redirect
             if status == 'draft':
-                messages.success(request, f'Draft "{title}" saved successfully!')
-                redirect_url = reverse('blog:blog_drafts')
+                messages.success(request, 'Blog post saved as draft successfully!')
+                return redirect('blog:drafts')  # Redirect to drafts page
             else:
-                messages.success(request, f'Blog post "{title}" submitted for admin approval!')
-                redirect_url = reverse('blog:blog_drafts')  # Site managers view their posts in drafts
-            
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({
-                    'success': True,
-                    'message': 'Blog post created successfully!',
-                    'redirect_url': redirect_url
-                })
-            
-            return redirect(redirect_url)
-            
+                messages.success(request, 'Blog post created successfully!')
+                return redirect('blog:drafts')
+                
         except Exception as e:
             messages.error(request, f'Error creating blog post: {str(e)}')
-            
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({
-                    'success': False,
-                    'message': f'Error creating blog post: {str(e)}'
-                })
+            return redirect('blog:createblog')
     
-    # GET request - show form
+    # GET request - show the form
+    # Get categories and tags for the form
     categories = Category.objects.all().order_by('name')
     tags = Tag.objects.all().order_by('name')
     
     context = {
         'categories': categories,
         'tags': tags,
+        'edit_blog': edit_blog,  # Pass the blog post being edited (if any)
     }
     
     return render(request, 'blogcreation/createblog.html', context)
@@ -345,27 +419,63 @@ def edit_blog_post(request, post_id):
     return render(request, 'blogcreation/createblog.html', context)
 
 
-@admin_or_site_manager_required
-def delete_blog_post(request, post_id):
+@require_site_manager_role
+def delete_blog(request, blog_id):
     """Soft delete a blog post"""
-    blog_post = get_object_or_404(BlogPost, id=post_id, is_deleted=False)
-    
-    if request.method == 'POST':
-        title = blog_post.title
+    try:
+        blog_post = BlogPost.objects.get(id=blog_id, author=request.user, is_deleted=False)
         blog_post.is_deleted = True
         blog_post.deleted_at = timezone.now()
         blog_post.save()
-        messages.success(request, f'Blog post "{title}" moved to recently deleted!')
-        
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': True,
-                'message': f'Blog post "{title}" moved to recently deleted!'
-            })
-        
-        return redirect('blog:blog_drafts')
+        messages.success(request, f'Blog post "{blog_post.title}" moved to recently deleted.')
+    except BlogPost.DoesNotExist:
+        messages.error(request, 'Blog post not found or already deleted.')
     
-    return render(request, 'admin/blog_delete_confirm.html', {'blog_post': blog_post})
+    return redirect('blog:drafts')
+
+@require_site_manager_role
+def recently_deleted(request):
+    """Show recently deleted blog posts"""
+    # Get deleted blog posts by current user
+    deleted_posts = BlogPost.objects.select_related(
+        'author', 'category'
+    ).prefetch_related('tags').filter(
+        author=request.user,
+        is_deleted=True
+    ).order_by('-deleted_at')
+    
+    context = {
+        'deleted_posts': deleted_posts,
+    }
+    
+    return render(request, 'blogcreation/recently_deleted.html', context)
+
+@require_site_manager_role
+def restore_blog(request, blog_id):
+    """Restore a soft deleted blog post"""
+    try:
+        blog_post = BlogPost.objects.get(id=blog_id, author=request.user, is_deleted=True)
+        blog_post.is_deleted = False
+        blog_post.deleted_at = None
+        blog_post.save()
+        messages.success(request, f'Blog post "{blog_post.title}" restored successfully.')
+    except BlogPost.DoesNotExist:
+        messages.error(request, 'Blog post not found or not deleted.')
+    
+    return redirect('blog:recently_deleted')
+
+@require_site_manager_role
+def permanent_delete_blog(request, blog_id):
+    """Permanently delete a blog post"""
+    try:
+        blog_post = BlogPost.objects.get(id=blog_id, author=request.user, is_deleted=True)
+        blog_title = blog_post.title
+        blog_post.delete()
+        messages.success(request, f'Blog post "{blog_title}" permanently deleted.')
+    except BlogPost.DoesNotExist:
+        messages.error(request, 'Blog post not found or not in deleted state.')
+    
+    return redirect('blog:recently_deleted')
 
 
 @require_site_manager_role
@@ -395,23 +505,23 @@ def get_blog_post_data(request, post_id):
 
 
 @require_site_manager_role
-def blog_drafts(request):
-    """Site manager's drafts page - shows all their blog posts (drafts and published)"""
-    # Get all blog posts by current user excluding deleted ones
+def drafts(request):
+    """Site manager's drafts page - shows only their blog posts with proper user isolation"""
+    # Get all blog posts by current user (proper user isolation) - exclude deleted
     user_blog_posts = BlogPost.objects.select_related(
         'author', 'category'
     ).prefetch_related('tags').filter(
-        author=request.user,
-        is_deleted=False
+        author=request.user,  # Critical: Only show posts by the logged-in user
+        is_deleted=False  # Exclude soft deleted posts
     ).order_by('-created_date')
     
-    # Get statistics
+    # Get statistics for the current user only
     total_posts = user_blog_posts.count()
     draft_posts = user_blog_posts.filter(status='draft').count()
     published_posts = user_blog_posts.filter(status='published').count()
     archived_posts = user_blog_posts.filter(status='archived').count()
     
-    # Get all categories for filter
+    # Get all categories for filter dropdown
     all_categories = Category.objects.all().order_by('name')
     
     context = {
@@ -945,3 +1055,51 @@ def admin_toggle_featured(request, post_id):
         return JsonResponse({'success': False, 'message': str(e)})
     
     return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+
+@require_site_manager_role
+@require_http_methods(["POST"])
+def upload_content_image(request):
+    """AJAX endpoint for uploading images within blog content"""
+    try:
+        if 'image' not in request.FILES:
+            return JsonResponse({'success': False, 'message': 'No image file provided'})
+        
+        image_file = request.FILES['image']
+        blog_post_id = request.POST.get('blog_post_id')
+        alt_text = request.POST.get('alt_text', '')
+        caption = request.POST.get('caption', '')
+        
+        # Get or create blog post
+        if blog_post_id:
+            try:
+                blog_post = BlogPost.objects.get(id=blog_post_id, author=request.user)
+            except BlogPost.DoesNotExist:
+                return JsonResponse({'success': False, 'message': 'Blog post not found'})
+        else:
+            # Create a temporary blog post for the image
+            blog_post = BlogPost.objects.create(
+                title='Temporary Post',
+                content='',
+                author=request.user,
+                status='draft'
+            )
+        
+        # Create content image
+        content_image = ContentImage.objects.create(
+            blog_post=blog_post,
+            image=image_file,
+            alt_text=alt_text,
+            caption=caption
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'image_url': content_image.image.url,
+            'image_id': content_image.id,
+            'blog_post_id': blog_post.id,
+            'message': 'Image uploaded successfully'
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})

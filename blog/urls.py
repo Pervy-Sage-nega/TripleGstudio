@@ -17,10 +17,12 @@ urlpatterns = [
     path('admin/toggle-featured/<int:post_id>/', views.admin_toggle_featured, name='admin_toggle_featured'),
     
     # Site manager views
-    path('drafts/', views.blog_drafts, name='blog_drafts'),
-    path('create/', views.create_blog_post, name='create_blog_post'),
-    path('edit/<int:post_id>/', views.edit_blog_post, name='edit_blog_post'),
-    path('delete/<int:post_id>/', views.delete_blog_post, name='delete_blog_post'),
+    path('drafts/', views.drafts, name='drafts'),
+    path('createblog/', views.createblog, name='createblog'),
+    path('delete-blog/<int:blog_id>/', views.delete_blog, name='delete_blog'),
+    path('recently-deleted/', views.recently_deleted, name='recently_deleted'),
+    path('restore-blog/<int:blog_id>/', views.restore_blog, name='restore_blog'),
+    path('permanent-delete/<int:blog_id>/', views.permanent_delete_blog, name='permanent_delete_blog'),
     path('get-post-data/<int:post_id>/', views.get_blog_post_data, name='get_blog_post_data'),
     
     # Public views
@@ -59,6 +61,7 @@ urlpatterns = [
     path('toggle-featured/<int:post_id>/', views.toggle_featured, name='toggle_featured'),
     path('change-status/<int:post_id>/', views.change_status, name='change_status'),
     path('track-event/', views.track_analytics_event, name='track_analytics_event'),
+    path('upload-content-image/', views.upload_content_image, name='upload_content_image'),
     # Legacy URLs for backward compatibility
     path('blogmanagement/', views.blog_management, name='blogmanagement'),
     path('bloglist/', views.blog_list, name='bloglist'),

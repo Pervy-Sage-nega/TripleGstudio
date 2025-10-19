@@ -62,7 +62,7 @@
         <!-- Blog Creation Form -->
         <div class="blog-creation-container">
             <div class="form-container">
-                <form id="blogForm" class="blog-form" method="post" enctype="multipart/form-data" action="{% url 'site_diary:createblog' %}">
+                <form id="blogForm" class="blog-form" method="post" enctype="multipart/form-data" action="{% url 'blog:createblog' %}">
                     {% csrf_token %}
                     <!-- Title Input -->
                     <div class="form-group">
@@ -118,7 +118,7 @@
                     <!-- Tags Input -->
                     <div class="form-group">
                         <label for="blogTags">Tags (separate with commas)</label>
-                        <input type="text" id="blogTags" name="tags" class="form-control" placeholder="architecture, design, construction" value="{% if edit_blog %}{% for tag in edit_blog.tags.all %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}">
+                        <input type="text" id="blogTags" name="tags" class="form-control" placeholder="architecture, design, construction" value="{% if edit_blog %}{% for tag in edit_blog.tags.all %}{{ tag.name|safe }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}">
                     </div>
 
                     <!-- Blog Excerpt -->
