@@ -186,6 +186,10 @@ CSRF_COOKIE_SECURE = True
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Weather API Configuration
+WEATHER_API_KEY = os.getenv('WEATHER_API_KEY', 'your_openweathermap_api_key_here')
+WEATHER_API_URL = 'https://api.openweathermap.org/data/2.5/weather'
+
 # Authentication backends
 AUTHENTICATION_BACKENDS = [
     'axes.backends.AxesStandaloneBackend',
@@ -223,14 +227,14 @@ SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 CONTENT_SECURITY_POLICY = {
     'DIRECTIVES': {
         'base-uri': ("'self'",),
-        'connect-src': ("'self'", 'https://cdn.jsdelivr.net'),
+        'connect-src': ("'self'", 'https://cdn.jsdelivr.net', 'https://maps.googleapis.com', 'https://nominatim.openstreetmap.org', 'https://api.openweathermap.org'),
         'default-src': ("'self'",),
         'font-src': ("'self'", 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com'),
         'form-action': ("'self'",),
         'frame-src': ('https://www.google.com', 'https://maps.google.com'),
         'img-src': ("'self'", 'data:', 'https:', 'http:'),
         'object-src': ("'none'",),
-        'script-src': ("'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com', 'https://code.jquery.com'),
-        'style-src': ("'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com')
+        'script-src': ("'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com', 'https://code.jquery.com', 'https://maps.googleapis.com', 'https://unpkg.com'),
+        'style-src': ("'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com', 'https://unpkg.com')
     }
 }

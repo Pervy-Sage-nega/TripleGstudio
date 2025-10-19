@@ -1044,7 +1044,7 @@ def project_detail(request, project_id):
     except:
         # Fallback - redirect to dashboard if project doesn't exist
         messages.info(request, 'Project details are not available yet.')
-        return redirect('site:dashboard')
+        return redirect('site_diary:dashboard')
 
 @login_required
 @require_site_manager_role

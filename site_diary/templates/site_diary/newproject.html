@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="{% static 'css/sitecss/createblog.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/newproject.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         .input-with-icon {
             position: relative;
@@ -35,6 +37,57 @@
         input[type="number"] {
             -moz-appearance: textfield;
             appearance: textfield;
+        }
+        .location-input-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .location-input-container input {
+            flex: 1;
+        }
+        .map-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .map-modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 800px;
+            height: 70%;
+            max-height: 600px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .map-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .map-container {
+            width: 100%;
+            height: calc(100% - 80px);
+            border-radius: 4px;
+        }
+        .map-modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 15px;
         }
     </style>
 {% endblock %}
@@ -86,7 +139,12 @@
                     <!-- Project Location -->
                     <div class="filter-group">
                         <label for="project-location">Project Location <span class="required">*</span></label>
-                        <input type="text" id="project-location" required>
+                        <div class="location-input-container">
+                            <input type="text" id="project-location" required placeholder="Enter location or click map button">
+                            <button type="button" id="map-picker-btn" class="btn btn-outline">
+                                <i class="fas fa-map-marker-alt"></i> Pick on Map
+                            </button>
+                        </div>
                         <p class="error-message" id="location-error" style="display: none;">Project Location is required.</p>
                     </div>
 
@@ -167,7 +225,27 @@
             </form>
         </div>
     </div>
-   
+
+    <!-- Map Modal -->
+    <div id="mapModal" class="map-modal">
+        <div class="map-modal-content">
+            <div class="map-modal-header">
+                <h3><i class="fas fa-map-marker-alt"></i> Select Project Location</h3>
+                <button type="button" id="closeMapModal" class="btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="search-container" style="margin-bottom: 15px;">
+                <input type="text" id="location-search" placeholder="Search for a location..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                <button type="button" id="search-btn" style="margin-top: 5px; padding: 8px 15px; background: #007cba; color: white; border: none; border-radius: 4px; cursor: pointer;">Search</button>
+            </div>
+            <div id="map" class="map-container"></div>
+            <div class="map-modal-footer">
+                <button type="button" id="cancelMapSelection" class="btn btn-secondary">Cancel</button>
+                <button type="button" id="confirmMapSelection" class="btn btn-primary">Done</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         const form = document.getElementById("new-project-form");
@@ -182,7 +260,134 @@
         const imagePreview = document.getElementById("image-preview");
         const imageOutput = document.getElementById("image-output");
         const clearImage = document.getElementById("clear-image");
-        const budgetInput = document.getElementById('project-budget');
+        const mapPickerBtn = document.getElementById('map-picker-btn');
+        const mapModal = document.getElementById('mapModal');
+        const closeMapModal = document.getElementById('closeMapModal');
+        const cancelMapSelection = document.getElementById('cancelMapSelection');
+        const confirmMapSelection = document.getElementById('confirmMapSelection');
+        const locationSearch = document.getElementById('location-search');
+        const searchBtn = document.getElementById('search-btn');
+        
+        let map;
+        let marker;
+        let selectedLocation = null;
+        
+        // Initialize Leaflet Map
+        function initMap() {
+            const defaultLocation = [14.5995, 120.9842];
+            
+            map = L.map('map').setView(defaultLocation, 13);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+            
+            map.on('click', function(e) {
+                placeMarker(e.latlng);
+            });
+        }
+        
+        function placeMarker(location) {
+            if (marker) map.removeLayer(marker);
+            
+            marker = L.marker([location.lat, location.lng], {draggable: true}).addTo(map);
+            selectedLocation = location;
+            
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${location.lat}&lon=${location.lng}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.display_name) {
+                        document.getElementById('project-location').value = data.display_name;
+                    }
+                })
+                .catch(err => console.log('Geocoding error:', err));
+            
+            marker.on('dragend', function() {
+                const pos = marker.getLatLng();
+                selectedLocation = pos;
+                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.lat}&lon=${pos.lng}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.display_name) {
+                            document.getElementById('project-location').value = data.display_name;
+                        }
+                    })
+                    .catch(err => console.log('Geocoding error:', err));
+            });
+        }
+        
+        // Map picker button click
+        mapPickerBtn.addEventListener('click', function() {
+            mapModal.style.display = 'block';
+            setTimeout(() => {
+                map.invalidateSize();
+                if (selectedLocation) {
+                    map.setView([selectedLocation.lat, selectedLocation.lng]);
+                }
+            }, 100);
+        });
+        
+        // Close modal events
+        closeMapModal.addEventListener('click', function() {
+            mapModal.style.display = 'none';
+        });
+        
+        cancelMapSelection.addEventListener('click', function() {
+            mapModal.style.display = 'none';
+        });
+        
+        confirmMapSelection.addEventListener('click', function() {
+            mapModal.style.display = 'none';
+        });
+        
+        // Close modal when clicking outside
+        window.addEventListener('click', function(event) {
+            if (event.target === mapModal) {
+                mapModal.style.display = 'none';
+            }
+        });
+        
+        // Search functionality
+        function searchLocation() {
+            const query = locationSearch.value.trim();
+            if (!query) return;
+            
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.length > 0) {
+                        const result = data[0];
+                        const lat = parseFloat(result.lat);
+                        const lng = parseFloat(result.lon);
+                        map.setView([lat, lng], 15);
+                        placeMarker({lat: lat, lng: lng});
+                    } else {
+                        alert('Location not found. Please try a different search term.');
+                    }
+                })
+                .catch(err => {
+                    console.log('Search error:', err);
+                    alert('Search failed. Please try again.');
+                });
+        }
+        
+        searchBtn.addEventListener('click', searchLocation);
+        locationSearch.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchLocation();
+            }
+        });
+        
+        document.addEventListener('DOMContentLoaded', initMap);
+
+        // Budget input formatting
+        projectBudget.addEventListener('input', function(e) {
+            let value = this.value.replace(/[^0-9]/g, '');
+            if (value.length > 0) {
+                value = parseInt(value, 10).toLocaleString('en-PH');
+            }
+            this.value = value;
+        });
 
         // Image upload preview
         imageInput.addEventListener("change", (event) => {
@@ -200,34 +405,15 @@
             }
         });
 
-        if (budgetInput) {
-    budgetInput.addEventListener('input', function(e) {
-        // Remove all non-digit characters
-        let value = this.value.replace(/[^0-9]/g, '');
-        
-        // Format with commas
-        if (value.length > 0) {
-            value = parseInt(value, 10).toLocaleString('en-PH');
-        }
-        
-        this.value = value;
-    });
-}
-
-// Update form validation to include budget
-form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    let valid = true;
         // Clear image preview
         clearImage.addEventListener("click", () => {
             imageInput.value = "";
             imagePreview.style.display = "none";
         });
 
-        // Form validation before submission
+        // Form validation
         form.addEventListener("submit", (e) => {
             e.preventDefault();
-
             let valid = true;
 
             // Validate required fields
@@ -247,31 +433,15 @@ form.addEventListener('submit', (e) => {
                 document.getElementById("type-error").style.display = "block";
                 valid = false;
             }
-
-            if (!projectBudget.value || projectBudget.value <= 0) {
+            if (!projectBudget.value || projectBudget.value.replace(/[^0-9]/g, '') === '0') {
                 document.getElementById("budget-error").style.display = "block";
                 valid = false;
             }
-
             if (!startDate.value || !endDate.value || new Date(endDate.value) <= new Date(startDate.value)) {
                 document.getElementById("end-date-error").style.display = "block";
                 valid = false;
             }
-            
 
-            if (!budgetInput.value || budgetInput.value.replace(/[^0-9]/g, '') === '0') {
-                document.getElementById("budget-error").style.display = "block";
-                valid = false;
-    }
-
-    if (valid) {
-        alert("Project created successfully!");
-        form.reset();
-        imagePreview.style.display = "none";
-    }
-});
-
-            // Check validation result
             if (valid) {
                 alert("Project created successfully!");
                 form.reset();
