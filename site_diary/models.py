@@ -33,6 +33,21 @@ class Project(models.Model):
     
     def __str__(self):
         return f"{self.name} - {self.client_name}"
+    
+    def get_progress_percentage(self):
+        """Get the latest progress percentage from diary entries"""
+        latest_entry = self.diary_entries.order_by('-entry_date').first()
+        if latest_entry:
+            return int(latest_entry.progress_percentage)
+        # Fallback to status-based progress
+        status_progress = {
+            'planning': 10,
+            'active': 50,
+            'on_hold': 25,
+            'completed': 100,
+            'cancelled': 0,
+        }
+        return status_progress.get(self.status, 0)
 
 class DiaryEntry(models.Model):
     WEATHER_CONDITIONS = [

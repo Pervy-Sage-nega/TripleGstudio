@@ -54,8 +54,8 @@
                 </div>
                 <div class="progress-circle-container">
                     <div class="project-code">PRJ-{{ project.created_at.year }}-{{ project.id|stringformat:"03d" }}</div>
-                    <div class="progress-circle">
-                        <div class="progress-value">{% if project.status == 'completed' %}100%{% elif project.status == 'active' %}65%{% else %}25%{% endif %}</div>
+                    <div class="progress-circle" style="--progress-deg: {% widthratio project.get_progress_percentage 100 360 %}deg;">
+                        <div class="progress-value">{{ project.get_progress_percentage }}%</div>
                         <div class="progress-label">Complete</div>
                     </div>
                 </div>
@@ -69,7 +69,7 @@
                     <i class="fas fa-chart-line"></i>
                 </div>
                 <div class="analytics-content">
-                    <div class="analytics-value">{% if project.status == 'completed' %}100%{% elif project.status == 'active' %}65%{% else %}25%{% endif %}</div>
+                    <div class="analytics-value">{{ project.get_progress_percentage }}%</div>
                     <div class="analytics-label">Overall Progress</div>
                 </div>
             </div>
