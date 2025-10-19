@@ -15,19 +15,52 @@
 /* Tag styling */
 .tag-container {
   display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+  max-width: 200px;
 }
 
 .blog-tag {
   display: inline-block;
   background-color: var(--light-gray);
   color: var(--accent-color);
-  padding: 2px 8px;
-  border-radius: 12px;
+  padding: 3px 10px;
+  border-radius: 16px;
   font-size: 0.75rem;
   font-weight: 500;
   white-space: nowrap;
+  border: 1px solid rgba(60, 110, 113, 0.2);
+  transition: all 0.2s ease;
+}
+
+.blog-tag:hover {
+  background-color: rgba(60, 110, 113, 0.1);
+  border-color: var(--accent-color);
+}
+
+/* Tag ellipsis button */
+.tag-ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background-color: #f8f9fa;
+  color: #6c757d;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 0.7rem;
+  transition: all 0.2s ease;
+  border: 1px solid #dee2e6;
+  flex-shrink: 0;
+}
+
+.tag-ellipsis:hover {
+  background-color: var(--accent-color);
+  color: white;
+  border-color: var(--accent-color);
+  transform: scale(1.1);
 }
 
 /* Grid view styling */
@@ -43,11 +76,29 @@
   border-radius: 8px;
   overflow: hidden;
   box-shadow: var(--shadow);
-  transition: transform 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
 }
 
 .blog-card:hover {
   transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.blog-card[onclick] {
+  cursor: pointer;
+}
+
+.blog-card[onclick]:hover::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(60, 110, 113, 0.05);
+  pointer-events: none;
+  z-index: 1;
 }
 
 .blog-card-header {
@@ -271,6 +322,19 @@
 
 
 
+/* Table Actions - Horizontal Layout */
+.actions {
+  text-align: center;
+}
+
+.actions .action-buttons {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+}
+
 /* Action button colors */
 .action-btn.approve {
   color: var(--mid-gray);
@@ -341,6 +405,69 @@
   color: var(--danger-color);
 }
 
+/* Tags Modal Styling */
+.tags-modal-content {
+  max-width: 600px;
+  width: 90%;
+}
+
+.tags-modal-title {
+  font-size: 1rem;
+  color: var(--dark-gray);
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+  font-weight: 500;
+}
+
+.tags-modal-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 5px;
+}
+
+.tags-modal-container .blog-tag {
+  background-color: var(--light-gray);
+  color: var(--accent-color);
+  padding: 6px 12px;
+  border-radius: 18px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: 1px solid rgba(60, 110, 113, 0.2);
+  transition: all 0.2s ease;
+  cursor: default;
+}
+
+.tags-modal-container .blog-tag:hover {
+  background-color: rgba(60, 110, 113, 0.1);
+  border-color: var(--accent-color);
+  transform: translateY(-1px);
+}
+
+/* Custom scrollbar for tags modal */
+.tags-modal-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tags-modal-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.tags-modal-container::-webkit-scrollbar-thumb {
+  background: var(--accent-color);
+  border-radius: 3px;
+}
+
+.tags-modal-container::-webkit-scrollbar-thumb:hover {
+  background: #2a5254;
+}
+.view-toggle {
+  margin-bottom: 10px;
+}
 /* Status badge styling */
 .status-badge {
   padding: 4px 12px;
@@ -355,6 +482,12 @@
   background-color: #fff3cd; 
   color: #856404; 
   border: 1px solid #ffeaa7;
+}
+
+.status-pending { 
+  background-color: #cce5ff; 
+  color: #004085; 
+  border: 1px solid #b3d7ff;
 }
 
 .status-published { 
@@ -624,4 +757,132 @@
   outline: none;
   border-color: #007bff;
   box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+/* Filter Search Controls Layout */
+.filter-search-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    margin-bottom: 1rem;
+}
+
+.filter-section {
+    display: flex;
+    gap: 0.75rem;
+    flex-shrink: 0;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0px !important;
+}
+
+.filter-dropdown {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #dee2e6;
+    background: #fff;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    height: 38px;
+    min-width: 140px;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+}
+
+.filter-dropdown:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+}
+
+.search-section {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.search-input-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 300px;
+}
+
+.search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+    font-size: 0.8rem;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.search-input {
+    width: 100%;
+    padding: 0.4rem 0.6rem 0.4rem 2.5rem !important;
+    border: 1px solid #dee2e6;
+    background: #fff;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    transition: all 0.2s ease;
+    height: 32px;
+    box-sizing: border-box;
+    line-height: 1.5;
+    vertical-align: middle;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+}
+
+.search-input::placeholder {
+    color: #6c757d;
+}
+
+/* Responsive behavior */
+@media (max-width: 768px) {
+    .filter-search-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+    
+    .filter-section {
+        order: 1;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .search-section {
+        order: 2;
+        justify-content: stretch;
+    }
+    
+    .search-input-wrapper {
+        max-width: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .filter-section {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .filter-dropdown {
+        min-width: 120px;
+        font-size: 0.8rem;
+    }
+    
+    .search-input {
+        font-size: 0.8rem;
+    }
 }

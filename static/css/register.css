@@ -230,6 +230,7 @@ form {
     padding: 0 clamp(20px, 5vw, 50px);
     height: 100%;
     text-align: center;
+    position: relative;
 }
 
 input {
@@ -244,6 +245,57 @@ input {
 
 input::placeholder {
     color: rgba(255, 255, 255, 0.7);
+}
+
+.password-container {
+    position: relative;
+    width: 100%;
+    margin: 8px 0;
+}
+
+.password-container input {
+    padding-right: 45px;
+    margin: 0;
+}
+
+.password-eye {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    z-index: 2;
+    pointer-events: auto;
+}
+
+.password-eye:hover {
+    color: #FA5A02;
+}
+
+/* Error message styling */
+.error-message {
+    background-color: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    margin: 5px 0;
+    text-align: left;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .container {

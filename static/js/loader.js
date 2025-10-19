@@ -43,6 +43,13 @@ class TripleGLoader {
      */
     init() {
         if (this.initiated) return;
+        
+        // Check if loader has already been shown in this session
+        if (sessionStorage.getItem('tripleGLoaderShown')) {
+            console.log(' TripleG Loader: Skipping - already shown this session');
+            return;
+        }
+        
         this.initiated = true;
         this.startTime = performance.now();
 
@@ -51,7 +58,6 @@ class TripleGLoader {
         this.createLoaderUI();
         this.setupEventListeners();
         this.startResourceTracking();
-        this.createFallbackAnimation();
         
         // Safety timeout in case something hangs
         this.safetyTimeout = setTimeout(() => {
@@ -114,10 +120,7 @@ class TripleGLoader {
         logoContainer.appendChild(logoText);
         this.loaderContainer.appendChild(logoContainer);
 
-        // Lottie container
-        this.lottieContainer = document.createElement('div');
-        this.lottieContainer.className = 'tripleG-lottie-container';
-        this.loaderContainer.appendChild(this.lottieContainer);
+
 
         // Progress bar
         const progressContainer = document.createElement('div');
@@ -135,8 +138,7 @@ class TripleGLoader {
         this.loadingMessage.textContent = 'Loading creative assets...';
         this.loaderContainer.appendChild(this.loadingMessage);
         
-        // Debug console (for development)
-        this.createDebugConsole();
+
         
         // Lock body scroll
         document.body.style.overflow = 'hidden';
@@ -181,19 +183,7 @@ class TripleGLoader {
         }
     }
 
-    /**
-     * Create animated spinner
-     */
-    createFallbackAnimation() {
-        this.lottieContainer.innerHTML = `
-            <div class="fallback-animation">
-                <div class="spinner"></div>
-                <div class="loading-dots">
-                    <span></span><span></span><span></span>
-                </div>
-            </div>
-        `;
-    }
+
 
     /**
      * Start real resource tracking
@@ -467,18 +457,15 @@ class TripleGLoader {
      */
     completeLoading() {
         clearInterval(this.progressInterval);
-        clearInterval(this.debugInterval);
         clearTimeout(this.safetyTimeout);
+        
+        // Mark loader as shown for this session
+        sessionStorage.setItem('tripleGLoaderShown', 'true');
         
         // Quickly fill any remaining progress
         this.progress = 1;
         this.progressBar.style.width = '100%';
         this.updateLoadingMessage('Complete!');
-        
-        // Clean up debug console
-        if (this.debugConsole) {
-            this.debugConsole.remove();
-        }
         
         // Hide the loader
         setTimeout(() => {
@@ -494,10 +481,7 @@ class TripleGLoader {
         
         this.loaderContainer.classList.add('tripleG-loader-hidden');
         
-        // Clean up Lottie if used
-        if (this.lottieInstance) {
-            this.lottieInstance.destroy();
-        }
+
         
         // Remove from DOM after transition
         setTimeout(() => {
@@ -508,60 +492,14 @@ class TripleGLoader {
         }, 600);
     }
 
-    /**
-     * Create debug console for development
-     */
-    createDebugConsole() {
-        // Only show debug in development (check for localhost or specific flag)
-        const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.tripleGDebug;
-        
-        if (!isDev) return;
-        
-        this.debugConsole = document.createElement('div');
-        this.debugConsole.className = 'loader-debug active';
-        this.debugConsole.innerHTML = `
-            <div><strong>TripleG Loader Debug</strong></div>
-            <div id="debug-progress">Progress: 0%</div>
-            <div id="debug-stage">Stage: Initializing</div>
-            <div id="debug-resources">Resources: 0/0</div>
-            <div id="debug-time">Time: 0ms</div>
-        `;
-        document.body.appendChild(this.debugConsole);
-        
-        // Update debug info every 100ms
-        this.debugInterval = setInterval(() => {
-            this.updateDebugInfo();
-        }, 100);
-    }
-    
-    /**
-     * Update debug console information
-     */
-    updateDebugInfo() {
-        if (!this.debugConsole) return;
-        
-        const elapsed = performance.now() - this.startTime;
-        const totalResources = Object.values(this.resourceTypes).reduce((sum, type) => sum + type.total, 0);
-        const loadedResources = Object.values(this.resourceTypes).reduce((sum, type) => sum + type.loaded, 0);
-        
-        const currentStage = Object.keys(this.loadingStages).find(stage => !this.loadingStages[stage]) || 'Complete';
-        
-        document.getElementById('debug-progress').textContent = `Progress: ${Math.floor(this.progress * 100)}%`;
-        document.getElementById('debug-stage').textContent = `Stage: ${currentStage}`;
-        document.getElementById('debug-resources').textContent = `Resources: ${loadedResources}/${totalResources}`;
-        document.getElementById('debug-time').textContent = `Time: ${Math.floor(elapsed)}ms`;
-    }
+
 
     /**
      * Force hide the loader in emergency situations
      */
     forceHide() {
         clearInterval(this.progressInterval);
-        clearInterval(this.debugInterval);
         clearTimeout(this.safetyTimeout);
-        if (this.debugConsole) {
-            this.debugConsole.remove();
-        }
         this.hideLoader();
     }
 }

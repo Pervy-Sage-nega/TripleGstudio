@@ -1,36 +1,38 @@
 {% load static %}
 <!-- Admin Navigation Bar -->
 <nav class="navbar">
-    <div class="logo-container">
+    <div class="logo-container" onclick="window.location.href='{% url 'admin_side:admin_home' %}'">
         <img class="logo" src="{% static 'images/logostick.png' %}" alt="Logo">
-        <div class="logo1">TRIPLE<a href="#">G</a></div>
+        <div class="logo1">TRIPLE<a>G.</a></div>
     </div>
+    <!-- Debug: {{ request.resolver_match.namespace }} | {{ request.resolver_match.url_name }} -->
     <ul class="nav-links" id="navLinks">
-        <li><a href="{% url 'admin_side:admin_home' %}">Dashboard</a></li>
+        <li><a href="{% url 'admin_side:admin_home' %}" {% if request.resolver_match.url_name == 'admin_home' %}class="active"{% endif %}>Dashboard</a></li>
        
         <li class="dropdown">
-            <a href="#" class="dropdown-toggle">Portfolio <i class="fas fa-caret-down"></i></a>
+            <a href="#" class="dropdown-toggle" data-section="portfolio">Portfolio <i class="fas fa-caret-down"></i></a>
             <ul class="dropdown-menu">
-               <li><a href="{% url 'portfolio:projectmanagement' %}">Project Management</a></li>
-                <li><a href="{% url 'blog:blogmanagement' %}">Blog Management</a></li>
+               <li><a href="{% url 'portfolio:projectmanagement' %}" {% if request.resolver_match.url_name == 'projectmanagement' %}class="active"{% endif %}>Project Management</a></li>
+                <li><a href="{% url 'blog:blogmanagement' %}" {% if request.resolver_match.url_name == 'blogmanagement' %}class="active"{% endif %}>Blog Management</a></li>
             </ul>
         </li>
 
         <li class="dropdown">
-            <a href="#" class="dropdown-toggle">Site Diary Management <i class="fas fa-caret-down"></i></a>
+            <a href="#" class="dropdown-toggle" data-section="site">Site Diary Management <i class="fas fa-caret-down"></i></a>
             <ul class="dropdown-menu">
-                <li><a href="{% url 'site_diary:admindiaryreviewer' %}">Diary Review</a></li>
-                <li><a href="{% url 'site_diary:adminhistory' %}">Diary History</a></li>
-                <li><a href="{% url 'site_diary:adminreports' %}">Reports & Analytics</a></li>
-                <li><a href="{% url 'site_diary:adminclientproject' %}">Client Projects</a></li>
+                <li><a href="{% url 'site:admindiaryreviewer' %}" {% if request.resolver_match.url_name == 'admindiaryreviewer' %}class="active"{% endif %}>Diary Review</a></li>
+                <li><a href="{% url 'site:adminhistory' %}" {% if request.resolver_match.url_name == 'adminhistory' %}class="active"{% endif %}>Diary History</a></li>
+                <li><a href="{% url 'site:adminreports' %}" {% if request.resolver_match.url_name == 'adminreports' %}class="active"{% endif %}>Reports & Analytics</a></li>
+                <li><a href="{% url 'site:adminclientproject' %}" {% if request.resolver_match.url_name == 'adminclientproject' %}class="active"{% endif %}>Client Projects</a></li>
             </ul>
         </li>
 
         <li class="dropdown">
-            <a href="#" class="dropdown-toggle">Admin Tools <i class="fas fa-caret-down"></i></a>
+            <a href="#" class="dropdown-toggle" data-section="admin">Admin Tools <i class="fas fa-caret-down"></i></a>
             <ul class="dropdown-menu">
-                <li><a href="{% url 'chatbot:adminmessagecenter' %}">Message Center</a></li>
-                <li><a href="{% url 'admin_side:admin_settings' %}">Settings</a></li>
+                <li><a href="{% url 'admin_side:admin_user_list' %}" {% if request.resolver_match.url_name == 'admin_user_list' %}class="active"{% endif %}>User Management</a></li>
+                <li><a href="{% url 'chatbot:adminmessagecenter' %}" {% if request.resolver_match.url_name == 'adminmessagecenter' %}class="active"{% endif %}>Message Center</a></li>
+                <li><a href="{% url 'admin_side:admin_settings' %}" {% if request.resolver_match.url_name == 'admin_settings' %}class="active"{% endif %}>Settings</a></li>
             </ul>
         </li>
 

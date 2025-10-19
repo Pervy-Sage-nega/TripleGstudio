@@ -10,7 +10,7 @@ from django.views.decorators.cache import cache_page
 from django.utils.decorators import method_decorator
 from django.utils import timezone
 from .models import BlogPost, Category, Tag, BlogImage
-from .decorators import require_site_manager_role, require_admin_role, allow_public_access
+from accounts.decorators import require_site_manager_role, require_admin_role, allow_public_access
 from .seo import SEOManager
 
 # Create your views here.
@@ -21,18 +21,20 @@ from .seo import SEOManager
 
 @require_admin_role
 def blog_management(request):
-    """Admin dashboard for blog management - Now includes drafts for review"""
-    # Get ALL posts including drafts for admin review
+    """Admin dashboard for blog management - Excludes drafts, shows pending/published/archived"""
+    # Get posts excluding drafts (admins only see submitted posts)
     all_blog_posts = BlogPost.objects.select_related(
         'author', 'category'
-    ).prefetch_related('tags', 'gallery_images').order_by('-created_date')
+    ).prefetch_related('tags', 'gallery_images').exclude(status='draft').order_by('-created_date')
     
-    # Get statistics for dashboard
-    total_posts = all_blog_posts.count()
-    published_posts = all_blog_posts.filter(status='published').count()
-    draft_posts = all_blog_posts.filter(status='draft').count()
-    archived_posts = all_blog_posts.filter(status='archived').count()
-    featured_posts = all_blog_posts.filter(featured=True, status='published').count()
+    # Get statistics for dashboard (including drafts for stats only)
+    all_posts_for_stats = BlogPost.objects.all()
+    total_posts = all_posts_for_stats.count()
+    published_posts = all_posts_for_stats.filter(status='published').count()
+    draft_posts = all_posts_for_stats.filter(status='draft').count()
+    pending_posts = all_posts_for_stats.filter(status='pending').count()
+    archived_posts = all_posts_for_stats.filter(status='archived').count()
+    featured_posts = all_posts_for_stats.filter(featured=True, status='published').count()
     
     # Get all categories for filter dropdown
     all_categories = Category.objects.all().order_by('name')
@@ -45,6 +47,7 @@ def blog_management(request):
         'total_posts': total_posts,
         'published_posts': published_posts,
         'draft_posts': draft_posts,
+        'pending_posts': pending_posts,
         'archived_posts': archived_posts,
         'featured_posts': featured_posts,
         'all_categories': all_categories,
@@ -101,14 +104,26 @@ def create_blog_post(request):
             # Handle featured image
             if 'featured_image' in request.FILES:
                 blog_post.featured_image = request.FILES['featured_image']
-                blog_post.save()
             
-            # Handle gallery images
+            # Handle featured image alt text
+            featured_image_alt = request.POST.get('featured_image_alt', '')
+            if featured_image_alt:
+                blog_post.featured_image_alt = featured_image_alt
+            
+            blog_post.save()
+            
+            # Handle gallery images with captions and alt text
             gallery_images = request.FILES.getlist('gallery_images')
             for i, image_file in enumerate(gallery_images):
+                # Get caption and alt text if provided
+                caption = request.POST.get(f'gallery_caption_{i}', '')
+                alt_text = request.POST.get(f'gallery_alt_{i}', '')
+                
                 BlogImage.objects.create(
                     blog_post=blog_post,
                     image=image_file,
+                    caption=caption,
+                    alt_text=alt_text,
                     order=i
                 )
             
@@ -181,6 +196,10 @@ def edit_blog_post(request, post_id):
             if 'featured_image' in request.FILES:
                 blog_post.featured_image = request.FILES['featured_image']
             
+            # Update featured image alt text
+            featured_image_alt = request.POST.get('featured_image_alt', '')
+            blog_post.featured_image_alt = featured_image_alt
+            
             blog_post.save()
             
             # Update tags
@@ -192,12 +211,45 @@ def edit_blog_post(request, post_id):
                     tag, created = Tag.objects.get_or_create(name=tag_name)
                     blog_post.tags.add(tag)
             
+            # Handle existing gallery image updates and deletions
+            for key, value in request.POST.items():
+                if key.startswith('gallery_caption_') and not key.endswith('_new'):
+                    image_id = key.replace('gallery_caption_', '')
+                    try:
+                        gallery_image = BlogImage.objects.get(id=image_id, blog_post=blog_post)
+                        gallery_image.caption = value
+                        
+                        # Update alt text if provided
+                        alt_key = f'gallery_alt_{image_id}'
+                        if alt_key in request.POST:
+                            gallery_image.alt_text = request.POST[alt_key]
+                        
+                        gallery_image.save()
+                    except BlogImage.DoesNotExist:
+                        pass
+                
+                # Handle gallery image deletions
+                elif key.startswith('delete_gallery_image_'):
+                    if value == 'true':
+                        image_id = key.replace('delete_gallery_image_', '')
+                        try:
+                            gallery_image = BlogImage.objects.get(id=image_id, blog_post=blog_post)
+                            gallery_image.delete()
+                        except BlogImage.DoesNotExist:
+                            pass
+            
             # Handle new gallery images
             gallery_images = request.FILES.getlist('gallery_images')
             for i, image_file in enumerate(gallery_images):
+                # Get caption and alt text for new images
+                caption = request.POST.get(f'gallery_caption_{i}_new', '')
+                alt_text = request.POST.get(f'gallery_alt_{i}_new', '')
+                
                 BlogImage.objects.create(
                     blog_post=blog_post,
                     image=image_file,
+                    caption=caption,
+                    alt_text=alt_text,
                     order=blog_post.gallery_images.count() + i
                 )
             
@@ -226,7 +278,8 @@ def edit_blog_post(request, post_id):
     tags = Tag.objects.all().order_by('name')
     
     context = {
-        'blog_post': blog_post,
+        'edit_blog': blog_post,  # Use 'edit_blog' to match template expectations
+        'blog_post': blog_post,  # Keep both for compatibility
         'categories': categories,
         'tags': tags,
         'selected_tags': list(blog_post.tags.values_list('name', flat=True)),
@@ -499,10 +552,16 @@ def tag_list(request, slug):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
+    # Get popular tags
+    popular_tags = Tag.objects.annotate(
+        post_count=Count('blog_posts', filter=Q(blog_posts__status='published'))
+    ).filter(post_count__gt=0).order_by('-post_count')[:20]
+    
     context = {
         'tag': tag,
         'page_obj': page_obj,
         'posts': page_obj.object_list,
+        'popular_tags': popular_tags,
     }
     
     return render(request, 'bloguser/tag_list.html', context)

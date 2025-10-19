@@ -2,40 +2,53 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}TripleG{% endblock %}</title>
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="{% static 'images/logostick.png' %}">
+  <link rel="shortcut icon" type="image/png" href="{% static 'images/logostick.png' %}">
+  <!-- Valorant Style CSS -->
+  <link rel="stylesheet" href="{% static 'css/sitecss/global-header.css' %}">
+  <link rel="stylesheet" href="{% static 'fontawesome/css/all.min.css' %}">
   {% block head %} 
     <!-- Modal Message CSS -->
     <link rel="stylesheet" href="{% static 'css/sitecss/modal_messages.css' %}">
     <!-- Lineicons for modal icons -->
-    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link href="{% static 'lineicons/lineicons.css' %}" rel="stylesheet" />
   {% endblock %}
 </head>
 <body>
   {% include 'client/_modal_messages.html' %}
-   <nav class="navbar">
+  <nav class="navbar">
     <div class="logo-container" onclick="window.location.href='{% url 'core:index' %}'">
-    <img class="logo" src="{% static 'images/logostick.png' %}" alt="Logo">
-    <div class="logo1">TRIPLE<a>G.</a></div>
-  </div>
+      <img class="logo" src="{% static 'images/logostick.png' %}" alt="Logo">
+      <div class="logo1">TRIPLE<a>G</a></div>
+    </div>
     <ul class="nav-links" id="navLinks">
-      <li><a href="{% url 'core:index' %}">Home</a></li>
-      <li><a href="{% url 'blog:bloglist' %}">Blog</a></li>
-      <li><a href="{% url 'core:contact' %}">Contact</a></li>
-      <li><a href="{% url 'core:about' %}">About Us</a></li>
+      <li><a href="{% url 'core:index' %}" class="{% if request.resolver_match.url_name == 'index' %}active{% endif %}">Home</a></li>
+      <li><a href="{% url 'blog:bloglist' %}" class="{% if 'blog' in request.resolver_match.namespace %}active{% endif %}">Blog</a></li>
+      <li><a href="{% url 'core:contact' %}" class="{% if request.resolver_match.url_name == 'contact' %}active{% endif %}">Contact</a></li>
+      <li><a href="{% url 'core:about' %}" class="{% if request.resolver_match.url_name == 'about' %}active{% endif %}">About Us</a></li>
       {% if not user.is_authenticated %}
-      <li><a href="{% url 'accounts:client_login' %}">Log in</a></li>
+      <li><a href="{% url 'accounts:client_login' %}" class="{% if 'login' in request.resolver_match.url_name %}active{% endif %}">Log in</a></li>
       {% else %}
       <li><a href="/user">Dashboard</a></li>
-      <li><a href="{% url 'core:usersettings' %}" class="active">Settings</a></li>
+      <li><a href="{% url 'core:usersettings' %}" class="{% if request.resolver_match.url_name == 'usersettings' %}active{% endif %}">Settings</a></li>
       {% endif %}
-     
     </ul>
     <button class="mobile-menu-btn" id="mobileMenuBtn">
       <i class="fas fa-bars"></i>
     </button>
   </nav>
-  {% block body %}
-  {% endblock %}
+  
+  <main class="main-content">
+    {% block body %}
+    {% endblock %}
+  </main>
+  
   <!-- Modal Message JS -->
   <script src="{% static 'js/sitejs/modal_messages.js' %}"></script>
+  <script src="{% static 'js/adminjs/mobile-btn.js' %}"></script>
 </body>
 </html>

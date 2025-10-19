@@ -53,6 +53,93 @@ container.classList.remove("right-panel-active");
    registerToLoginBtn.addEventListener('click', updateMobileToggleVisibility);
  }
 
+// Password visibility toggle functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Login password toggle
+    const loginPasswordToggle = document.getElementById('loginPasswordToggle');
+    const loginPasswordInput = document.getElementById('login-password');
+    
+    if (loginPasswordToggle && loginPasswordInput) {
+        loginPasswordToggle.addEventListener('click', function() {
+            const type = loginPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            loginPasswordInput.setAttribute('type', type);
+            
+            if (type === 'text') {
+                loginPasswordToggle.classList.remove('fa-eye');
+                loginPasswordToggle.classList.add('fa-eye-slash');
+            } else {
+                loginPasswordToggle.classList.remove('fa-eye-slash');
+                loginPasswordToggle.classList.add('fa-eye');
+            }
+        });
+    }
+    
+    // Register password toggle
+    const registerPasswordToggle = document.getElementById('registerPasswordToggle');
+    const registerPasswordInput = document.getElementById('register-password');
+    
+    if (registerPasswordToggle && registerPasswordInput) {
+        registerPasswordToggle.addEventListener('click', function() {
+            const type = registerPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            registerPasswordInput.setAttribute('type', type);
+            
+            if (type === 'text') {
+                registerPasswordToggle.classList.remove('fa-eye');
+                registerPasswordToggle.classList.add('fa-eye-slash');
+            } else {
+                registerPasswordToggle.classList.remove('fa-eye-slash');
+                registerPasswordToggle.classList.add('fa-eye');
+            }
+        });
+    }
+    
+    // Form validation
+    const loginForm = document.querySelector('.login-container form');
+    const loginError = document.getElementById('loginError');
+    
+    if (loginForm) {
+        loginForm.addEventListener('submit', function(e) {
+            const username = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value;
+            
+            // Clear previous errors
+            hideError();
+            
+            // Basic validation
+            if (!username) {
+                showError('Please enter your email or username');
+                e.preventDefault();
+                return;
+            }
+            
+            if (!password) {
+                showError('Please enter your password');
+                e.preventDefault();
+                return;
+            }
+            
+            if (password.length < 6) {
+                showError('Password must be at least 6 characters long');
+                e.preventDefault();
+                return;
+            }
+        });
+    }
+    
+    function showError(message) {
+        if (loginError) {
+            loginError.textContent = message;
+            loginError.style.display = 'block';
+        }
+    }
+    
+    function hideError() {
+        if (loginError) {
+            loginError.style.display = 'none';
+        }
+    }
+});
+
 // --- Modal Logic ---
 document.addEventListener('DOMContentLoaded', function() {
     const modalOverlay = document.getElementById('messageModal');

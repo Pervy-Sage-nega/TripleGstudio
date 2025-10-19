@@ -29,6 +29,7 @@
             <!-- Overlay to ensure text readability -->
             <div class="video-overlay"></div>
         </div>
+     
         <div class="container">
             <h1>Industry Insights & Expert Articles</h1>
             <p>Stay informed with the latest trends, expert advice, and innovative solutions in construction and design.</p>
@@ -84,7 +85,7 @@
                                 <div class="filter-tags">
                                     <a href="{% url 'blog:blog_list' %}" class="filter-tag {% if not selected_category %}active{% endif %}">All</a>
                                     {% for category in categories %}
-                                        <a href="{% url 'blog:category_list' category.slug %}" 
+                                        <a href="{% url 'blog:blog_list' %}?category={{ category.slug }}" 
                                            class="filter-tag {% if selected_category.id == category.id %}active{% endif %}">
                                             {{ category.name }}
                                         </a>

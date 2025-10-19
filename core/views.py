@@ -47,6 +47,39 @@ def project(request):
 
 @require_public_role
 @login_required
+def clientdashboard(request):
+    """
+    Client Dashboard View - Shows project dashboard for users with assigned projects
+    """
+    current_user = request.user
+    
+    try:
+        profile = Profile.objects.get(user=current_user)
+    except Profile.DoesNotExist:
+        profile = Profile.objects.create(user=current_user, role='customer')
+    
+    # Allow access to dashboard even without project for design viewing
+    # if not profile.project_name:
+    #     messages.info(request, 'No project assigned yet. Please contact us to get started.')
+    #     return redirect('core:usersettings')
+    
+    # Debug: Print profile data
+    print(f"[DEBUG] Profile data: role={profile.role}, phone={profile.phone}")
+    print(f"[DEBUG] Project: name={profile.project_name}, start={profile.project_start}")
+    print(f"[DEBUG] Architect: {profile.assigned_architect}")
+    
+    context = {
+        'user': current_user,
+        'profile': profile,
+        'user_full_name': current_user.get_full_name() or current_user.username,
+        'user_email': current_user.email,
+        'profile_role': profile.role.title() if profile.role else 'Customer',
+    }
+    
+    return render(request, 'core/clientdashboard.html', context)
+
+@require_public_role
+@login_required
 @never_cache
 @csrf_protect
 @transaction.atomic

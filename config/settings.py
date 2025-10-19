@@ -53,14 +53,18 @@ INSTALLED_APPS = [
     # Third-party apps
     'axes',
     'storages',
+    'csp',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'csp.middleware.CSPMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'accounts.online_middleware.OnlineStatusMiddleware',  # Track user online status
     'core.middleware.UnauthorizedAccessMiddleware',  # Custom 401 error handling - BEFORE messages
     'django.contrib.messages.middleware.MessageMiddleware',
     'accounts.middleware.RoleBasedAccessMiddleware',  # Role-based access control
@@ -134,7 +138,14 @@ DEFAULT_FROM_EMAIL = 'triplegotp@gmail.com'
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Use different static file storage based on environment
+if DEBUG:
+    # Development - use default storage
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+else:
+    # Production - use whitenoise with compression
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media files
 MEDIA_URL = '/media/'
@@ -189,3 +200,37 @@ AXES_LOCKOUT_TEMPLATE = 'client/lockout.html'  # create a lockout page
 # Axes lockout configuration (updated for django-axes 5.0+)
 AXES_LOCK_OUT_AT_FAILURE = True
 AXES_RESET_ON_SUCCESS = True
+
+# Cache configuration for online status tracking
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+        'TIMEOUT': 300,  # 5 minutes
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,
+        }
+    }
+}
+
+# Security Headers
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
+X_FRAME_OPTIONS = 'DENY'
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+
+# Content Security Policy (django-csp 4.0 format)
+CONTENT_SECURITY_POLICY = {
+    'DIRECTIVES': {
+        'base-uri': ("'self'",),
+        'connect-src': ("'self'", 'https://cdn.jsdelivr.net'),
+        'default-src': ("'self'",),
+        'font-src': ("'self'", 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com'),
+        'form-action': ("'self'",),
+        'frame-src': ("'none'",),
+        'img-src': ("'self'", 'data:', 'https:', 'http:'),
+        'object-src': ("'none'",),
+        'script-src': ("'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com', 'https://code.jquery.com'),
+        'style-src': ("'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com')
+    }
+}

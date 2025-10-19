@@ -32,37 +32,7 @@
                 <button class="btn btn-secondary"><i class="fas fa-print"></i> Print</button>
             </div>
         </div>
-        
-        <!-- Improved Filter + Search + Button Controls -->
-        <div class="filter-search-controls">
-            <div class="filter-group">
-                <select id="filter-category" class="filter-dropdown">
-                    <option value="">All Categories</option>
-                    {% for category in all_categories %}
-                    <option value="{{ category.slug }}">{{ category.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            
-            <div class="filter-group">
-                <select id="filter-status" class="filter-dropdown">
-                    <option value="">All Statuses</option>
-                    <option value="draft">Drafts</option>
-                    <option value="published">Published</option>
-                    <option value="archived">Archived</option>
-                </select>
-            </div>
-            
-            <div class="search-group">
-                <i class="fas fa-search"></i>
-                <input type="text" id="search" placeholder="Search drafts..." class="search-input">
-            </div>
-            
-            <a href="{% url 'blog:create_blog_post' %}" class="new-post-btn btn btn-primary">
-                <i class="fas fa-plus"></i>
-                New Blog Post
-            </a>
-        </div>
+   
         
         <!-- Compact Summary Section -->
         <div class="summary-section">
@@ -124,15 +94,39 @@
                     </button>
                     <button id="gridViewBtn" class="view-btn" title="Grid View">
                         <i class="fas fa-th-large"></i> Grid View
-                    </button>
-                    <button id="expandAllBtn" class="view-btn" title="Expand All">
-                        <i class="fas fa-expand-alt"></i> Expand All
-                    </button>
-                    <button id="collapseAllBtn" class="view-btn" title="Collapse All">
-                        <i class="fas fa-compress-alt"></i> Collapse All
-                    </button>
+                    </button>                   
                 </div>
             </div>
+                 
+        <!-- Improved Filter + Search + Button Controls -->
+        <div class="filter-search-controls">
+            <div class="filter-section">
+                <div class="filter-group">
+                    <select id="filter-category" class="filter-dropdown">
+                        <option value="">All Categories</option>
+                        {% for category in all_categories %}
+                        <option value="{{ category.slug }}">{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <select id="filter-status" class="filter-dropdown">
+                        <option value="">All Statuses</option>
+                        <option value="draft">Drafts</option>
+                        <option value="published">Published</option>
+                        <option value="archived">Archived</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="search-section">
+                <div class="search-input-wrapper">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="search" placeholder="Search projects…" class="search-input">
+                </div>
+            </div>
+        </div>
             
             <div class="content-container">
                 <!-- Table View -->
@@ -167,9 +161,14 @@
                                 <td>{{ blog.created_date|date:"Y-m-d" }}</td>
                                 <td>
                                     <div class="tag-container">
-                                        {% for tag in blog.tags.all|slice:":3" %}
+                                        {% for tag in blog.tags.all|slice:":2" %}
                                         <span class="blog-tag">{{ tag.name }}</span>
                                         {% endfor %}
+                                        {% if blog.tags.count > 2 %}
+                                        <span class="tag-ellipsis" onclick="showAllTags({{ blog.id }}, '{{ blog.title|escapejs }}')" title="View all tags">
+                                            <i class="fas fa-ellipsis-h"></i>
+                                        </span>
+                                        {% endif %}
                                     </div>
                                 </td>
                                 <td>{{ blog.reading_time }} min{% if blog.reading_time > 1 %}s{% endif %}</td>
@@ -179,13 +178,11 @@
                                     </span>
                                 </td>
                                 <td class="actions">
-                                    <button class="action-btn view" title="View in Modal" onclick="viewBlog({{ blog.id }})"><i class="fas fa-eye"></i></button>
-                                    <select class="status-select" data-id="{{ blog.id }}" title="Change Status">
-                                        <option value="draft" {% if blog.status == 'draft' %}selected{% endif %}>Draft</option>
-                                        <option value="published" {% if blog.status == 'published' %}selected{% endif %}>Publish</option>
-                                        <option value="archived" {% if blog.status == 'archived' %}selected{% endif %}>Archive</option>
-                                    </select>
-                                    <button class="action-btn delete" title="Delete" onclick="deleteBlog({{ blog.id }})"><i class="fas fa-trash"></i></button>
+                                    <div class="action-buttons">
+                                        <button class="action-btn view" title="View in Modal" onclick="viewBlog({{ blog.id }})"><i class="fas fa-eye"></i></button>
+                                        <button class="action-btn edit" title="Edit Post" onclick="editBlog({{ blog.id }})"><i class="fas fa-edit"></i></button>
+                                        <button class="action-btn delete" title="Delete" onclick="deleteBlog({{ blog.id }})"><i class="fas fa-trash"></i></button>
+                                    </div>
                                 </td>
                             </tr>
                             {% empty %}
@@ -208,7 +205,7 @@
                 <!-- Grid View -->
                 <div class="grid-view" id="gridView" style="display: none;">
                     {% for blog in blog_posts %}
-                    <div class="blog-card" data-id="{{ blog.id }}">
+                    <div class="blog-card" data-id="{{ blog.id }}" onclick="viewBlog({{ blog.id }})" style="cursor: pointer;" title="Click to view blog preview">
                         <div class="blog-card-header">
                             <div class="blog-card-status status-{{ blog.status }}">{{ blog.get_status_display }}</div>
                             {% if blog.featured_image %}
@@ -231,13 +228,9 @@
                                 {% endfor %}
                             </div>
                         </div>
-                        <div class="blog-card-actions">
+                        <div class="blog-card-actions" onclick="event.stopPropagation()">
                             <button class="btn btn-primary" onclick="viewBlog({{ blog.id }})"><i class="fas fa-eye"></i> View</button>
-                            <select class="status-select" data-id="{{ blog.id }}" title="Change Status">
-                                <option value="draft" {% if blog.status == 'draft' %}selected{% endif %}>Draft</option>
-                                <option value="published" {% if blog.status == 'published' %}selected{% endif %}>Publish</option>
-                                <option value="archived" {% if blog.status == 'archived' %}selected{% endif %}>Archive</option>
-                            </select>
+                            <button class="btn btn-success" onclick="editBlog({{ blog.id }})"><i class="fas fa-edit"></i> Edit</button>
                             <button class="btn btn-danger" onclick="deleteBlog({{ blog.id }})"><i class="fas fa-trash"></i> Delete</button>
                         </div>
                     </div>
@@ -304,6 +297,15 @@
     </div>
     {% endfor %}
     
+    <!-- Hidden tags data for modal display -->
+    {% for blog in blog_posts %}
+    <div id="blogTags{{ blog.id }}" class="blog-tags-data" style="display: none;">
+        {% for tag in blog.tags.all %}
+        <span class="blog-tag">{{ tag.name }}</span>
+        {% endfor %}
+    </div>
+    {% endfor %}
+    
     <!-- Blog Preview Modal - Content loaded dynamically via JavaScript -->
     <div class="modal" id="blogPreviewModal">
         <div class="modal-content blog-preview-modal">
@@ -320,6 +322,25 @@
             </div>
             <div class="modal-footer" id="blogPreviewActions">
                 <!-- Action buttons will be inserted dynamically based on blog status -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- All Tags Modal -->
+    <div class="modal" id="allTagsModal">
+        <div class="modal-content tags-modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-tags"></i> All Tags</h3>
+                <button class="modal-close" onclick="closeAllTagsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="tags-modal-title" id="tagsModalTitle"></div>
+                <div class="tags-modal-container" id="tagsModalContainer">
+                    <!-- Tags will be populated dynamically -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeAllTagsModal()">Close</button>
             </div>
         </div>
     </div>

@@ -27,6 +27,7 @@ class Category(models.Model):
 class Project(models.Model):
     """Main project model - no client information for privacy"""
     STATUS_CHOICES = [
+        ('draft', 'Draft'),
         ('planned', 'Planned'),
         ('ongoing', 'Ongoing'),
         ('completed', 'Completed'),

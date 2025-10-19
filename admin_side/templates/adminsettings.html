@@ -62,7 +62,7 @@
 
                 <div class="profile-preview">
                     <div class="profile-avatar">
-                        <img src="{% profile_image_url user %}" alt="Admin Profile" class="logo" id="profileImage">
+                        <img src="{{ user.adminprofile.get_profile_image_url }}" alt="Admin Profile" class="logo" id="profileImage">
                     </div>
                     <div class="profile-info">
                         <div class="profile-name">{{ user.get_full_name|default:user.username }}</div>

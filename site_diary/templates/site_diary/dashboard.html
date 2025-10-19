@@ -1,12 +1,13 @@
 {% extends "site_diary/layout_format.html" %}
 {% load static %}
 
+{% block title %}Triple G BuildHub - Dashboard{% endblock %}
+
 {% block head %}
-    <title>Triple G BuildHub - Dashboard</title>
     <link rel="stylesheet" href="{% static 'css/sitecss/global-footer.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/dashboard.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/createblog.css' %}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
 {% endblock %}
 
 {% block body %}
@@ -19,10 +20,10 @@
             </div>
             <div class="user-info">
                 <div class="user-greeting">
-                    <div class="user-name">John Doe</div>
-                    <div class="user-role">Project Manager</div>
+                    <div class="user-name">{{ user.get_full_name|default:user.email }}</div>
+                    <div class="user-role">{% if user.is_staff %}Site Manager{% else %}Project Member{% endif %}</div>
                 </div>
-                <div class="user-avatar">JD</div>
+                <div class="user-avatar">{{ user.first_name.0|default:user.email.0|upper }}{{ user.last_name.0|default:'' }}</div>
             </div>
         </div>
         
@@ -33,8 +34,8 @@
                     <i class="fas fa-building"></i>
                 </div>
                 <div class="stat-content">
-                    <div class="stat-value">{{ stats.total_projects }}</div>
-                    <div class="stat-label">Total Projects</div>
+                    <div class="stat-value">{{ stats.active_projects }}</div>
+                    <div class="stat-label">Active Projects</div>
                 </div>
             </div>
             <div class="stat-card">
@@ -42,35 +43,8 @@
                     <i class="fas fa-check-circle"></i>
                 </div>
                 <div class="stat-content">
-                    <div class="stat-value">{{ stats.active_projects }}</div>
-                    <div class="stat-label">Active Projects</div>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">
-                    <i class="fas fa-calendar-check"></i>
-                </div>
-                <div class="stat-content">
-                    <div class="stat-value">{{ stats.completed_projects }}</div>
-                    <div class="stat-label">Completed Projects</div>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">
-                    <i class="fas fa-file-alt"></i>
-                </div>
-                <div class="stat-content">
-                    <div class="stat-value">{{ stats.total_entries }}</div>
-                    <div class="stat-label">Total Diary Entries</div>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">
-                    <i class="fas fa-clock"></i>
-                </div>
-                <div class="stat-content">
-                    <div class="stat-value">{{ stats.planning_projects }}</div>
-                    <div class="stat-label">Planning</div>
+                    <div class="stat-value">16</div>
+                    <div class="stat-label">On Schedule</div>
                 </div>
             </div>
             <div class="stat-card">
@@ -78,8 +52,8 @@
                     <i class="fas fa-pause-circle"></i>
                 </div>
                 <div class="stat-content">
-                    <div class="stat-value">{{ stats.on_hold_projects }}</div>
-                    <div class="stat-label">On Hold</div>
+                    <div class="stat-value">8</div>
+                    <div class="stat-label">At Risk</div>
                 </div>
             </div>
             <div class="stat-card">
@@ -87,189 +61,337 @@
                     <i class="fas fa-edit"></i>
                 </div>
                 <div class="stat-content">
-                    <div class="stat-value">{{ stats.draft_entries }}</div>
-                    <div class="stat-label">Draft Entries</div>
+                    <div class="stat-value">4</div>
+                    <div class="stat-label">Completed This Month</div>
                 </div>
             </div>
         </div>
 
         <!-- Dashboard Controls -->
         <div class="dashboard-controls">
-            <div class="controls-title">Current Projects</div>
+            <div class="controls-title">Site Manager Projects</div>
             <div class="filter-controls">
-                <select class="filter-dropdown">
+                <select class="filter-dropdown" id="categoryFilter">
                     <option value="">All Categories</option>
                     <option value="commercial">Commercial</option>
                     <option value="residential">Residential</option>
                     <option value="industrial">Industrial</option>
                     <option value="infrastructure">Infrastructure</option>
                 </select>
-                <select class="filter-dropdown">
+                <select class="filter-dropdown" id="statusFilter">
                     <option value="">All Statuses</option>
-                    <option value="planning">Planning</option>
-                    <option value="ongoing">Ongoing</option>
-                    <option value="review">Under Review</option>
+                    <option value="active">Active</option>
                     <option value="completed">Completed</option>
+                    <option value="delayed">Delayed</option>
+                    <option value="planning">Planning</option>
                 </select>
                 <div class="search-box">
                     <i class="fas fa-search search-icon"></i>
-                    <input type="text" class="search-input" placeholder="Search projects...">
+                    <input type="text" class="search-input" id="projectSearch" placeholder="Search by project name or code...">
                 </div>
+                <button class="btn btn-primary" onclick="window.location.href='{% url 'site_diary:newproject' %}'">
+                    <i class="fas fa-plus"></i> New Project
+                </button>
             </div>
         </div>
-
-        <!-- Enhanced Statistics Section -->
-        {% if labor_stats or material_stats or equipment_stats %}
-        <div class="enhanced-stats-section">
-            <h3><i class="fas fa-chart-bar"></i> Detailed Statistics</h3>
-            <div class="stats-row">
-                {% if labor_stats %}
-                <div class="stat-detail-card">
-                    <div class="stat-detail-header">
-                        <i class="fas fa-users"></i>
-                        <h4>Labor Statistics</h4>
-                    </div>
-                    <div class="stat-detail-content">
-                        <div class="stat-detail-item">
-                            <span class="label">Total Workers:</span>
-                            <span class="value">{{ labor_stats.total_workers|default:0 }}</span>
-                        </div>
-                        <div class="stat-detail-item">
-                            <span class="label">Total Hours:</span>
-                            <span class="value">{{ labor_stats.total_hours|default:0 }}</span>
-                        </div>
-                        <div class="stat-detail-item">
-                            <span class="label">Average Hours:</span>
-                            <span class="value">{{ labor_stats.avg_hours|default:0|floatformat:1 }}</span>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
-
-                {% if material_stats %}
-                <div class="stat-detail-card">
-                    <div class="stat-detail-header">
-                        <i class="fas fa-boxes"></i>
-                        <h4>Material Statistics</h4>
-                    </div>
-                    <div class="stat-detail-content">
-                        <div class="stat-detail-item">
-                            <span class="label">Total Deliveries:</span>
-                            <span class="value">{{ material_stats.total_deliveries|default:0 }}</span>
-                        </div>
-                        <div class="stat-detail-item">
-                            <span class="label">Total Materials:</span>
-                            <span class="value">{{ material_stats.total_materials|default:0 }}</span>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
-
-                {% if equipment_stats %}
-                <div class="stat-detail-card">
-                    <div class="stat-detail-header">
-                        <i class="fas fa-tools"></i>
-                        <h4>Equipment Statistics</h4>
-                    </div>
-                    <div class="stat-detail-content">
-                        <div class="stat-detail-item">
-                            <span class="label">Total Equipment:</span>
-                            <span class="value">{{ equipment_stats.total_equipment|default:0 }}</span>
-                        </div>
-                        <div class="stat-detail-item">
-                            <span class="label">Total Hours:</span>
-                            <span class="value">{{ equipment_stats.total_hours|default:0 }}</span>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-        {% endif %}
-
-        <!-- Recent Activities Section -->
-        {% if recent_entries or recent_delays %}
-        <div class="recent-activities-section">
-            <div class="activities-row">
-                {% if recent_entries %}
-                <div class="activity-card">
-                    <div class="activity-header">
-                        <i class="fas fa-book"></i>
-                        <h4>Recent Diary Entries</h4>
-                    </div>
-                    <div class="activity-content">
-                        {% for entry in recent_entries %}
-                        <div class="activity-item">
-                            <div class="activity-info">
-                                <strong>{{ entry.project.name }}</strong>
-                                <br>
-                                <small>{{ entry.entry_date|date:"M d, Y" }} - {{ entry.created_by.get_full_name|default:entry.created_by.username }}</small>
-                            </div>
-                            <div class="activity-progress">
-                                <span class="badge bg-primary">{{ entry.progress_percentage }}%</span>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endif %}
-
-                {% if recent_delays %}
-                <div class="activity-card">
-                    <div class="activity-header">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <h4>Recent Delays</h4>
-                    </div>
-                    <div class="activity-content">
-                        {% for delay in recent_delays %}
-                        <div class="activity-item">
-                            <div class="activity-info">
-                                <strong>{{ delay.diary_entry.project.name }}</strong>
-                                <br>
-                                <small>{{ delay.diary_entry.entry_date|date:"M d, Y" }} - {{ delay.get_category_display }}</small>
-                            </div>
-                            <div class="activity-progress">
-                                <span class="badge 
-                                    {% if delay.impact_level == 'low' %}bg-success
-                                    {% elif delay.impact_level == 'medium' %}bg-warning
-                                    {% elif delay.impact_level == 'high' %}bg-danger
-                                    {% else %}bg-secondary{% endif %}">
-                                    {{ delay.duration_hours }}h
-                                </span>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-        {% endif %}
         
         <!-- Project Grid -->
         <div class="project-grid">
-            {% if project_cards and project_cards|length > 0 %}
-                {% for p in project_cards %}
-                <div class="project-card">
-                    <img src="{% static 'images/image' %}{{ forloop.counter }}.jpg" alt="{{ p.project.name }}" class="project-image">
-                    <div class="project-content">
-                        <h3 class="project-title">{{ p.project.name }}</h3>
-                        <p class="project-description">{{ p.project.description|default:'No description.' }}</p>
-                        <div class="progress-container">
-                            <div class="progress-label">PROGRESS:</div>
-                            <div class="progress-track">
-                                <div class="progress-bar" style="width: {{ p.latest_entry.progress_percentage|default:0 }}%;"></div>
+            <!-- Project Card 1 -->
+            <div class="project-card" data-category="commercial" data-status="ongoing">
+                <img src="{% static 'images/image6.jpg' %}" alt="Harbor Tower" class="project-image">
+                <div class="project-content">
+                    <h3 class="project-title">Harbor Tower</h3>
+                    <p class="project-description">Luxury commercial building with 35 floors, featuring premium office spaces and retail outlets.</p>
+                    <div class="progress-container">
+                        <div class="progress-label">PROGRESS:</div>
+                        <div class="progress-track">
+                            <div class="progress-bar" style="width: 65%;"></div>
+                        </div>
+                        <div class="milestone-markers">
+                            <div class="milestone completed">
+                                <div class="milestone-dot"></div>
+                                <div class="milestone-label">Planning</div>
+                            </div>
+                            <div class="milestone completed">
+                                <div class="milestone-dot"></div>
+                                <div class="milestone-label">Foundation</div>
+                            </div>
+                            <div class="milestone">
+                                <div class="milestone-dot"></div>
+                                <div class="milestone-label">Structure</div>
+                            </div>
+                            <div class="milestone">
+                                <div class="milestone-dot"></div>
+                                <div class="milestone-label">Finishing</div>
                             </div>
                         </div>
-                        <div class="card-actions">
-                            <a href="{% url 'site_diary:project_detail' p.project.id %}" class="btn btn-primary">See Details</a>
-                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn btn-outline">Location Details</button>
+                        <a href="{% url 'site:project_detail' 1 %}" class="btn btn-primary">See Details</a>
                     </div>
                 </div>
-                {% endfor %}
-            {% else %}
-                <div class="no-projects">No projects available. Create a new project to get started.</div>
-            {% endif %}
+                <div class="performance-analytics">
+                    <h4 class="analytics-title">Performance Analytics</h4>
+                    <div class="analytics-item">
+                        <span class="analytics-label">Budget Usage:</span>
+                        <span class="analytics-value good">62% Used</span>
+                    </div>
+                                        <!-- Cost Variance commented out                    <div class="analytics-item">                        <span class="analytics-label">Cost Variance:</span>                        <span class="analytics-value good">+2.3%</span>                    </div>                    -->
+                    <div class="analytics-item">
+                        <span class="analytics-label">Schedule Adherence:</span>
+                        <span class="analytics-value good">On Track</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Card 2 -->
+            <div class="project-card" data-category="residential" data-status="planning">
+                <img src="{% static 'images/image1.jpg' %}" alt="Riverfront Promenade" class="project-image">
+                <div class="project-content">
+                    <h3 class="project-title">Riverfront Promenade</h3>
+                    <p class="project-description">Public infrastructure project featuring walkways, parks, and recreational areas along the river.</p>
+                    <div class="progress-container">
+                        <div class="progress-label">PROGRESS:</div>
+                        <div class="progress-track">
+                            <div class="progress-bar" style="width: 40%;"></div>
+                        </div>
+                        <div class="milestone-markers">
+                            <div class="milestone completed">
+                                <div class="milestone-dot"></div>
+                                <div class="milestone-label">Design</div>
+                            </div>
+                            <div class="milestone completed">
+                                <div class="milestone-dot"></div>
+                                <div class="milestone-label">Clearing</div>
+                            </div>
+                            <div class="milestone">
+                                <div class="milestone-dot"></div>
+                                <div class="milestone-label">Construction</div>
+                            </div>
+                            <div class="milestone">
+                                <div class="milestone-dot"></div>
+                                <div class="milestone-label">Landscaping</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn btn-outline">Location Details</button>
+                        <a href="{% url 'site:project_detail' 2 %}" class="btn btn-primary">See Details</a>
+                    </div>
+                </div>
+                
+                <div class="performance-analytics">
+                    <h4 class="analytics-title">Performance Analytics</h4>
+                    <div class="analytics-item">
+                        <span class="analytics-label">Budget Usage:</span>
+                        <span class="analytics-value warning">45% Used</span>
+                    </div>
+                                        <!-- Cost Variance commented out                    <div class="analytics-item">                        <span class="analytics-label">Cost Variance:</span>                        <span class="analytics-value warning">+4.8%</span>                    </div>                    -->
+                    <div class="analytics-item">
+                        <span class="analytics-label">Schedule Adherence:</span>
+                        <span class="analytics-value warning">Minor Delays</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Card 3 -->
+            <div class="project-card">
+                <img src="{% static 'images/image2.jpeg' %}" alt="Oakridge Residences" class="project-image">
+                <div class="project-content">
+                    <h3 class="project-title">Oakridge Residences</h3>
+                    <p class="project-description">Luxury residential complex with 120 units, featuring modern amenities and green spaces.</p>
+                    <div class="progress-container">
+                        <div class="progress-label">PROGRESS:</div>
+                        <div class="progress-track">
+                            <div class="progress-bar" style="width: 85%;"></div>
+                        </div>
+                        <div class="milestone-markers">
+                            <div class="milestone completed">
+                                <div class="milestone-dot"></div>
+                                <div class="milestone-label">Foundation</div>
+                            </div>
+                            <div class="milestone completed">
+                                <div class="milestone-dot"></div>
+                                <div class="milestone-label">Structure</div>
+                            </div>
+                            <div class="milestone completed">
+                                <div class="milestone-dot"></div>
+                                <div class="milestone-label">Interiors</div>
+                            </div>
+                            <div class="milestone">
+                                <div class="milestone-dot"></div>
+                                <div class="milestone-label">Finishing</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn btn-outline">Location Details</button>
+                        <a href="{% url 'site:project_detail' 3 %}" class="btn btn-primary">See Details</a>
+                    </div>
+                </div>
+                <div class="performance-analytics">
+                    <h4 class="analytics-title">Performance Analytics</h4>
+                    <div class="analytics-item">
+                        <span class="analytics-label">Budget Usage:</span>
+                        <span class="analytics-value warning">88% Used</span>
+                    </div>
+                                        <!-- Cost Variance commented out                    <div class="analytics-item">                        <span class="analytics-label">Cost Variance:</span>                        <span class="analytics-value warning">+3.5%</span>                    </div>                    -->
+                    <div class="analytics-item">
+                        <span class="analytics-label">Schedule Adherence:</span>
+                        <span class="analytics-value good">On Track</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Card 4 -->
+            <div class="project-card">
+                <img src="{% static 'images/image3.jpg' %}" alt="Tech Innovation Hub" class="project-image">
+                <div class="project-content">
+                    <h3 class="project-title">Tech Innovation Hub</h3>
+                    <p class="project-description">Modern facility designed for tech startups with co-working spaces, conference rooms, and labs.</p>
+                    <div class="progress-container">
+                        <div class="progress-label">PROGRESS:</div>
+                        <div class="progress-track">
+                            <div class="progress-bar" style="width: 25%;"></div>
+                        </div>
+                        <div class="milestone-markers">
+                            <div class="milestone completed">
+                                <div class="milestone-dot"></div>
+                                <div class="milestone-label">Planning</div>
+                            </div>
+                            <div class="milestone">
+                                <div class="milestone-dot"></div>
+                                <div class="milestone-label">Foundation</div>
+                            </div>
+                            <div class="milestone">
+                                <div class="milestone-dot"></div>
+                                <div class="milestone-label">Structure</div>
+                            </div>
+                            <div class="milestone">
+                                <div class="milestone-dot"></div>
+                                <div class="milestone-label">Finishing</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn btn-outline">Location Details</button>
+                        <a href="{% url 'site:project_detail' 4 %}" class="btn btn-primary">See Details</a>
+                    </div>
+                </div>
+                <div class="performance-analytics">
+                    <h4 class="analytics-title">Performance Analytics</h4>
+                    <div class="analytics-item">
+                        <span class="analytics-label">Budget Usage:</span>
+                        <span class="analytics-value good">22% Used</span>
+                    </div>
+                                        <!-- Cost Variance commented out                    <div class="analytics-item">                        <span class="analytics-label">Cost Variance:</span>                        <span class="analytics-value good">+1.2%</span>                    </div>                    -->
+                    <div class="analytics-item">
+                        <span class="analytics-label">Schedule Adherence:</span>
+                        <span class="analytics-value good">On Track</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Card 5 -->
+            <div class="project-card">
+                <img src="{% static 'images/image4.jpg' %}" alt="Central Hospital Extension" class="project-image">
+                <div class="project-content">
+                    <h3 class="project-title">Central Hospital Extension</h3>
+                    <p class="project-description">Healthcare facility expansion with new emergency department, ICU, and specialized treatment areas.</p>
+                    <div class="progress-container">
+                        <div class="progress-label">PROGRESS:</div>
+                        <div class="progress-track">
+                            <div class="progress-bar" style="width: 55%;"></div>
+                        </div>
+                        <div class="milestone-markers">
+                            <div class="milestone completed">
+                                <div class="milestone-dot"></div>
+                                <div class="milestone-label">Design</div>
+                            </div>
+                            <div class="milestone completed">
+                                <div class="milestone-dot"></div>
+                                <div class="milestone-label">Foundation</div>
+                            </div>
+                            <div class="milestone">
+                                <div class="milestone-dot"></div>
+                                <div class="milestone-label">Structure</div>
+                            </div>
+                            <div class="milestone">
+                                <div class="milestone-dot"></div>
+                                <div class="milestone-label">Equipment</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn btn-outline">Location Details</button>
+                        <a href="{% url 'site:project_detail' 5 %}" class="btn btn-primary">See Details</a>
+                    </div>
+                </div>
+                <div class="performance-analytics">
+                    <h4 class="analytics-title">Performance Analytics</h4>
+                    <div class="analytics-item">
+                        <span class="analytics-label">Budget Usage:</span>
+                        <span class="analytics-value danger">60% Used</span>
+                    </div>
+                                        <!-- Cost Variance commented out                    <div class="analytics-item">                        <span class="analytics-label">Cost Variance:</span>                        <span class="analytics-value danger">-7.2%</span>                    </div>                    -->
+                    <div class="analytics-item">
+                        <span class="analytics-label">Schedule Adherence:</span>
+                        <span class="analytics-value warning">Minor Delays</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Card 6 -->
+            <div class="project-card">
+                <img src="{% static 'images/image5.jpg' %}" alt="Sunset Mall Renovation" class="project-image">
+                <div class="project-content">
+                    <h3 class="project-title">Sunset Mall Renovation</h3>
+                    <p class="project-description">Complete overhaul of existing mall with modern design, improved facilities, and expanded retail space.</p>
+                    <div class="progress-container">
+                        <div class="progress-label">PROGRESS:</div>
+                        <div class="progress-track">
+                            <div class="progress-bar" style="width: 75%;"></div>
+                        </div>
+                        <div class="milestone-markers">
+                            <div class="milestone completed">
+                                <div class="milestone-dot"></div>
+                                <div class="milestone-label">Planning</div>
+                            </div>
+                            <div class="milestone completed">
+                                <div class="milestone-dot"></div>
+                                <div class="milestone-label">Demolition</div>
+                            </div>
+                            <div class="milestone completed">
+                                <div class="milestone-dot"></div>
+                                <div class="milestone-label">Structure</div>
+                            </div>
+                            <div class="milestone">
+                                <div class="milestone-dot"></div>
+                                <div class="milestone-label">Interiors</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn btn-outline">Location Details</button>
+                        <a href="{% url 'site:project_detail' 6 %}" class="btn btn-primary">See Details</a>
+                    </div>
+                </div>
+                <div class="performance-analytics">
+                    <h4 class="analytics-title">Performance Analytics</h4>
+                    <div class="analytics-item">
+                        <span class="analytics-label">Budget Usage:</span>
+                        <span class="analytics-value warning">78% Used</span>
+                    </div>
+                                        <!-- Cost Variance commented out                    <div class="analytics-item">                        <span class="analytics-label">Cost Variance:</span>                        <span class="analytics-value warning">+5.1%</span>                    </div>                    -->
+                    <div class="analytics-item">
+                        <span class="analytics-label">Schedule Adherence:</span>
+                        <span class="analytics-value good">On Track</span>
+                    </div>
+                </div>
+            </div>
+           
         </div>
 
         
@@ -277,8 +399,8 @@
    
 
     <!-- Scripts -->
+    <script src="{% static 'js/sitejs/sitemanager-dashboard.js' %}"></script>
     <script src="{% static 'js/sitejs/dashboardjs' %}"></script>
-    <script src="./sitecss/sitejs/chatarkside.js"></script>
     <!-- loader.js will be loaded by loader-init.js -->
     {% include "site_diary/navtemplate/layoutfooter.html" %}
 {% endblock %}

@@ -93,6 +93,13 @@
 .toc-h5 { font-weight: 400; font-size: 12px; color: #999; }
 .toc-h6 { font-weight: 400; font-size: 12px; color: #aaa; }
 
+/* Post content word wrapping */
+.post-content {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
 /* Smooth scroll behavior for headings */
 .post-content h1,
 .post-content h2,
@@ -985,6 +992,18 @@
     margin-left: 10px;
 }
 
+/* Social Sharing Copy Success State */
+.share-btn.copied {
+    background-color: #22c55e !important;
+    border-color: #22c55e !important;
+    color: white !important;
+    transform: scale(1.05);
+}
+
+.share-btn.copied:hover {
+    background-color: #16a34a !important;
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
     .comment-form .form-row {
@@ -1004,6 +1023,10 @@
     .login-buttons .btn {
         width: 100%;
         justify-content: center;
+    }
+     .back-to-blog {
+        top: 4rem;
+        left: 0.75rem;
     }
     
     .login-overlay .login-buttons {

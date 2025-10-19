@@ -1,0 +1,362 @@
+
+{% load static %}
+
+
+{% block extra_head %}
+    <link rel="stylesheet" href="{% static 'css/admincss/adminusers.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admincss/nav.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admincss/header.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="page-title">
+                <i class="fas fa-user"></i>
+                <h1>{{ user.get_full_name }} - {{ user_role }}</h1>
+            </div>
+            <div class="export-options">
+                <a href="{% url 'admin_side:admin_user_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Users
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Header Card -->
+    <div class="card" style="margin-bottom: 20px;">
+        <div class="user-header-card">
+            <div class="user-avatar-large">
+                {% if profile_pic %}
+                    <img src="{{ profile_pic }}" alt="Profile Picture">
+                {% else %}
+                    <i class="fas fa-user"></i>
+                {% endif %}
+            </div>
+            <div class="user-header-info">
+                <h2>{{ user.get_full_name }}</h2>
+                <p class="user-role">{{ user_role }}</p>
+                <p class="user-email">{{ user.email }}</p>
+                <div class="user-status">
+                    <span class="status-badge status-{{ status }}">{{ status_display }}</span>
+                </div>
+            </div>
+            <div class="user-actions">
+                {% if user_role == 'Site Manager' and status == 'pending' %}
+                    <button class="btn btn-primary" onclick="updateUserStatus({{ user.id }}, 'approve')">
+                        <i class="fas fa-check"></i> Approve
+                    </button>
+                    <button class="btn btn-danger" onclick="updateUserStatus({{ user.id }}, 'deny')">
+                        <i class="fas fa-times"></i> Deny
+                    </button>
+                {% elif status == 'active' %}
+                    <button class="btn btn-warning" onclick="updateUserStatus({{ user.id }}, 'suspend')">
+                        <i class="fas fa-ban"></i> Suspend
+                    </button>
+                {% elif status == 'suspended' %}
+                    <button class="btn btn-success" onclick="updateUserStatus({{ user.id }}, 'reactivate')">
+                        <i class="fas fa-check-circle"></i> Reactivate
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- User Information Tabs -->
+    <div class="card">
+        <div class="tabs-container">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="account">Account Information</button>
+                <button class="tab-btn" data-tab="profile">Profile Information</button>
+                {% if user_role == 'Site Manager' %}
+                <button class="tab-btn" data-tab="permissions">Permissions</button>
+                {% endif %}
+            </div>
+
+            <!-- Account Information Tab -->
+            <div class="tab-content active" id="account">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" value="{{ user.username }}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" value="{{ user.email }}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>First Name</label>
+                        <input type="text" value="{{ user.first_name }}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Last Name</label>
+                        <input type="text" value="{{ user.last_name }}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Date Joined</label>
+                        <input type="text" value="{{ user.date_joined|date:'M d, Y H:i' }}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Last Login</label>
+                        <input type="text" value="{% if user.last_login %}{{ user.last_login|date:'M d, Y H:i' }}{% else %}Never{% endif %}" readonly>
+                    </div>
+                    {% if profile_data.department %}
+                    <div class="form-group">
+                        <label>Department</label>
+                        <input type="text" value="{{ profile_data.department }}" readonly>
+                    </div>
+                    {% endif %}
+                    <div class="form-group full-width">
+                        <label>Employee ID</label>
+                        <div class="employee-id-container">
+                            <input type="text" id="employeeIdField" value="{{ profile_data.employee_id|default:'' }}" placeholder="Enter Employee ID or generate one">
+                            <button type="button" class="btn btn-secondary" id="generateEmployeeId" data-user-type="{% if user_role == 'Site Manager' %}sitemanager{% else %}admin{% endif %}">
+                                <i class="fas fa-magic"></i> Generate ID
+                            </button>
+                        </div>
+                        <small class="form-help">Format: TG-YYYY-NNNN for admins, SM-YYYY-NNNN for site managers</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Information Tab -->
+            <div class="tab-content" id="profile">
+                <div class="form-grid">
+                    {% if profile_data.phone %}
+                    <div class="form-group">
+                        <label>Phone</label>
+                        <input type="text" value="{{ profile_data.phone }}" readonly>
+                    </div>
+                    {% endif %}
+                    {% if profile_data.emergency_contact %}
+                    <div class="form-group">
+                        <label>Emergency Contact</label>
+                        <input type="text" value="{{ profile_data.emergency_contact }}" readonly>
+                    </div>
+                    {% endif %}
+                    {% if profile_data.hire_date %}
+                    <div class="form-group">
+                        <label>Hire Date</label>
+                        <input type="text" value="{{ profile_data.hire_date|date:'M d, Y' }}" readonly>
+                    </div>
+                    {% endif %}
+                    {% if profile_data.company_department %}
+                    <div class="form-group">
+                        <label>Company Department</label>
+                        <input type="text" value="{{ profile_data.company_department }}" readonly>
+                    </div>
+                    {% endif %}
+                    {% if profile_data.approved_by %}
+                    <div class="form-group">
+                        <label>Approved By</label>
+                        <input type="text" value="{{ profile_data.approved_by.get_full_name }}" readonly>
+                    </div>
+                    {% endif %}
+                    {% if profile_data.approved_at %}
+                    <div class="form-group">
+                        <label>Approved Date</label>
+                        <input type="text" value="{{ profile_data.approved_at|date:'M d, Y H:i' }}" readonly>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Permissions Tab (Site Managers only) -->
+            {% if user_role == 'Site Manager' %}
+            <div class="tab-content" id="permissions">
+                <div class="permissions-section">
+                    <h3>Current Permissions</h3>
+                    <table class="permissions-table">
+                        <thead>
+                            <tr>
+                                <th>Permission</th>
+                                <th>Status</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Blog Management</td>
+                                <td><span class="text-success"><i class="fas fa-check"></i> Granted</span></td>
+                                <td>Can create, edit, and manage blog posts</td>
+                            </tr>
+                            <tr>
+                                <td>Site Diary Access</td>
+                                <td><span class="text-success"><i class="fas fa-check"></i> Granted</span></td>
+                                <td>Can view and manage site diary entries</td>
+                            </tr>
+                            <tr>
+                                <td>Message Center</td>
+                                <td>
+                                    {% if status == 'approved' %}
+                                        <span class="text-success"><i class="fas fa-check"></i> Granted</span>
+                                    {% else %}
+                                        <span class="text-muted"><i class="fas fa-times"></i> Pending Approval</span>
+                                    {% endif %}
+                                </td>
+                                <td>Can read contact form and chatbot messages</td>
+                            </tr>
+                            <tr>
+                                <td>User Management</td>
+                                <td><span class="text-danger"><i class="fas fa-times"></i> Denied</span></td>
+                                <td>Cannot manage user accounts (Admin only)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <div class="permissions-note">
+                        <i class="fas fa-info-circle"></i>
+                        Site Manager permissions are automatically granted upon approval. Message center access requires account approval.
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal" id="confirmationModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="confirmTitle">Confirm Action</h3>
+            <button class="modal-close" id="closeConfirmModal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p id="confirmMessage">Are you sure you want to perform this action?</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="cancelAction">Cancel</button>
+            <button class="btn btn-primary" id="confirmAction">Confirm</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Tab switching - using event delegation for dynamically loaded content
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('tab-btn')) {
+        const tabId = e.target.dataset.tab;
+        const container = e.target.closest('.tabs-container');
+        
+        // Remove active class from all tabs and content in this container
+        container.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+        container.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        
+        // Add active class to clicked tab and corresponding content
+        e.target.classList.add('active');
+        container.querySelector('#' + tabId).classList.add('active');
+    }
+});
+
+// Initialize tabs when modal opens
+document.addEventListener('DOMContentLoaded', function() {
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList' && mutation.target.id === 'userDetailContent') {
+                // Content loaded, tabs should work now
+            }
+        });
+    });
+    
+    const targetNode = document.getElementById('userDetailContent');
+    if (targetNode) {
+        observer.observe(targetNode, { childList: true, subtree: true });
+    }
+});
+
+// User status update function
+function updateUserStatus(userId, action) {
+    const actions = {
+        'approve': { title: 'Approve User', message: 'Are you sure you want to approve this site manager?' },
+        'deny': { title: 'Deny User', message: 'Are you sure you want to deny this site manager application?' },
+        'suspend': { title: 'Suspend User', message: 'Are you sure you want to suspend this user?' },
+        'reactivate': { title: 'Reactivate User', message: 'Are you sure you want to reactivate this user?' }
+    };
+    
+    const actionData = actions[action];
+    document.getElementById('confirmTitle').textContent = actionData.title;
+    document.getElementById('confirmMessage').textContent = actionData.message;
+    
+    document.getElementById('confirmationModal').classList.add('active');
+    
+    document.getElementById('confirmAction').onclick = () => {
+        fetch(`{% url 'admin_side:update_user_status' 0 %}`.replace('0', userId), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({ action: action })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+        
+        document.getElementById('confirmationModal').classList.remove('active');
+    };
+}
+
+// Modal close handlers
+document.getElementById('closeConfirmModal').onclick = () => {
+    document.getElementById('confirmationModal').classList.remove('active');
+};
+
+document.getElementById('cancelAction').onclick = () => {
+    document.getElementById('confirmationModal').classList.remove('active');
+};
+
+// Employee ID generation
+document.addEventListener('click', function(e) {
+    if (e.target.id === 'generateEmployeeId' || e.target.closest('#generateEmployeeId')) {
+        const btn = e.target.closest('#generateEmployeeId') || e.target;
+        const userType = btn.dataset.userType;
+        const field = document.getElementById('employeeIdField');
+        
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+        
+        fetch('{% url "admin_side:generate_employee_id" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({ user_type: userType })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                field.value = data.employee_id;
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-magic"></i> Generate ID';
+        });
+    }
+});
+</script>
+<script src="{% static 'js/adminjs/mobile-btn.js' %}"></script>
+<script src="{% static 'js/adminjs/admin-logout.js' %}"></script>
+{% endblock %}

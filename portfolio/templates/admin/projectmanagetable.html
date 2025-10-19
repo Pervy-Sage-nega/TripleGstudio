@@ -1,0 +1,483 @@
+{% extends 'admin-nav-footer-template/base.html' %}
+{% load static %}
+{% block title %}Admin Project Table Management | Triple G BuildHub{% endblock %}
+{% block extra_head %}
+    <link rel="stylesheet" href="{% static 'css/admincss/header.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/dashboard.css' %}">
+    
+    <link rel="stylesheet" href="{% static 'css/sitecss/reports.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/history.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admincss/blogmanagement.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/blog-ui-fixes.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admincss/nav.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/admincss/projectmanagement.css' %}">
+    
+     
+{% endblock %}
+
+{% block content %}
+
+
+        
+
+    <div class="container">
+        <!-- Page Header (Admin Theme) -->
+        <div class="page-header">
+            <div class="page-title">
+                <i class="fas fa-table"></i>
+                <h1>Project Table Management</h1>
+            </div>
+            <div class="export-options">
+                <a href="{% url 'portfolio:projectmanagement' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Form
+                </a>
+                <button class="btn btn-info" id="refreshBtn">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+        </div>
+        <p style="margin-bottom:2rem; color:#777; font-size:1rem;">View and manage all project entries in a comprehensive table format.</p>
+       
+        <!-- Project Management View Wrapper -->
+        <div id="pmViewWrapper">
+        
+        <div class="form-container card" id="formContainer">
+        <!-- Projects Table Section -->
+        <div class="projects-container">
+        <div class="projects-header">
+            <div class="section-title">
+                <i class="fas fa-folder-open"></i>
+                <span>All Projects</span>
+            </div>
+            
+            <!-- Search and Filter Controls -->
+            <div class="search-filter-controls" style="margin: 1rem 0;">
+                <div class="search-container">
+                    <div class="search-input-wrapper">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="projectSearch" class="search-input" placeholder="Search projects…">
+                    </div>
+                </div>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="all" title="Show all projects" style="background: #3c6e71; color: white; border-color: #3c6e71;">
+                        <i class="fas fa-list"></i> All
+                    </button>
+                    <button class="filter-btn" data-filter="draft" title="Show draft projects">
+                        <i class="fas fa-file-alt"></i> Draft
+                    </button>
+                    <button class="filter-btn" data-filter="planned" title="Show planned projects">
+                        <i class="fas fa-calendar-alt"></i> Planned
+                    </button>
+                    <button class="filter-btn" data-filter="ongoing" title="Show ongoing projects">
+                        <i class="fas fa-clock"></i> Ongoing
+                    </button>
+                    <button class="filter-btn" data-filter="completed" title="Show completed projects">
+                        <i class="fas fa-check-circle"></i> Completed
+                    </button>
+                    <button class="filter-btn" data-filter="featured" title="Show featured projects">
+                        <i class="fas fa-star"></i> Featured
+                    </button>
+                </div>
+            </div>
+            
+            <!-- View Toggle -->
+            <div class="view-toggle">
+                <button id="projectsTableViewBtn" class="view-btn active" title="Table View">
+                    <i class="fas fa-table"></i> Table View
+                </button>
+                <button id="projectsGridViewBtn" class="view-btn" title="Grid View">
+                    <i class="fas fa-th-large"></i> Grid View
+                </button>
+            </div>
+        </div>
+        
+        <div class="content-container">
+            <!-- Table View -->
+            <div class="table-responsive" id="projectsTableView">
+                <table>
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Status</th>
+                        <th>Visibility</th>
+                        <th>Completion Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for project in all_projects %}
+                    <tr class="project-row" data-status="{{ project.status|default:'draft' }}" data-featured="{{ project.featured|yesno:'true,false' }}">
+                        <td class="table-project-name">{{ project.title }}</td>
+                        <td>
+                            <span class="status-badge status-{{ project.status|default:'draft' }}">
+                                {{ project.get_status_display|default:"Draft" }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if project.featured %}
+                                <span class="visibility-badge featured">Featured</span>
+                            {% else %}
+                                <span class="visibility-badge public">Public</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ project.completion_date|date:"M d, Y" }}</td>
+                        <td>
+                            <div class="table-actions">
+                                <button class="action-btn edit" title="Edit Project" data-project-id="{{ project.id }}" onclick="editProject(this.dataset.projectId)">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="action-btn view" title="View Details" onclick="window.open('{{ project.get_absolute_url }}', '_blank')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="action-btn delete" title="Delete Project" data-project-id="{{ project.id }}" onclick="deleteProject(this.dataset.projectId)">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="no-results">
+                            <i class="fas fa-folder-open"></i>
+                            <h3>No Projects Found</h3>
+                            <p>Create your first project using the form.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Grid View -->
+        <div class="grid-view" id="projectsGridView" style="display: none;">
+            {% for project in all_projects %}
+            <div class="blog-card project-card" data-id="{{ project.id }}" data-status="{{ project.status|default:'draft' }}" data-featured="{{ project.featured|yesno:'true,false' }}" onclick="editProject({{ project.id }})" title="Click to edit project">
+                <div class="blog-card-header">
+                    <div class="blog-card-status status-{{ project.status|default:'draft' }}">
+                        {{ project.get_status_display|default:"Draft" }}
+                    </div>
+                    {% if project.featured %}
+                    <div class="featured-badge">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    {% endif %}
+                    {% if project.hero_image %}
+                    <img src="{{ project.hero_image.url }}" alt="{{ project.title }}" class="blog-card-image">
+                    {% else %}
+                    <img src="{% static 'images/default-project.jpg' %}" alt="{{ project.title }}" class="blog-card-image">
+                    {% endif %}
+                </div>
+                <div class="blog-card-body">
+                    <h3 class="blog-card-title">{{ project.title|truncatechars:60 }}</h3>
+                    <div class="blog-card-info">
+                        <span><i class="fas fa-folder"></i> {{ project.category.name|default:"Uncategorized" }}</span>
+                        <span><i class="fas fa-calendar"></i> {{ project.year|default:"N/A" }}</span>
+                        <span><i class="fas fa-map-marker-alt"></i> {{ project.location|truncatechars:20|default:"N/A" }}</span>
+                        <span><i class="fas fa-clock"></i> {{ project.updated_at|date:"M d, Y" }}</span>
+                    </div>
+                    {% if project.tagline %}
+                    <div class="blog-card-tags">
+                        <span class="blog-tag">{{ project.tagline }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="blog-card-actions" onclick="event.stopPropagation()">
+                    <button class="btn btn-primary" onclick="editProject({{ project.id }})"><i class="fas fa-edit"></i> Edit</button>
+                    {% if project.status == 'draft' or not project.status %}
+                    <button class="btn btn-success" onclick="publishDraft({{ project.id }})"><i class="fas fa-upload"></i> Publish</button>
+                    {% else %}
+                    <button class="btn btn-info" onclick="window.open('{{ project.get_absolute_url }}', '_blank')"><i class="fas fa-eye"></i> View</button>
+                    {% endif %}
+                    <button class="btn btn-danger" onclick="deleteProject({{ project.id }})"><i class="fas fa-trash"></i> Delete</button>
+                </div>
+            </div>
+            {% empty %}
+            <div class="no-results">
+                <i class="fas fa-folder-open"></i>
+                <h3>No Projects Found</h3>
+                <p>Create your first project using the form.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    </div>
+        </div>
+       
+        
+        </div>
+        <!-- End Project Management View Wrapper -->
+    </div>
+
+
+{% endblock %}
+
+{% block extra_scripts %}
+{% csrf_token %}
+<script>
+console.log('JavaScript loading...');
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing table functionality...');
+    
+    // Projects view toggle (Table/Grid)
+    function showTableView() {
+        console.log('Switching to table view');
+        const tableView = document.getElementById('projectsTableView');
+        const gridView = document.getElementById('projectsGridView');
+        const tableBtn = document.getElementById('projectsTableViewBtn');
+        const gridBtn = document.getElementById('projectsGridViewBtn');
+        
+        if (tableView && gridView) {
+            tableView.style.display = 'block';
+            gridView.style.display = 'none';
+            if (tableBtn) tableBtn.classList.add('active');
+            if (gridBtn) gridBtn.classList.remove('active');
+        }
+    }
+
+    function showGridView() {
+        console.log('Switching to grid view');
+        const tableView = document.getElementById('projectsTableView');
+        const gridView = document.getElementById('projectsGridView');
+        const tableBtn = document.getElementById('projectsTableViewBtn');
+        const gridBtn = document.getElementById('projectsGridViewBtn');
+        
+        if (tableView && gridView) {
+            tableView.style.display = 'none';
+            gridView.style.display = 'block';
+            if (gridBtn) gridBtn.classList.add('active');
+            if (tableBtn) tableBtn.classList.remove('active');
+        }
+    }
+    
+    // Add event listeners for view toggle
+    const tableBtn = document.getElementById('projectsTableViewBtn');
+    const gridBtn = document.getElementById('projectsGridViewBtn');
+    console.log('Table button:', tableBtn);
+    console.log('Grid button:', gridBtn);
+    
+    if (tableBtn && gridBtn) {
+        tableBtn.addEventListener('click', showTableView);
+        gridBtn.addEventListener('click', showGridView);
+        console.log('View toggle listeners added');
+    }
+
+    // Filter projects based on status
+    function filterProjects(status) {
+        console.log('Filtering projects by:', status);
+        
+        // Update filter button states
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.remove('active');
+            btn.style.background = '';
+            btn.style.color = '';
+            btn.style.borderColor = '';
+            if (btn.dataset.filter === status) {
+                btn.classList.add('active');
+                btn.style.background = '#3c6e71';
+                btn.style.color = 'white';
+                btn.style.borderColor = '#3c6e71';
+            }
+        });
+        
+        // Filter table rows
+        const tableRows = document.querySelectorAll('.project-row');
+        let visibleCount = 0;
+        
+        tableRows.forEach(row => {
+            let shouldShow = false;
+            const rowStatus = row.dataset.status;
+            const isFeatured = row.dataset.featured === 'true';
+            
+            switch(status) {
+                case 'all':
+                    shouldShow = true;
+                    break;
+                case 'draft':
+                    shouldShow = rowStatus === 'draft' || !rowStatus;
+                    break;
+                case 'planned':
+                    shouldShow = rowStatus === 'planned';
+                    break;
+                case 'ongoing':
+                    shouldShow = rowStatus === 'ongoing';
+                    break;
+                case 'completed':
+                    shouldShow = rowStatus === 'completed';
+                    break;
+                case 'featured':
+                    shouldShow = isFeatured;
+                    break;
+            }
+            
+            if (shouldShow) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        // Filter grid cards
+        const gridCards = document.querySelectorAll('.project-card');
+        gridCards.forEach(card => {
+            let shouldShow = false;
+            const cardStatus = card.dataset.status;
+            const isFeatured = card.dataset.featured === 'true';
+            
+            switch(status) {
+                case 'all':
+                    shouldShow = true;
+                    break;
+                case 'draft':
+                    shouldShow = cardStatus === 'draft' || !cardStatus;
+                    break;
+                case 'planned':
+                    shouldShow = cardStatus === 'planned';
+                    break;
+                case 'ongoing':
+                    shouldShow = cardStatus === 'ongoing';
+                    break;
+                case 'completed':
+                    shouldShow = cardStatus === 'completed';
+                    break;
+                case 'featured':
+                    shouldShow = isFeatured;
+                    break;
+            }
+            
+            if (shouldShow) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+        
+        console.log(`Showing ${visibleCount} projects for status: ${status}`);
+    }
+    
+    // Initialize filter buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const filter = this.dataset.filter;
+            filterProjects(filter);
+        });
+    });
+    console.log('Filter buttons initialized:', document.querySelectorAll('.filter-btn').length);
+    
+    // Search functionality
+    const searchInput = document.getElementById('projectSearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase().trim();
+            searchProjects(searchTerm);
+        });
+        console.log('Search input initialized');
+    }
+    
+    // Search projects function
+    function searchProjects(searchTerm) {
+        const tableRows = document.querySelectorAll('.project-row');
+        const gridCards = document.querySelectorAll('.project-card');
+        
+        // Search in table rows
+        tableRows.forEach(row => {
+            const title = row.querySelector('.table-project-name')?.textContent.toLowerCase() || '';
+            const status = row.querySelector('.status-badge')?.textContent.toLowerCase() || '';
+            const shouldShow = !searchTerm || title.includes(searchTerm) || status.includes(searchTerm);
+            row.style.display = shouldShow ? '' : 'none';
+        });
+        
+        // Search in grid cards
+        gridCards.forEach(card => {
+            const title = card.querySelector('.blog-card-title')?.textContent.toLowerCase() || '';
+            const status = card.querySelector('.blog-card-status')?.textContent.toLowerCase() || '';
+            const info = card.querySelector('.blog-card-info')?.textContent.toLowerCase() || '';
+            const shouldShow = !searchTerm || title.includes(searchTerm) || status.includes(searchTerm) || info.includes(searchTerm);
+            card.style.display = shouldShow ? '' : 'none';
+        });
+    }
+    
+    // Initialize with 'all' filter
+    filterProjects('all');
+
+    // Get CSRF cookie
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Edit project function
+    window.editProject = function(projectId) {
+        console.log('Editing project:', projectId);
+        window.location.href = `/portfolio/projectmanagement/?edit=${projectId}`;
+    };
+    
+    // Publish draft function
+    window.publishDraft = function(projectId) {
+        if (confirm('Are you sure you want to publish this draft? It will become publicly visible.')) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/portfolio/publish/${projectId}/`;
+            
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+            if (csrfToken) {
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrfmiddlewaretoken';
+                csrfInput.value = csrfToken.value;
+                form.appendChild(csrfInput);
+            }
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
+    };
+    
+    // Delete project function
+    window.deleteProject = function(projectId) {
+        if (confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/portfolio/delete/${projectId}/`;
+            
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+            if (csrfToken) {
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrfmiddlewaretoken';
+                csrfInput.value = csrfToken.value;
+                form.appendChild(csrfInput);
+            }
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
+    };
+
+    // Refresh button functionality
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() {
+            location.reload();
+        });
+        console.log('Refresh button listener added');
+    }
+    
+    // Initialize with table view
+    showTableView();
+    console.log('Initialization complete');
+});
+</script>
+<script src="{% static 'js/adminjs/mobile-btn.js' %}"></script>
+{% endblock %}

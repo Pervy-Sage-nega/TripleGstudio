@@ -24,7 +24,7 @@ import requests
 OPENWEATHERMAP_API_KEY = "0c461dd2b831a59146501773674950cd"
 
 # Create your views here.
-@login_required
+@require_site_manager_role
 def diary(request):
     """Create new diary entry with all related data, including Save as Draft support"""
     if request.method == 'POST':
@@ -118,9 +118,9 @@ def diary(request):
     }
     return render(request, 'site_diary/diary.html', context)
 
-@login_required
+@require_site_manager_role
 def dashboard(request):
-    """Enhanced dashboard with comprehensive project overview and statistics"""
+    """Site Manager Enhanced dashboard with comprehensive comprehensive project overview"""
     # Get user's projects
     if request.user.is_staff:
         projects = Project.objects.all()
@@ -129,89 +129,66 @@ def dashboard(request):
             Q(project_manager=request.user) | Q(architect=request.user)
         )
     
-    # Recent diary entries
-    recent_entries = DiaryEntry.objects.filter(
-        project__in=projects
-    ).select_related('project', 'created_by').order_by('-created_at')[:5]
+    # Enhanced project data with progress and analytics
+    project_data = []
+    # Mock progress values for demonstration
+    mock_progress = [65, 40, 85, 25, 55, 75, 30, 90, 45, 60]
     
-    # Statistics
+    for i, project in enumerate(projects):
+        # Get latest diary entry for progress
+        latest_entry = DiaryEntry.objects.filter(project=project).order_by('-entry_date').first()
+        
+        # Calculate project analytics
+        project_entries = DiaryEntry.objects.filter(project=project)
+        labor_entries = LaborEntry.objects.filter(diary_entry__in=project_entries)
+        delay_entries = DelayEntry.objects.filter(diary_entry__in=project_entries)
+        
+        # Budget calculations
+        total_labor_cost = sum(labor.total_cost for labor in labor_entries)
+        budget_used_percentage = min((total_labor_cost / 1000000) * 100, 100) if total_labor_cost else (mock_progress[i % len(mock_progress)] * 0.8)
+        
+        # Use mock data if no diary entries exist
+        progress = latest_entry.progress_percentage if latest_entry else mock_progress[i % len(mock_progress)]
+        current_phase = latest_entry.work_description[:50] if latest_entry else f"Phase {min(int(progress/25) + 1, 4)} - {'Planning' if progress < 25 else 'Foundation' if progress < 50 else 'Structure' if progress < 75 else 'Finishing'}"
+        
+        project_info = {
+            'id': project.id,
+            'name': project.name,
+            'client_name': project.client_name,
+            'location': project.location,
+            'status': project.status,
+            'progress': progress,
+            'current_phase': current_phase,
+            'start_date': project.created_at,
+            'target_completion': project.created_at + timedelta(days=365),
+            'budget_used': budget_used_percentage,
+            'schedule_status': 'On Track' if delay_entries.count() < 3 else 'Minor Delays' if delay_entries.count() < 6 else 'At Risk',
+            'delay_count': delay_entries.count(),
+            'image': getattr(project, 'image', None),
+        }
+        project_data.append(project_info)
+    
+    # Dashboard statistics
     total_projects = projects.count()
     active_projects = projects.filter(status='active').count()
     completed_projects = projects.filter(status='completed').count()
-    planning_projects = projects.filter(status='planning').count()
-    on_hold_projects = projects.filter(status='on_hold').count()
     total_entries = DiaryEntry.objects.filter(project__in=projects).count()
-    draft_entries = DiaryEntry.objects.filter(project__in=projects, draft=True).count()
     
     # Recent delays
     recent_delays = DelayEntry.objects.filter(
         diary_entry__project__in=projects
     ).select_related('diary_entry__project').order_by('-diary_entry__entry_date')[:5]
     
-    # Project progress statistics
-    project_progress = []
-    for project in projects[:5]:
-        latest_entry = DiaryEntry.objects.filter(
-            project=project, draft=False
-        ).order_by('-entry_date').first()
-        
-        progress_data = {
-            'project': project,
-            'latest_progress': latest_entry.progress_percentage if latest_entry else 0,
-            'total_entries': DiaryEntry.objects.filter(project=project, draft=False).count(),
-            'last_entry_date': latest_entry.entry_date if latest_entry else None,
-        }
-        project_progress.append(progress_data)
-    
-    # Labor statistics
-    labor_stats = LaborEntry.objects.filter(
-        diary_entry__project__in=projects
-    ).aggregate(
-        total_workers=Sum('workers_count'),
-        total_hours=Sum('hours_worked'),
-        avg_hours=Avg('hours_worked')
-    )
-    
-    # Material statistics
-    material_stats = MaterialEntry.objects.filter(
-        diary_entry__project__in=projects
-    ).aggregate(
-        total_deliveries=Count('id'),
-        total_materials=Count('material_name')
-    )
-    
-    # Equipment statistics
-    equipment_stats = EquipmentEntry.objects.filter(
-        diary_entry__project__in=projects
-    ).aggregate(
-        total_equipment=Count('id'),
-        total_hours=Sum('hours_operated')
-    )
-    
-    # Project card data for template (first 5 projects)
-    project_cards = []
-    for project in projects[:5]:
-        latest_entry = DiaryEntry.objects.filter(project=project, draft=False).order_by('-entry_date').first()
-        project_cards.append({'project': project, 'latest_entry': latest_entry})
-
     context = {
-        'projects': projects[:5],  # For any other features
-        'project_cards': project_cards,
+        'projects': projects[:5],  # Show only 5 recent projects
         'recent_entries': recent_entries,
         'recent_delays': recent_delays,
-        'project_progress': project_progress,
         'stats': {
             'total_projects': total_projects,
             'active_projects': active_projects,
             'completed_projects': completed_projects,
-            'planning_projects': planning_projects,
-            'on_hold_projects': on_hold_projects,
             'total_entries': total_entries,
-            'draft_entries': draft_entries,
-        },
-        'labor_stats': labor_stats,
-        'material_stats': material_stats,
-        'equipment_stats': equipment_stats,
+        }
     }
     return render(request, 'site_diary/dashboard.html', context)
 
@@ -219,7 +196,7 @@ def dashboard(request):
 def chatbot(request):
     return render(request, 'chatbot/chatbot.html')
 
-@login_required
+@require_site_manager_role
 def newproject(request):
     """Create new project with enhanced validation and user experience"""
     if request.method == 'POST':
@@ -580,7 +557,7 @@ def drafts(request):
     
     return render(request, 'blogcreation/drafts.html', context)
 
-@login_required
+@require_site_manager_role
 def history(request):
     """View diary entry history with search and filtering"""
     # Get user's projects
@@ -621,7 +598,7 @@ def history(request):
     }
     return render(request, 'site_diary/history.html', context)
 
-@login_required
+@require_site_manager_role
 def reports(request):
     """Generate comprehensive reports and analytics with database data"""
     # Get user's projects
@@ -800,19 +777,113 @@ def reports(request):
     return render(request, 'site_diary/reports.html', context)
 
 
-@login_required
+@require_site_manager_role
 def project_detail(request, project_id):
-    """Project detail view - temporary placeholder"""
+    """Comprehensive Project Detail View for Site Managers"""
     try:
         project = get_object_or_404(Project, id=project_id)
+        
+        # Verify user has access to this project
+        if not request.user.is_staff:
+            user_projects = Project.objects.filter(
+                Q(project_manager=request.user) | Q(architect=request.user)
+            )
+            if project not in user_projects:
+                messages.error(request, 'You do not have access to this project.')
+                return redirect('site_diary:dashboard')
+        
+        # Get project entries and related data
+        project_entries = DiaryEntry.objects.filter(project=project).order_by('-entry_date')
+        labor_entries = LaborEntry.objects.filter(diary_entry__in=project_entries)
+        material_entries = MaterialEntry.objects.filter(diary_entry__in=project_entries)
+        equipment_entries = EquipmentEntry.objects.filter(diary_entry__in=project_entries)
+        delay_entries = DelayEntry.objects.filter(diary_entry__in=project_entries)
+        
+        # Calculate project metrics with mock data fallback
+        latest_entry = project_entries.first()
+        # Mock progress based on project ID for demonstration
+        mock_progress_map = {1: 65, 2: 40, 3: 85, 4: 25, 5: 55}
+        progress = latest_entry.progress_percentage if latest_entry else mock_progress_map.get(project.id, 50)
+        
+        # Budget calculations with error handling
+        try:
+            total_labor_cost = sum(labor.total_cost for labor in labor_entries)
+            total_material_cost = sum(material.total_cost for material in material_entries)
+            total_equipment_cost = sum(equipment.total_rental_cost for equipment in equipment_entries)
+        except (AttributeError, TypeError):
+            total_labor_cost = total_material_cost = total_equipment_cost = 0
+        
+        total_spent = total_labor_cost + total_material_cost + total_equipment_cost
+        total_budget = getattr(project, 'budget', 2500000) or 2500000
+        remaining_budget = max(0, total_budget - total_spent)
+        
+        # Recent diary entries for summary
+        recent_diary_entries = project_entries[:3]
+        
+        # Resource statistics
+        total_workers = labor_entries.aggregate(total=Sum('workers_count'))['total'] or 0
+        equipment_count = equipment_entries.values('equipment_type').distinct().count()
+        delay_count = delay_entries.count()
+        
+        # Project timeline/milestones (mock data - replace with actual model)
+        project_timeline = [
+            {
+                'title': 'Project Planning',
+                'date': project.created_at,
+                'description': 'Initial planning, permits, and design finalization.',
+                'completed': True
+            },
+            {
+                'title': 'Foundation Work',
+                'date': project.created_at + timedelta(days=30),
+                'description': 'Excavation, foundation laying, and structural groundwork.',
+                'completed': progress > 25
+            },
+            {
+                'title': 'Structural Construction',
+                'date': project.created_at + timedelta(days=120),
+                'description': 'Main structure, steel framework, and concrete work.',
+                'completed': progress > 65
+            },
+            {
+                'title': 'Finishing Work',
+                'date': project.created_at + timedelta(days=300),
+                'description': 'Interior finishing, utilities installation, and final inspections.',
+                'completed': progress > 90
+            }
+        ]
+        
+        # Enhanced project data
+        project_data = {
+            'id': project.id,
+            'name': project.name,
+            'code': f"{project.name[:2].upper()}-{project.created_at.year}-{project.id:03d}",
+            'status': project.status,
+            'client_name': project.client_name,
+            'client_email': project.client_email if hasattr(project, 'client_email') else 'contact@client.com',
+            'client_phone': project.client_phone if hasattr(project, 'client_phone') else '+1 (555) 123-4567',
+            'start_date': project.created_at.strftime('%b %d, %Y'),
+            'target_completion': (project.created_at + timedelta(days=365)).strftime('%b %d, %Y'),
+            'current_phase': latest_entry.work_description[:50] if latest_entry else f"Phase {min(int(progress/25) + 1, 4)} - {'Planning' if progress < 25 else 'Foundation' if progress < 50 else 'Structure' if progress < 75 else 'Finishing'}",
+            'progress': progress,
+            'total_budget': f"{total_budget:,}",
+            'total_spent': f"{total_spent:,}",
+            'remaining_budget': f"{remaining_budget:,}",
+            'labor_count': total_workers,
+            'equipment_count': equipment_count,
+            'delays_count': delay_count,
+        }
+        
         context = {
-            'project': project,
+            'project': project_data,
+            'recent_diary_entries': recent_diary_entries,
+            'project_timeline': project_timeline,
         }
         return render(request, 'site_diary/project_detail.html', context)
     except:
         # Fallback - redirect to dashboard if project doesn't exist
         messages.info(request, 'Project details are not available yet.')
-        return redirect('site_diary:dashboard')
+        return redirect('site:dashboard')
 
 @login_required
 @require_site_manager_role
@@ -821,16 +892,30 @@ def settings(request):
     from accounts.models import SiteManagerProfile
     from accounts.forms import ProfileUpdateForm
     from django.contrib.auth.forms import PasswordChangeForm
+    from django.contrib.auth import logout
+    from django.http import HttpResponse
+    from django.db import transaction
+    import csv
+    import json
     
     # Get or create site manager profile
     try:
         site_manager_profile = request.user.sitemanagerprofile
+        print(f"DEBUG: Site manager profile found: {site_manager_profile}")
+        print(f"DEBUG: Current profile data - Phone: {site_manager_profile.phone}, Emergency: {site_manager_profile.emergency_contact}")
+        print(f"DEBUG: Current profile pic: {site_manager_profile.profile_pic}")
     except SiteManagerProfile.DoesNotExist:
+        print(f"DEBUG: Site Manager profile not found for user: {request.user}")
         messages.error(request, 'Site Manager profile not found.')
         return redirect('site_diary:dashboard')
     
     if request.method == 'POST':
+        print(f"DEBUG: POST request received")
+        print(f"DEBUG: POST data: {request.POST}")
+        print(f"DEBUG: FILES data: {request.FILES}")
+        
         action = request.POST.get('action')
+        print(f"DEBUG: Action: {action}")
         
         if action == 'update_profile':
             # Handle profile update
@@ -845,13 +930,49 @@ def settings(request):
             
             # Handle profile picture upload
             if 'profile_pic' in request.FILES:
-                site_manager_profile.profile_pic = request.FILES['profile_pic']
+                profile_pic = request.FILES['profile_pic']
+                print(f"DEBUG: Profile picture uploaded: {profile_pic.name}, Size: {profile_pic.size}")
+                
+                # Validate file type
+                allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+                file_type = profile_pic.content_type.lower()
+                
+                if file_type not in allowed_types:
+                    messages.error(request, 'Invalid file type. Please upload a JPEG, PNG, GIF, or WebP image.')
+                    return redirect('site_diary:settings')
+                
+                # Validate file size (max 5MB)
+                max_size = 5 * 1024 * 1024  # 5MB
+                if profile_pic.size > max_size:
+                    messages.error(request, 'File size too large. Please upload an image smaller than 5MB.')
+                    return redirect('site_diary:settings')
+                
+                site_manager_profile.profile_pic = profile_pic
+                print(f"DEBUG: Profile picture assigned to site_manager_profile")
             
             try:
-                user.save()
-                site_manager_profile.save()
-                messages.success(request, 'Profile updated successfully!')
+                with transaction.atomic():
+                    # Save user data
+                    print(f"DEBUG: Saving user data - First: {user.first_name}, Last: {user.last_name}, Email: {user.email}")
+                    user.save()
+                    
+                    # Save site manager profile data
+                    print(f"DEBUG: Saving profile data - Phone: {site_manager_profile.phone}, Emergency: {site_manager_profile.emergency_contact}")
+                    site_manager_profile.save()
+                    
+                    # Verify data was saved by reloading from database
+                    user.refresh_from_db()
+                    site_manager_profile.refresh_from_db()
+                    
+                    print(f"DEBUG: Verification - User saved: First={user.first_name}, Last={user.last_name}, Email={user.email}")
+                    print(f"DEBUG: Verification - Profile saved: Phone={site_manager_profile.phone}, Emergency={site_manager_profile.emergency_contact}")
+                    print(f"DEBUG: Verification - Profile pic: {site_manager_profile.profile_pic}")
+                    
+                    messages.success(request, 'Profile updated successfully!')
             except Exception as e:
+                print(f"DEBUG: Error saving profile: {str(e)}")
+                import traceback
+                print(f"DEBUG: Full traceback: {traceback.format_exc()}")
                 messages.error(request, f'Error updating profile: {str(e)}')
         
         elif action == 'change_password':
@@ -864,13 +985,44 @@ def settings(request):
                 for error in password_form.errors.values():
                     messages.error(request, error[0])
         
-        return redirect('site_diary:settings')
+        return redirect('site:settings')
+    
+    # Debug: Show current data being passed to template
+    print(f"DEBUG: Template context - User: {request.user}")
+    print(f"DEBUG: Template context - Profile: {site_manager_profile}")
+    print(f"DEBUG: Template context - User first_name: {request.user.first_name}")
+    print(f"DEBUG: Template context - User last_name: {request.user.last_name}")
+    print(f"DEBUG: Template context - User email: {request.user.email}")
+    print(f"DEBUG: Template context - Profile phone: {site_manager_profile.phone}")
+    print(f"DEBUG: Template context - Profile emergency_contact: {site_manager_profile.emergency_contact}")
     
     context = {
         'user': request.user,
         'site_manager_profile': site_manager_profile,
     }
     return render(request, 'site_diary/settings.html', context)
+
+@login_required
+@require_site_manager_role
+def site_manager_logout(request):
+    """Site Manager logout view"""
+    from django.contrib.auth import logout
+    
+    if request.method == 'POST':
+        # Clear browser data if requested
+        clear_browser_data = request.POST.get('clear_browser_data') == 'on'
+        
+        # Log out the user
+        logout(request)
+        
+        # Add success message
+        messages.success(request, 'You have been successfully logged out from the Site Manager panel.')
+        
+        # Redirect to site manager login
+        return redirect('accounts:sitemanager_login')
+    
+    # If GET request, redirect to settings
+    return redirect('site:settings')
 
 @require_admin_role
 def adminclientproject(request):
@@ -949,55 +1101,36 @@ def adminreports(request):
     """Admin reports view"""
     return render(request, 'admin/adminreports.html')
 
-@login_required
-def sitedraft(request):
-    drafts = DiaryEntry.objects.filter(created_by=request.user, draft=True).order_by('-created_at')
-    return render(request, 'site_diary/sitedraft.html', {'drafts': drafts})
-
-@csrf_exempt
-@login_required
-def weather_api(request):
-    """Weather API endpoint for fetching real-time weather data"""
+@require_site_manager_role
+def generate_project_report(request, project_id):
+    """Generate project report - API endpoint"""
     if request.method == 'POST':
-        location = request.POST.get('location')
-        if not location:
-            return JsonResponse({'success': False, 'error': 'Location required.'}, status=400)
-        
         try:
-            # Use the provided API key
-            url = f"https://api.openweathermap.org/data/2.5/weather?q={location}&appid={OPENWEATHERMAP_API_KEY}&units=metric"
-            response = requests.get(url, timeout=10)
-            data = response.json()
+            project = get_object_or_404(Project, id=project_id)
             
-            if response.status_code != 200:
-                error_msg = data.get('message', 'Weather API error')
-                return JsonResponse({'success': False, 'error': error_msg}, status=400)
+            # Verify user has access
+            if not request.user.is_staff:
+                user_projects = Project.objects.filter(
+                    Q(project_manager=request.user) | Q(architect=request.user)
+                )
+                if project not in user_projects:
+                    return JsonResponse({'error': 'Access denied'}, status=403)
             
-            if 'main' not in data or 'weather' not in data:
-                return JsonResponse({'success': False, 'error': 'Invalid weather data received'}, status=400)
-            
-            # Extract weather data
-            weather_data = {
-                'condition': data['weather'][0]['main'].lower(),
-                'description': data['weather'][0]['description'].title(),
-                'temperature': round(data['main']['temp']),
-                'temperature_high': round(data['main']['temp_max']),
-                'temperature_low': round(data['main']['temp_min']),
-                'humidity': int(data['main']['humidity']),
-                'wind_speed': round(data['wind']['speed'] * 3.6, 1),  # Convert m/s to km/h
-                'pressure': data['main'].get('pressure', 0),
-                'visibility': data.get('visibility', 0) / 1000,  # Convert m to km
-                'location': data['name'],
-                'country': data['sys']['country'],
+            # Mock report generation - replace with actual report logic
+            report_data = {
+                'project_name': project.name,
+                'generated_at': timezone.now().isoformat(),
+                'status': 'success',
+                'download_url': f'/reports/project_{project_id}_{timezone.now().strftime("%Y%m%d")}.pdf'
             }
             
-            return JsonResponse({'success': True, 'data': weather_data})
+            return JsonResponse(report_data)
             
-        except requests.exceptions.Timeout:
-            return JsonResponse({'success': False, 'error': 'Weather service timeout. Please try again.'}, status=408)
-        except requests.exceptions.RequestException as e:
-            return JsonResponse({'success': False, 'error': f'Weather service error: {str(e)}'}, status=503)
         except Exception as e:
-            return JsonResponse({'success': False, 'error': f'Unexpected error: {str(e)}'}, status=500)
+            return JsonResponse({'error': str(e)}, status=500)
     
-    return JsonResponse({'success': False, 'error': 'Only POST method allowed.'}, status=405)
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+@require_site_manager_role
+def sitedraft(request):
+    return render(request, 'site_diary/sitedraft.html')

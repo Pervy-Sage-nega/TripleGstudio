@@ -4,10 +4,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>{% block title %}Auth | Triple G BuildHub{% endblock %}</title>
+   
+    
+    <!-- Font Awesome - Load first to override any cached CDN references -->
+    <link rel="stylesheet" href="{% static 'fontawesome/css/all-fixed.min.css' %}?v=20250115003" media="all">
     <link rel="stylesheet" href="{% static 'css/admincss/login.css' %}?v=2024092501">
     <link rel="stylesheet" href="{% static 'css/sitecss/modal_messages.css' %}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'lineicons/lineicons.css' %}">
     {% block extra_head %}{% endblock %}
 </head>
 <body>

@@ -39,7 +39,10 @@ class RoleBasedAccessMiddleware(MiddlewareMixin):
         skip_paths = [
             '/static/', '/media/', '/favicon.ico',
             '/accounts/client/login/', '/accounts/client/register/',
+            '/accounts/client/forgot-password/', '/accounts/client/reset-password/',
             '/accounts/admin-auth/login/', '/accounts/admin-auth/register/',
+            '/accounts/admin-auth/forgot-password/', '/accounts/sitemanager/forgot-password/',
+            '/accounts/admin-auth/reset-password/', '/accounts/sitemanager/reset-password/',
             '/accounts/client/verify-otp/', '/accounts/admin-auth/verify-otp/',
             '/accounts/client/logout/', '/accounts/admin-auth/logout/',
             '/admin/login/', '/admin/logout/',

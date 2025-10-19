@@ -15,9 +15,11 @@ document.addEventListener('DOMContentLoaded', function() {
         loginForm.addEventListener('submit', handleLogin);
     }
     
-    if (passwordToggle) {
-        passwordToggle.addEventListener('click', togglePasswordVisibility);
-    }
+    // Add event listeners for all password toggle buttons
+    const passwordToggles = document.querySelectorAll('.password-toggle');
+    passwordToggles.forEach(toggle => {
+        toggle.addEventListener('click', togglePasswordVisibility);
+    });
     
     if (closeModalBtn) {
         closeModalBtn.addEventListener('click', closeModal);
@@ -41,13 +43,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Toggle password visibility
     function togglePasswordVisibility() {
         const icon = this.querySelector('i');
+        const input = this.parentElement.querySelector('input[type="password"], input[type="text"]');
         
-        if (passwordInput.type === 'password') {
-            passwordInput.type = 'text';
+        if (input.type === 'password') {
+            input.type = 'text';
             icon.classList.remove('fa-eye');
             icon.classList.add('fa-eye-slash');
         } else {
-            passwordInput.type = 'password';
+            input.type = 'password';
             icon.classList.remove('fa-eye-slash');
             icon.classList.add('fa-eye');
         }
