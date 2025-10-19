@@ -127,7 +127,7 @@
               <div class="profile-email" id="displayEmail">{{ user_email }}</div>
               <div class="profile-status">
                 <span class="client-badge">{{ profile_role }}</span>
-                <span class="project-status">Project: <span class="status-ongoing">{% if profile.project_name %}{{ profile.project_name }}{% else %}Not Assigned{% endif %}</span></span>
+                <span class="project-status">Project: <span class="status-ongoing">{% if profile.project_name %}{{ profile.project_name }}{% else %}{{ client_projects.first.name|default:"Not Assigned" }}{% endif %}</span></span>
               </div>
               <label for="id_profile_pic_debug" class="upload-btn" id="changePhotoBtn">
                 <i class="fas fa-camera"></i> Change Photo

@@ -17,5 +17,6 @@ urlpatterns = [
     path('project/', views.project, name='project'),
     path('usersettings/', views.usersettings, name='usersettings'),
     path('clientdashboard/', views.clientdashboard, name='clientdashboard'),
+    path('project/<int:project_id>/', views.client_project_detail, name='client_project_detail'),
     path('user/', user_dashboard_redirect, name='user_dashboard'),  # Redirect for backward compatibility
 ]

@@ -9,6 +9,7 @@ from accounts.models import Profile
 from accounts.forms import ProfileUpdateForm
 from accounts.decorators import allow_public_access, require_public_role
 from portfolio.models import Project, Category
+from site_diary.models import Project as SiteDiaryProject
 
 @allow_public_access
 def home(request):
@@ -56,27 +57,101 @@ def clientdashboard(request):
     try:
         profile = Profile.objects.get(user=current_user)
     except Profile.DoesNotExist:
-        profile = Profile.objects.create(user=current_user, role='customer')
+        profile = Profile.objects.create(user=current_user, role='client')
+    
+    # Ensure users with projects have client role
+    if not profile.role or profile.role == 'guest':
+        profile.role = 'client'
+        profile.save()
     
     # Allow access to dashboard even without project for design viewing
     # if not profile.project_name:
     #     messages.info(request, 'No project assigned yet. Please contact us to get started.')
     #     return redirect('core:usersettings')
     
+    # Get client's projects from site_diary
+    client_projects = SiteDiaryProject.objects.filter(client=current_user).order_by('-created_at')
+    
+    # If no projects found by client field, try to find by client_name
+    if not client_projects.exists():
+        user_full_name = current_user.get_full_name()
+        if user_full_name:
+            client_projects = SiteDiaryProject.objects.filter(client_name__icontains=user_full_name).order_by('-created_at')
+            print(f"[DEBUG] Found {client_projects.count()} projects by name matching: {user_full_name}")
+        else:
+            client_projects = SiteDiaryProject.objects.filter(client_name__icontains=current_user.username).order_by('-created_at')
+            print(f"[DEBUG] Found {client_projects.count()} projects by username matching: {current_user.username}")
+    
+    # Calculate project statistics
+    total_projects = client_projects.count()
+    active_projects = client_projects.filter(status='active').count()
+    completed_projects = client_projects.filter(status='completed').count()
+    planning_projects = client_projects.filter(status='planning').count()
+    
     # Debug: Print profile data
+    print(f"[DEBUG] Current user: {current_user.username} (ID: {current_user.id})")
+    print(f"[DEBUG] User email: {current_user.email}")
+    print(f"[DEBUG] User full name: {current_user.get_full_name()}")
     print(f"[DEBUG] Profile data: role={profile.role}, phone={profile.phone}")
     print(f"[DEBUG] Project: name={profile.project_name}, start={profile.project_start}")
     print(f"[DEBUG] Architect: {profile.assigned_architect}")
+    print(f"[DEBUG] Client projects found: {total_projects}")
+    
+    # Debug: Print all projects to see what's available
+    all_projects = SiteDiaryProject.objects.all()
+    print(f"[DEBUG] Total projects in database: {all_projects.count()}")
+    for proj in all_projects:
+        print(f"[DEBUG] Project: {proj.name}, Client: {proj.client}, Client Name: {proj.client_name}")
+    
+    print(f"[DEBUG] Final client projects: {total_projects}")
+    for proj in client_projects:
+        print(f"[DEBUG] Final project: {proj.name}, Status: {proj.status}, Client: {proj.client}")
     
     context = {
         'user': current_user,
         'profile': profile,
         'user_full_name': current_user.get_full_name() or current_user.username,
         'user_email': current_user.email,
-        'profile_role': profile.role.title() if profile.role else 'Customer',
+        'profile_role': profile.role.title() if profile.role else 'Client',
+        'client_projects': client_projects,
+        'total_projects': total_projects,
+        'active_projects': active_projects,
+        'completed_projects': completed_projects,
+        'planning_projects': planning_projects,
     }
     
     return render(request, 'core/clientdashboard.html', context)
+
+@require_public_role
+@login_required
+def client_project_detail(request, project_id):
+    """
+    Client Project Detail View - Shows detailed project information for clients
+    """
+    current_user = request.user
+    
+    # Get the project and ensure it belongs to the current user
+    try:
+        project = SiteDiaryProject.objects.get(id=project_id, client=current_user)
+    except SiteDiaryProject.DoesNotExist:
+        # Try to find by client_name if client field is not set
+        user_full_name = current_user.get_full_name()
+        if user_full_name:
+            try:
+                project = SiteDiaryProject.objects.get(id=project_id, client_name__icontains=user_full_name)
+            except SiteDiaryProject.DoesNotExist:
+                messages.error(request, 'Project not found or access denied.')
+                return redirect('core:clientdashboard')
+        else:
+            messages.error(request, 'Project not found or access denied.')
+            return redirect('core:clientdashboard')
+    
+    context = {
+        'project': project,
+        'user': current_user,
+    }
+    
+    return render(request, 'core/client_project_detail.html', context)
 
 @require_public_role
 @login_required
@@ -100,8 +175,14 @@ def usersettings(request):
         print(f"[DEBUG] USERSETTINGS - Found existing profile for user: {current_user.username}")
     except Profile.DoesNotExist:
         # Create profile if it doesn't exist (signal should handle this, but fallback)
-        profile = Profile.objects.create(user=current_user, role='customer')
+        profile = Profile.objects.create(user=current_user, role='client')
         print(f"[DEBUG] USERSETTINGS - Created new profile for user: {current_user.username}")
+    
+    # Ensure users accessing settings have client role if they don't have a role set
+    if not profile.role or profile.role == 'guest':
+        profile.role = 'client'
+        profile.save()
+        print(f"[DEBUG] USERSETTINGS - Updated role to client for user: {current_user.username}")
     
     # SECURITY CHECK: Verify profile belongs to current user
     if profile.user != current_user:
@@ -167,6 +248,15 @@ def usersettings(request):
         print(f"[DEBUG] USERSETTINGS - Initial form data: {initial_data}")
         form = ProfileUpdateForm(instance=profile, user=current_user, initial=initial_data)
     
+    # Get client's projects for display
+    client_projects = SiteDiaryProject.objects.filter(client=current_user).order_by('-created_at')
+    if not client_projects.exists():
+        user_full_name = current_user.get_full_name()
+        if user_full_name:
+            client_projects = SiteDiaryProject.objects.filter(client_name__icontains=user_full_name).order_by('-created_at')
+        else:
+            client_projects = SiteDiaryProject.objects.filter(client_name__icontains=current_user.username).order_by('-created_at')
+    
     # SECURITY: Only pass current user's data to template
     context = {
         'profile': profile,
@@ -174,7 +264,8 @@ def usersettings(request):
         'user': current_user,  # Explicitly pass current user
         'user_full_name': current_user.get_full_name() or current_user.username,
         'user_email': current_user.email,
-        'profile_role': profile.role.title() if profile.role else 'Customer',
+        'profile_role': profile.role.title() if profile.role else 'Client',
+        'client_projects': client_projects,
         # Additional user-specific data
         'account_created': current_user.date_joined.strftime('%B %d, %Y') if current_user.date_joined else 'Unknown',
         'last_login': current_user.last_login.strftime('%B %d, %Y at %I:%M %p') if current_user.last_login else 'Never',

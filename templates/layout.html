@@ -33,7 +33,10 @@
       {% if not user.is_authenticated %}
       <li><a href="{% url 'accounts:client_login' %}" class="{% if 'login' in request.resolver_match.url_name %}active{% endif %}">Log in</a></li>
       {% else %}
+      {% load profile_tags %}
+      {% if user|has_projects %}
       <li><a href="/user">Dashboard</a></li>
+      {% endif %}
       <li><a href="{% url 'core:usersettings' %}" class="{% if request.resolver_match.url_name == 'usersettings' %}active{% endif %}">Settings</a></li>
       {% endif %}
     </ul>

@@ -15,6 +15,7 @@ class Project(models.Model):
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     client_name = models.CharField(max_length=100)
+    client = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='client_projects')
     project_manager = models.ForeignKey(User, on_delete=models.CASCADE, related_name='managed_projects')
     architect = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='architect_projects')
     location = models.CharField(max_length=300)

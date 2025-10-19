@@ -11,7 +11,7 @@ import string
 class Profile(models.Model):
     USER_ROLES = [
         ('guest', 'Guest'),
-        ('customer', 'Customer'),
+        ('client', 'Client'),
         ('architect', 'Architect'),
         # ('admin', 'Admin'),  # use is_staff / is_superuser instead
     ]

@@ -21,7 +21,7 @@
             <div class="user-info">
                 <div class="user-greeting">
                     <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
-                    <div class="user-role">{% if profile %}{{ profile.get_role_display }}{% else %}Client{% endif %}</div>
+                    <div class="user-role">{{ profile.get_role_display|default:"Client" }}</div>
                 </div>
                 <div class="user-avatar">
                     <img src="{% profile_image_url user %}" alt="{{ user.get_full_name|default:user.username }}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;">
@@ -31,50 +31,106 @@
 
         <!-- Project Overview Card -->
         <div class="project-overview-section">
-            <div class="project-card main-project">
-                <img src="{% static 'images/image6.jpg' %}" alt="Project Image" class="project-image">
-                <div class="project-content">
-                    <div class="project-header">
-                        <h3 class="project-title" id="projectTitle">{% if profile.project_name %}{{ profile.project_name }}{% else %}No Project Assigned{% endif %}</h3>
+            {% if client_projects %}
+                {% for project in client_projects %}
+                <div class="project-card main-project" style="margin-bottom: 20px;">
+                    <img src="{% if project.image %}{{ project.image.url }}{% else %}{% static 'images/image6.jpg' %}{% endif %}" alt="{{ project.name }} Image" class="project-image">
+                    <div class="project-content">
+                        <div class="project-header">
+                            <h3 class="project-title" id="projectTitle">{{ project.name }}</h3>
+                        </div>
+                        <p class="project-description" id="projectDescription">{{ project.description|default:"Construction project in progress" }}</p>
+                        <div class="project-meta">
+                            <div class="meta-item">
+                                <i class="fas fa-user-tie"></i>
+                                <span id="projectArchitect">{{ project.project_manager.get_full_name|default:project.project_manager.username }}</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fas fa-calendar"></i>
+                                <span id="projectDates">{{ project.start_date|date:"M Y" }}{% if project.expected_end_date %} - {{ project.expected_end_date|date:"M Y" }}{% else %} - Ongoing{% endif %}</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fas fa-cog"></i>
+                                <span id="currentPhase">{{ project.get_status_display }}</span>
+                            </div>
+                        </div>
+                        <div class="card-actions">
+                            <a href="{% url 'core:client_project_detail' project.id %}" class="btn btn-primary">View Project Details</a>
+                        </div>
                     </div>
-                    <p class="project-description" id="projectDescription">{% if profile.project_name %}{{ profile.project_name }} - Construction project managed by {{ profile.assigned_architect|default:"Triple G Team" }}{% else %}No project description available{% endif %}</p>
-                    <div class="project-meta">
-                        <div class="meta-item">
-                            <i class="fas fa-user-tie"></i>
-                            <span id="projectArchitect">{{ profile.assigned_architect|default:"Not Assigned" }}</span>
+                    <div class="progress-circle-container">
+                        <div class="project-code" id="projectCode">PRJ-{{ project.created_at.year }}-{{ project.id|stringformat:"03d" }}</div>
+                        <div class="progress-circle" id="overallProgress">
+                            <div class="progress-value">{% if project.status == 'completed' %}100%{% elif project.status == 'active' %}65%{% else %}25%{% endif %}</div>
+                            <div class="progress-label">Complete</div>
                         </div>
-                        <div class="meta-item">
-                            <i class="fas fa-calendar"></i>
-                            <span id="projectDates">{% if profile.project_start %}{{ profile.project_start|date:"M Y" }} - Ongoing{% else %}Not Started{% endif %}</span>
-                        </div>
-                        <div class="meta-item">
-                            <i class="fas fa-cog"></i>
-                            <span id="currentPhase">{% if profile.project_name %}In Progress{% else %}Planning{% endif %}</span>
-                        </div>
-                    </div>
-                    <div class="card-actions">
-                        <a href="#" class="btn btn-primary">View Project Details</a>
                     </div>
                 </div>
-                <div class="progress-circle-container">
-                    <div class="project-code" id="projectCode">PRJ-2024-001</div>
-                    <div class="progress-circle" id="overallProgress">
-                        <div class="progress-value">65%</div>
-                        <div class="progress-label">Complete</div>
+                {% endfor %}
+            {% else %}
+                <div class="project-card main-project" style="margin-bottom: 20px;">
+                    <img src="{% static 'images/image6.jpg' %}" alt="No Project" class="project-image">
+                    <div class="project-content">
+                        <div class="project-header">
+                            <h3 class="project-title" id="projectTitle">No Project Assigned</h3>
+                        </div>
+                        <p class="project-description" id="projectDescription">No project description available</p>
+                        <div class="project-meta">
+                            <div class="meta-item">
+                                <i class="fas fa-user-tie"></i>
+                                <span id="projectArchitect">Not Assigned</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fas fa-calendar"></i>
+                                <span id="projectDates">Not Started</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fas fa-cog"></i>
+                                <span id="currentPhase">Planning</span>
+                            </div>
+                        </div>
+                        <div class="card-actions">
+                            <a href="#" class="btn btn-primary">Contact Us</a>
+                        </div>
+                    </div>
+                    <div class="progress-circle-container">
+                        <div class="project-code" id="projectCode">No Project</div>
+                        <div class="progress-circle" id="overallProgress">
+                            <div class="progress-value">0%</div>
+                            <div class="progress-label">Complete</div>
+                        </div>
                     </div>
                 </div>
-            </div>
+            {% endif %}
         </div>
 
-        <!-- Progress Analytics Section -->
+        <!-- Quick Stats Section -->
         <div class="analytics-section">
             <div class="analytics-card">
                 <div class="analytics-icon">
                     <i class="fas fa-chart-line"></i>
                 </div>
                 <div class="analytics-content">
-                    <div class="analytics-value" id="overallProgressPercent">65%</div>
-                    <div class="analytics-label">Overall Progress</div>
+                    <div class="analytics-value">{{ total_projects }}</div>
+                    <div class="analytics-label">Total Projects</div>
+                </div>
+            </div>
+            <div class="analytics-card">
+                <div class="analytics-icon">
+                    <i class="fas fa-cog"></i>
+                </div>
+                <div class="analytics-content">
+                    <div class="analytics-value">{{ active_projects }}</div>
+                    <div class="analytics-label">Active Projects</div>
+                </div>
+            </div>
+            <div class="analytics-card">
+                <div class="analytics-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="analytics-content">
+                    <div class="analytics-value">{{ completed_projects }}</div>
+                    <div class="analytics-label">Completed</div>
                 </div>
             </div>
             <div class="analytics-card">
@@ -82,142 +138,8 @@
                     <i class="fas fa-clock"></i>
                 </div>
                 <div class="analytics-content">
-                    <div class="analytics-value" id="daysRemaining">287</div>
-                    <div class="analytics-label">Days Remaining</div>
-                </div>
-            </div>
-            <div class="analytics-card">
-                <div class="analytics-icon">
-                    <i class="fas fa-dollar-sign"></i>
-                </div>
-                <div class="analytics-content">
-                    <div class="analytics-value" id="budgetUsed">62%</div>
-                    <div class="analytics-label">Budget Used</div>
-                </div>
-            </div>
-            <div class="analytics-card">
-                <div class="analytics-icon">
-                    <i class="fas fa-tasks"></i>
-                </div>
-                <div class="analytics-content">
-                    <div class="analytics-value" id="phasesCompleted">2/4</div>
-                    <div class="analytics-label">Phases Complete</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Milestone Timeline Section -->
-        <div class="timeline-section">
-            <h2 class="section-title">Project Timeline</h2>
-            <div class="timeline-container">
-                <div class="milestone completed" data-phase="planning">
-                    <div class="milestone-dot"></div>
-                    <div class="milestone-content">
-                        <h4>Planning & Design</h4>
-                        <p>Target: Jan 2024</p>
-                        <span class="status-badge completed">Completed</span>
-                    </div>
-                </div>
-                <div class="milestone completed" data-phase="foundation">
-                    <div class="milestone-dot"></div>
-                    <div class="milestone-content">
-                        <h4>Foundation Work</h4>
-                        <p>Target: Mar 2024</p>
-                        <span class="status-badge completed">Completed</span>
-                    </div>
-                </div>
-                <div class="milestone current" data-phase="structure">
-                    <div class="milestone-dot"></div>
-                    <div class="milestone-content">
-                        <h4>Structural Framework</h4>
-                        <p>Target: Sep 2024</p>
-                        <span class="status-badge in-progress">In Progress</span>
-                    </div>
-                </div>
-                <div class="milestone pending" data-phase="finishing">
-                    <div class="milestone-dot"></div>
-                    <div class="milestone-content">
-                        <h4>Finishing & Handover</h4>
-                        <p>Target: Dec 2025</p>
-                        <span class="status-badge pending">Pending</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Activity Feed and Budget Summary -->
-        <div class="bottom-section">
-            <!-- Activity Feed -->
-            <div class="activity-section">
-                <h2 class="section-title">Recent Updates</h2>
-                <div class="activity-feed" id="activityFeed">
-                    <div class="activity-item">
-                        <div class="activity-date">Dec 15, 2024</div>
-                        <div class="activity-content">
-                            <h4>Concrete pouring completed for Level 15</h4>
-                            <p>Structural work progressing on schedule</p>
-                        </div>
-                        <div class="activity-icon">
-                            <i class="fas fa-hammer"></i>
-                        </div>
-                    </div>
-                    <div class="activity-item">
-                        <div class="activity-date">Dec 12, 2024</div>
-                        <div class="activity-content">
-                            <h4>Steel framework installation</h4>
-                            <p>Level 14-15 framework completed</p>
-                        </div>
-                        <div class="activity-icon">
-                            <i class="fas fa-tools"></i>
-                        </div>
-                    </div>
-                    <div class="activity-item">
-                        <div class="activity-date">Dec 10, 2024</div>
-                        <div class="activity-content">
-                            <h4>Safety inspection passed</h4>
-                            <p>All safety protocols verified</p>
-                        </div>
-                        <div class="activity-icon">
-                            <i class="fas fa-shield-alt"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Budget Summary -->
-            <div class="budget-section">
-                <h2 class="section-title">Budget Summary</h2>
-                <div class="budget-widget">
-                    <div class="budget-item">
-                        <span class="budget-label">Total Budget</span>
-                        <span class="budget-value" id="totalBudget">₱2,500,000</span>
-                    </div>
-                    <div class="budget-item">
-                        <span class="budget-label">Used</span>
-                        <span class="budget-value used" id="usedBudget">₱1,550,000</span>
-                    </div>
-                    <div class="budget-item">
-                        <span class="budget-label">Remaining</span>
-                        <span class="budget-value remaining" id="remainingBudget">₱950,000</span>
-                    </div>
-                    <div class="budget-progress">
-                        <div class="budget-bar" id="budgetBar" style="width: 62%;"></div>
-                    </div>
-                </div>
-
-                <!-- Weather Widget -->
-                <div class="weather-widget">
-                    <h3>Site Weather</h3>
-                    <div class="weather-content">
-                        <div class="weather-icon">
-                            <i class="fas fa-sun"></i>
-                        </div>
-                        <div class="weather-info">
-                            <div class="temperature">24°C</div>
-                            <div class="condition">Sunny</div>
-                            <div class="humidity">Humidity: 65%</div>
-                        </div>
-                    </div>
+                    <div class="analytics-value">{{ planning_projects }}</div>
+                    <div class="analytics-label">Planning</div>
                 </div>
             </div>
         </div>

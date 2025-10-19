@@ -344,9 +344,29 @@ def newproject(request):
     if request.method == 'POST':
         # Handle form data from JavaScript
         try:
+            client_name = request.POST.get('client_name')
+            client_email = request.POST.get('client_email', '')
+            
+            # Try to find existing client by email or name
+            client_user = None
+            if client_email:
+                try:
+                    from django.contrib.auth.models import User
+                    client_user = User.objects.get(email=client_email)
+                except User.DoesNotExist:
+                    # Try to find by name if email doesn't match
+                    try:
+                        client_user = User.objects.filter(
+                            first_name__icontains=client_name.split()[0] if client_name else '',
+                            last_name__icontains=client_name.split()[-1] if len(client_name.split()) > 1 else ''
+                        ).first()
+                    except:
+                        pass
+            
             project = Project.objects.create(
                 name=request.POST.get('name'),
-                client_name=request.POST.get('client_name'),
+                client_name=client_name,
+                client=client_user,  # Link to user account if found
                 location=request.POST.get('location'),
                 description=request.POST.get('description', ''),
                 budget=float(request.POST.get('budget', 0)) if request.POST.get('budget') else None,
@@ -356,6 +376,20 @@ def newproject(request):
                 status='planning',
                 image=request.FILES.get('image') if 'image' in request.FILES else None
             )
+            
+            # Update client's profile if linked
+            if client_user:
+                try:
+                    from accounts.models import Profile
+                    profile, created = Profile.objects.get_or_create(user=client_user)
+                    if not profile.project_name:
+                        profile.project_name = project.name
+                        profile.project_start = project.start_date
+                        profile.save()
+                        messages.info(request, f'Client account linked and updated for {client_user.get_full_name() or client_user.username}')
+                except Exception as e:
+                    print(f"Error updating client profile: {e}")
+            
             messages.success(request, f'Project "{project.name}" created successfully!')
             return redirect('site_diary:dashboard')
         except Exception as e:
