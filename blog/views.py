@@ -136,6 +136,9 @@ def createblog(request):
             # Extract form data
             title = request.POST.get('title')
             content = request.POST.get('content')
+            # Unescape HTML entities in content
+            import html
+            content = html.unescape(content) if content else ''
             excerpt = request.POST.get('excerpt', '')
             category_id = request.POST.get('category')
             # Check if this is an edit operation

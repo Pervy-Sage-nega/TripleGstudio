@@ -10,6 +10,7 @@ from django.utils import timezone
 from accounts.models import AdminProfile, SiteManagerProfile, Profile
 from django.contrib.auth.models import User
 from site_diary.models import Project
+from blog.models import BlogPost
 from django.db.models import Count
 from django.contrib.sessions.models import Session
 from .decorators import require_admin_role, ajax_require_admin_role
@@ -22,6 +23,16 @@ def admin_home(request):
     """Admin dashboard home page"""
     admin_profile = AdminProfile.objects.get(user=request.user)
     
+    # Get blog statistics
+    all_posts = BlogPost.objects.filter(is_deleted=False)
+    total_posts = all_posts.count()
+    published_posts = all_posts.filter(status='published').count()
+    draft_posts = all_posts.filter(status='draft').count()
+    pending_posts = all_posts.filter(status='pending').count()
+    
+    # Get recent blog posts
+    recent_posts = BlogPost.objects.filter(is_deleted=False).order_by('-created_date')[:3]
+    
     # Get dashboard statistics
     context = {
         'total_users': User.objects.count(),
@@ -31,6 +42,12 @@ def admin_home(request):
         'pending_site_managers': SiteManagerProfile.objects.filter(approval_status='pending').count(),
         'admin_profile': admin_profile,
         'user': request.user,
+        # Blog statistics
+        'total_posts': total_posts,
+        'published_posts': published_posts,
+        'draft_posts': draft_posts,
+        'pending_posts': pending_posts,
+        'recent_posts': recent_posts,
     }
     
     return render(request, 'adminhome.html', context)

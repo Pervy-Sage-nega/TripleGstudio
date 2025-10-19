@@ -2,6 +2,7 @@
 {% extends 'layout.html' %}
 {% load static %}
 {% load profile_tags %}
+{% load blog_filters %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -113,7 +114,7 @@
 
                     <!-- Post Content -->
                     <div class="post-content">
-                        {{ blog_post.content|safe }}
+                        {{ blog_post.content|unescape_html|safe }}
                     </div>
 
                     <!-- Post Tags -->

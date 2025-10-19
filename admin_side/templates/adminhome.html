@@ -214,34 +214,36 @@
                 <div class="section-header">
                     <div class="section-title"><i class="fas fa-blog"></i> Blog Management</div>
                     <div class="blog-actions">
-                        <a href="{% url 'blog:create_blog_post' %}" class="btn btn-primary"><i class="fas fa-plus"></i> New Post</a>
+                        <a href="{% url 'blog:createblog' %}" class="btn btn-primary"><i class="fas fa-plus"></i> New Post</a>
                         <a href="{% url 'blog:blogmanagement' %}" class="btn btn-secondary"><i class="fas fa-cog"></i> Manage</a>
                     </div>
                 </div>
                 <div class="blog-stats">
                     <div class="stat-item">
-                        <span class="stat-number">{{ total_posts|default:"12" }}</span>
+                        <span class="stat-number">{{ total_posts|default:"0" }}</span>
                         <span class="stat-label">Total Posts</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-number">{{ published_posts|default:"8" }}</span>
+                        <span class="stat-number">{{ published_posts|default:"0" }}</span>
                         <span class="stat-label">Published</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-number">{{ draft_posts|default:"3" }}</span>
+                        <span class="stat-number">{{ draft_posts|default:"0" }}</span>
                         <span class="stat-label">Drafts</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-number">{{ pending_posts|default:"1" }}</span>
+                        <span class="stat-number">{{ pending_posts|default:"0" }}</span>
                         <span class="stat-label">Pending</span>
                     </div>
                 </div>
                 <div class="recent-posts">
                     <h4>Recent Posts</h4>
                     <ul class="post-list">
-                        <li><a href="#">Project Update: CBD Tower Progress</a> <span class="post-status published">Published</span></li>
-                        <li><a href="#">Construction Safety Guidelines</a> <span class="post-status draft">Draft</span></li>
-                        <li><a href="#">New Equipment Arrival</a> <span class="post-status pending">Pending</span></li>
+                        {% for post in recent_posts %}
+                        <li><a href="{% url 'blog:blog_detail' post.slug %}">{{ post.title|truncatechars:40 }}</a> <span class="post-status {{ post.status }}">{{ post.get_status_display }}</span></li>
+                        {% empty %}
+                        <li>No recent posts available</li>
+                        {% endfor %}
                     </ul>
                 </div>
             </div>
@@ -255,7 +257,7 @@
                         <i class="fas fa-plus-circle"></i>
                         <span>Add Project</span>
                     </a>
-                    <a class="quick-action-item" href="{% url 'blog:create_blog_post' %}">
+                    <a class="quick-action-item" href="{% url 'blog:createblog' %}">
                         <i class="fas fa-pen"></i>
                         <span>Write Blog</span>
                     </a>

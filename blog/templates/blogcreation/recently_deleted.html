@@ -21,7 +21,7 @@
                 <h1>Recently Deleted</h1>
             </div>
             <div class="header-actions">
-                <a href="{% url 'site_diary:drafts' %}" class="btn btn-secondary">
+                <a href="{% url 'blog:drafts' %}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Back to Drafts
                 </a>
             </div>
@@ -84,7 +84,7 @@
                                     <i class="fas fa-inbox"></i>
                                     <h3>No Recently Deleted Posts</h3>
                                     <p>You don't have any recently deleted blog posts.</p>
-                                    <a href="{% url 'site_diary:drafts' %}" class="btn btn-primary">
+                                    <a href="{% url 'blog:drafts' %}" class="btn btn-primary">
                                         <i class="fas fa-arrow-left"></i> Back to Drafts
                                     </a>
                                 </div>
@@ -204,13 +204,13 @@
             // Confirm buttons
             document.getElementById('restore-confirm-btn').addEventListener('click', function() {
                 if (currentBlogId) {
-                    window.location.href = `{% url 'site_diary:restore_blog' 0 %}`.replace('0', currentBlogId);
+                    window.location.href = `{% url 'blog:admin_restore_blog' 0 %}`.replace('0', currentBlogId);
                 }
             });
 
             document.getElementById('delete-confirm-btn').addEventListener('click', function() {
                 if (currentBlogId) {
-                    window.location.href = `{% url 'site_diary:permanent_delete_blog' 0 %}`.replace('0', currentBlogId);
+                    window.location.href = `{% url 'blog:admin_permanent_delete_blog' 0 %}`.replace('0', currentBlogId);
                 }
             });
 

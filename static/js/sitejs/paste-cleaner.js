@@ -17,6 +17,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 const cleanedContent = cleanPastedContent(pastedData);
                 document.execCommand('insertHTML', false, cleanedContent);
                 
+                // Save current selection
+                const selection = window.getSelection();
+                const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+                
                 // Trigger content sync if available
                 const contentField = document.getElementById('blogContent');
                 if (contentField) {
@@ -40,6 +44,29 @@ function cleanPastedContent(html) {
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = html;
     
+    // Convert Word bold formatting to proper HTML
+    const boldSpans = tempDiv.querySelectorAll('span');
+    boldSpans.forEach(span => {
+        const style = span.getAttribute('style') || '';
+        if (style.includes('font-weight:bold') || style.includes('font-weight: bold') || style.includes('font-weight:700')) {
+            const strong = document.createElement('strong');
+            strong.innerHTML = span.innerHTML;
+            span.replaceWith(strong);
+        } else if (style.includes('font-style:italic') || style.includes('font-style: italic')) {
+            const em = document.createElement('em');
+            em.innerHTML = span.innerHTML;
+            span.replaceWith(em);
+        }
+    });
+    
+    // Handle Word's <b> tags that might be nested in spans
+    const bTags = tempDiv.querySelectorAll('b');
+    bTags.forEach(b => {
+        const strong = document.createElement('strong');
+        strong.innerHTML = b.innerHTML;
+        b.replaceWith(strong);
+    });
+    
     // Remove Google Docs specific elements
     const googleDocsSpans = tempDiv.querySelectorAll('span[id*="docs-internal-guid"]');
     googleDocsSpans.forEach(span => {
@@ -50,45 +77,24 @@ function cleanPastedContent(html) {
     const styleElements = tempDiv.querySelectorAll('style');
     styleElements.forEach(style => style.remove());
     
-    // Remove HTML comments
-    const walker = document.createTreeWalker(tempDiv, NodeFilter.SHOW_COMMENT);
-    const comments = [];
-    let comment;
-    while (comment = walker.nextNode()) {
-        comments.push(comment);
-    }
-    comments.forEach(comment => comment.remove());
-    
-    // Remove empty paragraphs and excessive line breaks
-    const emptyElements = tempDiv.querySelectorAll('p:empty, div:empty, span:empty, br + br');
-    emptyElements.forEach(el => el.remove());
-    
-    // Clean up multiple consecutive line breaks
-    let htmlContent = tempDiv.innerHTML;
-    htmlContent = htmlContent.replace(/(<br\s*\/?\s*>\s*){3,}/gi, '<br><br>');
-    htmlContent = htmlContent.replace(/(<p[^>]*>\s*<\/p>\s*){2,}/gi, '');
-    htmlContent = htmlContent.replace(/^\s*(<br\s*\/?\s*>\s*)+/gi, '');
-    tempDiv.innerHTML = htmlContent;
-    
     // Clean all elements
     const allElements = tempDiv.querySelectorAll('*');
     allElements.forEach(element => {
-        // Remove all style attributes and classes
-        element.removeAttribute('style');
-        element.removeAttribute('class');
-        element.removeAttribute('id');
-        element.removeAttribute('face');
-        element.removeAttribute('size');
-        element.removeAttribute('color');
-        
-        // Keep only essential formatting tags (including bold)
+        // Keep only essential formatting tags
         const allowedTags = ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 'h2', 'h3', 'ul', 'ol', 'li', 'hr'];
         
-        if (!allowedTags.includes(element.tagName.toLowerCase())) {
+        if (allowedTags.includes(element.tagName.toLowerCase())) {
+            // Remove attributes but keep the tag
+            element.removeAttribute('style');
+            element.removeAttribute('class');
+            element.removeAttribute('id');
+            element.removeAttribute('face');
+            element.removeAttribute('size');
+            element.removeAttribute('color');
+        } else {
+            // Replace non-allowed tags with their content
             if (element.textContent.trim()) {
-                const p = document.createElement('p');
-                p.textContent = element.textContent;
-                element.replaceWith(p);
+                element.replaceWith(...element.childNodes);
             } else {
                 element.remove();
             }

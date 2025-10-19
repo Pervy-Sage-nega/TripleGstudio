@@ -12,12 +12,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .assignment-form {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid #e1e5e9;
+        }
+        .grid {
+            display: grid;
             max-width: 1400px;
             margin: 0 auto;
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         .form-group {
             margin-bottom: 20px;
@@ -30,29 +34,69 @@
         }
         .form-control {
             width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
             font-size: 14px;
+            transition: all 0.3s ease;
+            background: #ffffff;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        select.form-control {
+            max-height: none;
+            overflow: visible;
         }
         .btn {
-            padding: 12px 24px;
+            padding: 10px 20px;
             border: none;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
-            font-weight: 600;
+            
+            font-weight: 500;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
             gap: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
         }
         .btn-primary {
             background: #3c6e71;
             color: white;
+            margin-bottom: 10px;
+            border-color: #3c6e71;
+        }
+        .btn-primary:hover {
+            background: #2a5154;
         }
         .btn-secondary {
-            background: #6c757d;
-            color: white;
+            height: 36px;
+            margin-bottom: 10px;
+            padding: 0 12px;
+            border: 1px solid #dddddd;
+            background-color: white;
+            color: var(--dark-gray);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-secondary:hover {
+            background: #f8f9fa;
+            border-color: #adb5bd;
+        }
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
         }
         .assignments-list {
             margin-top: 30px;
@@ -61,10 +105,17 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px;
-            border: 1px solid #eee;
-            border-radius: 4px;
-            margin-bottom: 10px;
+            padding: 20px;
+            border: 1px solid #e1e5e9;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+        .assignment-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
         .assignment-info {
             flex: 1;
@@ -85,55 +136,97 @@
         </div>
     </div>
 
-    <div class="assignment-form">
-        <form method="post">
-            {% csrf_token %}
-            <div class="form-group">
-                <label for="site_manager">Site Manager</label>
-                <select name="site_manager" id="site_manager" class="form-control" required>
-                    <option value="">Select Site Manager</option>
-                    {% for manager in site_managers %}
-                        <option value="{{ manager.id }}">{{ manager.get_full_name }} ({{ manager.username }})</option>
-                    {% endfor %}
-                </select>
+    <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 30px;">
+        <!-- Multiple Assignment Form -->
+        <div class="assignment-form">
+            <div class="multi-assignment-section">
+                <h3>Assign Multiple Users to Project</h3>
+                <div class="form-group">
+                    <label for="multi_project">Select Project</label>
+                    <select id="multi_project" class="form-control">
+                        <option value="">Select Project</option>
+                        {% for project in projects %}
+                            <option value="{{ project.id }}">{{ project.name }} - {{ project.client_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div id="assignments-container" style="display: none;">
+                    <h4>Add Assignments</h4>
+                    <div id="assignment-rows"></div>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" id="add-assignment" class="btn btn-secondary">
+                            <i class="fas fa-plus"></i> Add Another Assignment
+                        </button>
+                        <button type="button" id="save-assignments" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save All Assignments
+                        </button>
+                    </div>
+                </div>
             </div>
+        </div>
+        
+        <!-- Single Assignment Form -->
+        <div class="assignment-form">
+            <div class="single-assignment-section">
+                <h3>Single Assignment</h3>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="user">Site Manager</label>
+                        <select name="user" id="user" class="form-control" required>
+                            <option value="">Select Site Manager</option>
+                            {% for manager in site_managers %}
+                                <option value="{{ manager.id }}">{{ manager.get_full_name }} ({{ manager.username }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-            <div class="form-group">
-                <label for="project">Project</label>
-                <select name="project" id="project" class="form-control" required>
-                    <option value="">Select Project</option>
-                    {% for project in projects %}
-                        <option value="{{ project.id }}">{{ project.name }} - {{ project.client_name }}</option>
-                    {% endfor %}
-                </select>
+                    <div class="form-group">
+                        <label for="project">Project</label>
+                        <select name="project" id="project" class="form-control" required>
+                            <option value="">Select Project</option>
+                            {% for project in projects %}
+                                <option value="{{ project.id }}">{{ project.name }} - {{ project.client_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="role">Role</label>
+                        <select name="role" id="role" class="form-control" required>
+                            <option value="">Select Role</option>
+                            {% for role_value, role_display in role_choices %}
+                                <option value="{{ role_value }}">{{ role_display }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <div style="display: flex; gap: 10px;">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Assign to Project
+                            </button>
+                            <a href="{% url 'admin_side:admin_user_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Users
+                            </a>
+                        </div>
+                    </div>
+                </form>
             </div>
+        </div>
+    </div>
 
-            <div class="form-group">
-                <label for="role">Role</label>
-                <select name="role" id="role" class="form-control" required>
-                    <option value="">Select Role</option>
-                    <option value="project_manager">Project Manager</option>
-                    <option value="architect">Architect</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> Assign to Project
-                </button>
-                <a href="{% url 'admin_side:admin_user_list' %}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Back to Users
-                </a>
-            </div>
-        </form>
-
+    <!-- Current Assignments -->
+    <div class="assignment-form" style="margin-top: 30px;">
         <div class="assignments-list">
             <h3>Current Assignments</h3>
             {% for assignment in current_assignments %}
                 <div class="assignment-item">
                     <div class="assignment-info">
                         <strong>{{ assignment.project.name }}</strong><br>
-                        <small>{{ assignment.user.get_full_name }} as {{ assignment.role|title }}</small>
+                        <small>{{ assignment.user.get_full_name }} as {{ assignment.get_role_display }}</small>
+                        <small style="color: #666;">Assigned on {{ assignment.assigned_date|date:"M d, Y" }}</small>
                     </div>
                     <div class="assignment-actions">
                         <a href="{% url 'admin_side:remove_assignment' assignment.id %}" class="btn btn-secondary btn-sm">
@@ -147,4 +240,119 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const multiProject = document.getElementById('multi_project');
+    const assignmentsContainer = document.getElementById('assignments-container');
+    const assignmentRows = document.getElementById('assignment-rows');
+    const addAssignmentBtn = document.getElementById('add-assignment');
+    const saveAssignmentsBtn = document.getElementById('save-assignments');
+    
+    const siteManagers = {{ site_managers_json|safe }};
+    const roleChoices = {{ role_choices_json|safe }};
+    
+    let assignmentCount = 0;
+    
+    multiProject.addEventListener('change', function() {
+        if (this.value) {
+            assignmentsContainer.style.display = 'block';
+            addAssignmentRow();
+        } else {
+            assignmentsContainer.style.display = 'none';
+            assignmentRows.innerHTML = '';
+            assignmentCount = 0;
+        }
+    });
+    
+    addAssignmentBtn.addEventListener('click', addAssignmentRow);
+    
+    function addAssignmentRow() {
+        const row = document.createElement('div');
+        row.className = 'assignment-row';
+        row.style.cssText = 'display: flex; gap: 10px; margin-bottom: 10px; align-items: center;';
+        
+        let userOptions = '<option value="">Select User</option>';
+        siteManagers.forEach(manager => {
+            userOptions += `<option value="${manager.id}">${manager.name} (${manager.username})</option>`;
+        });
+        
+        let roleOptions = '<option value="">Select Role</option>';
+        roleChoices.forEach(role => {
+            roleOptions += `<option value="${role.value}">${role.display}</option>`;
+        });
+        
+        row.innerHTML = `
+            <select class="form-control user-select" style="flex: 1;">
+                ${userOptions}
+            </select>
+            <select class="form-control role-select" style="flex: 1;">
+                ${roleOptions}
+            </select>
+            <button type="button" class="btn btn-secondary btn-sm remove-row">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        
+        assignmentRows.appendChild(row);
+        assignmentCount++;
+        
+        // Add remove functionality
+        row.querySelector('.remove-row').addEventListener('click', function() {
+            row.remove();
+            assignmentCount--;
+        });
+    }
+    
+    saveAssignmentsBtn.addEventListener('click', function() {
+        const projectId = multiProject.value;
+        if (!projectId) {
+            alert('Please select a project');
+            return;
+        }
+        
+        const assignments = [];
+        const rows = assignmentRows.querySelectorAll('.assignment-row');
+        
+        rows.forEach(row => {
+            const userId = row.querySelector('.user-select').value;
+            const role = row.querySelector('.role-select').value;
+            
+            if (userId && role) {
+                assignments.push({ user_id: userId, role: role });
+            }
+        });
+        
+        if (assignments.length === 0) {
+            alert('Please add at least one assignment');
+            return;
+        }
+        
+        // Send AJAX request
+        fetch('{% url "admin_side:assign_project" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                project_id: projectId,
+                assignments: assignments
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Error: ' + error.message);
+        });
+    });
+});
+</script>
 {% endblock %}

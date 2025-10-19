@@ -15,10 +15,11 @@
 /* Tag styling */
 .tag-container {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: center;
   gap: 6px;
   max-width: 200px;
+  min-height: 24px;
 }
 
 .blog-tag {
