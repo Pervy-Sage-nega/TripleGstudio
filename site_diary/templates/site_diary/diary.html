@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="{% static 'css/sitecss/global-footer.css' %}">
     <link rel="stylesheet" href="{% static 'css/admincss/nav.css' %}">
     <script src="{% static 'js/sitejs/diary.js' %}"></script>
-    <script src="{% static 'js/sitejs/weather.js' %}"></script>
+    <script src="{% static 'js/weather-api.js' %}"></script>
 {% endblock %}
 
 {% block body %}
@@ -60,7 +60,8 @@
                 </nav>
 
                 <div class="tabs-content">
-                    <form id="siteEntryForm">
+                    <form id="siteEntryForm" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
                         <!-- Project Info Tab -->
                         <section id="tab-project" class="tab-panel active" role="tabpanel" aria-labelledby="tab-btn-project">
                             <!-- Project Information Section -->
@@ -71,34 +72,18 @@
                                 </div>
                                 <div class="form-row">
                                     <div class="form-group">
-                                        <label for="projectSelect">Project Name *</label>
-                                        <select class="form-control" id="projectSelect" required>
-                                            <option value="">Select Project</option>
-                                            <option value="river-view">River View Residences</option>
-                                            <option value="central-tower">Central Business District Tower</option>
-                                            <option value="highway-bridge">Highway Bridge Expansion</option>
-                                            <option value="waterfront">Waterfront Development</option>
-                                        </select>
-                                        <div class="invalid-feedback">Please select a project</div>
+                                        <label for="{{ diary_form.project.id_for_label }}">Project Name *</label>
+                                        {{ diary_form.project }}
+                                        {% if diary_form.project.errors %}
+                                            <div class="invalid-feedback">{{ diary_form.project.errors.0 }}</div>
+                                        {% endif %}
                                     </div>
                                     <div class="form-group">
-                                        <label for="projectNumber">Project Number</label>
-                                        <input type="text" class="form-control" id="projectNumber" placeholder="Auto-filled based on project" readonly>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="projectBudget">Project Budget</label>
-                                        <input type="text" class="form-control" id="projectBudget" placeholder="Auto-filled based on project" readonly>
-                                    </div>
-                                </div>
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label for="location">Location</label>
-                                        <input type="text" class="form-control" id="location" placeholder="Auto-filled based on project" readonly>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="entryDate">Date *</label>
-                                        <input type="text" class="form-control flatpickr" id="entryDate" placeholder="Select Date" required>
-                                        <div class="invalid-feedback">Please select a date</div>
+                                        <label for="{{ diary_form.entry_date.id_for_label }}">Date *</label>
+                                        {{ diary_form.entry_date }}
+                                        {% if diary_form.entry_date.errors %}
+                                            <div class="invalid-feedback">{{ diary_form.entry_date.errors.0 }}</div>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
@@ -140,15 +125,59 @@
                                     <i class="fas fa-cloud-sun"></i>
                                     <h2 class="section-title">Weather Conditions</h2>
                                 </div>
+                                
+                                <!-- Weather Form Fields -->
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="{{ diary_form.weather_condition.id_for_label }}">Weather Condition</label>
+                                        {{ diary_form.weather_condition }}
+                                        {% if diary_form.weather_condition.errors %}
+                                            <div class="invalid-feedback">{{ diary_form.weather_condition.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="{{ diary_form.temperature_high.id_for_label }}">Temperature High (°C)</label>
+                                        {{ diary_form.temperature_high }}
+                                        {% if diary_form.temperature_high.errors %}
+                                            <div class="invalid-feedback">{{ diary_form.temperature_high.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="{{ diary_form.temperature_low.id_for_label }}">Temperature Low (°C)</label>
+                                        {{ diary_form.temperature_low }}
+                                        {% if diary_form.temperature_low.errors %}
+                                            <div class="invalid-feedback">{{ diary_form.temperature_low.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="{{ diary_form.humidity.id_for_label }}">Humidity (%)</label>
+                                        {{ diary_form.humidity }}
+                                        {% if diary_form.humidity.errors %}
+                                            <div class="invalid-feedback">{{ diary_form.humidity.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="{{ diary_form.wind_speed.id_for_label }}">Wind Speed (km/h)</label>
+                                        {{ diary_form.wind_speed }}
+                                        {% if diary_form.wind_speed.errors %}
+                                            <div class="invalid-feedback">{{ diary_form.wind_speed.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Weather Display Section -->
                                 <div class="weather-readings">
                                     <div class="weather-reading morning">
-                                        <h3><i class="fas fa-sun"></i> Morning Reading (8 AM)</h3>
+                                        <h3><i class="fas fa-sun"></i> Current Weather</h3>
                                         <div class="weather-data">
                                             <div class="weather-main">
                                                 <div class="weather-icon-large" id="morningWeatherIcon">
-                                                    <i class="fas fa-sync fa-spin"></i>
+                                                    <i class="fas fa-cloud text-secondary"></i>
                                                 </div>
-                                                <div class="weather-description" id="morningWeatherDesc">Loading...</div>
+                                                <div class="weather-description" id="morningWeatherDesc">Click "Fetch Weather" to load current conditions</div>
                                             </div>
                                             <div class="weather-details">
                                                 <div class="weather-detail">
@@ -170,56 +199,19 @@
                                             </div>
                                         </div>
                                     </div>
-                                    
-                                    <div class="weather-reading afternoon">
-                                        <h3><i class="fas fa-sun"></i> Afternoon Reading (2 PM)</h3>
-                                        <div class="weather-data">
-                                            <div class="weather-main">
-                                                <div class="weather-icon-large" id="afternoonWeatherIcon">
-                                                    <i class="fas fa-sync fa-spin"></i>
-                                                </div>
-                                                <div class="weather-description" id="afternoonWeatherDesc">Loading...</div>
-                                            </div>
-                                            <div class="weather-details">
-                                                <div class="weather-detail">
-                                                    <i class="fas fa-temperature-high"></i>
-                                                    <span id="afternoonTemp">--</span>°C
-                                                </div>
-                                                <div class="weather-detail">
-                                                    <i class="fas fa-wind"></i>
-                                                    <span id="afternoonWind">--</span> km/h
-                                                </div>
-                                                <div class="weather-detail">
-                                                    <i class="fas fa-tint"></i>
-                                                    <span id="afternoonHumidity">--</span>%
-                                                </div>
-                                                <div class="weather-detail">
-                                                    <i class="fas fa-cloud-rain"></i>
-                                                    <span id="afternoonPrecipitation">--</span> mm
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
                                 </div>
                                 
-                                <!-- Hidden inputs to store weather data -->
-                                <input type="hidden" id="weatherMorning" name="weatherMorning">
-                                <input type="hidden" id="weatherAfternoon" name="weatherAfternoon">
-                                
-                                <!-- Location input for manual override -->
+                                <!-- Location input for weather API -->
                                 <div class="form-row">
                                     <div class="form-group">
-                                        <label for="siteLocation">Site Location</label>
+                                        <label for="siteLocation">Site Location for Weather</label>
                                         <div class="input-group">
-                                            <input type="text" class="form-control" id="siteLocation" placeholder="Enter site location or allow automatic detection">
-                                            <button type="button" class="btn btn-secondary" id="detectLocation">
-                                                <i class="fas fa-location-arrow"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-primary" id="refreshWeather">
-                                                <i class="fas fa-sync-alt"></i> Refresh Weather
+                                            <input type="text" class="form-control" id="siteLocation" placeholder="Enter site location (e.g., Manila, Philippines)">
+                                            <button type="button" class="btn btn-primary" id="fetch-weather-btn">
+                                                <i class="fas fa-cloud-sun"></i> Fetch Weather
                                             </button>
                                         </div>
-                                        <small class="form-text text-muted">Weather data is automatically fetched for morning (8 AM) and afternoon (2 PM)</small>
+                                        <small class="form-text text-muted">Enter the location to fetch current weather data</small>
                                     </div>
                                 </div>
                             </div>
@@ -289,9 +281,18 @@
                                     <h2 class="section-title">Work Performed</h2>
                                 </div>
                                 <div class="form-group">
-                                    <label for="workPerformed">Description of Work Performed *</label>
-                                    <textarea class="form-control form-control-textarea" id="workPerformed" placeholder="Describe in detail the work performed today" required></textarea>
-                                    <div class="invalid-feedback">Please provide a description of work performed</div>
+                                    <label for="{{ diary_form.work_description.id_for_label }}">Description of Work Performed *</label>
+                                    {{ diary_form.work_description }}
+                                    {% if diary_form.work_description.errors %}
+                                        <div class="invalid-feedback">{{ diary_form.work_description.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ diary_form.progress_percentage.id_for_label }}">Progress Percentage (%)</label>
+                                    {{ diary_form.progress_percentage }}
+                                    {% if diary_form.progress_percentage.errors %}
+                                        <div class="invalid-feedback">{{ diary_form.progress_percentage.errors.0 }}</div>
+                                    {% endif %}
                                 </div>
                                 <div class="form-row">
                                     <div class="form-group">
@@ -473,6 +474,43 @@
 
                         <!-- Delays & Documentation Tab -->
                         <section id="tab-delays" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-delays">
+                            <!-- Quality and Safety Section -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-shield-alt"></i>
+                                    <h2 class="section-title">Quality and Safety</h2>
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ diary_form.quality_issues.id_for_label }}">Quality Issues</label>
+                                    {{ diary_form.quality_issues }}
+                                    {% if diary_form.quality_issues.errors %}
+                                        <div class="invalid-feedback">{{ diary_form.quality_issues.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ diary_form.safety_incidents.id_for_label }}">Safety Incidents</label>
+                                    {{ diary_form.safety_incidents }}
+                                    {% if diary_form.safety_incidents.errors %}
+                                        <div class="invalid-feedback">{{ diary_form.safety_incidents.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ diary_form.general_notes.id_for_label }}">General Notes</label>
+                                    {{ diary_form.general_notes }}
+                                    {% if diary_form.general_notes.errors %}
+                                        <div class="invalid-feedback">{{ diary_form.general_notes.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="form-group">
+                                    <div class="form-check">
+                                        {{ diary_form.photos_taken }}
+                                        <label class="form-check-label" for="{{ diary_form.photos_taken.id_for_label }}">
+                                            Photos were taken today
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <!-- Delays and Issues Section -->
                             <div class="form-section">
                                 <div class="section-header">
@@ -690,7 +728,7 @@
                             <div class="form-footer">
                                 <div class="save-status">
                                     <i class="fas fa-save"></i>
-                                    <span>Last saved: Today at 10:25 AM</span>
+                                    <span>Ready to submit</span>
                                 </div>
                                 <div class="action-buttons">
                                     <button type="button" class="btn btn-secondary" id="saveAsDraft">
@@ -709,3 +747,32 @@
     </div>
     {% include "site_diary/navtemplate/layoutfooter.html" %}
 {% endblock %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var saveAsDraftBtn = document.getElementById('saveAsDraft');
+    var siteEntryForm = document.getElementById('siteEntryForm');
+    
+    if (saveAsDraftBtn && siteEntryForm) {
+        saveAsDraftBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'save_as_draft';
+            input.value = '1';
+            siteEntryForm.appendChild(input);
+            siteEntryForm.submit();
+        });
+    }
+    
+    // Auto-fetch weather when page loads if location is available
+    var locationInput = document.getElementById('siteLocation');
+    if (locationInput && locationInput.value) {
+        setTimeout(() => {
+            if (typeof fetchWeatherData === 'function') {
+                fetchWeatherData();
+            }
+        }, 1000);
+    }
+});
+</script>

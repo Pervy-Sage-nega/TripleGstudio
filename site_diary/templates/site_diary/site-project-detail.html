@@ -1,0 +1,732 @@
+{% extends "site_diary/layout_format.html" %}
+{% load static %}
+
+{% block head %}
+    <title>{{ project.name|default:"Project Details" }} | Triple G BuildHub</title>
+    <link rel="stylesheet" href="{% static 'css/sitecss/global-footer.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/createblog.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/newproject.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .project-detail-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .project-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .project-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.1);
+            z-index: 1;
+        }
+        
+        .project-header-content {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .project-title-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+        
+        .project-main-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .project-status-badge {
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+        
+        .status-ongoing { background: #28a745; }
+        .status-planning { background: #ffc107; color: #333; }
+        .status-review { background: #17a2b8; }
+        .status-completed { background: #6c757d; }
+        .status-delayed { background: #dc3545; }
+        
+        .project-meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .meta-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .content-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        
+        .sidebar-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .detail-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            border: 1px solid #e9ecef;
+        }
+        
+        .card-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .progress-section {
+            margin-bottom: 25px;
+        }
+        
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .progress-percentage {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+        
+        .progress-track-large {
+            height: 12px;
+            background: #e9ecef;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        .progress-bar-large {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 6px;
+            transition: width 0.3s ease;
+        }
+        
+        .milestone-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        
+        .milestone-card {
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+        
+        .milestone-card.completed {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        
+        .milestone-card.active {
+            background: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+        
+        .milestone-card.pending {
+            background: #f8f9fa;
+            border-color: #dee2e6;
+            color: #6c757d;
+        }
+        
+        .milestone-icon {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+        }
+        
+        .milestone-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .milestone-date {
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #6c757d;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .info-value {
+            font-size: 1.1rem;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+        
+        .budget-breakdown {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .budget-item {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+        
+        .budget-amount {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
+        .budget-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        
+        .team-member {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            border-radius: 10px;
+            background: #f8f9fa;
+            margin-bottom: 10px;
+        }
+        
+        .member-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #667eea;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+        
+        .member-info {
+            flex: 1;
+        }
+        
+        .member-name {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 3px;
+        }
+        
+        .member-role {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+        
+        .btn-outline {
+            background: transparent;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        
+        .btn-outline:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-warning {
+            background: #ffc107;
+            color: #333;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .project-image-container {
+            margin-bottom: 20px;
+        }
+        
+        .project-main-image {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .recent-updates {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .update-item {
+            padding: 15px;
+            border-left: 4px solid #667eea;
+            background: #f8f9fa;
+            margin-bottom: 15px;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .update-date {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+        
+        .update-text {
+            color: #2c3e50;
+            line-height: 1.5;
+        }
+        
+        @media (max-width: 768px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .project-title-section {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .project-main-title {
+                font-size: 2rem;
+            }
+            
+            .project-meta-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-buttons {
+                justify-content: center;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="project-detail-container">
+        <!-- Project Header -->
+        <div class="project-header">
+            <div class="project-header-content">
+                <div class="project-title-section">
+                    <h1 class="project-main-title">{{ project.name|default:"Harbor Tower" }}</h1>
+                    <div class="project-status-badge status-{{ project.status|default:'ongoing' }}">
+                        {{ project.status|default:"Ongoing" }}
+                    </div>
+                </div>
+                
+                <div class="project-meta-grid">
+                    <div class="meta-item">
+                        <div class="meta-icon"><i class="fas fa-map-marker-alt"></i></div>
+                        <div>
+                            <div style="font-size: 0.9rem; opacity: 0.8;">Location</div>
+                            <div style="font-weight: 600;">{{ project.location|default:"Makati City, Philippines" }}</div>
+                        </div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-icon"><i class="fas fa-user-tie"></i></div>
+                        <div>
+                            <div style="font-size: 0.9rem; opacity: 0.8;">Client</div>
+                            <div style="font-weight: 600;">{{ project.client|default:"Harbor Development Corp." }}</div>
+                        </div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-icon"><i class="fas fa-calendar-alt"></i></div>
+                        <div>
+                            <div style="font-size: 0.9rem; opacity: 0.8;">Timeline</div>
+                            <div style="font-weight: 600;">{{ project.start_date|default:"Jan 2024" }} - {{ project.end_date|default:"Dec 2025" }}</div>
+                        </div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-icon"><i class="fas fa-peso-sign"></i></div>
+                        <div>
+                            <div style="font-size: 0.9rem; opacity: 0.8;">Budget</div>
+                            <div style="font-weight: 600;">₱{{ project.budget|default:"450,000,000" }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="content-grid">
+            <!-- Main Content -->
+            <div class="main-content">
+                <!-- Project Image -->
+                <div class="project-image-container">
+                    <img src="{% if project.image %}{{ project.image.url }}{% else %}{% static 'images/image6.jpg' %}{% endif %}" 
+                         alt="{{ project.name|default:'Project Image' }}" 
+                         class="project-main-image">
+                </div>
+
+                <!-- Progress Tracking -->
+                <div class="detail-card">
+                    <h3 class="card-title">
+                        <i class="fas fa-chart-line"></i>
+                        Project Progress
+                    </h3>
+                    
+                    <div class="progress-section">
+                        <div class="progress-header">
+                            <span style="font-weight: 600; color: #2c3e50;">Overall Completion</span>
+                            <span class="progress-percentage">{{ project.progress|default:"65" }}%</span>
+                        </div>
+                        <div class="progress-track-large">
+                            <div class="progress-bar-large" style="width: {{ project.progress|default:'65' }}%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="milestone-grid">
+                        <div class="milestone-card completed">
+                            <div class="milestone-icon"><i class="fas fa-check-circle"></i></div>
+                            <div class="milestone-title">Planning</div>
+                            <div class="milestone-date">Completed</div>
+                        </div>
+                        <div class="milestone-card completed">
+                            <div class="milestone-icon"><i class="fas fa-check-circle"></i></div>
+                            <div class="milestone-title">Foundation</div>
+                            <div class="milestone-date">Completed</div>
+                        </div>
+                        <div class="milestone-card active">
+                            <div class="milestone-icon"><i class="fas fa-cog fa-spin"></i></div>
+                            <div class="milestone-title">Structure</div>
+                            <div class="milestone-date">In Progress</div>
+                        </div>
+                        <div class="milestone-card pending">
+                            <div class="milestone-icon"><i class="fas fa-clock"></i></div>
+                            <div class="milestone-title">Finishing</div>
+                            <div class="milestone-date">Pending</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project Information -->
+                <div class="detail-card">
+                    <h3 class="card-title">
+                        <i class="fas fa-info-circle"></i>
+                        Project Information
+                    </h3>
+                    
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">Project Code</div>
+                            <div class="info-value">{{ project.code|default:"HT-2024-001" }}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Project Type</div>
+                            <div class="info-value">{{ project.type|default:"Commercial" }}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Assigned Architect</div>
+                            <div class="info-value">{{ project.architect|default:"Arch. Maria Santos" }}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Floor Area</div>
+                            <div class="info-value">{{ project.floor_area|default:"25,000 sqm" }}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Number of Floors</div>
+                            <div class="info-value">{{ project.floors|default:"35" }}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Expected Completion</div>
+                            <div class="info-value">{{ project.completion_date|default:"December 2025" }}</div>
+                        </div>
+                    </div>
+
+                    {% if project.description %}
+                    <div style="margin-top: 25px;">
+                        <div class="info-label" style="margin-bottom: 10px;">Description</div>
+                        <p style="line-height: 1.6; color: #2c3e50;">{{ project.description }}</p>
+                    </div>
+                    {% else %}
+                    <div style="margin-top: 25px;">
+                        <div class="info-label" style="margin-bottom: 10px;">Description</div>
+                        <p style="line-height: 1.6; color: #2c3e50;">
+                            Luxury commercial building with 35 floors, featuring premium office spaces and retail outlets. 
+                            The project incorporates sustainable design principles and state-of-the-art building management systems.
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="detail-card">
+                    <h3 class="card-title">
+                        <i class="fas fa-tools"></i>
+                        Project Actions
+                    </h3>
+                    
+                    <div class="action-buttons">
+                        <button class="btn btn-primary">
+                            <i class="fas fa-edit"></i>
+                            Update Progress
+                        </button>
+                        <button class="btn btn-outline">
+                            <i class="fas fa-file-alt"></i>
+                            View Reports
+                        </button>
+                        <button class="btn btn-success">
+                            <i class="fas fa-plus"></i>
+                            Add Update
+                        </button>
+                        <button class="btn btn-warning">
+                            <i class="fas fa-calendar-plus"></i>
+                            Schedule Meeting
+                        </button>
+                        <a href="{% url 'site_diary:dashboard' %}" class="btn btn-outline">
+                            <i class="fas fa-arrow-left"></i>
+                            Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar Content -->
+            <div class="sidebar-content">
+                <!-- Budget Overview -->
+                <div class="detail-card">
+                    <h3 class="card-title">
+                        <i class="fas fa-chart-pie"></i>
+                        Budget Overview
+                    </h3>
+                    
+                    <div class="budget-breakdown">
+                        <div class="budget-item">
+                            <div class="budget-amount">₱{{ project.total_budget|default:"450M" }}</div>
+                            <div class="budget-label">Total Budget</div>
+                        </div>
+                        <div class="budget-item">
+                            <div class="budget-amount">₱{{ project.used_budget|default:"279M" }}</div>
+                            <div class="budget-label">Used (62%)</div>
+                        </div>
+                        <div class="budget-item">
+                            <div class="budget-amount">₱{{ project.remaining_budget|default:"171M" }}</div>
+                            <div class="budget-label">Remaining</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Team Members -->
+                <div class="detail-card">
+                    <h3 class="card-title">
+                        <i class="fas fa-users"></i>
+                        Project Team
+                    </h3>
+                    
+                    <div class="team-member">
+                        <div class="member-avatar">MS</div>
+                        <div class="member-info">
+                            <div class="member-name">Maria Santos</div>
+                            <div class="member-role">Lead Architect</div>
+                        </div>
+                    </div>
+                    
+                    <div class="team-member">
+                        <div class="member-avatar">JR</div>
+                        <div class="member-info">
+                            <div class="member-name">Juan Rodriguez</div>
+                            <div class="member-role">Project Manager</div>
+                        </div>
+                    </div>
+                    
+                    <div class="team-member">
+                        <div class="member-avatar">AC</div>
+                        <div class="member-info">
+                            <div class="member-name">Anna Cruz</div>
+                            <div class="member-role">Site Engineer</div>
+                        </div>
+                    </div>
+                    
+                    <div class="team-member">
+                        <div class="member-avatar">DL</div>
+                        <div class="member-info">
+                            <div class="member-name">David Lee</div>
+                            <div class="member-role">Safety Officer</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Updates -->
+                <div class="detail-card">
+                    <h3 class="card-title">
+                        <i class="fas fa-clock"></i>
+                        Recent Updates
+                    </h3>
+                    
+                    <div class="recent-updates">
+                        <div class="update-item">
+                            <div class="update-date">December 15, 2024</div>
+                            <div class="update-text">Foundation work completed ahead of schedule. Moving to structural phase next week.</div>
+                        </div>
+                        
+                        <div class="update-item">
+                            <div class="update-date">December 10, 2024</div>
+                            <div class="update-text">Safety inspection passed with excellent ratings. All safety protocols are being followed.</div>
+                        </div>
+                        
+                        <div class="update-item">
+                            <div class="update-date">December 5, 2024</div>
+                            <div class="update-text">Material delivery scheduled for next week. Steel beams and concrete supplies confirmed.</div>
+                        </div>
+                        
+                        <div class="update-item">
+                            <div class="update-date">November 28, 2024</div>
+                            <div class="update-text">Monthly progress review completed. Project is 65% complete and on track for December 2025 completion.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add interactive functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Progress animation
+            const progressBar = document.querySelector('.progress-bar-large');
+            if (progressBar) {
+                setTimeout(() => {
+                    progressBar.style.width = progressBar.style.width;
+                }, 500);
+            }
+
+            // Button interactions
+            document.querySelectorAll('.btn').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    if (!this.getAttribute('href')) {
+                        e.preventDefault();
+                        // Add your button functionality here
+                        console.log('Button clicked:', this.textContent.trim());
+                    }
+                });
+            });
+
+            // Milestone hover effects
+            document.querySelectorAll('.milestone-card').forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-5px)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                });
+            });
+        });
+    </script>
+
+    <script src="{% static 'js/sitejs/mobile-btn.js' %}"></script>
+{% endblock %}
+
+{% include "site_diary/navtemplate/layoutfooter.html" %}

@@ -16,14 +16,19 @@ from .models import (
 from .forms import (
     ProjectForm, DiaryEntryForm, LaborEntryFormSet, MaterialEntryFormSet,
     EquipmentEntryFormSet, DelayEntryFormSet, VisitorEntryFormSet, 
-    DiaryPhotoFormSet, DiarySearchForm, ProjectSearchForm
+    DiaryPhotoFormSet, DiarySearchForm, DiaryEntrySearchForm, ProjectSearchForm
 )
+from django.views.decorators.csrf import csrf_exempt
+import requests
+
+OPENWEATHERMAP_API_KEY = "0c461dd2b831a59146501773674950cd"
 
 # Create your views here.
 @require_site_manager_role
 def diary(request):
-    """Create new diary entry with all related data"""
+    """Create new diary entry with all related data, including Save as Draft support"""
     if request.method == 'POST':
+        save_as_draft = request.POST.get('save_as_draft') == '1'
         diary_form = DiaryEntryForm(request.POST)
         labor_formset = LaborEntryFormSet(request.POST, prefix='labor')
         material_formset = MaterialEntryFormSet(request.POST, prefix='material')
@@ -32,14 +37,15 @@ def diary(request):
         visitor_formset = VisitorEntryFormSet(request.POST, prefix='visitor')
         photo_formset = DiaryPhotoFormSet(request.POST, request.FILES, prefix='photo')
         
-        if (diary_form.is_valid() and labor_formset.is_valid() and 
-            material_formset.is_valid() and equipment_formset.is_valid() and
-            delay_formset.is_valid() and visitor_formset.is_valid() and
+        if (diary_form.is_valid() and labor_formset.is_valid() and \
+            material_formset.is_valid() and equipment_formset.is_valid() and \
+            delay_formset.is_valid() and visitor_formset.is_valid() and \
             photo_formset.is_valid()):
             
             # Save diary entry
             diary_entry = diary_form.save(commit=False)
             diary_entry.created_by = request.user
+            diary_entry.draft = save_as_draft
             diary_entry.save()
             
             # Save related entries
@@ -48,41 +54,51 @@ def diary(request):
                     labor_entry = form.save(commit=False)
                     labor_entry.diary_entry = diary_entry
                     labor_entry.save()
-            
             for form in material_formset:
                 if form.cleaned_data and not form.cleaned_data.get('DELETE', False):
                     material_entry = form.save(commit=False)
                     material_entry.diary_entry = diary_entry
                     material_entry.save()
-            
             for form in equipment_formset:
                 if form.cleaned_data and not form.cleaned_data.get('DELETE', False):
                     equipment_entry = form.save(commit=False)
                     equipment_entry.diary_entry = diary_entry
                     equipment_entry.save()
-            
             for form in delay_formset:
                 if form.cleaned_data and not form.cleaned_data.get('DELETE', False):
                     delay_entry = form.save(commit=False)
                     delay_entry.diary_entry = diary_entry
                     delay_entry.save()
-            
             for form in visitor_formset:
                 if form.cleaned_data and not form.cleaned_data.get('DELETE', False):
                     visitor_entry = form.save(commit=False)
                     visitor_entry.diary_entry = diary_entry
                     visitor_entry.save()
-            
             for form in photo_formset:
                 if form.cleaned_data and not form.cleaned_data.get('DELETE', False):
                     photo_entry = form.save(commit=False)
                     photo_entry.diary_entry = diary_entry
                     photo_entry.save()
             
-            messages.success(request, 'Diary entry created successfully!')
-            return redirect('diary')
+            if save_as_draft:
+                messages.success(request, 'Diary draft saved successfully!')
+                return redirect('site_diary:sitedraft')
+            else:
+                messages.success(request, 'Diary entry created successfully!')
+                return redirect('site_diary:diary')
     else:
+        # Get user's projects for the form
+        if request.user.is_staff:
+            user_projects = Project.objects.all()
+        else:
+            user_projects = Project.objects.filter(
+                Q(project_manager=request.user) | Q(architect=request.user)
+            )
+        
         diary_form = DiaryEntryForm()
+        # Update the project field queryset
+        diary_form.fields['project'].queryset = user_projects
+        
         labor_formset = LaborEntryFormSet(prefix='labor')
         material_formset = MaterialEntryFormSet(prefix='material')
         equipment_formset = EquipmentEntryFormSet(prefix='equipment')
@@ -98,12 +114,13 @@ def diary(request):
         'delay_formset': delay_formset,
         'visitor_formset': visitor_formset,
         'photo_formset': photo_formset,
+        'user_projects': user_projects,
     }
     return render(request, 'site_diary/diary.html', context)
 
 @require_site_manager_role
 def dashboard(request):
-    """Site Manager Dashboard with comprehensive project overview"""
+    """Site Manager Enhanced dashboard with comprehensive comprehensive project overview"""
     # Get user's projects
     if request.user.is_staff:
         projects = Project.objects.all()
@@ -154,24 +171,114 @@ def dashboard(request):
     # Dashboard statistics
     total_projects = projects.count()
     active_projects = projects.filter(status='active').count()
-    on_schedule = sum(1 for p in project_data if p['schedule_status'] == 'On Track')
-    at_risk = sum(1 for p in project_data if p['schedule_status'] == 'At Risk')
-    completed_this_month = projects.filter(
-        status='completed',
-        updated_at__gte=timezone.now() - timedelta(days=30)
-    ).count()
+    completed_projects = projects.filter(status='completed').count()
+    total_entries = DiaryEntry.objects.filter(project__in=projects).count()
+    
+    # Recent delays
+    recent_delays = DelayEntry.objects.filter(
+        diary_entry__project__in=projects
+    ).select_related('diary_entry__project').order_by('-diary_entry__entry_date')[:5]
     
     context = {
-        'projects': project_data,
+        'projects': project_data[:5],  # Show only 5 recent projects with enhanced data
+        'recent_entries': recent_entries,
+        'recent_delays': recent_delays,
         'stats': {
             'total_projects': total_projects,
             'active_projects': active_projects,
-            'on_schedule': on_schedule,
-            'at_risk': at_risk,
-            'completed_this_month': completed_this_month,
+            'completed_projects': completed_projects,
+            'total_entries': total_entries,
+            'at_risk': sum(1 for p in project_data if p['schedule_status'] == 'At Risk'),
         }
     }
     return render(request, 'site_diary/dashboard.html', context)
+
+@require_site_manager_role
+def weather_api(request):
+    """Weather API endpoint for fetching weather data"""
+    if request.method == 'GET':
+        location = request.GET.get('location', '')
+        if location:
+            # Here you would integrate with the actual weather API
+            # For now, return mock data
+            weather_data = {
+                'temperature': 25,
+                'humidity': 60,
+                'wind_speed': 10,
+                'description': 'Partly Cloudy',
+                'location': location
+            }
+            return JsonResponse(weather_data)
+        return JsonResponse({'error': 'Location parameter required'}, status=400)
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+@require_site_manager_role
+def print_preview(request, project_id):
+    """Print preview for project"""
+    project = get_object_or_404(Project, id=project_id)
+    return render(request, 'site_diary/print_preview.html', {'project': project})
+
+@require_site_manager_role
+def sample_print(request):
+    """Sample print view"""
+    return render(request, 'site_diary/sample_print.html')
+
+@require_site_manager_role
+def generate_project_report(request, project_id):
+    """Generate project report API"""
+    project = get_object_or_404(Project, id=project_id)
+    # Generate report logic here
+    return JsonResponse({'status': 'success', 'report_url': f'/reports/{project_id}/'})
+
+@require_site_manager_role
+def api_filter_projects(request):
+    """API for filtering projects"""
+    if request.method == 'GET':
+        status = request.GET.get('status', '')
+        category = request.GET.get('category', '')
+        
+        projects = Project.objects.all()
+        if status:
+            projects = projects.filter(status=status)
+        if category:
+            projects = projects.filter(category=category)
+            
+        project_data = []
+        for project in projects:
+            project_data.append({
+                'id': project.id,
+                'name': project.name,
+                'status': project.status,
+                'client_name': project.client_name,
+            })
+        
+        return JsonResponse({'projects': project_data})
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+@require_site_manager_role
+def adminclientproject(request):
+    """Admin client project management"""
+    return render(request, 'site_diary/admin/clientproject.html')
+
+@require_site_manager_role
+def admindiary(request):
+    """Admin diary management"""
+    return render(request, 'site_diary/admin/diary.html')
+
+@require_site_manager_role
+def admindiaryreviewer(request):
+    """Admin diary reviewer"""
+    return render(request, 'site_diary/admin/diary_reviewer.html')
+
+@require_site_manager_role
+def adminhistory(request):
+    """Admin history view"""
+    return render(request, 'site_diary/admin/history.html')
+
+@require_site_manager_role
+def adminreports(request):
+    """Admin reports view"""
+    return render(request, 'site_diary/admin/reports.html')
 
 @require_site_manager_role
 def chatbot(request):
@@ -179,18 +286,159 @@ def chatbot(request):
 
 @require_site_manager_role
 def newproject(request):
-    """Create new project"""
+    """Create new project with enhanced validation and user experience"""
     if request.method == 'POST':
         form = ProjectForm(request.POST)
         if form.is_valid():
-            project = form.save()
+            project = form.save(commit=False)
+            # Set the project manager to the current user if not already set
+            if not project.project_manager:
+                project.project_manager = request.user
+            project.save()
             messages.success(request, f'Project "{project.name}" created successfully!')
-            return redirect('dashboard')
+            return redirect('site_diary:dashboard')
+        else:
+            messages.error(request, 'Please correct the errors below.')
     else:
-        form = ProjectForm()
+        # Pre-populate project manager with current user
+        form = ProjectForm(initial={'project_manager': request.user})
     
-    context = {'form': form}
+    context = {
+        'form': form,
+        'page_title': 'Create New Project'
+    }
     return render(request, 'site_diary/newproject.html', context)
+
+@login_required
+def project_list(request):
+    """List all projects with filtering and search capabilities"""
+    # Get user's projects
+    if request.user.is_staff:
+        projects = Project.objects.all()
+    else:
+        projects = Project.objects.filter(
+            Q(project_manager=request.user) | Q(architect=request.user)
+        )
+    
+    # Apply filters
+    search_form = ProjectSearchForm(request.GET)
+    if search_form.is_valid():
+        if search_form.cleaned_data.get('name'):
+            projects = projects.filter(name__icontains=search_form.cleaned_data['name'])
+        if search_form.cleaned_data.get('status'):
+            projects = projects.filter(status=search_form.cleaned_data['status'])
+        if search_form.cleaned_data.get('client_name'):
+            projects = projects.filter(client_name__icontains=search_form.cleaned_data['client_name'])
+        if search_form.cleaned_data.get('location'):
+            projects = projects.filter(location__icontains=search_form.cleaned_data['location'])
+    
+    # Pagination
+    paginator = Paginator(projects, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'search_form': search_form,
+        'page_title': 'Project List'
+    }
+    return render(request, 'site_diary/project_list.html', context)
+
+@login_required
+def project_detail(request, project_id):
+    """Detailed view of a specific project with all related information"""
+    project = get_object_or_404(Project, id=project_id)
+    
+    # Check if user has access to this project
+    if not request.user.is_staff and project.project_manager != request.user and project.architect != request.user:
+        messages.error(request, 'You do not have permission to view this project.')
+        return redirect('site_diary:dashboard')
+    
+    # Get project statistics
+    diary_entries = DiaryEntry.objects.filter(project=project).order_by('-entry_date')
+    total_entries = diary_entries.count()
+    draft_entries = diary_entries.filter(draft=True).count()
+    
+    # Get latest progress
+    latest_entry = diary_entries.filter(draft=False).first()
+    current_progress = latest_entry.progress_percentage if latest_entry else 0
+    
+    # Labor statistics
+    labor_stats = LaborEntry.objects.filter(
+        diary_entry__project=project
+    ).aggregate(
+        total_workers=Sum('workers_count'),
+        total_hours=Sum('hours_worked')
+    )
+    
+    # Material statistics
+    material_stats = MaterialEntry.objects.filter(
+        diary_entry__project=project
+    ).aggregate(
+        total_deliveries=Count('id'),
+        total_materials=Count('material_name')
+    )
+    
+    # Equipment statistics
+    equipment_stats = EquipmentEntry.objects.filter(
+        diary_entry__project=project
+    ).aggregate(
+        total_equipment=Count('id'),
+        total_hours=Sum('hours_operated')
+    )
+    
+    # Recent delays
+    recent_delays = DelayEntry.objects.filter(
+        diary_entry__project=project
+    ).select_related('diary_entry').order_by('-diary_entry__entry_date')[:5]
+    
+    # Recent visitors
+    recent_visitors = VisitorEntry.objects.filter(
+        diary_entry__project=project
+    ).select_related('diary_entry').order_by('-diary_entry__entry_date')[:5]
+    
+    context = {
+        'project': project,
+        'diary_entries': diary_entries[:10],  # Show last 10 entries
+        'total_entries': total_entries,
+        'draft_entries': draft_entries,
+        'current_progress': current_progress,
+        'labor_stats': labor_stats,
+        'material_stats': material_stats,
+        'equipment_stats': equipment_stats,
+        'recent_delays': recent_delays,
+        'recent_visitors': recent_visitors,
+        'page_title': f'Project: {project.name}'
+    }
+    return render(request, 'site_diary/project_detail.html', context)
+
+@login_required
+def project_edit(request, project_id):
+    """Edit an existing project"""
+    project = get_object_or_404(Project, id=project_id)
+    
+    # Check if user has permission to edit this project
+    if not request.user.is_staff and project.project_manager != request.user:
+        messages.error(request, 'You do not have permission to edit this project.')
+        return redirect('site_diary:project_detail', project_id=project_id)
+    
+    if request.method == 'POST':
+        form = ProjectForm(request.POST, instance=project)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Project "{project.name}" updated successfully!')
+            return redirect('site_diary:project_detail', project_id=project_id)
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = ProjectForm(instance=project)
+    
+    context = {
+        'form': form,
+        'project': project,
+        'page_title': f'Edit Project: {project.name}'
+    }
+    return render(request, 'site_diary/project_edit.html', context)
 
 @require_site_manager_role
 def createblog(request):
@@ -207,10 +455,10 @@ def createblog(request):
             blog_title = blog_post.title
             blog_post.delete()
             messages.success(request, f'Blog post "{blog_title}" deleted successfully!')
-            return redirect('site:drafts')
+            return redirect('site_diary:drafts')
         except (BlogPost.DoesNotExist, ValueError):
             messages.error(request, 'Blog post not found or you do not have permission to delete it.')
-            return redirect('site:drafts')
+            return redirect('site_diary:drafts')
     
     # Handle edit operation
     edit_blog = None
@@ -220,7 +468,7 @@ def createblog(request):
             edit_blog = BlogPost.objects.get(id=blog_id, author=request.user)
         except (BlogPost.DoesNotExist, ValueError):
             messages.error(request, 'Blog post not found or you do not have permission to edit it.')
-            return redirect('site:drafts')
+            return redirect('site_diary:drafts')
     
     if request.method == 'POST':
         try:
@@ -253,7 +501,7 @@ def createblog(request):
                     blog_post.save()
                 except BlogPost.DoesNotExist:
                     messages.error(request, 'Blog post not found or you do not have permission to edit it.')
-                    return redirect('site:drafts')
+                    return redirect('site_diary:drafts')
             else:
                 # Create new blog post with proper user isolation
                 blog_post = BlogPost.objects.create(
@@ -342,14 +590,14 @@ def createblog(request):
             # Success message and redirect
             if status == 'draft':
                 messages.success(request, 'Blog post saved as draft successfully!')
-                return redirect('site:drafts')  # Redirect to drafts page
+                return redirect('site_diary:drafts')  # Redirect to drafts page
             else:
                 messages.success(request, 'Blog post created successfully!')
-                return redirect('site:drafts')
+                return redirect('site_diary:drafts')
                 
         except Exception as e:
             messages.error(request, f'Error creating blog post: {str(e)}')
-            return redirect('site:createblog')
+            return redirect('site_diary:createblog')
     
     # GET request - show the form
     # Get categories and tags for the form
@@ -786,11 +1034,11 @@ def project_detail(request, project_id):
             'recent_diary_entries': recent_diary_entries,
             'project_timeline': project_timeline,
         }
-        return render(request, 'site_diary/project-detail.html', context)
-        
-    except Exception as e:
-        messages.error(request, f'Error loading project details: {str(e)}')
-        return redirect('site_diary:dashboard')
+        return render(request, 'site_diary/project_detail.html', context)
+    except:
+        # Fallback - redirect to dashboard if project doesn't exist
+        messages.info(request, 'Project details are not available yet.')
+        return redirect('site:dashboard')
 
 @login_required
 @require_site_manager_role
@@ -814,7 +1062,7 @@ def settings(request):
     except SiteManagerProfile.DoesNotExist:
         print(f"DEBUG: Site Manager profile not found for user: {request.user}")
         messages.error(request, 'Site Manager profile not found.')
-        return redirect('site:dashboard')
+        return redirect('site_diary:dashboard')
     
     if request.method == 'POST':
         print(f"DEBUG: POST request received")
@@ -891,99 +1139,6 @@ def settings(request):
             else:
                 for error in password_form.errors.values():
                     messages.error(request, error[0])
-        
-        elif action == 'update_notifications':
-            # Handle notification preferences
-            try:
-                # Get notification preferences from form
-                daily_log_alerts = request.POST.get('daily_log_alerts') == 'on'
-                milestone_updates = request.POST.get('milestone_updates') == 'on'
-                report_confirmations = request.POST.get('report_confirmations') == 'on'
-                weekly_summary = request.POST.get('weekly_summary') == 'on'
-                notification_delivery = request.POST.get('notification_delivery', 'in-app')
-                
-                # Store preferences in site manager profile or create a separate model
-                # For now, we'll store as JSON in a text field (you may want to create a separate model)
-                notification_prefs = {
-                    'daily_log_alerts': daily_log_alerts,
-                    'milestone_updates': milestone_updates,
-                    'report_confirmations': report_confirmations,
-                    'weekly_summary': weekly_summary,
-                    'notification_delivery': notification_delivery,
-                }
-                
-                # You might want to add a notification_preferences field to SiteManagerProfile
-                # For now, we'll just show success message
-                messages.success(request, 'Notification preferences updated successfully!')
-            except Exception as e:
-                messages.error(request, f'Error updating notification preferences: {str(e)}')
-        
-        elif action == 'update_backup':
-            # Handle backup preferences
-            try:
-                auto_backup = request.POST.get('auto_backup') == 'on'
-                backup_frequency = request.POST.get('backup_frequency', 'daily')
-                
-                # Store backup preferences
-                backup_prefs = {
-                    'auto_backup': auto_backup,
-                    'backup_frequency': backup_frequency,
-                }
-                
-                messages.success(request, 'Backup preferences updated successfully!')
-            except Exception as e:
-                messages.error(request, f'Error updating backup preferences: {str(e)}')
-        
-        elif action == 'export_csv':
-            # Export project data as CSV
-            try:
-                response = HttpResponse(content_type='text/csv')
-                response['Content-Disposition'] = 'attachment; filename="site_manager_data.csv"'
-                
-                writer = csv.writer(response)
-                writer.writerow(['Project Name', 'Status', 'Created Date', 'Manager'])
-                
-                # Get user's projects
-                projects = Project.objects.filter(
-                    Q(project_manager=request.user) | Q(architect=request.user)
-                )
-                
-                for project in projects:
-                    writer.writerow([
-                        project.name,
-                        project.status,
-                        project.created_at.strftime('%Y-%m-%d'),
-                        project.project_manager.get_full_name() if project.project_manager else 'N/A'
-                    ])
-                
-                return response
-            except Exception as e:
-                messages.error(request, f'Error exporting data: {str(e)}')
-        
-        elif action == 'export_diary':
-            # Export diary entries
-            try:
-                response = HttpResponse(content_type='text/csv')
-                response['Content-Disposition'] = 'attachment; filename="diary_entries.csv"'
-                
-                writer = csv.writer(response)
-                writer.writerow(['Date', 'Project', 'Weather', 'Progress %', 'Notes'])
-                
-                # Get user's diary entries
-                entries = DiaryEntry.objects.filter(created_by=request.user)
-                
-                for entry in entries:
-                    writer.writerow([
-                        entry.entry_date.strftime('%Y-%m-%d'),
-                        entry.project.name,
-                        entry.weather_condition,
-                        entry.progress_percentage,
-                        entry.notes[:100] + '...' if len(entry.notes) > 100 else entry.notes
-                    ])
-                
-                return response
-            except Exception as e:
-                messages.error(request, f'Error exporting diary entries: {str(e)}')
         
         return redirect('site:settings')
     
@@ -1067,7 +1222,16 @@ def admindiary(request):
             entries = entries.filter(entry_date__gte=search_form.cleaned_data['start_date'])
         if search_form.cleaned_data['end_date']:
             entries = entries.filter(entry_date__lte=search_form.cleaned_data['end_date'])
+    
+    # Pagination
+    paginator = Paginator(entries, 15)
     page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'search_form': search_form,
+    }
     return render(request, 'admin/admindiary.html', context)
 
 @require_admin_role
@@ -1125,136 +1289,3 @@ def generate_project_report(request, project_id):
 @require_site_manager_role
 def sitedraft(request):
     return render(request, 'site_diary/sitedraft.html')
-
-# API endpoint for dashboard filtering
-def print_preview(request, project_id):
-    """Print preview for construction report"""
-    project = get_object_or_404(Project, id=project_id)
-    
-    # Verify user has access
-    if not request.user.is_staff:
-        user_projects = Project.objects.filter(
-            Q(project_manager=request.user) | Q(architect=request.user)
-        )
-        if project not in user_projects:
-            messages.error(request, 'You do not have access to this project.')
-            return redirect('site_diary:dashboard')
-    
-    # Get latest diary entry for this project
-    diary_entry = DiaryEntry.objects.filter(project=project).order_by('-entry_date').first()
-    
-    context = {
-        'project': project,
-        'diary_entry': diary_entry,
-    }
-    return render(request, 'site_diary/printlayout.html', context)
-
-@require_site_manager_role
-def api_filter_projects(request):
-    """API endpoint for filtering projects on dashboard"""
-    if request.method == 'GET':
-        category = request.GET.get('category', '')
-        status = request.GET.get('status', '')
-        search = request.GET.get('search', '')
-        
-        # Get user's projects
-        if request.user.is_staff:
-            projects = Project.objects.all()
-        else:
-            projects = Project.objects.filter(
-                Q(project_manager=request.user) | Q(architect=request.user)
-            )
-        
-        # Apply filters
-        if category:
-            projects = projects.filter(category=category)
-        if status:
-            projects = projects.filter(status=status)
-        if search:
-            projects = projects.filter(
-                Q(name__icontains=search) | Q(client_name__icontains=search)
-            )
-        
-        # Format response
-        project_data = []
-        for project in projects:
-            latest_entry = DiaryEntry.objects.filter(project=project).order_by('-entry_date').first()
-            project_data.append({
-                'id': project.id,
-                'name': project.name,
-                'client_name': project.client_name,
-                'status': project.status,
-                'progress': latest_entry.progress_percentage if latest_entry else 0,
-            })
-        
-        return JsonResponse({'projects': project_data})
-    
-    return JsonResponse({'error': 'Method not allowed'}, status=405)
-
-def sample_print(request):
-    """Sample print preview with mock data - no authentication required"""
-    from datetime import date
-    
-    # Mock project data
-    class MockProject:
-        name = "Metro Plaza Tower"
-        client_name = "Metro Development Corp"
-        location = "Central Business District, Manila"
-        status = "active"
-        
-        def get_status_display(self):
-            return "Active"
-    
-    # Mock diary entry data
-    class MockDiaryEntry:
-        entry_date = date.today()
-        weather_condition = "sunny"
-        temperature_high = 32
-        temperature_low = 24
-        progress_percentage = 65
-        work_description = "Continued concrete pouring for foundation work. Completed rebar installation for columns A1-A5. Structural steel delivery scheduled for tomorrow. Quality inspections passed for all completed sections."
-        quality_issues = "No quality issues reported"
-        safety_incidents = "No safety incidents reported"
-        general_notes = "Weather conditions favorable for construction activities. All safety protocols followed. Material deliveries on schedule."
-        
-        class MockCreatedBy:
-            def get_full_name(self):
-                return "John Smith"
-        
-        created_by = MockCreatedBy()
-        
-        class MockMaterialEntries:
-            def all(self):
-                return [
-                    type('MockMaterial', (), {
-                        'material_name': 'Concrete',
-                        'quantity_delivered': 15,
-                        'unit': 'm³'
-                    }),
-                    type('MockMaterial', (), {
-                        'material_name': 'Steel Rebar',
-                        'quantity_delivered': 2500,
-                        'unit': 'kg'
-                    }),
-                    type('MockMaterial', (), {
-                        'material_name': 'Cement',
-                        'quantity_delivered': 150,
-                        'unit': 'bags'
-                    })
-                ]
-        
-        material_entries = MockMaterialEntries()
-    
-    class MockProjectManager:
-        def get_full_name(self):
-            return "Maria Rodriguez"
-    
-    project = MockProject()
-    project.project_manager = MockProjectManager()
-    diary_entry = MockDiaryEntry()
-    
-    context = {
-        'project': project,
-        'diary_entry': diary_entry,
-    }
-    return render(request, 'site_diary/printlayout.html', context)

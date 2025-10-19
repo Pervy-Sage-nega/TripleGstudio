@@ -100,62 +100,65 @@
 
         <!-- Card View (Default) -->
         <div class="drafts-container card-view" id="drafts-card-view">
-            <!-- Cards will be populated via JavaScript -->
-            <div class="no-drafts" id="no-drafts-message">
-                <i class="fas fa-file-alt"></i>
-                <h3>No Diary Drafts Found</h3>
-                <p>You haven't saved any diary entry drafts yet. Start creating a new diary entry to get started.</p>
-                <a href="diary.html" class="btn btn-primary">Create New Diary Entry</a>
-            </div>
-
-            <!-- Sample Draft Card (Will be cloned via JS) -->
-            <div class="draft-card template" id="draft-card-template">
-                <div class="draft-header">
-                    <div class="draft-category">Materials</div>
-                    <div class="draft-date">
-                        <i class="far fa-calendar-alt"></i> <span class="date-value">2023-06-15</span>
+            {% if drafts and drafts|length > 0 %}
+                {% for draft in drafts %}
+                <div class="draft-card">
+                    <div class="draft-header">
+                        <div class="draft-category">Draft</div>
+                        <div class="draft-date">
+                            <i class="far fa-calendar-alt"></i> <span class="date-value">{{ draft.entry_date }}</span>
+                        </div>
+                    </div>
+                    <div class="draft-body">
+                        <h3 class="draft-title">{{ draft.project.name }}</h3>
+                        <p class="draft-excerpt">{{ draft.work_description|truncatechars:100 }}</p>
+                    </div>
+                    <div class="draft-actions">
+                        <a href="/diary/revise/{{ draft.id }}/" class="action-btn revision-btn" title="Revise">
+                            <i class="fas fa-history"></i>
+                        </a>
                     </div>
                 </div>
-                <div class="draft-body">
-                    <h3 class="draft-title">Sample Diary Entry Title</h3>
-                    <p class="draft-excerpt">This is a short excerpt from the diary entry content...</p>
+                {% endfor %}
+            {% else %}
+                <div class="no-drafts" id="no-drafts-message">
+                    <i class="fas fa-file-alt"></i>
+                    <h3>No Diary Drafts Found</h3>
+                    <p>You haven't saved any diary entry drafts yet. Start creating a new diary entry to get started.</p>
+                    <a href="/diary/" class="btn btn-primary">Create New Diary Entry</a>
                 </div>
-                <div class="draft-tags">
-                    <span class="draft-tag">site-a</span>
-                    <span class="draft-tag">phase-1</span>
-                </div>
-                <div class="draft-actions">
-                    <button class="action-btn preview-btn" title="Preview">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                    <button class="action-btn edit-btn" title="Edit">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="action-btn delete-btn" title="Delete">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
-                    <button class="action-btn submit-btn" title="Submit Entry for Review">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
-                </div>
-            </div>
+            {% endif %}
         </div>
 
-        <!-- Table View (Hidden by default) -->
+        <!-- Table View -->
         <div class="drafts-container table-view" id="drafts-table-view">
             <div class="table-responsive">
                 <table id="drafts-table">
                     <thead>
                         <tr>
-                            <th>Diary Entry Title</th>
-                            <th>Category</th>
-                            <th>Last Modified</th>
+                            <th>Project</th>
+                            <th>Date</th>
+                            <th>Excerpt</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="drafts-table-body">
-                        <!-- Table rows will be populated via JavaScript -->
+                        {% for draft in drafts %}
+                        <tr>
+                            <td>{{ draft.project.name }}</td>
+                            <td>{{ draft.entry_date }}</td>
+                            <td>{{ draft.work_description|truncatechars:80 }}</td>
+                            <td>Draft</td>
+                            <td>
+                                <a href="/diary/revise/{{ draft.id }}/" class="action-btn revision-btn" title="Revise">
+                                    <i class="fas fa-history"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5">No diary drafts found.</td></tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>

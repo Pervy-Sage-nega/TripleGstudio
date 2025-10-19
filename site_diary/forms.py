@@ -29,7 +29,7 @@ class ProjectForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Filter users for project manager and architect
-        self.fields['project_manager'].queryset = User.objects.filter(is_staff=True)
+        self.fields['project_manager'].queryset = User.objects.all()
         self.fields['architect'].queryset = User.objects.all()
         self.fields['architect'].required = False
 
@@ -207,25 +207,37 @@ class DiarySearchForm(forms.Form):
         widget=forms.Select(attrs={'class': 'form-control'})
     )
 
+class DiaryEntrySearchForm(forms.Form):
+    project = forms.ModelChoiceField(
+        queryset=Project.objects.all(),
+        required=False,
+        empty_label="All Projects",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    start_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'})
+    )
+    end_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'})
+    )
+
 class ProjectSearchForm(forms.Form):
-    STATUS_CHOICES = [('', 'All Status')] + Project.PROJECT_STATUS
-    
     name = forms.CharField(
         required=False,
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Search by name'})
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Search by project name'})
+    )
+    status = forms.ChoiceField(
+        choices=[('', 'All Statuses')] + Project.PROJECT_STATUS,
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-control'})
     )
     client_name = forms.CharField(
         required=False,
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Search by client'})
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Search by client name'})
     )
-    status = forms.ChoiceField(
-        choices=STATUS_CHOICES,
+    location = forms.CharField(
         required=False,
-        widget=forms.Select(attrs={'class': 'form-control'})
-    )
-    project_manager = forms.ModelChoiceField(
-        queryset=User.objects.filter(is_staff=True),
-        required=False,
-        empty_label="All Managers",
-        widget=forms.Select(attrs={'class': 'form-control'})
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Search by location'})
     )

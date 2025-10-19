@@ -113,7 +113,7 @@ class RoleBasedAccessMiddleware(MiddlewareMixin):
                     '/accounts/admin-auth/', '/portfolio/projectmanagement/',
                     '/blog/blogmanagement/', '/diary/adminside/',
                 ],
-                'redirect_to': 'site:dashboard'
+                'redirect_to': 'site_diary:dashboard'
             },
             'superadmin': {
                 'allowed': ['*'],  # Super admin can access everything

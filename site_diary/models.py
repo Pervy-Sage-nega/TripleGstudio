@@ -71,6 +71,8 @@ class DiaryEntry(models.Model):
     approved = models.BooleanField(default=False)
     approval_date = models.DateTimeField(null=True, blank=True)
     
+    draft = models.BooleanField(default=False, help_text="Save as draft without finalizing entry")
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

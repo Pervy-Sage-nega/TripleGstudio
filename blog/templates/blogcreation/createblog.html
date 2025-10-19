@@ -62,7 +62,7 @@
         <!-- Blog Creation Form -->
         <div class="blog-creation-container">
             <div class="form-container">
-                <form id="blogForm" class="blog-form" method="post" enctype="multipart/form-data" action="{% url 'site:createblog' %}">
+                <form id="blogForm" class="blog-form" method="post" enctype="multipart/form-data" action="{% url 'site_diary:createblog' %}">
                     {% csrf_token %}
                     <!-- Title Input -->
                     <div class="form-group">
