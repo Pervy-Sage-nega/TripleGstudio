@@ -9,6 +9,7 @@ from django.views.decorators.cache import never_cache
 from django.utils import timezone
 from accounts.models import AdminProfile, SiteManagerProfile, Profile
 from django.contrib.auth.models import User
+from site_diary.models import Project
 from django.db.models import Count
 from django.contrib.sessions.models import Session
 from .decorators import require_admin_role, ajax_require_admin_role

@@ -23,6 +23,7 @@ class Project(models.Model):
     actual_end_date = models.DateField(null=True, blank=True)
     budget = models.DecimalField(max_digits=12, decimal_places=2)
     status = models.CharField(max_length=20, choices=PROJECT_STATUS, default='planning')
+    image = models.ImageField(upload_to='project_images/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

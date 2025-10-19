@@ -70,13 +70,7 @@ body:not(:hover)::-webkit-scrollbar-thumb {
             });
         }
 
-        const locationBtn = card.querySelector('.btn-outline');
-        if (locationBtn) {
-            locationBtn.addEventListener('click', function () {
-                const projectTitle = card.querySelector('.project-title').textContent;
-                alert(`Viewing location details for project: ${projectTitle}`);
-            });
-        }
+
     });
 
     // ===== ENHANCED FILTER FUNCTIONALITY =====

@@ -143,14 +143,28 @@ def dashboard(request):
         labor_entries = LaborEntry.objects.filter(diary_entry__in=project_entries)
         delay_entries = DelayEntry.objects.filter(diary_entry__in=project_entries)
         
+        # Calculate actual progress based on project age
+        days_since_start = (timezone.now().date() - project.created_at.date()).days
+        expected_duration = 365  # 1 year project
+        actual_progress = min((days_since_start / expected_duration) * 100, 100) if days_since_start > 0 else 0
+        
+        # Use actual progress or diary entry progress
+        progress = latest_entry.progress_percentage if latest_entry else max(actual_progress, 5)
+        
         # Budget calculations
         total_labor_cost = sum(labor.total_cost for labor in labor_entries)
-        budget_used_percentage = min((total_labor_cost / 1000000) * 100, 100) if total_labor_cost else (mock_progress[i % len(mock_progress)] * 0.8)
+        budget_used_percentage = min((total_labor_cost / 1000000) * 100, 100) if total_labor_cost else (progress * 0.8)
         
-        # Use mock data if no diary entries exist
-        progress = latest_entry.progress_percentage if latest_entry else mock_progress[i % len(mock_progress)]
-        current_phase = latest_entry.work_description[:50] if latest_entry else f"Phase {min(int(progress/25) + 1, 4)} - {'Planning' if progress < 25 else 'Foundation' if progress < 50 else 'Structure' if progress < 75 else 'Finishing'}"
-        
+        # Determine current phase based on progress
+        if progress < 25:
+            phase_name = "Planning"
+        elif progress < 50:
+            phase_name = "Foundation"
+        elif progress < 75:
+            phase_name = "Structure"
+        else:
+            phase_name = "Finishing"
+            
         project_info = {
             'id': project.id,
             'name': project.name,
@@ -158,13 +172,13 @@ def dashboard(request):
             'location': project.location,
             'status': project.status,
             'progress': progress,
-            'current_phase': current_phase,
+            'current_phase': f"Phase {min(int(progress/25) + 1, 4)} - {phase_name}",
             'start_date': project.created_at,
             'target_completion': project.created_at + timedelta(days=365),
             'budget_used': budget_used_percentage,
             'schedule_status': 'On Track' if delay_entries.count() < 3 else 'Minor Delays' if delay_entries.count() < 6 else 'At Risk',
             'delay_count': delay_entries.count(),
-            'image': getattr(project, 'image', None),
+            'image': project.image if hasattr(project, 'image') and project.image else None,
         }
         project_data.append(project_info)
     
@@ -339,7 +353,8 @@ def newproject(request):
                 start_date=request.POST.get('start_date'),
                 expected_end_date=request.POST.get('expected_end_date'),
                 project_manager=request.user,
-                status='planning'
+                status='planning',
+                image=request.FILES.get('image') if 'image' in request.FILES else None
             )
             messages.success(request, f'Project "{project.name}" created successfully!')
             return redirect('site_diary:dashboard')
@@ -386,73 +401,7 @@ def project_list(request):
     }
     return render(request, 'site_diary/project_list.html', context)
 
-@login_required
-def project_detail(request, project_id):
-    """Detailed view of a specific project with all related information"""
-    project = get_object_or_404(Project, id=project_id)
-    
-    # Check if user has access to this project
-    if not request.user.is_staff and project.project_manager != request.user and project.architect != request.user:
-        messages.error(request, 'You do not have permission to view this project.')
-        return redirect('site_diary:dashboard')
-    
-    # Get project statistics
-    diary_entries = DiaryEntry.objects.filter(project=project).order_by('-entry_date')
-    total_entries = diary_entries.count()
-    draft_entries = diary_entries.filter(draft=True).count()
-    
-    # Get latest progress
-    latest_entry = diary_entries.filter(draft=False).first()
-    current_progress = latest_entry.progress_percentage if latest_entry else 0
-    
-    # Labor statistics
-    labor_stats = LaborEntry.objects.filter(
-        diary_entry__project=project
-    ).aggregate(
-        total_workers=Sum('workers_count'),
-        total_hours=Sum('hours_worked')
-    )
-    
-    # Material statistics
-    material_stats = MaterialEntry.objects.filter(
-        diary_entry__project=project
-    ).aggregate(
-        total_deliveries=Count('id'),
-        total_materials=Count('material_name')
-    )
-    
-    # Equipment statistics
-    equipment_stats = EquipmentEntry.objects.filter(
-        diary_entry__project=project
-    ).aggregate(
-        total_equipment=Count('id'),
-        total_hours=Sum('hours_operated')
-    )
-    
-    # Recent delays
-    recent_delays = DelayEntry.objects.filter(
-        diary_entry__project=project
-    ).select_related('diary_entry').order_by('-diary_entry__entry_date')[:5]
-    
-    # Recent visitors
-    recent_visitors = VisitorEntry.objects.filter(
-        diary_entry__project=project
-    ).select_related('diary_entry').order_by('-diary_entry__entry_date')[:5]
-    
-    context = {
-        'project': project,
-        'diary_entries': diary_entries[:10],  # Show last 10 entries
-        'total_entries': total_entries,
-        'draft_entries': draft_entries,
-        'current_progress': current_progress,
-        'labor_stats': labor_stats,
-        'material_stats': material_stats,
-        'equipment_stats': equipment_stats,
-        'recent_delays': recent_delays,
-        'recent_visitors': recent_visitors,
-        'page_title': f'Project: {project.name}'
-    }
-    return render(request, 'site_diary/project_detail.html', context)
+
 
 @login_required
 def project_edit(request, project_id):
@@ -977,110 +926,105 @@ def reports(request):
 @require_site_manager_role
 def project_detail(request, project_id):
     """Comprehensive Project Detail View for Site Managers"""
+    project = get_object_or_404(Project, id=project_id)
+    
+    # Verify user has access to this project
+    if not request.user.is_staff:
+        user_projects = Project.objects.filter(
+            Q(project_manager=request.user) | Q(architect=request.user)
+        )
+        if project not in user_projects:
+            messages.error(request, 'You do not have access to this project.')
+            return redirect('site_diary:dashboard')
+    
+    # Get project entries and related data
+    project_entries = DiaryEntry.objects.filter(project=project).order_by('-entry_date')
+    labor_entries = LaborEntry.objects.filter(diary_entry__in=project_entries)
+    material_entries = MaterialEntry.objects.filter(diary_entry__in=project_entries)
+    equipment_entries = EquipmentEntry.objects.filter(diary_entry__in=project_entries)
+    delay_entries = DelayEntry.objects.filter(diary_entry__in=project_entries)
+    
+    # Calculate project metrics with mock data fallback
+    latest_entry = project_entries.first()
+    # Mock progress based on project ID for demonstration
+    mock_progress_map = {1: 65, 2: 40, 3: 85, 4: 25, 5: 55}
+    progress = latest_entry.progress_percentage if latest_entry else mock_progress_map.get(project.id, 50)
+    
+    # Budget calculations with error handling
     try:
-        project = get_object_or_404(Project, id=project_id)
-        
-        # Verify user has access to this project
-        if not request.user.is_staff:
-            user_projects = Project.objects.filter(
-                Q(project_manager=request.user) | Q(architect=request.user)
-            )
-            if project not in user_projects:
-                messages.error(request, 'You do not have access to this project.')
-                return redirect('site_diary:dashboard')
-        
-        # Get project entries and related data
-        project_entries = DiaryEntry.objects.filter(project=project).order_by('-entry_date')
-        labor_entries = LaborEntry.objects.filter(diary_entry__in=project_entries)
-        material_entries = MaterialEntry.objects.filter(diary_entry__in=project_entries)
-        equipment_entries = EquipmentEntry.objects.filter(diary_entry__in=project_entries)
-        delay_entries = DelayEntry.objects.filter(diary_entry__in=project_entries)
-        
-        # Calculate project metrics with mock data fallback
-        latest_entry = project_entries.first()
-        # Mock progress based on project ID for demonstration
-        mock_progress_map = {1: 65, 2: 40, 3: 85, 4: 25, 5: 55}
-        progress = latest_entry.progress_percentage if latest_entry else mock_progress_map.get(project.id, 50)
-        
-        # Budget calculations with error handling
-        try:
-            total_labor_cost = sum(labor.total_cost for labor in labor_entries)
-            total_material_cost = sum(material.total_cost for material in material_entries)
-            total_equipment_cost = sum(equipment.total_rental_cost for equipment in equipment_entries)
-        except (AttributeError, TypeError):
-            total_labor_cost = total_material_cost = total_equipment_cost = 0
-        
-        total_spent = total_labor_cost + total_material_cost + total_equipment_cost
-        total_budget = getattr(project, 'budget', 2500000) or 2500000
-        remaining_budget = max(0, total_budget - total_spent)
-        
-        # Recent diary entries for summary
-        recent_diary_entries = project_entries[:3]
-        
-        # Resource statistics
-        total_workers = labor_entries.aggregate(total=Sum('workers_count'))['total'] or 0
-        equipment_count = equipment_entries.values('equipment_type').distinct().count()
-        delay_count = delay_entries.count()
-        
-        # Project timeline/milestones (mock data - replace with actual model)
-        project_timeline = [
-            {
-                'title': 'Project Planning',
-                'date': project.created_at,
-                'description': 'Initial planning, permits, and design finalization.',
-                'completed': True
-            },
-            {
-                'title': 'Foundation Work',
-                'date': project.created_at + timedelta(days=30),
-                'description': 'Excavation, foundation laying, and structural groundwork.',
-                'completed': progress > 25
-            },
-            {
-                'title': 'Structural Construction',
-                'date': project.created_at + timedelta(days=120),
-                'description': 'Main structure, steel framework, and concrete work.',
-                'completed': progress > 65
-            },
-            {
-                'title': 'Finishing Work',
-                'date': project.created_at + timedelta(days=300),
-                'description': 'Interior finishing, utilities installation, and final inspections.',
-                'completed': progress > 90
-            }
-        ]
-        
-        # Enhanced project data
-        project_data = {
-            'id': project.id,
-            'name': project.name,
-            'code': f"{project.name[:2].upper()}-{project.created_at.year}-{project.id:03d}",
-            'status': project.status,
-            'client_name': project.client_name,
-            'client_email': project.client_email if hasattr(project, 'client_email') else 'contact@client.com',
-            'client_phone': project.client_phone if hasattr(project, 'client_phone') else '+1 (555) 123-4567',
-            'start_date': project.created_at.strftime('%b %d, %Y'),
-            'target_completion': (project.created_at + timedelta(days=365)).strftime('%b %d, %Y'),
-            'current_phase': latest_entry.work_description[:50] if latest_entry else f"Phase {min(int(progress/25) + 1, 4)} - {'Planning' if progress < 25 else 'Foundation' if progress < 50 else 'Structure' if progress < 75 else 'Finishing'}",
-            'progress': progress,
-            'total_budget': f"{total_budget:,}",
-            'total_spent': f"{total_spent:,}",
-            'remaining_budget': f"{remaining_budget:,}",
-            'labor_count': total_workers,
-            'equipment_count': equipment_count,
-            'delays_count': delay_count,
+        total_labor_cost = sum(labor.total_cost for labor in labor_entries)
+        total_material_cost = sum(material.total_cost for material in material_entries)
+        total_equipment_cost = sum(equipment.total_rental_cost for equipment in equipment_entries)
+    except (AttributeError, TypeError):
+        total_labor_cost = total_material_cost = total_equipment_cost = 0
+    
+    total_spent = total_labor_cost + total_material_cost + total_equipment_cost
+    total_budget = getattr(project, 'budget', 2500000) or 2500000
+    remaining_budget = max(0, total_budget - total_spent)
+    
+    # Recent diary entries for summary
+    recent_diary_entries = project_entries[:3]
+    
+    # Resource statistics
+    total_workers = labor_entries.aggregate(total=Sum('workers_count'))['total'] or 0
+    equipment_count = equipment_entries.values('equipment_type').distinct().count()
+    delay_count = delay_entries.count()
+    
+    # Project timeline/milestones (mock data - replace with actual model)
+    project_timeline = [
+        {
+            'title': 'Project Planning',
+            'date': project.created_at,
+            'description': 'Initial planning, permits, and design finalization.',
+            'completed': True
+        },
+        {
+            'title': 'Foundation Work',
+            'date': project.created_at + timedelta(days=30),
+            'description': 'Excavation, foundation laying, and structural groundwork.',
+            'completed': progress > 25
+        },
+        {
+            'title': 'Structural Construction',
+            'date': project.created_at + timedelta(days=120),
+            'description': 'Main structure, steel framework, and concrete work.',
+            'completed': progress > 65
+        },
+        {
+            'title': 'Finishing Work',
+            'date': project.created_at + timedelta(days=300),
+            'description': 'Interior finishing, utilities installation, and final inspections.',
+            'completed': progress > 90
         }
-        
-        context = {
-            'project': project_data,
-            'recent_diary_entries': recent_diary_entries,
-            'project_timeline': project_timeline,
-        }
-        return render(request, 'site_diary/project_detail.html', context)
-    except:
-        # Fallback - redirect to dashboard if project doesn't exist
-        messages.info(request, 'Project details are not available yet.')
-        return redirect('site_diary:dashboard')
+    ]
+    
+    # Enhanced project data
+    project_data = {
+        'id': project.id,
+        'name': project.name,
+        'code': f"{project.name[:2].upper()}-{project.created_at.year}-{project.id:03d}",
+        'status': project.status,
+        'client_name': project.client_name,
+        'client_email': project.client_email if hasattr(project, 'client_email') else 'contact@client.com',
+        'client_phone': project.client_phone if hasattr(project, 'client_phone') else '+1 (555) 123-4567',
+        'start_date': project.created_at.strftime('%b %d, %Y'),
+        'target_completion': (project.created_at + timedelta(days=365)).strftime('%b %d, %Y'),
+        'current_phase': latest_entry.work_description[:50] if latest_entry else f"Phase {min(int(progress/25) + 1, 4)} - {'Planning' if progress < 25 else 'Foundation' if progress < 50 else 'Structure' if progress < 75 else 'Finishing'}",
+        'progress': progress,
+        'total_budget': f"{total_budget:,}",
+        'total_spent': f"{total_spent:,}",
+        'remaining_budget': f"{remaining_budget:,}",
+        'labor_count': total_workers,
+        'equipment_count': equipment_count,
+        'delays_count': delay_count,
+    }
+    
+    context = {
+        'project': project_data,
+        'recent_diary_entries': recent_diary_entries,
+        'project_timeline': project_timeline,
+    }
+    return render(request, 'site_diary/project-detail.html', context)
 
 @login_required
 @require_site_manager_role
@@ -1235,8 +1179,7 @@ def adminclientproject(request):
             projects = projects.filter(client_name__icontains=search_form.cleaned_data['client_name'])
         if search_form.cleaned_data['status']:
             projects = projects.filter(status=search_form.cleaned_data['status'])
-        if search_form.cleaned_data['project_manager']:
-            projects = projects.filter(project_manager=search_form.cleaned_data['project_manager'])
+        # Remove project_manager filter as it's not in the form
     
     paginator = Paginator(projects.order_by('-created_at'), 15)
     page_number = request.GET.get('page')
