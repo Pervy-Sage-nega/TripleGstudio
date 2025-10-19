@@ -90,6 +90,8 @@
 	box-shadow: var(--shadow);
 	padding: 20px;
 	margin-bottom: 30px;
+	position: relative;
+	overflow: hidden;
 }
 
 /* Tabs Layout */
@@ -97,6 +99,8 @@
 	display: grid;
 	grid-template-columns: 260px 1fr;
 	gap: 20px;
+	position: relative;
+	width: 100%;
 }
 
 .tabs-sidebar {
@@ -143,6 +147,10 @@
 
 .tabs-content {
 	min-height: 400px;
+	position: relative;
+	width: 100%;
+	max-width: 100%;
+	overflow: hidden;
 }
 
 .tab-panel {
@@ -150,10 +158,18 @@
 	opacity: 0;
 	transform: translateY(6px);
 	transition: opacity 0.2s ease, transform 0.2s ease;
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	width: 100%;
+	box-sizing: border-box;
+	z-index: 1;
 }
 
 .tab-panel.active {
 	display: block;
+	position: relative;
 	opacity: 1;
 	transform: translateY(0);
 }

@@ -15,6 +15,8 @@ from .forms import ClientRegisterForm, OTPForm, AdminRegisterForm, AdminLoginFor
 from .models import OneTimePassword, AdminProfile, SiteManagerProfile, Profile
 from .utils import get_user_role, get_user_dashboard_url, get_appropriate_redirect
 from .activity_tracker import UserActivityTracker
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
 
 # Forgot password views
 def admin_forgot_password(request):
@@ -946,3 +948,41 @@ def client_reset_password(request):
             messages.error(request, "Invalid reset code.")
     
     return render(request, 'client/reset_password.html', {'email': email})
+
+# API endpoints for fetching users
+@login_required
+def api_sitemanagers(request):
+    """API endpoint to fetch site managers"""
+    sitemanagers = User.objects.filter(
+        sitemanagerprofile__isnull=False,
+        sitemanagerprofile__approval_status='approved',
+        is_active=True
+    ).values('id', 'first_name', 'last_name', 'email')
+    
+    sitemanager_list = []
+    for sm in sitemanagers:
+        sitemanager_list.append({
+            'id': sm['id'],
+            'full_name': f"{sm['first_name']} {sm['last_name']}".strip(),
+            'email': sm['email']
+        })
+    
+    return JsonResponse({'sitemanagers': sitemanager_list})
+
+@login_required
+def api_clients(request):
+    """API endpoint to fetch clients"""
+    clients = User.objects.filter(
+        profile__isnull=False,
+        is_active=True
+    ).values('id', 'first_name', 'last_name', 'email')
+    
+    client_list = []
+    for client in clients:
+        client_list.append({
+            'id': client['id'],
+            'full_name': f"{client['first_name']} {client['last_name']}".strip(),
+            'email': client['email']
+        })
+    
+    return JsonResponse({'clients': client_list})

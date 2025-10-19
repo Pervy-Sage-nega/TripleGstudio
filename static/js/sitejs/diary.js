@@ -88,16 +88,22 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===== BUDGET TRACKING FUNCTIONS =====
     function initBudgetTracking() {
         // Update project budget when project is selected
-        document.getElementById('projectSelect').addEventListener('change', function() {
-            const projectCode = this.options[this.selectedIndex].value;
-            // In a real app, this would fetch from server
-            projectBudget = parseInt(localStorage.getItem(`project_budget_${projectCode}`)) || 0;
-            document.getElementById('projectBudget').value = formatCurrency(projectBudget);
-            
-            // For demo, set a running cost (25% of budget)
-            runningCost = Math.floor(projectBudget * 0.25);
-            updateBudgetSummary();
-        });
+        const projectSelect = document.getElementById('projectSelect');
+        if (projectSelect) {
+            projectSelect.addEventListener('change', function() {
+                const projectCode = this.options[this.selectedIndex].value;
+                // In a real app, this would fetch from server
+                projectBudget = parseInt(localStorage.getItem(`project_budget_${projectCode}`)) || 0;
+                const budgetElement = document.getElementById('projectBudget');
+                if (budgetElement) {
+                    budgetElement.value = formatCurrency(projectBudget);
+                }
+                
+                // For demo, set a running cost (25% of budget)
+                runningCost = Math.floor(projectBudget * 0.25);
+                updateBudgetSummary();
+            });
+        }
 
         // Calculate costs when items are added
         document.getElementById('addMaterial')?.addEventListener('click', addMaterialCost);
@@ -167,23 +173,31 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateBudgetSummary() {
-        document.getElementById('dailyCost').value = formatCurrency(dailyCost);
+        const dailyCostElement = document.getElementById('dailyCost');
+        if (dailyCostElement) {
+            dailyCostElement.value = formatCurrency(dailyCost);
+        }
         
         const totalUsed = runningCost + dailyCost;
-        document.getElementById('runningCost').value = formatCurrency(totalUsed);
+        const runningCostElement = document.getElementById('runningCost');
+        if (runningCostElement) {
+            runningCostElement.value = formatCurrency(totalUsed);
+        }
         
         if (projectBudget > 0) {
             const remaining = projectBudget - totalUsed;
-            document.getElementById('remainingBudget').value = formatCurrency(remaining);
-            
-            // Visual feedback for budget status
             const remainingElement = document.getElementById('remainingBudget');
-            if (remaining < projectBudget * 0.1) {
-                remainingElement.classList.add('budget-warning');
-                remainingElement.classList.remove('budget-safe');
-            } else {
-                remainingElement.classList.add('budget-safe');
-                remainingElement.classList.remove('budget-warning');
+            if (remainingElement) {
+                remainingElement.value = formatCurrency(remaining);
+                
+                // Visual feedback for budget status
+                if (remaining < projectBudget * 0.1) {
+                    remainingElement.classList.add('budget-warning');
+                    remainingElement.classList.remove('budget-safe');
+                } else {
+                    remainingElement.classList.add('budget-safe');
+                    remainingElement.classList.remove('budget-warning');
+                }
             }
         }
     }

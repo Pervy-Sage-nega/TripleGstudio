@@ -30,4 +30,8 @@ urlpatterns = [
     path('client/logout/', views.client_logout_view, name='client_logout'),
     path('client/forgot-password/', views.client_forgot_password, name='client_forgot_password'),
     path('client/reset-password/', views.client_reset_password, name='client_reset_password'),
+    
+    # API endpoints
+    path('api/sitemanagers/', views.api_sitemanagers, name='api_sitemanagers'),
+    path('api/clients/', views.api_clients, name='api_clients'),
 ]

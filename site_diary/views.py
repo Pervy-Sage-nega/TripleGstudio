@@ -205,16 +205,50 @@ def weather_api(request):
     if request.method == 'GET':
         location = request.GET.get('location', '')
         if location:
-            # Here you would integrate with the actual weather API
-            # For now, return mock data
-            weather_data = {
-                'temperature': 25,
-                'humidity': 60,
-                'wind_speed': 10,
-                'description': 'Partly Cloudy',
-                'location': location
-            }
-            return JsonResponse(weather_data)
+            try:
+                import requests
+                from django.conf import settings
+                
+                # Use OpenWeatherMap API
+                api_key = getattr(settings, 'WEATHER_API_KEY', '0c461dd2b831a59146501773674950cd')
+                api_url = f"https://api.openweathermap.org/data/2.5/weather?q={location}&appid={api_key}&units=metric"
+                
+                response = requests.get(api_url, timeout=10)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    weather_data = {
+                        'temperature': round(data['main']['temp']),
+                        'temperature_high': round(data['main']['temp_max']),
+                        'temperature_low': round(data['main']['temp_min']),
+                        'humidity': data['main']['humidity'],
+                        'wind_speed': round(data['wind']['speed'] * 3.6),  # Convert m/s to km/h
+                        'description': data['weather'][0]['description'],
+                        'condition': data['weather'][0]['main'],
+                        'icon': data['weather'][0]['icon'],
+                        'location': location
+                    }
+                    return JsonResponse(weather_data)
+                else:
+                    return JsonResponse({'error': 'Weather data not found'}, status=404)
+                    
+            except requests.RequestException:
+                # Fallback to mock data if API fails
+                weather_data = {
+                    'temperature': 28,
+                    'temperature_high': 32,
+                    'temperature_low': 24,
+                    'humidity': 65,
+                    'wind_speed': 12,
+                    'description': 'Partly Cloudy',
+                    'condition': 'Clouds',
+                    'icon': '02d',
+                    'location': location
+                }
+                return JsonResponse(weather_data)
+            except Exception as e:
+                return JsonResponse({'error': f'Weather service error: {str(e)}'}, status=500)
+                
         return JsonResponse({'error': 'Location parameter required'}, status=400)
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
@@ -294,23 +328,25 @@ def chatbot(request):
 def newproject(request):
     """Create new project with enhanced validation and user experience"""
     if request.method == 'POST':
-        form = ProjectForm(request.POST)
-        if form.is_valid():
-            project = form.save(commit=False)
-            # Set the project manager to the current user if not already set
-            if not project.project_manager:
-                project.project_manager = request.user
-            project.save()
+        # Handle form data from JavaScript
+        try:
+            project = Project.objects.create(
+                name=request.POST.get('name'),
+                client_name=request.POST.get('client_name'),
+                location=request.POST.get('location'),
+                description=request.POST.get('description', ''),
+                budget=float(request.POST.get('budget', 0)) if request.POST.get('budget') else None,
+                start_date=request.POST.get('start_date'),
+                expected_end_date=request.POST.get('expected_end_date'),
+                project_manager=request.user,
+                status='planning'
+            )
             messages.success(request, f'Project "{project.name}" created successfully!')
             return redirect('site_diary:dashboard')
-        else:
-            messages.error(request, 'Please correct the errors below.')
-    else:
-        # Pre-populate project manager with current user
-        form = ProjectForm(initial={'project_manager': request.user})
+        except Exception as e:
+            messages.error(request, f'Error creating project: {str(e)}')
     
     context = {
-        'form': form,
         'page_title': 'Create New Project'
     }
     return render(request, 'site_diary/newproject.html', context)
@@ -1290,6 +1326,22 @@ def generate_project_report(request, project_id):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
     
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+@csrf_exempt
+def api_project_location(request, project_id):
+    """API endpoint to get project location"""
+    if request.method == 'GET':
+        try:
+            project = Project.objects.get(id=project_id)
+            return JsonResponse({
+                'location': project.location or '',
+                'project_name': project.name
+            })
+        except Project.DoesNotExist:
+            return JsonResponse({'error': 'Project not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 @require_site_manager_role
