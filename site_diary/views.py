@@ -16,14 +16,19 @@ from .models import (
 from .forms import (
     ProjectForm, DiaryEntryForm, LaborEntryFormSet, MaterialEntryFormSet,
     EquipmentEntryFormSet, DelayEntryFormSet, VisitorEntryFormSet, 
-    DiaryPhotoFormSet, DiarySearchForm, ProjectSearchForm
+    DiaryPhotoFormSet, DiarySearchForm, DiaryEntrySearchForm, ProjectSearchForm
 )
+from django.views.decorators.csrf import csrf_exempt
+import requests
+
+OPENWEATHERMAP_API_KEY = "0c461dd2b831a59146501773674950cd"
 
 # Create your views here.
 @login_required
 def diary(request):
-    """Create new diary entry with all related data"""
+    """Create new diary entry with all related data, including Save as Draft support"""
     if request.method == 'POST':
+        save_as_draft = request.POST.get('save_as_draft') == '1'
         diary_form = DiaryEntryForm(request.POST)
         labor_formset = LaborEntryFormSet(request.POST, prefix='labor')
         material_formset = MaterialEntryFormSet(request.POST, prefix='material')
@@ -32,14 +37,15 @@ def diary(request):
         visitor_formset = VisitorEntryFormSet(request.POST, prefix='visitor')
         photo_formset = DiaryPhotoFormSet(request.POST, request.FILES, prefix='photo')
         
-        if (diary_form.is_valid() and labor_formset.is_valid() and 
-            material_formset.is_valid() and equipment_formset.is_valid() and
-            delay_formset.is_valid() and visitor_formset.is_valid() and
+        if (diary_form.is_valid() and labor_formset.is_valid() and \
+            material_formset.is_valid() and equipment_formset.is_valid() and \
+            delay_formset.is_valid() and visitor_formset.is_valid() and \
             photo_formset.is_valid()):
             
             # Save diary entry
             diary_entry = diary_form.save(commit=False)
             diary_entry.created_by = request.user
+            diary_entry.draft = save_as_draft
             diary_entry.save()
             
             # Save related entries
@@ -48,41 +54,51 @@ def diary(request):
                     labor_entry = form.save(commit=False)
                     labor_entry.diary_entry = diary_entry
                     labor_entry.save()
-            
             for form in material_formset:
                 if form.cleaned_data and not form.cleaned_data.get('DELETE', False):
                     material_entry = form.save(commit=False)
                     material_entry.diary_entry = diary_entry
                     material_entry.save()
-            
             for form in equipment_formset:
                 if form.cleaned_data and not form.cleaned_data.get('DELETE', False):
                     equipment_entry = form.save(commit=False)
                     equipment_entry.diary_entry = diary_entry
                     equipment_entry.save()
-            
             for form in delay_formset:
                 if form.cleaned_data and not form.cleaned_data.get('DELETE', False):
                     delay_entry = form.save(commit=False)
                     delay_entry.diary_entry = diary_entry
                     delay_entry.save()
-            
             for form in visitor_formset:
                 if form.cleaned_data and not form.cleaned_data.get('DELETE', False):
                     visitor_entry = form.save(commit=False)
                     visitor_entry.diary_entry = diary_entry
                     visitor_entry.save()
-            
             for form in photo_formset:
                 if form.cleaned_data and not form.cleaned_data.get('DELETE', False):
                     photo_entry = form.save(commit=False)
                     photo_entry.diary_entry = diary_entry
                     photo_entry.save()
             
-            messages.success(request, 'Diary entry created successfully!')
-            return redirect('diary')
+            if save_as_draft:
+                messages.success(request, 'Diary draft saved successfully!')
+                return redirect('site_diary:sitedraft')
+            else:
+                messages.success(request, 'Diary entry created successfully!')
+                return redirect('site_diary:diary')
     else:
+        # Get user's projects for the form
+        if request.user.is_staff:
+            user_projects = Project.objects.all()
+        else:
+            user_projects = Project.objects.filter(
+                Q(project_manager=request.user) | Q(architect=request.user)
+            )
+        
         diary_form = DiaryEntryForm()
+        # Update the project field queryset
+        diary_form.fields['project'].queryset = user_projects
+        
         labor_formset = LaborEntryFormSet(prefix='labor')
         material_formset = MaterialEntryFormSet(prefix='material')
         equipment_formset = EquipmentEntryFormSet(prefix='equipment')
@@ -98,12 +114,13 @@ def diary(request):
         'delay_formset': delay_formset,
         'visitor_formset': visitor_formset,
         'photo_formset': photo_formset,
+        'user_projects': user_projects,
     }
     return render(request, 'site_diary/diary.html', context)
 
 @login_required
 def dashboard(request):
-    """Dashboard with project overview and statistics"""
+    """Enhanced dashboard with comprehensive project overview and statistics"""
     # Get user's projects
     if request.user.is_staff:
         projects = Project.objects.all()
@@ -121,23 +138,80 @@ def dashboard(request):
     total_projects = projects.count()
     active_projects = projects.filter(status='active').count()
     completed_projects = projects.filter(status='completed').count()
+    planning_projects = projects.filter(status='planning').count()
+    on_hold_projects = projects.filter(status='on_hold').count()
     total_entries = DiaryEntry.objects.filter(project__in=projects).count()
+    draft_entries = DiaryEntry.objects.filter(project__in=projects, draft=True).count()
     
     # Recent delays
     recent_delays = DelayEntry.objects.filter(
         diary_entry__project__in=projects
     ).select_related('diary_entry__project').order_by('-diary_entry__entry_date')[:5]
     
+    # Project progress statistics
+    project_progress = []
+    for project in projects[:5]:
+        latest_entry = DiaryEntry.objects.filter(
+            project=project, draft=False
+        ).order_by('-entry_date').first()
+        
+        progress_data = {
+            'project': project,
+            'latest_progress': latest_entry.progress_percentage if latest_entry else 0,
+            'total_entries': DiaryEntry.objects.filter(project=project, draft=False).count(),
+            'last_entry_date': latest_entry.entry_date if latest_entry else None,
+        }
+        project_progress.append(progress_data)
+    
+    # Labor statistics
+    labor_stats = LaborEntry.objects.filter(
+        diary_entry__project__in=projects
+    ).aggregate(
+        total_workers=Sum('workers_count'),
+        total_hours=Sum('hours_worked'),
+        avg_hours=Avg('hours_worked')
+    )
+    
+    # Material statistics
+    material_stats = MaterialEntry.objects.filter(
+        diary_entry__project__in=projects
+    ).aggregate(
+        total_deliveries=Count('id'),
+        total_materials=Count('material_name')
+    )
+    
+    # Equipment statistics
+    equipment_stats = EquipmentEntry.objects.filter(
+        diary_entry__project__in=projects
+    ).aggregate(
+        total_equipment=Count('id'),
+        total_hours=Sum('hours_operated')
+    )
+    
+    # Project card data for template (first 5 projects)
+    project_cards = []
+    for project in projects[:5]:
+        latest_entry = DiaryEntry.objects.filter(project=project, draft=False).order_by('-entry_date').first()
+        project_cards.append({'project': project, 'latest_entry': latest_entry})
+
     context = {
-        'projects': projects[:5],  # Show only 5 recent projects
+        'projects': projects[:5],  # For any other features
+        'project_cards': project_cards,
         'recent_entries': recent_entries,
         'recent_delays': recent_delays,
+        'project_progress': project_progress,
         'stats': {
             'total_projects': total_projects,
             'active_projects': active_projects,
             'completed_projects': completed_projects,
+            'planning_projects': planning_projects,
+            'on_hold_projects': on_hold_projects,
             'total_entries': total_entries,
-        }
+            'draft_entries': draft_entries,
+        },
+        'labor_stats': labor_stats,
+        'material_stats': material_stats,
+        'equipment_stats': equipment_stats,
     }
     return render(request, 'site_diary/dashboard.html', context)
 
@@ -147,18 +221,159 @@ def chatbot(request):
 
 @login_required
 def newproject(request):
-    """Create new project"""
+    """Create new project with enhanced validation and user experience"""
     if request.method == 'POST':
         form = ProjectForm(request.POST)
         if form.is_valid():
-            project = form.save()
+            project = form.save(commit=False)
+            # Set the project manager to the current user if not already set
+            if not project.project_manager:
+                project.project_manager = request.user
+            project.save()
             messages.success(request, f'Project "{project.name}" created successfully!')
-            return redirect('dashboard')
+            return redirect('site_diary:dashboard')
+        else:
+            messages.error(request, 'Please correct the errors below.')
     else:
-        form = ProjectForm()
+        # Pre-populate project manager with current user
+        form = ProjectForm(initial={'project_manager': request.user})
     
-    context = {'form': form}
+    context = {
+        'form': form,
+        'page_title': 'Create New Project'
+    }
     return render(request, 'site_diary/newproject.html', context)
+
+@login_required
+def project_list(request):
+    """List all projects with filtering and search capabilities"""
+    # Get user's projects
+    if request.user.is_staff:
+        projects = Project.objects.all()
+    else:
+        projects = Project.objects.filter(
+            Q(project_manager=request.user) | Q(architect=request.user)
+        )
+    
+    # Apply filters
+    search_form = ProjectSearchForm(request.GET)
+    if search_form.is_valid():
+        if search_form.cleaned_data.get('name'):
+            projects = projects.filter(name__icontains=search_form.cleaned_data['name'])
+        if search_form.cleaned_data.get('status'):
+            projects = projects.filter(status=search_form.cleaned_data['status'])
+        if search_form.cleaned_data.get('client_name'):
+            projects = projects.filter(client_name__icontains=search_form.cleaned_data['client_name'])
+        if search_form.cleaned_data.get('location'):
+            projects = projects.filter(location__icontains=search_form.cleaned_data['location'])
+    
+    # Pagination
+    paginator = Paginator(projects, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'search_form': search_form,
+        'page_title': 'Project List'
+    }
+    return render(request, 'site_diary/project_list.html', context)
+
+@login_required
+def project_detail(request, project_id):
+    """Detailed view of a specific project with all related information"""
+    project = get_object_or_404(Project, id=project_id)
+    
+    # Check if user has access to this project
+    if not request.user.is_staff and project.project_manager != request.user and project.architect != request.user:
+        messages.error(request, 'You do not have permission to view this project.')
+        return redirect('site_diary:dashboard')
+    
+    # Get project statistics
+    diary_entries = DiaryEntry.objects.filter(project=project).order_by('-entry_date')
+    total_entries = diary_entries.count()
+    draft_entries = diary_entries.filter(draft=True).count()
+    
+    # Get latest progress
+    latest_entry = diary_entries.filter(draft=False).first()
+    current_progress = latest_entry.progress_percentage if latest_entry else 0
+    
+    # Labor statistics
+    labor_stats = LaborEntry.objects.filter(
+        diary_entry__project=project
+    ).aggregate(
+        total_workers=Sum('workers_count'),
+        total_hours=Sum('hours_worked')
+    )
+    
+    # Material statistics
+    material_stats = MaterialEntry.objects.filter(
+        diary_entry__project=project
+    ).aggregate(
+        total_deliveries=Count('id'),
+        total_materials=Count('material_name')
+    )
+    
+    # Equipment statistics
+    equipment_stats = EquipmentEntry.objects.filter(
+        diary_entry__project=project
+    ).aggregate(
+        total_equipment=Count('id'),
+        total_hours=Sum('hours_operated')
+    )
+    
+    # Recent delays
+    recent_delays = DelayEntry.objects.filter(
+        diary_entry__project=project
+    ).select_related('diary_entry').order_by('-diary_entry__entry_date')[:5]
+    
+    # Recent visitors
+    recent_visitors = VisitorEntry.objects.filter(
+        diary_entry__project=project
+    ).select_related('diary_entry').order_by('-diary_entry__entry_date')[:5]
+    
+    context = {
+        'project': project,
+        'diary_entries': diary_entries[:10],  # Show last 10 entries
+        'total_entries': total_entries,
+        'draft_entries': draft_entries,
+        'current_progress': current_progress,
+        'labor_stats': labor_stats,
+        'material_stats': material_stats,
+        'equipment_stats': equipment_stats,
+        'recent_delays': recent_delays,
+        'recent_visitors': recent_visitors,
+        'page_title': f'Project: {project.name}'
+    }
+    return render(request, 'site_diary/project_detail.html', context)
+
+@login_required
+def project_edit(request, project_id):
+    """Edit an existing project"""
+    project = get_object_or_404(Project, id=project_id)
+    
+    # Check if user has permission to edit this project
+    if not request.user.is_staff and project.project_manager != request.user:
+        messages.error(request, 'You do not have permission to edit this project.')
+        return redirect('site_diary:project_detail', project_id=project_id)
+    
+    if request.method == 'POST':
+        form = ProjectForm(request.POST, instance=project)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Project "{project.name}" updated successfully!')
+            return redirect('site_diary:project_detail', project_id=project_id)
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = ProjectForm(instance=project)
+    
+    context = {
+        'form': form,
+        'project': project,
+        'page_title': f'Edit Project: {project.name}'
+    }
+    return render(request, 'site_diary/project_edit.html', context)
 
 @require_site_manager_role
 def createblog(request):
@@ -175,10 +390,10 @@ def createblog(request):
             blog_title = blog_post.title
             blog_post.delete()
             messages.success(request, f'Blog post "{blog_title}" deleted successfully!')
-            return redirect('site:drafts')
+            return redirect('site_diary:drafts')
         except (BlogPost.DoesNotExist, ValueError):
             messages.error(request, 'Blog post not found or you do not have permission to delete it.')
-            return redirect('site:drafts')
+            return redirect('site_diary:drafts')
     
     # Handle edit operation
     edit_blog = None
@@ -188,7 +403,7 @@ def createblog(request):
             edit_blog = BlogPost.objects.get(id=blog_id, author=request.user)
         except (BlogPost.DoesNotExist, ValueError):
             messages.error(request, 'Blog post not found or you do not have permission to edit it.')
-            return redirect('site:drafts')
+            return redirect('site_diary:drafts')
     
     if request.method == 'POST':
         try:
@@ -221,7 +436,7 @@ def createblog(request):
                     blog_post.save()
                 except BlogPost.DoesNotExist:
                     messages.error(request, 'Blog post not found or you do not have permission to edit it.')
-                    return redirect('site:drafts')
+                    return redirect('site_diary:drafts')
             else:
                 # Create new blog post with proper user isolation
                 blog_post = BlogPost.objects.create(
@@ -310,14 +525,14 @@ def createblog(request):
             # Success message and redirect
             if status == 'draft':
                 messages.success(request, 'Blog post saved as draft successfully!')
-                return redirect('site:drafts')  # Redirect to drafts page
+                return redirect('site_diary:drafts')  # Redirect to drafts page
             else:
                 messages.success(request, 'Blog post created successfully!')
-                return redirect('site:drafts')
+                return redirect('site_diary:drafts')
                 
         except Exception as e:
             messages.error(request, f'Error creating blog post: {str(e)}')
-            return redirect('site:createblog')
+            return redirect('site_diary:createblog')
     
     # GET request - show the form
     # Get categories and tags for the form
@@ -597,7 +812,7 @@ def project_detail(request, project_id):
     except:
         # Fallback - redirect to dashboard if project doesn't exist
         messages.info(request, 'Project details are not available yet.')
-        return redirect('site:dashboard')
+        return redirect('site_diary:dashboard')
 
 @login_required
 @require_site_manager_role
@@ -612,7 +827,7 @@ def settings(request):
         site_manager_profile = request.user.sitemanagerprofile
     except SiteManagerProfile.DoesNotExist:
         messages.error(request, 'Site Manager profile not found.')
-        return redirect('site:dashboard')
+        return redirect('site_diary:dashboard')
     
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -649,7 +864,7 @@ def settings(request):
                 for error in password_form.errors.values():
                     messages.error(request, error[0])
         
-        return redirect('site:settings')
+        return redirect('site_diary:settings')
     
     context = {
         'user': request.user,
@@ -700,7 +915,16 @@ def admindiary(request):
             entries = entries.filter(entry_date__gte=search_form.cleaned_data['start_date'])
         if search_form.cleaned_data['end_date']:
             entries = entries.filter(entry_date__lte=search_form.cleaned_data['end_date'])
+    
+    # Pagination
+    paginator = Paginator(entries, 15)
     page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'search_form': search_form,
+    }
     return render(request, 'admin/admindiary.html', context)
 
 @require_admin_role
@@ -727,4 +951,53 @@ def adminreports(request):
 
 @login_required
 def sitedraft(request):
-    return render(request, 'site_diary/sitedraft.html')
+    drafts = DiaryEntry.objects.filter(created_by=request.user, draft=True).order_by('-created_at')
+    return render(request, 'site_diary/sitedraft.html', {'drafts': drafts})
+
+@csrf_exempt
+@login_required
+def weather_api(request):
+    """Weather API endpoint for fetching real-time weather data"""
+    if request.method == 'POST':
+        location = request.POST.get('location')
+        if not location:
+            return JsonResponse({'success': False, 'error': 'Location required.'}, status=400)
+        
+        try:
+            # Use the provided API key
+            url = f"https://api.openweathermap.org/data/2.5/weather?q={location}&appid={OPENWEATHERMAP_API_KEY}&units=metric"
+            response = requests.get(url, timeout=10)
+            data = response.json()
+            
+            if response.status_code != 200:
+                error_msg = data.get('message', 'Weather API error')
+                return JsonResponse({'success': False, 'error': error_msg}, status=400)
+            
+            if 'main' not in data or 'weather' not in data:
+                return JsonResponse({'success': False, 'error': 'Invalid weather data received'}, status=400)
+            
+            # Extract weather data
+            weather_data = {
+                'condition': data['weather'][0]['main'].lower(),
+                'description': data['weather'][0]['description'].title(),
+                'temperature': round(data['main']['temp']),
+                'temperature_high': round(data['main']['temp_max']),
+                'temperature_low': round(data['main']['temp_min']),
+                'humidity': int(data['main']['humidity']),
+                'wind_speed': round(data['wind']['speed'] * 3.6, 1),  # Convert m/s to km/h
+                'pressure': data['main'].get('pressure', 0),
+                'visibility': data.get('visibility', 0) / 1000,  # Convert m to km
+                'location': data['name'],
+                'country': data['sys']['country'],
+            }
+            
+            return JsonResponse({'success': True, 'data': weather_data})
+            
+        except requests.exceptions.Timeout:
+            return JsonResponse({'success': False, 'error': 'Weather service timeout. Please try again.'}, status=408)
+        except requests.exceptions.RequestException as e:
+            return JsonResponse({'success': False, 'error': f'Weather service error: {str(e)}'}, status=503)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': f'Unexpected error: {str(e)}'}, status=500)
+    
+    return JsonResponse({'success': False, 'error': 'Only POST method allowed.'}, status=405)

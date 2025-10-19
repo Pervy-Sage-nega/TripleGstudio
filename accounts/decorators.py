@@ -74,7 +74,7 @@ def require_admin_role(view_func):
             
             if user_role == 'site_manager':
                 messages.error(request, "Site managers cannot access admin areas.")
-                return redirect('site:dashboard')
+                return redirect('site_diary:dashboard')
             elif user_role == 'public':
                 messages.error(request, "This area requires admin privileges.")
                 return redirect('accounts:client_login')
@@ -139,7 +139,7 @@ def require_public_role(view_func):
                 return redirect('portfolio:projectmanagement')
             elif user_role == 'site_manager':
                 messages.error(request, "Site managers cannot access client areas.")
-                return redirect('site:dashboard')
+                return redirect('site_diary:dashboard')
             else:
                 messages.error(request, "Access denied.")
                 return redirect('core:index')

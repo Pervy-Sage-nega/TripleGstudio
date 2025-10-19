@@ -38,7 +38,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('core.urls')),
     path('portfolio/', include(('portfolio.urls', 'portfolio'), namespace='portfolio')),
-    path('diary/', include(('site_diary.urls', 'site'), namespace='site')),
+    path('diary/', include(('site_diary.urls', 'site_diary'), namespace='site_diary')),
     path('blog/', include(('blog.urls', 'blog'), namespace='blog')),
     path('chat/', include(('chatbot.urls', 'chatbot'), namespace='chatbot')),
     # Admin side URLs

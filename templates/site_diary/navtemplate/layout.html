@@ -6,26 +6,26 @@
     </div>
     <ul class="nav-links" id="navLinks">
         <!-- General Pages -->
-        <li><a href="{% url 'site:dashboard' %}">Dashboard</a></li>
+        <li><a href="{% url 'site_diary:dashboard' %}">Dashboard</a></li>
         <li><a href="{% url 'chatbot:chatbot' %}">Message Center</a></li>
-        <li><a href="{% url 'site:newproject' %}">Create Project</a></li>
+        <li><a href="{% url 'site_diary:newproject' %}">Create Project</a></li>
         <li class="dropdown">
             <a href="#" class="dropbtn">Blog ▾</a>
             <div class="dropdown-content">
-                <a href="{% url 'site:createblog' %}">Create Blog</a>
-                <a href="{% url 'site:drafts' %}">Drafts</a>
+                <a href="{% url 'site_diary:createblog' %}">Create Blog</a>
+                <a href="{% url 'site_diary:drafts' %}">Drafts</a>
             </div>
         </li>
         <li class="dropdown">
             <a href="#" class="dropbtn">Site Diary ▾</a>
             <div class="dropdown-content">
-                <a href="{% url 'site:diary' %}">New Entry</a>
-                <a href="{% url 'site:sitedraft' %}">Drafts</a>
-                <a href="{% url 'site:history' %}">History</a>
-                <a href="{% url 'site:reports' %}">Reports</a>
+                <a href="{% url 'site_diary:diary' %}">New Entry</a>
+                <a href="{% url 'site_diary:sitedraft' %}">Drafts</a>
+                <a href="{% url 'site_diary:history' %}">History</a>
+                <a href="{% url 'site_diary:reports' %}">Reports</a>
             </div>
         </li>
-        <li><a href="{% url 'site:settings' %}">Settings</a></li>
+        <li><a href="{% url 'site_diary:settings' %}">Settings</a></li>
     </ul>
     <button class="mobile-menu-btn" id="mobileMenuBtn">
         <i class="fas fa-bars"></i>

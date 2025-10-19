@@ -1,221 +1,236 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 from django.utils import timezone
+from decimal import Decimal
 from datetime import date, timedelta
 from site_diary.models import (
     Project, DiaryEntry, LaborEntry, MaterialEntry, 
-    EquipmentEntry, DelayEntry, VisitorEntry
+    EquipmentEntry, DelayEntry, VisitorEntry, DiaryPhoto
 )
 
 class Command(BaseCommand):
-    help = 'Create sample data for site diary app testing'
+    help = 'Set up sample data for site diary testing'
 
     def handle(self, *args, **options):
-        self.stdout.write(self.style.SUCCESS('Creating sample data for site diary app...'))
+        self.stdout.write('Setting up sample data for site diary...')
         
         # Create sample users if they don't exist
-        admin_user, created = User.objects.get_or_create(
-            username='admin',
-            defaults={
-                'email': 'admin@example.com',
-                'first_name': 'Admin',
-                'last_name': 'User',
-                'is_staff': True,
-                'is_superuser': True
-            }
-        )
-        if created:
-            admin_user.set_password('admin123')
-            admin_user.save()
-            self.stdout.write(f'Created admin user: {admin_user.username}')
-        
-        project_manager, created = User.objects.get_or_create(
-            username='pm_john',
-            defaults={
-                'email': 'john@example.com',
-                'first_name': 'John',
-                'last_name': 'Smith',
-                'is_staff': True
-            }
-        )
-        if created:
-            project_manager.set_password('pm123')
-            project_manager.save()
-            self.stdout.write(f'Created project manager: {project_manager.username}')
-        
-        architect, created = User.objects.get_or_create(
-            username='arch_jane',
-            defaults={
-                'email': 'jane@example.com',
-                'first_name': 'Jane',
-                'last_name': 'Doe',
-                'is_staff': False
-            }
-        )
-        if created:
-            architect.set_password('arch123')
-            architect.save()
-            self.stdout.write(f'Created architect: {architect.username}')
+        self.create_sample_users()
         
         # Create sample projects
-        project1, created = Project.objects.get_or_create(
-            name='Downtown Office Complex',
-            defaults={
-                'description': 'Modern 20-story office building with retail space',
-                'client_name': 'ABC Corporation',
-                'project_manager': project_manager,
-                'architect': architect,
-                'location': '123 Main Street, Downtown',
-                'start_date': date.today() - timedelta(days=30),
-                'expected_end_date': date.today() + timedelta(days=365),
-                'budget': 5000000.00,
-                'status': 'active'
-            }
-        )
-        if created:
-            self.stdout.write(f'Created project: {project1.name}')
-        
-        project2, created = Project.objects.get_or_create(
-            name='Residential Complex Phase 1',
-            defaults={
-                'description': '50-unit residential apartment complex',
-                'client_name': 'XYZ Developers',
-                'project_manager': project_manager,
-                'architect': architect,
-                'location': '456 Oak Avenue, Suburbs',
-                'start_date': date.today() - timedelta(days=60),
-                'expected_end_date': date.today() + timedelta(days=300),
-                'budget': 3000000.00,
-                'status': 'active'
-            }
-        )
-        if created:
-            self.stdout.write(f'Created project: {project2.name}')
+        self.create_sample_projects()
         
         # Create sample diary entries
-        for i in range(5):
-            entry_date = date.today() - timedelta(days=i)
-            
-            diary_entry, created = DiaryEntry.objects.get_or_create(
-                project=project1,
-                entry_date=entry_date,
-                defaults={
-                    'created_by': project_manager,
-                    'weather_condition': 'sunny' if i % 2 == 0 else 'cloudy',
-                    'temperature_high': 25 + i,
-                    'temperature_low': 15 + i,
-                    'humidity': 60 + i * 5,
-                    'wind_speed': 10.5,
-                    'work_description': f'Foundation work continued on day {i+1}. Concrete pouring for sections A-C completed.',
-                    'progress_percentage': 15.5 + i * 2,
-                    'quality_issues': 'Minor concrete surface irregularities noted in section B' if i == 2 else '',
-                    'safety_incidents': '',
-                    'general_notes': f'Good progress made today. Weather conditions favorable.',
-                    'photos_taken': True,
-                    'approved': i < 3  # Approve first 3 entries
-                }
-            )
-            
-            if created:
-                self.stdout.write(f'Created diary entry for {entry_date}')
-                
-                # Add labor entries
-                LaborEntry.objects.create(
-                    diary_entry=diary_entry,
-                    labor_type='skilled',
-                    trade_description='Concrete Workers',
-                    workers_count=8,
-                    hours_worked=8.0,
-                    hourly_rate=25.00,
-                    overtime_hours=2.0 if i % 3 == 0 else 0,
-                    work_area='Foundation Section A-C',
-                    notes='Experienced crew, good productivity'
-                )
-                
-                LaborEntry.objects.create(
-                    diary_entry=diary_entry,
-                    labor_type='unskilled',
-                    trade_description='General Laborers',
-                    workers_count=4,
-                    hours_worked=8.0,
-                    hourly_rate=18.00,
-                    work_area='Site cleanup and material handling'
-                )
-                
-                # Add material entries
-                MaterialEntry.objects.create(
-                    diary_entry=diary_entry,
-                    material_name='Ready Mix Concrete',
-                    quantity_delivered=25.0,
-                    quantity_used=22.0,
-                    unit='m3',
-                    unit_cost=120.00,
-                    supplier='City Concrete Co.',
-                    delivery_time='08:30',
-                    quality_check=True,
-                    storage_location='On-site pour',
-                    notes='Grade 30 concrete as specified'
-                )
-                
-                MaterialEntry.objects.create(
-                    diary_entry=diary_entry,
-                    material_name='Rebar Steel',
-                    quantity_delivered=500.0,
-                    quantity_used=450.0,
-                    unit='kg',
-                    unit_cost=1.20,
-                    supplier='Steel Supply Inc.',
-                    storage_location='Material yard section B'
-                )
-                
-                # Add equipment entries
-                EquipmentEntry.objects.create(
-                    diary_entry=diary_entry,
-                    equipment_name='CAT 320D Excavator',
-                    equipment_type='Excavator',
-                    operator_name='Mike Johnson',
-                    hours_operated=7.5,
-                    fuel_consumption=45.0,
-                    status='operational',
-                    rental_cost_per_hour=85.00,
-                    work_area='Foundation excavation'
-                )
-                
-                # Add delay entry occasionally
-                if i == 1:
-                    DelayEntry.objects.create(
-                        diary_entry=diary_entry,
-                        category='weather',
-                        description='Heavy rain in the morning delayed concrete pour by 2 hours',
-                        start_time='09:00',
-                        end_time='11:00',
-                        duration_hours=2.0,
-                        impact_level='medium',
-                        affected_activities='Concrete pouring, finishing work',
-                        mitigation_actions='Covered work area, rescheduled pour to afternoon',
-                        responsible_party='Weather conditions',
-                        cost_impact=500.00
-                    )
-                
-                # Add visitor entry occasionally
-                if i == 0:
-                    VisitorEntry.objects.create(
-                        diary_entry=diary_entry,
-                        visitor_name='Robert Wilson',
-                        company='City Building Inspector',
-                        visitor_type='inspector',
-                        arrival_time='10:00',
-                        departure_time='11:30',
-                        purpose_of_visit='Foundation inspection and approval',
-                        areas_visited='Foundation sections A, B, C',
-                        accompanied_by='John Smith (PM)',
-                        notes='Inspection passed, minor recommendations noted'
-                    )
+        self.create_sample_diary_entries()
         
         self.stdout.write(
-            self.style.SUCCESS('Successfully created sample data for site diary app!')
+            self.style.SUCCESS('Successfully created sample data!')
         )
-        self.stdout.write('Sample users created:')
-        self.stdout.write(f'  - Admin: admin/admin123')
-        self.stdout.write(f'  - Project Manager: pm_john/pm123')
-        self.stdout.write(f'  - Architect: arch_jane/arch123')
+
+    def create_sample_users(self):
+        """Create sample users for testing"""
+        users_data = [
+            {
+                'username': 'site_manager',
+                'email': 'sitemanager@tripleg.com',
+                'first_name': 'John',
+                'last_name': 'Manager',
+                'is_staff': True,
+            },
+            {
+                'username': 'architect_user',
+                'email': 'architect@tripleg.com',
+                'first_name': 'Sarah',
+                'last_name': 'Architect',
+                'is_staff': False,
+            },
+            {
+                'username': 'project_manager',
+                'email': 'pm@tripleg.com',
+                'first_name': 'Mike',
+                'last_name': 'ProjectManager',
+                'is_staff': True,
+            }
+        ]
+        
+        for user_data in users_data:
+            user, created = User.objects.get_or_create(
+                username=user_data['username'],
+                defaults=user_data
+            )
+            if created:
+                user.set_password('testpass123')
+                user.save()
+                self.stdout.write(f'Created user: {user.username}')
+            else:
+                self.stdout.write(f'User already exists: {user.username}')
+
+    def create_sample_projects(self):
+        """Create sample projects"""
+        projects_data = [
+            {
+                'name': 'River View Residences',
+                'description': 'Luxury residential complex with river views',
+                'client_name': 'River View Development Corp',
+                'location': 'Manila, Philippines',
+                'start_date': date(2024, 1, 15),
+                'expected_end_date': date(2024, 12, 31),
+                'budget': Decimal('50000000.00'),
+                'status': 'active',
+            },
+            {
+                'name': 'Central Business District Tower',
+                'description': 'Commercial office tower in CBD',
+                'client_name': 'CBD Properties Inc',
+                'location': 'Makati, Philippines',
+                'start_date': date(2024, 3, 1),
+                'expected_end_date': date(2025, 6, 30),
+                'budget': Decimal('75000000.00'),
+                'status': 'active',
+            },
+            {
+                'name': 'Highway Bridge Expansion',
+                'description': 'Bridge expansion project for traffic relief',
+                'client_name': 'Department of Public Works',
+                'location': 'Quezon City, Philippines',
+                'start_date': date(2023, 10, 1),
+                'expected_end_date': date(2024, 8, 31),
+                'budget': Decimal('30000000.00'),
+                'status': 'active',
+            }
+        ]
+        
+        # Get users for project assignment
+        site_manager = User.objects.get(username='site_manager')
+        architect = User.objects.get(username='architect_user')
+        project_manager = User.objects.get(username='project_manager')
+        
+        for project_data in projects_data:
+            project, created = Project.objects.get_or_create(
+                name=project_data['name'],
+                defaults={
+                    **project_data,
+                    'project_manager': project_manager,
+                    'architect': architect,
+                }
+            )
+            if created:
+                self.stdout.write(f'Created project: {project.name}')
+            else:
+                self.stdout.write(f'Project already exists: {project.name}')
+
+    def create_sample_diary_entries(self):
+        """Create sample diary entries with related data"""
+        # Get projects and users
+        river_view = Project.objects.get(name='River View Residences')
+        cbd_tower = Project.objects.get(name='Central Business District Tower')
+        site_manager = User.objects.get(username='site_manager')
+        
+        # Create diary entries for the last 7 days
+        for i in range(7):
+            entry_date = date.today() - timedelta(days=i)
+            
+            # Create diary entry
+            diary_entry = DiaryEntry.objects.create(
+                project=river_view if i % 2 == 0 else cbd_tower,
+                entry_date=entry_date,
+                created_by=site_manager,
+                weather_condition='sunny' if i % 3 == 0 else 'cloudy',
+                temperature_high=32 + (i % 5),
+                temperature_low=25 + (i % 3),
+                humidity=60 + (i % 20),
+                wind_speed=Decimal('5.5') + Decimal(str(i % 3)),
+                work_description=f'Work performed on day {i+1}: Foundation work, concrete pouring, and site preparation.',
+                progress_percentage=Decimal('15.0') + Decimal(str(i * 2)),
+                quality_issues='' if i % 4 != 0 else 'Minor concrete cracking observed in section B',
+                safety_incidents='' if i % 5 != 0 else 'Near miss incident with crane operation',
+                general_notes=f'General notes for day {i+1}. Site conditions were good.',
+                photos_taken=i % 2 == 0,
+                draft=False,
+                approved=True,
+            )
+            
+            # Create labor entries
+            LaborEntry.objects.create(
+                diary_entry=diary_entry,
+                labor_type='skilled',
+                trade_description='Concrete Workers',
+                workers_count=8,
+                hours_worked=Decimal('8.0'),
+                hourly_rate=Decimal('15.00'),
+                overtime_hours=Decimal('2.0'),
+                work_area='Foundation Area',
+                notes='Worked on foundation concrete pouring'
+            )
+            
+            LaborEntry.objects.create(
+                diary_entry=diary_entry,
+                labor_type='supervisor',
+                trade_description='Site Supervisor',
+                workers_count=2,
+                hours_worked=Decimal('8.0'),
+                hourly_rate=Decimal('25.00'),
+                overtime_hours=Decimal('0.0'),
+                work_area='Entire Site',
+                notes='Supervised all activities'
+            )
+            
+            # Create material entries
+            MaterialEntry.objects.create(
+                diary_entry=diary_entry,
+                material_name='Ready-mix Concrete',
+                quantity_delivered=Decimal('15.0'),
+                quantity_used=Decimal('12.0'),
+                unit='m3',
+                unit_cost=Decimal('4500.00'),
+                supplier='ABC Concrete Supply',
+                quality_check=True,
+                storage_location='Site Storage Area',
+                notes='Good quality concrete delivered on time'
+            )
+            
+            # Create equipment entries
+            EquipmentEntry.objects.create(
+                diary_entry=diary_entry,
+                equipment_name='Excavator CAT 320',
+                equipment_type='Excavator',
+                operator_name='Juan Dela Cruz',
+                hours_operated=Decimal('6.0'),
+                fuel_consumption=Decimal('45.0'),
+                status='operational',
+                rental_cost_per_hour=Decimal('800.00'),
+                work_area='Foundation Area',
+            )
+            
+            # Create delay entries (occasionally)
+            if i % 3 == 0:
+                DelayEntry.objects.create(
+                    diary_entry=diary_entry,
+                    category='weather',
+                    description='Heavy rain caused work stoppage',
+                    duration_hours=Decimal('2.0'),
+                    impact_level='medium',
+                    affected_activities='Concrete pouring and excavation work',
+                    mitigation_actions='Workers sheltered in site office, resumed work after rain stopped',
+                    responsible_party='Weather conditions',
+                    cost_impact=Decimal('5000.00')
+                )
+            
+            # Create visitor entries (occasionally)
+            if i % 4 == 0:
+                VisitorEntry.objects.create(
+                    diary_entry=diary_entry,
+                    visitor_name='Maria Santos',
+                    company='Quality Assurance Inc',
+                    visitor_type='inspector',
+                    arrival_time='09:00',
+                    departure_time='11:30',
+                    purpose_of_visit='Quality inspection of foundation work',
+                    areas_visited='Foundation Area, Storage Area',
+                    accompanied_by='Site Supervisor',
+                    notes='Inspection passed with minor recommendations'
+                )
+            
+            self.stdout.write(f'Created diary entry for {entry_date}')
+        
+        self.stdout.write('Sample data creation completed!')
