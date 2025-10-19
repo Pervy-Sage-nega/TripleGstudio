@@ -179,6 +179,11 @@ def dashboard(request):
         diary_entry__project__in=projects
     ).select_related('diary_entry__project').order_by('-diary_entry__entry_date')[:5]
     
+    # Get recent diary entries
+    recent_entries = DiaryEntry.objects.filter(
+        project__in=projects
+    ).select_related('project', 'created_by').order_by('-entry_date')[:5]
+    
     context = {
         'projects': project_data[:5],  # Show only 5 recent projects with enhanced data
         'recent_entries': recent_entries,
@@ -189,6 +194,7 @@ def dashboard(request):
             'completed_projects': completed_projects,
             'total_entries': total_entries,
             'at_risk': sum(1 for p in project_data if p['schedule_status'] == 'At Risk'),
+            'draft_entries': DiaryEntry.objects.filter(project__in=projects, draft=True).count(),
         }
     }
     return render(request, 'site_diary/dashboard.html', context)
