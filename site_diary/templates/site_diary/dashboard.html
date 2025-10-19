@@ -34,8 +34,8 @@
                     <i class="fas fa-building"></i>
                 </div>
                 <div class="stat-content">
-                    <div class="stat-value">{{ stats.active_projects }}</div>
-                    <div class="stat-label">Active Projects</div>
+                    <div class="stat-value">{{ stats.total_projects }}</div>
+                    <div class="stat-label">Total Projects</div>
                 </div>
             </div>
             <div class="stat-card">
@@ -43,8 +43,8 @@
                     <i class="fas fa-check-circle"></i>
                 </div>
                 <div class="stat-content">
-                    <div class="stat-value">{{ stats.on_schedule }}</div>
-                    <div class="stat-label">On Schedule</div>
+                    <div class="stat-value">{{ stats.active_projects }}</div>
+                    <div class="stat-label">Active Projects</div>
                 </div>
             </div>
             <div class="stat-card">
@@ -61,8 +61,8 @@
                     <i class="fas fa-edit"></i>
                 </div>
                 <div class="stat-content">
-                    <div class="stat-value">{{ stats.completed_this_month }}</div>
-                    <div class="stat-label">Completed This Month</div>
+                    <div class="stat-value">{{ stats.draft_entries }}</div>
+                    <div class="stat-label">Draft Entries</div>
                 </div>
             </div>
         </div>
@@ -98,11 +98,11 @@
         <!-- Project Grid -->
         <div class="project-grid">
             {% for project in projects %}
-            <div class="project-card" data-category="{{ project.category|default:'commercial' }}" data-status="{{ project.status }}">
+            <div class="project-card" data-category="commercial" data-status="{{ project.status }}">
                 {% if project.image %}
                     <img src="{{ project.image.url }}" alt="{{ project.name }}" class="project-image">
                 {% else %}
-                    <img src="{% static 'images/image'|add:forloop.counter|add:'.jpg' %}" alt="{{ project.name }}" class="project-image" onerror="this.src='{% static 'images/image6.jpg' %}'">
+                    <img src="{% static 'images/image' %}{{ forloop.counter }}.jpg" alt="{{ project.name }}" class="project-image" onerror="this.src='{% static 'images/image6.jpg' %}'">
                 {% endif %}
                 <div class="project-content">
                     <h3 class="project-title">{{ project.name }}</h3>
@@ -164,7 +164,6 @@
 
            
         </div>
-
         
     </div>
    

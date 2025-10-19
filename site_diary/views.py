@@ -180,7 +180,7 @@ def dashboard(request):
     ).select_related('diary_entry__project').order_by('-diary_entry__entry_date')[:5]
     
     context = {
-        'projects': projects[:5],  # Show only 5 recent projects
+        'projects': project_data[:5],  # Show only 5 recent projects with enhanced data
         'recent_entries': recent_entries,
         'recent_delays': recent_delays,
         'stats': {
@@ -188,9 +188,97 @@ def dashboard(request):
             'active_projects': active_projects,
             'completed_projects': completed_projects,
             'total_entries': total_entries,
+            'at_risk': sum(1 for p in project_data if p['schedule_status'] == 'At Risk'),
         }
     }
     return render(request, 'site_diary/dashboard.html', context)
+
+@require_site_manager_role
+def weather_api(request):
+    """Weather API endpoint for fetching weather data"""
+    if request.method == 'GET':
+        location = request.GET.get('location', '')
+        if location:
+            # Here you would integrate with the actual weather API
+            # For now, return mock data
+            weather_data = {
+                'temperature': 25,
+                'humidity': 60,
+                'wind_speed': 10,
+                'description': 'Partly Cloudy',
+                'location': location
+            }
+            return JsonResponse(weather_data)
+        return JsonResponse({'error': 'Location parameter required'}, status=400)
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+@require_site_manager_role
+def print_preview(request, project_id):
+    """Print preview for project"""
+    project = get_object_or_404(Project, id=project_id)
+    return render(request, 'site_diary/print_preview.html', {'project': project})
+
+@require_site_manager_role
+def sample_print(request):
+    """Sample print view"""
+    return render(request, 'site_diary/sample_print.html')
+
+@require_site_manager_role
+def generate_project_report(request, project_id):
+    """Generate project report API"""
+    project = get_object_or_404(Project, id=project_id)
+    # Generate report logic here
+    return JsonResponse({'status': 'success', 'report_url': f'/reports/{project_id}/'})
+
+@require_site_manager_role
+def api_filter_projects(request):
+    """API for filtering projects"""
+    if request.method == 'GET':
+        status = request.GET.get('status', '')
+        category = request.GET.get('category', '')
+        
+        projects = Project.objects.all()
+        if status:
+            projects = projects.filter(status=status)
+        if category:
+            projects = projects.filter(category=category)
+            
+        project_data = []
+        for project in projects:
+            project_data.append({
+                'id': project.id,
+                'name': project.name,
+                'status': project.status,
+                'client_name': project.client_name,
+            })
+        
+        return JsonResponse({'projects': project_data})
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+@require_site_manager_role
+def adminclientproject(request):
+    """Admin client project management"""
+    return render(request, 'site_diary/admin/clientproject.html')
+
+@require_site_manager_role
+def admindiary(request):
+    """Admin diary management"""
+    return render(request, 'site_diary/admin/diary.html')
+
+@require_site_manager_role
+def admindiaryreviewer(request):
+    """Admin diary reviewer"""
+    return render(request, 'site_diary/admin/diary_reviewer.html')
+
+@require_site_manager_role
+def adminhistory(request):
+    """Admin history view"""
+    return render(request, 'site_diary/admin/history.html')
+
+@require_site_manager_role
+def adminreports(request):
+    """Admin reports view"""
+    return render(request, 'site_diary/admin/reports.html')
 
 @require_site_manager_role
 def chatbot(request):
