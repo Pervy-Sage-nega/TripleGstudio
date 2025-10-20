@@ -10,7 +10,8 @@ from django.views.decorators.cache import cache_page
 from django.utils.decorators import method_decorator
 from django.utils import timezone
 from .models import BlogPost, Category, Tag, BlogImage, ContentImage
-from accounts.decorators import require_site_manager_role, require_admin_role, allow_public_access, admin_or_site_manager_required
+from accounts.decorators import admin_or_site_manager_required
+from .decorators import require_site_manager_role, require_admin_role, allow_public_access
 from .seo import SEOManager
 
 # Create your views here.
