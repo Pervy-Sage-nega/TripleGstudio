@@ -1,0 +1,126 @@
+{% extends 'base_auth.html' %}
+{% load static %}
+
+{% block modal_messages %}
+    {% include 'client/_modal_messages.html' %}
+{% endblock %}
+
+{% block title %}Verify Account | Triple G BuildHub{% endblock %}
+{% block sidebar_content %}
+    <h1>Account Verification</h1>
+    <p>We've sent a 6-digit verification code to your email address. Please enter it below to activate your account.</p>
+    <div class="auth-features">
+        <div class="feature"><i class="fas fa-shield-check"></i><span>Secure verification</span></div>
+        <div class="feature"><i class="fas fa-clock"></i><span>Code expires in 10 minutes</span></div>
+        <div class="feature"><i class="fas fa-redo"></i><span>Resend if needed</span></div>
+    </div>
+{% endblock %}
+{% block form_content %}
+    <div class="auth-form-wrapper">
+        <div class="auth-form-header">
+            <h2>Verify Your Account</h2>
+            <p>We sent a verification code to: <strong>{{ email }}</strong></p>
+        </div>
+        
+        
+        <form method="POST" class="auth-form">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="{{ form.otp.id_for_label }}">Verification Code</label>
+                <div class="input-with-icon">
+                    <i class="fas fa-key"></i>
+                    {{ form.otp }}
+                </div>
+                {% if form.otp.errors %}
+                    <div class="error">{{ form.otp.errors.0 }}</div>
+                {% endif %}
+            </div>
+            <button type="submit" class="btn btn-primary login-btn">Verify Account</button>
+        </form>
+        
+        <div class="auth-form-footer">
+            <p>Didn't receive the code? 
+               <a href="{% url 'accounts:client_resend_otp' %}">Resend OTP</a>
+            </p>
+            <p><a href="{% url 'accounts:client_register' %}">Back to Registration</a></p>
+        </div>
+    </div>
+{% endblock %}
+{% block extra_scripts %}
+    <script src="{% static 'js/adminjs/login.js' %}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle form submission to set success flag
+            const form = document.querySelector('.auth-form');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    // Let the form submit normally, but set a flag for success modal
+                    sessionStorage.setItem('show_success_modal', 'true');
+                });
+            }
+        });
+        
+        function showCustomModal(type, title, message) {
+            // Create modal HTML
+            const modalHTML = `
+                <div id="customModalOverlay" class="custom-modal-overlay" role="dialog" aria-modal="true">
+                    <div class="custom-modal-content">
+                        <button class="custom-modal-close" aria-label="Close modal">&times;</button>
+                        <div class="custom-modal-body custom-alert-${type}">
+                            <div class="custom-modal-icon">
+                                ${type === 'success' ? '<i class="lni lni-checkmark-circle"></i>' : 
+                                  type === 'info' ? '<i class="lni lni-information"></i>' : 
+                                  type === 'warning' ? '<i class="lni lni-warning"></i>' : 
+                                  '<i class="lni lni-cross-circle"></i>'}
+                            </div>
+                            <div class="custom-modal-text">
+                                <h3>${title}</h3>
+                                <p>${message}</p>
+                            </div>
+                            <div class="custom-modal-actions">
+                                <button type="button" class="custom-btn-cancel">Cancel</button>
+                                <button type="button" class="custom-btn-confirm">Confirm</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove existing modal if any
+            const existingModal = document.getElementById('customModalOverlay');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Add modal to body
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            
+            // Show modal
+            const modal = document.getElementById('customModalOverlay');
+            modal.style.display = 'flex';
+            setTimeout(() => {
+                modal.classList.add('custom-visible');
+            }, 10);
+            
+            // Add event listeners
+            const closeBtn = modal.querySelector('.custom-modal-close');
+            const cancelBtn = modal.querySelector('.custom-btn-cancel');
+            const confirmBtn = modal.querySelector('.custom-btn-confirm');
+            
+            function hideModal() {
+                modal.classList.add('custom-fade-out');
+                modal.classList.remove('custom-visible');
+                setTimeout(() => {
+                    modal.remove();
+                }, 400);
+            }
+            
+            closeBtn.addEventListener('click', hideModal);
+            cancelBtn.addEventListener('click', hideModal);
+            confirmBtn.addEventListener('click', hideModal);
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) hideModal();
+            });
+        }
+    </script>
+{% endblock %}

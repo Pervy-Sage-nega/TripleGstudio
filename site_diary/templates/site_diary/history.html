@@ -1,0 +1,684 @@
+{% extends "site_diary/layout_format.html" %}
+{% load static %}
+
+{% block head %}
+    <title>Site Diary - History</title>
+    <link rel="stylesheet" href="{% static 'css/sitecss/history.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/createblog.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/global-footer.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admincss/nav.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}
+
+{% block body %}
+    <!-- Navigation Bar -->
+   
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-title">
+                <i class="fas fa-history"></i>
+                <h1>Site Diary History</h1>
+            </div>
+
+            <div class="view-toggle">
+                <button id="timelineViewBtn" class="view-btn active" title="Timeline View">
+                    <i class="fas fa-stream"></i>
+                </button>
+                <button id="tableViewBtn" class="view-btn" title="Table View">
+                    <i class="fas fa-table"></i>
+                </button>
+            </div>
+        </div>
+
+            <!-- Page Header already exists in your code -->
+            
+            <!-- Filter and Search Section -->
+            <div class="filter-container">
+                <div class="filter-header">
+                    <div class="filter-title">
+                        <i class="fas fa-filter"></i>
+                        <span>Filter Entries</span>
+                    </div>
+                    <button class="filter-toggle" id="filterToggle">
+                        <span>Show Filters</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+                
+                <div class="search-box">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-input" placeholder="Search entries...">
+                </div>
+                
+                <div class="filter-options" id="filterOptions" style="display: none;">
+                    <div class="filter-group">
+                        <label for="filter-project">Project Name</label>
+                        <select id="filter-project">
+                            <option value="">All Projects</option>
+                            <option value="Central Business District Tower">Central Business District Tower</option>
+                            <option value="Highway Bridge Expansion">Highway Bridge Expansion</option>
+                            <option value="Residential Complex Phase 2">Residential Complex Phase 2</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="filter-date-from">Date From</label>
+                        <input type="date" id="filter-date-from">
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="filter-date-to">Date To</label>
+                        <input type="date" id="filter-date-to">
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="filter-weather">Weather Condition</label>
+                        <select id="filter-weather">
+                            <option value="">All Weather</option>
+                            <option value="Sunny">Sunny</option>
+                            <option value="Cloudy">Cloudy</option>
+                            <option value="Rainy">Rainy</option>
+                            <option value="Windy">Windy</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="filter-personnel">Personnel</label>
+                        <select id="filter-personnel">
+                            <option value="">All Personnel</option>
+                            <option value="John Smith">John Smith</option>
+                            <option value="Sarah Johnson">Sarah Johnson</option>
+                            <option value="Michael Brown">Michael Brown</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-buttons">
+                        <button class="btn btn-secondary" id="resetFilters">
+                            <i class="fas fa-undo"></i>
+                            Reset
+                        </button>
+                        <button class="btn btn-primary" id="applyFilters">
+                            <i class="fas fa-check"></i>
+                            Apply Filters
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Timeline View -->
+            <div class="timeline-view" id="timelineView">
+                <div class="timeline-line"></div>
+                
+                <!-- Timeline Item 1 -->
+                <div class="timeline-item">
+                    <div class="timeline-header" data-id="1">
+                        <div class="timeline-date">
+                            <i class="fas fa-calendar-alt"></i>
+                            <div>
+                                <h3>Central Business District Tower</h3>
+                                <span>Mar 17, 2025</span>
+                            </div>
+                        </div>
+                        <div class="timeline-actions">
+                            <button class="action-btn download" title="Download PDF">
+                                <i class="fas fa-file-pdf"></i>
+                            </button>
+                            <button class="action-btn revision" title="Add Revision">
+                                <i class="fas fa-history"></i>
+                            </button>
+                            <button class="action-btn expand" title="Expand/Collapse">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-content" id="content1">
+                        <div class="project-info">
+                            <div class="info-group">
+                                <div class="info-label">Location</div>
+                                <div class="info-value">Downtown, Central Business District</div>
+                            </div>
+                            <div class="info-group">
+                                <div class="info-label">Supervisor</div>
+                                <div class="info-value">John Smith</div>
+                            </div>
+                            <div class="info-group">
+                                <div class="info-label">Personnel Count</div>
+                                <div class="info-value">42</div>
+                            </div>
+                            <div class="info-group">
+                                <div class="info-label">Equipment</div>
+                                <div class="info-value">Tower Crane, Concrete Pump, Excavator</div>
+                            </div>
+                        </div>
+                        
+                        <div class="weather-info">
+                            <i class="fas fa-sun weather-icon"></i>
+                            <div class="weather-details">
+                                <div class="weather-detail">
+                                    <i class="fas fa-thermometer-half"></i>
+                                    <span>24°C</span>
+                                </div>
+                                <div class="weather-detail">
+                                    <i class="fas fa-cloud"></i>
+                                    <span>Clear Sky</span>
+                                </div>
+                                <div class="weather-detail">
+                                    <i class="fas fa-wind"></i>
+                                    <span>8 km/h NE</span>
+                                </div>
+                                <div class="weather-detail">
+                                    <i class="fas fa-tint"></i>
+                                    <span>Humidity: 55%</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="activities-section">
+                            <div class="section-title">
+                                <i class="fas fa-tasks"></i>
+                                <span>Work Performed</span>
+                            </div>
+                            <p class="activity-text">
+                                Completed concrete pouring for the 12th floor slab. Inspected and approved formwork for columns on the 13th floor. Electrical conduit installation began on the 11th floor. Plumbing rough-in work continued on floors 9-10.
+                            </p>
+                        </div>
+                        
+                        <div class="activities-section">
+                            <div class="section-title">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>Delays & Issues</span>
+                            </div>
+                            <p class="activity-text">
+                                Concrete delivery was delayed by 2 hours due to traffic congestion. Minor rework required on 11th floor electrical placement due to design updates.
+                            </p>
+                        </div>
+                        
+                        <div class="activities-section">
+                            <div class="section-title">
+                                <i class="fas fa-camera"></i>
+                                <span>Site Photos</span>
+                            </div>
+                            <div class="photo-gallery">
+                                <div class="gallery-item">
+                                    <img src="{% static 'images/image3.jpg' %}" alt="Site Photo">
+                                </div>
+                                <div class="gallery-item">
+                                    <img src="{% static 'images/image3.jpg' %}" alt="Site Photo">
+                                    <span class="photo-count">+3</span>
+                                </div>
+                                <div class="gallery-item">
+                                    <img src="{% static 'images/image3.jpg' %}" alt="Site Photo">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Timeline Item 2 -->
+                <div class="timeline-item">
+                    <div class="timeline-header" data-id="2">
+                        <div class="timeline-date">
+                            <i class="fas fa-calendar-alt"></i>
+                            <div>
+                                <h3>Highway Bridge Expansion</h3>
+                                <span>Mar 16, 2025</span>
+                            </div>
+                        </div>
+                        <div class="timeline-actions">
+                            <button class="action-btn download" title="Download PDF">
+                                <i class="fas fa-file-pdf"></i>
+                            </button>
+                            <button class="action-btn revision" title="Add Revision">
+                                <i class="fas fa-history"></i>
+                            </button>
+                            <button class="action-btn expand" title="Expand/Collapse">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-content" id="content2">
+                        <div class="project-info">
+                            <div class="info-group">
+                                <div class="info-label">Location</div>
+                                <div class="info-value">North Highway, River Crossing</div>
+                            </div>
+                            <div class="info-group">
+                                <div class="info-label">Supervisor</div>
+                                <div class="info-value">Sarah Johnson</div>
+                            </div>
+                            <div class="info-group">
+                                <div class="info-label">Personnel Count</div>
+                                <div class="info-value">28</div>
+                            </div>
+                            <div class="info-group">
+                                <div class="info-label">Equipment</div>
+                                <div class="info-value">Mobile Crane, Pile Driver, Concrete Mixers</div>
+                            </div>
+                        </div>
+                        
+                        <div class="weather-info">
+                            <i class="fas fa-cloud-rain weather-icon"></i>
+                            <div class="weather-details">
+                                <div class="weather-detail">
+                                    <i class="fas fa-thermometer-half"></i>
+                                    <span>17°C</span>
+                                </div>
+                                <div class="weather-detail">
+                                    <i class="fas fa-cloud"></i>
+                                    <span>Light Rain</span>
+                                </div>
+                                <div class="weather-detail">
+                                    <i class="fas fa-wind"></i>
+                                    <span>12 km/h SW</span>
+                                </div>
+                                <div class="weather-detail">
+                                    <i class="fas fa-tint"></i>
+                                    <span>Humidity: 78%</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="activities-section">
+                            <div class="section-title">
+                                <i class="fas fa-tasks"></i>
+                                <span>Work Performed</span>
+                            </div>
+                            <p class="activity-text">
+                                Installed rebar for the north pier foundation. Waterproofing application on completed southern section. Traffic management team redirected vehicles to single lane operation.
+                            </p>
+                        </div>
+                        
+                        <div class="activities-section">
+                            <div class="section-title">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>Delays & Issues</span>
+                            </div>
+                            <p class="activity-text">
+                                Work slowed due to light rain showers. Suspended external painting operations. Site drainage system working effectively in managing rainfall.
+                            </p>
+                        </div>
+                        
+                        <div class="activities-section">
+                            <div class="section-title">
+                                <i class="fas fa-camera"></i>
+                                <span>Site Photos</span>
+                            </div>
+                            <div class="photo-gallery">
+    <div class="gallery-item">
+        <img src="{% static 'images/image3.jpg' %}" alt="Site Photo">
+    </div>
+    <div class="gallery-item">
+        <img src="{% static 'images/image4.jpg' %}" alt="Site Photo">
+    </div>
+</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Timeline Item 3 -->
+                <div class="timeline-item">
+                    <div class="timeline-header" data-id="3">
+                        <div class="timeline-date">
+                            <i class="fas fa-calendar-alt"></i>
+                            <div>
+                                <h3>Residential Complex Phase 2</h3>
+                                <span>Mar 15, 2025</span>
+                            </div>
+                        </div>
+                        <div class="timeline-actions">
+                            <button class="action-btn download" title="Download PDF">
+                                <i class="fas fa-file-pdf"></i>
+                            </button>
+                            <button class="action-btn revision" title="Add Revision">
+                                <i class="fas fa-history"></i>
+                            </button>
+                            <button class="action-btn expand" title="Expand/Collapse">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-content" id="content3">
+                        <div class="project-info">
+                            <div class="info-group">
+                                <div class="info-label">Location</div>
+                                <div class="info-value">Westside Development Zone</div>
+                            </div>
+                            <div class="info-group">
+                                <div class="info-label">Supervisor</div>
+                                <div class="info-value">Michael Brown</div>
+                            </div>
+                            <div class="info-group">
+                                <div class="info-label">Personnel Count</div>
+                                <div class="info-value">35</div>
+                            </div>
+                            <div class="info-group">
+                                <div class="info-label">Equipment</div>
+                                <div class="info-value">Backhoe, Concrete Pump, Boom Lift</div>
+                            </div>
+                        </div>
+                        
+                        <div class="weather-info">
+                            <i class="fas fa-cloud weather-icon"></i>
+                            <div class="weather-details">
+                                <div class="weather-detail">
+                                    <i class="fas fa-thermometer-half"></i>
+                                    <span>19°C</span>
+                                </div>
+                                <div class="weather-detail">
+                                    <i class="fas fa-cloud"></i>
+                                    <span>Partly Cloudy</span>
+                                </div>
+                                <div class="weather-detail">
+                                    <i class="fas fa-wind"></i>
+                                    <span>5 km/h SE</span>
+                                </div>
+                                <div class="weather-detail">
+                                    <i class="fas fa-tint"></i>
+                                    <span>Humidity: 62%</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="activities-section">
+                            <div class="section-title">
+                                <i class="fas fa-tasks"></i>
+                                <span>Work Performed</span>
+                            </div>
+                            <p class="activity-text">
+                                Framing for Building C units 15-20 completed. Roofing installation began on Building B. Window installation continued on Building A. Site landscaping work started around completed Building D.
+                            </p>
+                        </div>
+                        
+                        <div class="activities-section">
+                            <div class="section-title">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>Delays & Issues</span>
+                            </div>
+                            <p class="activity-text">
+                                Material delivery for kitchen cabinets delayed until tomorrow. HVAC subcontractor requested design clarification for Building C ductwork layout.
+                            </p>
+                        </div>
+                        
+                        <div class="activities-section">
+                            <div class="section-title">
+                                <i class="fas fa-camera"></i>
+                                <span>Site Photos</span>
+                            </div>
+                            <div class="photo-gallery">
+                                <div class="gallery-item">
+                                    <img src="{% static 'images/HOUSEtriGdesign.jpg' %}" alt="Site Photo">
+                                </div>
+                                <div class="gallery-item">
+                                    <img src="{% static 'images/image1.jpg' %}" alt="Site Photo">
+                                </div>
+                                <div class="gallery-item">
+                                    <img src="{% static 'images/image2.jpeg' %}" alt="Site Photo">
+                                    <span class="photo-count">+2</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Table View -->
+            <div class="table-view" id="tableView">
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Project</th>
+                                <th>Location</th>
+                                <th>Weather</th>
+                                <th>Personnel</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Mar 17, 2025</td>
+                                <td class="table-project-name">Central Business District Tower</td>
+                                <td>Downtown, Central Business District</td>
+                                <td>
+                                    <div class="table-weather">
+                                        <i class="fas fa-sun"></i>
+                                        <span>Sunny, 24°C</span>
+                                    </div>
+                                </td>
+                                <td>42</td>
+                                <td>
+                                    <div class="table-actions">
+                                        <button class="action-btn download" title="Download PDF">
+                                            <i class="fas fa-file-pdf"></i>
+                                        </button>
+                                        <button class="action-btn view" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="action-btn revision" title="Add Revision">
+                                            <i class="fas fa-history"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Mar 16, 2025</td>
+                                <td class="table-project-name">Highway Bridge Expansion</td>
+                                <td>North Highway, River Crossing</td>
+                                <td>
+                                    <div class="table-weather">
+                                        <i class="fas fa-cloud-rain"></i>
+                                        <span>Rainy, 17°C</span>
+                                    </div>
+                                </td>
+                                <td>28</td>
+                                <td>
+                                    <div class="table-actions">
+                                        <button class="action-btn download" title="Download PDF">
+                                            <i class="fas fa-file-pdf"></i>
+                                        </button>
+                                        <button class="action-btn view" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="action-btn revision" title="Add Revision">
+                                            <i class="fas fa-history"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Mar 15, 2025</td>
+                                <td class="table-project-name">Residential Complex Phase 2</td>
+                                <td>Westside Development Zone</td>
+                                <td>
+                                    <div class="table-weather">
+                                        <i class="fas fa-cloud"></i>
+                                        <span>Cloudy, 19°C</span>
+                                    </div>
+                                </td>
+                                <td>35</td>
+                                <td>
+                                    <div class="table-actions">
+                                        <button class="action-btn download" title="Download PDF">
+                                            <i class="fas fa-file-pdf"></i>
+                                        </button>
+                                        <button class="action-btn view" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="action-btn revision" title="Add Revision">
+                                            <i class="fas fa-history"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Pagination Controls -->
+            <div class="pagination">
+                <button class="page-btn disabled">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button class="page-btn active">1</button>
+                <button class="page-btn">2</button>
+                <button class="page-btn">3</button>
+                <span class="pagination-ellipsis">...</span>
+                <button class="page-btn">10</button>
+                <button class="page-btn">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+            
+            <!-- Modal for Viewing Entry Details -->
+            <div class="modal" id="viewEntryModal" style="display: none;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Entry Details</h2>
+                        <button class="modal-close" id="closeViewModal">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body" id="modalContent">
+                        <!-- Content will be dynamically inserted here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Revision Modal after the viewEntryModal -->
+            <div class="modal" id="revisionModal" style="display: none;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>
+                            <i class="fas fa-history"></i>
+                            Submit Revision
+                        </h2>
+                        <button class="modal-close" id="closeRevisionModal">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="revisionForm">
+                            <div class="form-section">
+                                <h3><i class="fas fa-info-circle"></i> Revision Details</h3>
+                                
+                                <div class="form-group">
+                                    <label for="revisionDate">Revision Date *</label>
+                                    <input type="date" id="revisionDate" name="revisionDate" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="revisionType">Revision Type *</label>
+                                    <select id="revisionType" name="revisionType" required>
+                                        <option value="">Select type</option>
+                                        <option value="correction">Data Correction</option>
+                                        <option value="update">Progress Update</option>
+                                        <option value="addition">Additional Information</option>
+                                        <option value="documentation">Documentation Update</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>Sections Revised *</label>
+                                    <div class="checkbox-group">
+                                        <label><input type="checkbox" name="sections" value="weather"> Weather Data</label>
+                                        <label><input type="checkbox" name="sections" value="personnel"> Personnel</label>
+                                        <label><input type="checkbox" name="sections" value="materials"> Materials</label>
+                                        <label><input type="checkbox" name="sections" value="work"> Work Performed</label>
+                                        <label><input type="checkbox" name="sections" value="delays"> Delays/Issues</label>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="revisionImpact">Impact Level</label>
+                                    <select id="revisionImpact" name="revisionImpact">
+                                        <option value="">Select impact</option>
+                                        <option value="minor">Minor (no impact)</option>
+                                        <option value="moderate">Moderate (small adjustments)</option>
+                                        <option value="major">Major (significant changes)</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="revisionDescription">Revision Description *</label>
+                                    <textarea id="revisionDescription" name="revisionDescription" rows="4" 
+                                              placeholder="Describe the revision details, including what changes were made and why..." required></textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>Supporting Documents</label>
+                                    <input type="file" id="supportingDocs" name="supportingDocs" multiple>
+                                    <small class="form-text">Upload any documents that support this revision (max 5 files)</small>
+                                </div>
+                            </div>
+                            
+                            <div class="form-section">
+                                <h3><i class="fas fa-user-tie"></i> Client Approval</h3>
+                                <div class="form-group">
+                                    <label for="clientName">Client Name *</label>
+                                    <input type="text" id="clientName" name="clientName" 
+                                           placeholder="Enter client name" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>Client Signature *</label>
+                                    <div class="photo-upload-container">
+                                        <div class="photo-preview" id="clientSignaturePreview">
+                                            <i class="fas fa-signature"></i>
+                                            <span>No signature selected</span>
+                                        </div>
+                                        <div class="photo-upload">
+                                            <input type="file" id="clientSignature" name="clientSignature" 
+                                                   accept="image/*" required>
+                                            <label for="clientSignature" class="upload-btn">
+                                                <i class="fas fa-upload"></i> Upload Signature
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-section">
+                                <h3><i class="fas fa-users"></i> Project Team</h3>
+                                <div class="form-group">
+                                    <label for="projectTeam">Project Team Leader *</label>
+                                    <input type="text" id="projectTeam" name="projectTeam" 
+                                           placeholder="Enter name of team leader" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>Team Leader Signature *</label>
+                                    <div class="photo-upload-container">
+                                        <div class="photo-preview" id="teamPhotoPreview">
+                                            <i class="fas fa-signature"></i>
+                                            <span>No signature selected</span>
+                                        </div>
+                                        <div class="photo-upload">
+                                            <input type="file" id="teamPhoto" name="teamPhoto" 
+                                                   accept="image/*" required>
+                                            <label for="teamPhoto" class="upload-btn">
+                                                <i class="fas fa-upload"></i> Upload Signature
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+  
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div> 
+  
+    
+    <script src="{% static 'js/sitejs/history.js' %}"></script>
+    {% include "site_diary/navtemplate/layoutfooter.html" %}
+{% endblock %}

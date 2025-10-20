@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site Diary - New Entry</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+    <link rel="stylesheet" href="../SiteDiary/sitecss/diary.css">
+    <link rel="stylesheet" href="../SiteDiary/sitecss/createblog.css">
+    <link rel="stylesheet" href="../SiteDiary/sitecss/dashboard.css">
+    <script src="./sitecss/sitejs/diary.js"></script>
+    <script src="./sitecss/sitejs/weather.js"></script>
+</head>
+<body>
+    <!-- Navigation Bar -->
+   
+    <nav class="navbar">
+        <div class="logo-container">
+            <img src="../userside/css/images/logostick.png" alt="Logo" class="logo">
+            <div class="logo1">TRIPLE<a href="index.html">G</a></div>
+        </div>
+        <ul class="nav-links" id="navLinks">
+            <!-- General Pages -->
+            <li><a href="../home.html">Home</a></li>
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="chatbot.html">Message Center</a></li>        
+            <li><a href="newproject.html">Create Project</a></li>
+            
+            <li class="dropdown">
+                <a href="#" class="dropbtn">Blog ▾</a>
+                <div class="dropdown-content">
+                <a href="createblog.html">Create Blog</a>
+                <a href="drafts.html">Drafts</a>              
+                </div>
+            </li>
+
+            <!-- Site Diary Module -->
+            <li class="dropdown">
+                <a href="#" class="dropbtn">Site Diary ▾</a>
+                <div class="dropdown-content">
+                <a href="diary.html">New Entry</a>
+                <a href="history.html">History</a>
+                <a href="reports.html">Reports</a>
+                </div>
+            </li>
+
+            <!-- Settings -->
+            <li><a href="settings.html">Settings</a></li>
+        </ul>
+        <button class="mobile-menu-btn">
+            <i class="fas fa-bars"></i>
+        </button>
+    </nav>
+    
+    <!-- Main Content Container -->
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-title">
+                <i class="fas fa-edit"></i>
+                <h1>New Site Diary Entry</h1>
+            </div>
+            <div class="page-actions">
+                <button class="btn btn-secondary" id="saveAsDraft">
+                    <i class="fas fa-save"></i>
+                    Save as Draft
+                </button>
+                <button class="btn btn-primary" id="submitEntry">
+                    <i class="fas fa-paper-plane"></i>
+                    Submit Entry
+                </button>
+            </div>
+        </div>
+        
+        <!-- Form Container -->
+        <div class="form-container">
+            <form id="siteEntryForm">
+                <!-- Project Information Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <i class="fas fa-project-diagram"></i>
+                        <h2 class="section-title">Project Information</h2>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="projectSelect">Project Name *</label>
+                            <select class="form-control" id="projectSelect" required>
+                                <option value="">Select Project</option>
+                                <option value="river-view">River View Residences</option>
+                                <option value="central-tower">Central Business District Tower</option>
+                                <option value="highway-bridge">Highway Bridge Expansion</option>
+                                <option value="waterfront">Waterfront Development</option>
+                            </select>
+                            <div class="invalid-feedback">Please select a project</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="projectNumber">Project Number</label>
+                            <input type="text" class="form-control" id="projectNumber" placeholder="Auto-filled based on project" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="projectBudget">Project Budget</label>
+                            <input type="text" class="form-control" id="projectBudget" placeholder="Auto-filled based on project" readonly>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="location">Location</label>
+                            <input type="text" class="form-control" id="location" placeholder="Auto-filled based on project" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="entryDate">Date *</label>
+                            <input type="text" class="form-control flatpickr" id="entryDate" placeholder="Select Date" required>
+                            <div class="invalid-feedback">Please select a date</div>
+                        </div>
+                    </div>
+                    
+                </div>
+                
+                <!-- Milestone Update Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <i class="fas fa-flag"></i>
+                        <h2 class="section-title">Milestone Update</h2>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="milestonePhase">Current Milestone Phase</label>
+                            <select class="form-control" id="milestonePhase" name="milestonePhase" required>
+                                <option value="">Select Current Phase</option>
+                                <option value="planning-design">Planning & Design</option>
+                                <option value="site-preparation">Site Preparation</option>
+                                <option value="foundation-work">Foundation Work</option>
+                                <option value="structural-framework">Structural Framework</option>
+                                <option value="mep">Mechanical, Electrical, Plumbing (MEP)</option>
+                                <option value="finishing">Interior & Exterior Finishing</option>
+                                <option value="inspection">Punch List & Inspection</option>
+                                <option value="handover">Project Completion / Handover</option>
+                            </select>
+                            <div class="invalid-feedback">Please select a milestone phase</div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="customMilestone">Custom Milestone Phase (Optional)</label>
+                            <input type="text" class="form-control" id="customMilestone" name="customMilestone" placeholder="Enter custom phase (optional)">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Weather Conditions Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <i class="fas fa-cloud-sun"></i>
+                        <h2 class="section-title">Weather Conditions</h2>
+                    </div>
+                    <div class="weather-readings">
+                        <div class="weather-reading morning">
+                            <h3><i class="fas fa-sun"></i> Morning Reading (8 AM)</h3>
+                            <div class="weather-data">
+                                <div class="weather-main">
+                                    <div class="weather-icon-large" id="morningWeatherIcon">
+                                        <i class="fas fa-sync fa-spin"></i>
+                                    </div>
+                                    <div class="weather-description" id="morningWeatherDesc">Loading...</div>
+                                </div>
+                                <div class="weather-details">
+                                    <div class="weather-detail">
+                                        <i class="fas fa-temperature-high"></i>
+                                        <span id="morningTemp">--</span>°C
+                                    </div>
+                                    <div class="weather-detail">
+                                        <i class="fas fa-wind"></i>
+                                        <span id="morningWind">--</span> km/h
+                                    </div>
+                                    <div class="weather-detail">
+                                        <i class="fas fa-tint"></i>
+                                        <span id="morningHumidity">--</span>%
+                                    </div>
+                                    <div class="weather-detail">
+                                        <i class="fas fa-cloud-rain"></i>
+                                        <span id="morningPrecipitation">--</span> mm
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="weather-reading afternoon">
+                            <h3><i class="fas fa-sun"></i> Afternoon Reading (2 PM)</h3>
+                            <div class="weather-data">
+                                <div class="weather-main">
+                                    <div class="weather-icon-large" id="afternoonWeatherIcon">
+                                        <i class="fas fa-sync fa-spin"></i>
+                                    </div>
+                                    <div class="weather-description" id="afternoonWeatherDesc">Loading...</div>
+                                </div>
+                                <div class="weather-details">
+                                    <div class="weather-detail">
+                                        <i class="fas fa-temperature-high"></i>
+                                        <span id="afternoonTemp">--</span>°C
+                                    </div>
+                                    <div class="weather-detail">
+                                        <i class="fas fa-wind"></i>
+                                        <span id="afternoonWind">--</span> km/h
+                                    </div>
+                                    <div class="weather-detail">
+                                        <i class="fas fa-tint"></i>
+                                        <span id="afternoonHumidity">--</span>%
+                                    </div>
+                                    <div class="weather-detail">
+                                        <i class="fas fa-cloud-rain"></i>
+                                        <span id="afternoonPrecipitation">--</span> mm
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Hidden inputs to store weather data -->
+                    <input type="hidden" id="weatherMorning" name="weatherMorning">
+                    <input type="hidden" id="weatherAfternoon" name="weatherAfternoon">
+                    
+                    <!-- Location input for manual override -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="siteLocation">Site Location</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="siteLocation" placeholder="Enter site location or allow automatic detection">
+                                <button type="button" class="btn btn-secondary" id="detectLocation">
+                                    <i class="fas fa-location-arrow"></i>
+                                </button>
+                                <button type="button" class="btn btn-primary" id="refreshWeather">
+                                    <i class="fas fa-sync-alt"></i> Refresh Weather
+                                </button>
+                            </div>
+                            <small class="form-text text-muted">Weather data is automatically fetched for morning (8 AM) and afternoon (2 PM)</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Labor and Personnel Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <i class="fas fa-hard-hat"></i>
+                        <h2 class="section-title">Labor and Personnel</h2>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="supervisorCount">Supervisors</label>
+                            <input type="number" class="form-control count-input" id="supervisorCount" min="0" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="skilledCount">Skilled Labor</label>
+                            <input type="number" class="form-control count-input" id="skilledCount" min="0" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="unskilledCount">Unskilled Labor</label>
+                            <input type="number" class="form-control count-input" id="unskilledCount" min="0" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="subcontractorCount">Subcontractors</label>
+                            <input type="number" class="form-control count-input" id="subcontractorCount" min="0" value="0">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Subcontractor Companies</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="subcontractorInput" placeholder="Enter subcontractor company name">
+                            <button type="button" class="add-btn" id="addSubcontractor">
+                                <i class="fas fa-plus-circle"></i>
+                            </button>
+                        </div>
+                        <div class="entry-list" id="subcontractorList">
+                            <!-- Dynamically added subcontractors will appear here -->
+                            <div class="entry-item">
+                                <div class="entry-content">
+                                    <strong>ABC Electrical Services</strong> - Electrical work
+                                </div>
+                                <div class="entry-actions">
+                                    <button type="button" class="entry-action-btn edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button type="button" class="entry-action-btn delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="personnelNotes">Personnel Notes</label>
+                        <textarea class="form-control form-control-textarea" id="personnelNotes" placeholder="Additional notes about personnel"></textarea>
+                    </div>
+                </div>
+                
+                <!-- Work Performed Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <i class="fas fa-tasks"></i>
+                        <h2 class="section-title">Work Performed</h2>
+                    </div>
+                    <div class="form-group">
+                        <label for="workPerformed">Description of Work Performed *</label>
+                        <textarea class="form-control form-control-textarea" id="workPerformed" placeholder="Describe in detail the work performed today" required></textarea>
+                        <div class="invalid-feedback">Please provide a description of work performed</div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="startTime">Start Time</label>
+                            <input type="text" class="form-control flatpickr" id="startTime" data-enable-time="true" data-no-calendar="true" data-date-format="H:i" placeholder="Select start time">
+                        </div>
+                        <div class="form-group">
+                            <label for="endTime">End Time</label>
+                            <input type="text" class="form-control flatpickr" id="endTime" data-enable-time="true" data-no-calendar="true" data-date-format="H:i" placeholder="Select end time">
+                        </div>
+                        <div class="form-group">
+                            <label for="totalHours">Total Hours</label>
+                            <input type="number" class="form-control" id="totalHours" placeholder="Auto-calculated" readonly>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Tasks Completed</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="taskInput" placeholder="Enter completed task">
+                            <button type="button" class="add-btn" id="addTask">
+                                <i class="fas fa-plus-circle"></i>
+                            </button>
+                        </div>
+                        <div class="entry-list" id="taskList">
+                            <!-- Dynamically added tasks will appear here -->
+                            <div class="entry-item">
+                                <div class="entry-content">
+                                    Foundation concrete pouring - Building B
+                                </div>
+                                <div class="entry-actions">
+                                    <button type="button" class="entry-action-btn edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button type="button" class="entry-action-btn delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Materials Delivered Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <i class="fas fa-truck-loading"></i>
+                        <h2 class="section-title">Materials Delivered</h2>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="materialName">Material Name</label>
+                            <input type="text" class="form-control" id="materialName" placeholder="Enter material name">
+                        </div>
+                        <div class="form-group">
+                            <label for="materialQuantity">Quantity</label>
+                            <input type="number" class="form-control" id="materialQuantity" placeholder="Enter quantity">
+                        </div>
+                        <div class="form-group">
+                            <label for="materialUnit">Unit</label>
+                            <select class="form-control" id="materialUnit">
+                                <option value="">Select Unit</option>
+                                <option value="kg">kg</option>
+                                <option value="ton">ton</option>
+                                <option value="m3">m³</option>
+                                <option value="m2">m²</option>
+                                <option value="m">m</option>
+                                <option value="pcs">pcs</option>
+                                <option value="bags">bags</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="materialCost">Cost (₱)</label>
+                            <input type="number" class="form-control" id="materialCost" placeholder="Enter cost">
+                        </div>
+                        <div class="form-group">
+                            <label for="materialAdd">&nbsp;</label>
+                            <button type="button" class="btn btn-primary" id="addMaterial" style="width: 100%;">
+                                <i class="fas fa-plus"></i> Add Material
+                            </button>
+                        </div>
+                    </div>
+                    <div class="entry-list" id="materialsList">
+                        <!-- Dynamically added materials will appear here -->
+                        <div class="entry-item">
+                            <div class="entry-content">
+                                <strong>Ready-mix Concrete</strong> - 15 m³ - Delivery note: #RMC-20250315
+                            </div>
+                            <div class="entry-actions">
+                                <button type="button" class="entry-action-btn edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="entry-action-btn delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Equipment Used Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <i class="fas fa-tools"></i>
+                        <h2 class="section-title">Equipment Used</h2>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="equipmentName">Equipment Name</label>
+                            <input type="text" class="form-control" id="equipmentName" placeholder="Enter equipment name">
+                        </div>
+                        <div class="form-group">
+                            <label for="equipmentQuantity">Quantity</label>
+                            <input type="number" class="form-control" id="equipmentQuantity" min="1" value="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="equipmentHours">Hours Used</label>
+                            <input type="number" class="form-control" id="equipmentHours" min="0" step="0.5" placeholder="Enter hours">
+                        </div>
+                        <div class="form-group">
+                            <label for="equipmentCost">Daily Cost (₱)</label>
+                            <input type="number" class="form-control" id="equipmentCost" placeholder="Enter daily cost">
+                        </div>
+                        <div class="form-group">
+                            <label for="equipmentAdd">&nbsp;</label>
+                            <button type="button" class="btn btn-primary" id="addEquipment" style="width: 100%;">
+                                <i class="fas fa-plus"></i> Add Equipment
+                            </button>
+                        </div>
+                        
+                    </div>
+                    <div class="entry-list" id="equipmentList">
+                        <!-- Dynamically added equipment will appear here -->
+                        <div class="entry-item">
+                            <div class="entry-content">
+                                <strong>Excavator CAT 320</strong> - 1 unit - 8 hours
+                            </div>
+                            <div class="entry-actions">
+                                <button type="button" class="entry-action-btn edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="entry-action-btn delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Other Costs Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <h2 class="section-title">Other Costs</h2>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="otherCostName">Cost Name</label>
+                            <input type="text" class="form-control" id="otherCostName" placeholder="Enter cost description">
+                        </div>
+                        <div class="form-group">
+                            <label for="otherCostAmount">Amount (₱)</label>
+                            <input type="number" class="form-control" id="otherCostAmount" placeholder="Enter amount">
+                        </div>
+                        <div class="form-group">
+                            <label for="addOtherCost">&nbsp;</label>
+                            <button type="button" class="btn btn-primary" id="addOtherCost" style="width: 100%;">
+                                <i class="fas fa-plus"></i> Add Cost
+                            </button>
+                        </div>
+                    </div>
+                    <div class="entry-list" id="otherCostsList">
+                        <!-- Dynamically added other costs will appear here -->
+                    </div>
+                </div>
+                <!-- Budget Summary Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <i class="fas fa-calculator"></i>
+                        <h2 class="section-title">Budget Summary</h2>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Cost of This Day (₱)</label>
+                            <input type="text" class="form-control" id="dailyCost" readonly value="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label>Running Budget Usage (₱)</label>
+                            <input type="text" class="form-control" id="runningCost" readonly value="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label>Remaining Budget (₱)</label>
+                            <input type="text" class="form-control" id="remainingBudget" readonly value="0.00">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Delays and Issues Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h2 class="section-title">Delays and Issues</h2>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="delayType">Type of Delay/Issue</label>
+                            <select class="form-control" id="delayType">
+                                <option value="">Select Type</option>
+                                <option value="weather">Weather Related</option>
+                                <option value="material">Material Shortage</option>
+                                <option value="equipment">Equipment Failure</option>
+                                <option value="labor">Labor Shortage</option>
+                                <option value="approval">Approval Delay</option>
+                                <option value="design">Design Issue</option>
+                                <option value="access">Site Access</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="delayImpact">Impact Level</label>
+                            <select class="form-control" id="delayImpact">
+                                <option value="">Select Impact</option>
+                                <option value="minor">Minor - No schedule impact</option>
+                                <option value="moderate">Moderate - Small schedule impact</option>
+                                <option value="major">Major - Significant delay</option>
+                                <option value="critical">Critical - Requires immediate action</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="delayDescription">Description</label>
+                        <textarea class="form-control form-control-textarea" id="delayDescription" placeholder="Describe the delay or issue in detail"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="delaySolution">Solution/Mitigation</label>
+                        <textarea class="form-control form-control-textarea" id="delaySolution" placeholder="Describe any solutions or mitigation measures taken"></textarea>
+                    </div>
+                    <button type="button" class="btn btn-primary" id="addDelay">
+                        <i class="fas fa-plus"></i> Add Delay/Issue
+                    </button>
+                    <div class="entry-list" id="delayList">
+                        <!-- Dynamically added delays will appear here -->
+                        <div class="entry-item">
+                            <div class="entry-content">
+                                <strong>Material Shortage - Major Impact</strong><br>
+                                Reinforcement steel delivery delayed by supplier. Expected to arrive tomorrow. Rescheduled concrete pour for foundation section F.
+                            </div>
+                            <div class="entry-actions">
+                                <button type="button" class="entry-action-btn edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="entry-action-btn delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Photo Documentation Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <i class="fas fa-camera"></i>
+                        <h2 class="section-title">Photo Documentation</h2>
+                    </div>
+                    <div class="photo-upload-container" id="photoDropZone">
+                        <input type="file" id="photoUpload" multiple accept="image/*" style="display: none;">
+                        <div class="upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <div class="upload-text">Drag and drop photos here or click to browse</div>
+                        <div class="upload-subtext">JPG, PNG or GIF • Max 10 MB each • Up to 20 photos</div>
+                    </div>
+                    <div class="photo-gallery" id="photoGallery">
+                        <!-- Sample photo preview - will be dynamically generated -->
+                        <div class="photo-item">
+                            <img src="https://via.placeholder.com/300x200/3c6e71/ffffff?text=Site+Photo" alt="Site Photo" class="photo-preview">
+                            <div class="photo-overlay">
+                                <div class="photo-description">Foundation work progress</div>
+                                <div class="photo-actions">
+                                    <button type="button" class="photo-action-btn edit-desc" title="Edit Description">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button type="button" class="photo-action-btn delete-photo" title="Remove Photo">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="photo-item">
+                            <img src="https://via.placeholder.com/300x200/284b63/ffffff?text=Site+Photo" alt="Site Photo" class="photo-preview">
+                            <div class="photo-overlay">
+                                <div class="photo-description">Excavation area north side</div>
+                                <div class="photo-actions">
+                                    <button type="button" class="photo-action-btn edit-desc" title="Edit Description">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button type="button" class="photo-action-btn delete-photo" title="Remove Photo">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Digital Signatures Section -->
+<div class="form-section">
+    <div class="section-header">
+        <i class="fas fa-signature"></i>
+        <h2 class="section-title">Digital Signatures</h2>
+    </div>
+    
+    <div class="form-row">
+        <div class="form-group">
+            <label for="supervisorName">Supervisor Name *</label>
+            <input type="text" class="form-control" id="supervisorName" placeholder="Enter supervisor name" required>
+            <div class="invalid-feedback">Please enter the supervisor name</div>
+        </div>
+        <div class="form-group">
+            <label for="supervisorEmail">Supervisor Email</label>
+            <input type="email" class="form-control" id="supervisorEmail" placeholder="Enter supervisor email">
+        </div>
+    </div>
+    
+    <div class="signature-container">
+        <label>Supervisor Signature *</label>
+        <div class="signature-upload-container">
+            <input type="file" id="supervisorSignatureUpload" accept="image/*" style="display: none;">
+            <div class="signature-preview-container" id="supervisorSignaturePreview">
+                <div class="upload-icon">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <div class="upload-text">Click to upload signature image</div>
+            </div>
+            <div class="signature-actions">
+                <button type="button" class="signature-btn clear" id="clearSupervisorSignature">
+                    <i class="fas fa-eraser"></i> Clear
+                </button>
+            </div>
+        </div>
+        <div class="invalid-feedback">Supervisor signature is required</div>
+    </div>
+    
+    <div class="form-row">
+        <div class="form-group">
+            <label for="clientRepName">Client Representative Name</label>
+            <input type="text" class="form-control" id="clientRepName" placeholder="Enter client representative name">
+        </div>
+        <div class="form-group">
+            <label for="clientRepEmail">Client Representative Email</label>
+            <input type="email" class="form-control" id="clientRepEmail" placeholder="Enter client representative email">
+        </div>
+    </div>
+    
+    <div class="signature-container">
+        <label>Client Representative Signature</label>
+        <div class="signature-upload-container">
+            <input type="file" id="clientSignatureUpload" accept="image/*" style="display: none;">
+            <div class="signature-preview-container" id="clientSignaturePreview">
+                <div class="upload-icon">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <div class="upload-text">Click to upload signature image</div>
+            </div>
+            <div class="signature-actions">
+                <button type="button" class="signature-btn clear" id="clearClientSignature">
+                    <i class="fas fa-eraser"></i> Clear
+                </button>
+            </div>
+        </div>
+        <div class="invalid-feedback">Client signature is required</div>
+    </div>
+</div>
+                    
+                    
+                
+                <!-- Additional Notes Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <i class="fas fa-sticky-note"></i>
+                        <h2 class="section-title">Additional Notes</h2>
+                    </div>
+                    <div class="form-group">
+                        <textarea class="form-control form-control-textarea" id="additionalNotes" placeholder="Enter any additional notes or observations"></textarea>
+                    </div>
+                </div>
+                
+                <!-- Form Footer -->
+                <div class="form-footer">
+                    <div class="save-status">
+                        <i class="fas fa-save"></i>
+                        <span>Last saved: Today at 10:25 AM</span>
+                    </div>
+                    <div class="action-buttons">
+                        <button type="button" class="btn btn-secondary" id="saveAsDraft">
+                            <i class="fas fa-save"></i> Save as Draft
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="submitDiary">
+                            <i class="fas fa-check-circle"></i> Submit Entry
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="copyright">
+                &copy; GG.Squad. All rights reserved.
+            </div>
+            <div class="footer-links">
+                <a href="#">Terms of Service</a>
+                <a href="#">Privacy Policy</a>
+                <a href="#">Support</a>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
+
+

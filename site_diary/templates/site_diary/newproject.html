@@ -1,0 +1,656 @@
+{% extends "site_diary/layout_format.html" %}
+{% load static %}
+
+{% block head %}
+    <title>New Project Entry | Triple G BuildHub</title>
+    <link rel="stylesheet" href="{% static 'css/sitecss/global-footer.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/reports.css' %}">   
+    <link rel="stylesheet" href="{% static 'css/sitecss/createblog.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/newproject.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        .input-with-icon {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .currency-symbol {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #555;
+            font-weight: 500;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .input-with-icon input[type="text"] {
+            padding-left: 30px;
+            width: 100%;
+        }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+        .location-input-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .location-input-container input {
+            flex: 1;
+        }
+        .map-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .map-modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 800px;
+            height: 70%;
+            max-height: 600px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .map-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .map-container {
+            width: 100%;
+            height: calc(100% - 80px);
+            border-radius: 4px;
+        }
+        .map-modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .input-with-dropdown {
+            position: relative;
+            display: flex;
+        }
+        .input-with-dropdown input {
+            flex: 1;
+            border-radius: 4px 0 0 4px;
+        }
+        .dropdown {
+            position: relative;
+        }
+        .dropdown-btn {
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-left: none;
+            background: #f8f9fa;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+        }
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            min-width: 200px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .dropdown-menu.show {
+            display: block;
+        }
+        .dropdown-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        .dropdown-item:hover {
+            background: #f8f9fa;
+        }
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+        .dropdown-loading {
+            padding: 10px 15px;
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    
+
+    <!-- Main container -->
+    <div class="container">
+        <!-- Page header -->
+        <div class="page-header">
+            <div class="page-title">
+                <i class="fas fa-plus-circle"></i>
+                <h1>New Project Entry</h1>
+            </div>
+        </div>
+
+        <!-- Project Entry Form -->
+        <div class="filter-container">
+            <div class="filter-header">
+                <div class="filter-title">
+                    <i class="fas fa-building"></i>
+                    Project Details
+                </div>
+            </div>
+            
+            <form id="new-project-form" method="post">
+                {% csrf_token %}
+                <div class="filter-options">
+                    <!-- Project Name -->
+                    <div class="filter-group">
+                        <label for="project-name">Project Name <span class="required">*</span></label>
+                        <input type="text" id="project-name" required>
+                        <p class="error-message" id="name-error" style="display: none;">Project Name is required.</p>
+                    </div>
+
+                    <!-- Client Name -->
+                    <div class="filter-group">
+                        <label for="client-name">Client Name <span class="required">*</span></label>
+                        <div class="input-with-dropdown">
+                            <input type="text" id="client-name" required>
+                            <div class="dropdown">
+                                <button type="button" class="dropdown-btn" id="client-dropdown">
+                                    <i class="fas fa-chevron-down"></i>
+                                </button>
+                                <div class="dropdown-menu" id="client-menu">
+                                    <div class="dropdown-loading">Loading clients...</div>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="error-message" id="client-error" style="display: none;">Client Name is required.</p>
+                    </div>
+
+                    <!-- Project Code -->
+                    <div class="filter-group">
+                        <label for="project-code">Project Code</label>
+                        <input type="text" id="project-code" placeholder="Auto-generated" readonly>
+                    </div>
+
+                    <!-- Project Location -->
+                    <div class="filter-group">
+                        <label for="project-location">Project Location <span class="required">*</span></label>
+                        <div class="location-input-container">
+                            <input type="text" id="project-location" required placeholder="Enter location or click map button">
+                            <button type="button" id="map-picker-btn" class="btn btn-outline">
+                                <i class="fas fa-map-marker-alt"></i> Pick on Map
+                            </button>
+                        </div>
+                        <p class="error-message" id="location-error" style="display: none;">Project Location is required.</p>
+                    </div>
+
+                    <!-- Project Image Upload -->
+                    <div class="filter-group">
+                        <label for="project-image">Project Image (Optional)</label>
+                        <input type="file" id="project-image" accept="image/png, image/jpeg">
+                        <small>Supported formats: JPG, PNG. Max size: 2MB.</small>
+                        <div class="image-preview" id="image-preview">
+                            <img src="#" alt="Project Image Preview" id="image-output">
+                            <button type="button" id="clear-image" class="btn btn-secondary">
+                                <i class="fas fa-trash-alt"></i> Remove Image
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Project Dates -->
+                    <div class="filter-group">
+                        <label for="start-date">Start Date <span class="required">*</span></label>
+                        <input type="date" id="start-date" required>
+                        <p class="error-message" id="date-error" style="display: none;">Start Date is required.</p>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="end-date">Estimated End Date <span class="required">*</span></label>
+                        <input type="date" id="end-date" required>
+                        <p class="error-message" id="end-date-error" style="display: none;">End Date must be after the Start Date.</p>
+                    </div>
+
+                    <!-- Project Budget -->
+                    <div class="filter-group">
+                        <label for="project-budget">Project Budget (₱) <span class="required">*</span></label>
+                        <div class="input-with-icon">
+                            <span class="currency-symbol">₱</span>
+                            <input type="text" id="project-budget" placeholder="Enter project budget" required>
+                        </div>
+                        <p class="error-message" id="budget-error" style="display: none;">Please enter a valid budget amount.</p>
+                    </div>
+
+                    <!-- Assigned Architect -->
+                    <div class="filter-group">
+                        <label for="assigned-architect">Assigned Architect <span class="required">*</span></label>
+                        <div class="input-with-dropdown">
+                            <input type="text" id="assigned-architect" required>
+                            <div class="dropdown">
+                                <button type="button" class="dropdown-btn" id="architect-dropdown">
+                                    <i class="fas fa-chevron-down"></i>
+                                </button>
+                                <div class="dropdown-menu" id="architect-menu">
+                                    <div class="dropdown-loading">Loading architects...</div>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="error-message" id="architect-error" style="display: none;">Assigned Architect is required.</p>
+                    </div>
+                    
+                    <!-- Project Type -->
+                    <div class="filter-group">
+                        <label for="project-type">Project Type <span class="required">*</span></label>
+                        <select id="project-type">
+                            <option value="">Select Type</option>
+                            <option value="residential">Residential</option>
+                            <option value="commercial">Commercial</option>
+                            <option value="industrial">Industrial</option>
+                            <option value="infrastructure">Infrastructure</option>
+                        </select>
+                        <p class="error-message" id="type-error" style="display: none;">Project Type is required.</p>
+                    </div>
+                    
+                    
+                    
+                    <!-- Project Description -->
+                    <div class="filter-group">
+                        <label for="project-description">Project Description</label>
+                        <textarea id="project-description" rows="4" placeholder="Optional: Add project details or notes..."></textarea>
+                    </div>
+                </div>
+                
+                <!-- Form Buttons -->
+                <div class="filter-buttons">
+                    <button type="button" class="btn btn-secondary" id="reset-btn">
+                        <i class="fas fa-undo"></i> Reset
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="submit-btn">
+                        <i class="fas fa-save"></i> Create Project
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Map Modal -->
+    <div id="mapModal" class="map-modal">
+        <div class="map-modal-content">
+            <div class="map-modal-header">
+                <h3><i class="fas fa-map-marker-alt"></i> Select Project Location</h3>
+                <button type="button" id="closeMapModal" class="btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="search-container" style="margin-bottom: 15px;">
+                <input type="text" id="location-search" placeholder="Search for a location..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                <button type="button" id="search-btn" style="margin-top: 5px; padding: 8px 15px; background: #007cba; color: white; border: none; border-radius: 4px; cursor: pointer;">Search</button>
+            </div>
+            <div id="map" class="map-container"></div>
+            <div class="map-modal-footer">
+                <button type="button" id="cancelMapSelection" class="btn btn-secondary">Cancel</button>
+                <button type="button" id="confirmMapSelection" class="btn btn-primary">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById("new-project-form");
+        const projectName = form.querySelector("#project-name");
+        const projectLocation = form.querySelector("#project-location");
+        const architectName = form.querySelector("#assigned-architect");
+        const projectType = form.querySelector("#project-type");
+        const startDate = form.querySelector("#start-date");
+        const endDate = form.querySelector("#end-date");
+        const projectBudget = form.querySelector("#project-budget");
+        const imageInput = form.querySelector("#project-image");
+        const imagePreview = document.getElementById("image-preview");
+        const imageOutput = document.getElementById("image-output");
+        const clearImage = document.getElementById("clear-image");
+        const mapPickerBtn = document.getElementById('map-picker-btn');
+        const mapModal = document.getElementById('mapModal');
+        const closeMapModal = document.getElementById('closeMapModal');
+        const cancelMapSelection = document.getElementById('cancelMapSelection');
+        const confirmMapSelection = document.getElementById('confirmMapSelection');
+        const locationSearch = document.getElementById('location-search');
+        const searchBtn = document.getElementById('search-btn');
+        
+        let map;
+        let marker;
+        let selectedLocation = null;
+        
+        // Initialize Leaflet Map
+        function initMap() {
+            const defaultLocation = [14.5995, 120.9842];
+            
+            map = L.map('map').setView(defaultLocation, 13);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+            
+            map.on('click', function(e) {
+                placeMarker(e.latlng);
+            });
+        }
+        
+        function placeMarker(location) {
+            if (marker) map.removeLayer(marker);
+            
+            marker = L.marker([location.lat, location.lng], {draggable: true}).addTo(map);
+            selectedLocation = location;
+            
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${location.lat}&lon=${location.lng}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.display_name) {
+                        document.getElementById('project-location').value = data.display_name;
+                    }
+                })
+                .catch(err => console.log('Geocoding error:', err));
+            
+            marker.on('dragend', function() {
+                const pos = marker.getLatLng();
+                selectedLocation = pos;
+                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.lat}&lon=${pos.lng}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.display_name) {
+                            document.getElementById('project-location').value = data.display_name;
+                        }
+                    })
+                    .catch(err => console.log('Geocoding error:', err));
+            });
+        }
+        
+        // Map picker button click
+        mapPickerBtn.addEventListener('click', function() {
+            mapModal.style.display = 'block';
+            setTimeout(() => {
+                map.invalidateSize();
+                if (selectedLocation) {
+                    map.setView([selectedLocation.lat, selectedLocation.lng]);
+                }
+            }, 100);
+        });
+        
+        // Close modal events
+        closeMapModal.addEventListener('click', function() {
+            mapModal.style.display = 'none';
+        });
+        
+        cancelMapSelection.addEventListener('click', function() {
+            mapModal.style.display = 'none';
+        });
+        
+        confirmMapSelection.addEventListener('click', function() {
+            mapModal.style.display = 'none';
+        });
+        
+        // Close modal when clicking outside
+        window.addEventListener('click', function(event) {
+            if (event.target === mapModal) {
+                mapModal.style.display = 'none';
+            }
+        });
+        
+        // Search functionality
+        function searchLocation() {
+            const query = locationSearch.value.trim();
+            if (!query) return;
+            
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.length > 0) {
+                        const result = data[0];
+                        const lat = parseFloat(result.lat);
+                        const lng = parseFloat(result.lon);
+                        map.setView([lat, lng], 15);
+                        placeMarker({lat: lat, lng: lng});
+                    } else {
+                        alert('Location not found. Please try a different search term.');
+                    }
+                })
+                .catch(err => {
+                    console.log('Search error:', err);
+                    alert('Search failed. Please try again.');
+                });
+        }
+        
+        searchBtn.addEventListener('click', searchLocation);
+        locationSearch.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchLocation();
+            }
+        });
+        
+        // Dropdown functionality
+        function setupDropdown(buttonId, menuId, inputId) {
+            const button = document.getElementById(buttonId);
+            const menu = document.getElementById(menuId);
+            const input = document.getElementById(inputId);
+            
+            if (button && menu && input) {
+                button.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    menu.classList.toggle('show');
+                });
+                
+                menu.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('dropdown-item')) {
+                        input.value = e.target.dataset.value;
+                        menu.classList.remove('show');
+                    }
+                });
+                
+                document.addEventListener('click', function() {
+                    menu.classList.remove('show');
+                });
+            }
+        }
+        
+        // Fetch and setup dropdowns
+        fetchArchitects();
+        fetchClients();
+        setupDropdown('client-dropdown', 'client-menu', 'client-name');
+        setupDropdown('architect-dropdown', 'architect-menu', 'assigned-architect');
+        
+        // Fetch site managers (architects) from API
+        function fetchArchitects() {
+            fetch('/accounts/api/sitemanagers/')
+                .then(response => response.json())
+                .then(data => {
+                    const menu = document.getElementById('architect-menu');
+                    menu.innerHTML = '';
+                    
+                    if (data.sitemanagers && data.sitemanagers.length > 0) {
+                        data.sitemanagers.forEach(sitemanager => {
+                            const item = document.createElement('div');
+                            item.className = 'dropdown-item';
+                            item.dataset.value = sitemanager.full_name;
+                            item.textContent = sitemanager.full_name;
+                            menu.appendChild(item);
+                        });
+                    } else {
+                        menu.innerHTML = '<div class="dropdown-loading">No site managers found</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching site managers:', error);
+                    document.getElementById('architect-menu').innerHTML = '<div class="dropdown-loading">Error loading site managers</div>';
+                });
+        }
+        
+        // Fetch clients from API
+        function fetchClients() {
+            fetch('/accounts/api/clients/')
+                .then(response => response.json())
+                .then(data => {
+                    const menu = document.getElementById('client-menu');
+                    menu.innerHTML = '';
+                    
+                    if (data.clients && data.clients.length > 0) {
+                        data.clients.forEach(client => {
+                            const item = document.createElement('div');
+                            item.className = 'dropdown-item';
+                            item.dataset.value = client.full_name;
+                            item.textContent = client.full_name;
+                            menu.appendChild(item);
+                        });
+                    } else {
+                        menu.innerHTML = '<div class="dropdown-loading">No clients found</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching clients:', error);
+                    document.getElementById('client-menu').innerHTML = '<div class="dropdown-loading">Error loading clients</div>';
+                });
+        }
+        
+        document.addEventListener('DOMContentLoaded', initMap);
+
+        // Budget input formatting
+        projectBudget.addEventListener('input', function(e) {
+            let value = this.value.replace(/[^0-9]/g, '');
+            if (value.length > 0) {
+                value = parseInt(value, 10).toLocaleString('en-PH');
+            }
+            this.value = value;
+        });
+
+        // Image upload preview
+        imageInput.addEventListener("change", (event) => {
+            const file = event.target.files[0];
+            if (file && (file.type === "image/jpeg" || file.type === "image/png")) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    imageOutput.src = e.target.result;
+                    imagePreview.style.display = "block";
+                };
+                reader.readAsDataURL(file);
+            } else {
+                alert("Invalid file type! Please upload a JPG or PNG image.");
+                event.target.value = "";
+            }
+        });
+
+        // Clear image preview
+        clearImage.addEventListener("click", () => {
+            imageInput.value = "";
+            imagePreview.style.display = "none";
+        });
+
+        // Form validation and submission
+        form.addEventListener("submit", (e) => {
+            e.preventDefault();
+            let valid = true;
+
+            // Validate required fields
+            if (!projectName.value.trim()) {
+                document.getElementById("name-error").style.display = "block";
+                valid = false;
+            }
+            if (!document.getElementById('client-name').value.trim()) {
+                document.getElementById("client-error").style.display = "block";
+                valid = false;
+            }
+            if (!projectLocation.value.trim()) {
+                document.getElementById("location-error").style.display = "block";
+                valid = false;
+            }
+            if (!architectName.value.trim()) {
+                document.getElementById("architect-error").style.display = "block";
+                valid = false;
+            }
+            if (!projectType.value) {
+                document.getElementById("type-error").style.display = "block";
+                valid = false;
+            }
+            if (!projectBudget.value || projectBudget.value.replace(/[^0-9]/g, '') === '0') {
+                document.getElementById("budget-error").style.display = "block";
+                valid = false;
+            }
+            if (!startDate.value || !endDate.value || new Date(endDate.value) <= new Date(startDate.value)) {
+                document.getElementById("end-date-error").style.display = "block";
+                valid = false;
+            }
+
+            if (valid) {
+                // Submit form data to Django
+                const formData = new FormData();
+                formData.append('name', projectName.value);
+                formData.append('client_name', document.getElementById('client-name').value);
+                formData.append('location', projectLocation.value);
+                formData.append('architect', architectName.value);
+                formData.append('project_type', projectType.value);
+                formData.append('budget', projectBudget.value.replace(/[^0-9]/g, ''));
+                formData.append('start_date', startDate.value);
+                formData.append('expected_end_date', endDate.value);
+                formData.append('description', document.getElementById('project-description').value);
+                
+                // Add image file if selected
+                if (imageInput.files[0]) {
+                    formData.append('image', imageInput.files[0]);
+                }
+                
+                formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+                
+                fetch(window.location.href, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (response.ok) {
+                        alert("Project created successfully!");
+                        window.location.href = '/diary/dashboard/';
+                    } else {
+                        alert("Error creating project. Please try again.");
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert("Error creating project. Please try again.");
+                });
+            }
+        });
+
+        // Hide errors on input change
+        form.querySelectorAll("input, textarea, select").forEach((input) =>
+            input.addEventListener("input", () => {
+                input.nextElementSibling && (input.nextElementSibling.style.display = "none");
+            })
+        );
+    </script>
+   <script src="{% static 'js/sitejs/mobile-btn.js' %}"></script>
+</body>
+</html>
+{% include "site_diary/navtemplate/layoutfooter.html" %}
+{% endblock %}

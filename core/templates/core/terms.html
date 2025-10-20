@@ -1,0 +1,344 @@
+{% extends 'layout.html' %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {% block head %} 
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terms and Conditions - Triple G Studio</title>
+  <link rel="stylesheet" href="{% static 'css/home.css' %}">
+  <link rel="stylesheet" href="{% static 'css/about.css' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap">
+  <style>
+    .terms-hero {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 120px 40px 80px;
+      background-image: url("{% static 'images/HOUSEtriGdesign.jpg' %}");
+      background-repeat: no-repeat;
+      background-size: cover;
+      background-position: center;
+      width: 100%;
+      min-height: 40vh;
+      background-blend-mode: darken;
+      background-color: rgba(0, 0, 0, 0.7);
+      text-align: center;
+    }
+
+    .terms-hero h1 {
+      margin-top: 60px;
+      font-size: 50px;
+      margin-bottom: 20px;
+      font-family: 'Montserrat', sans-serif;
+      letter-spacing: 2px;
+      animation: fadeIn 1s ease-in-out;
+    }
+
+    .terms-hero p {
+      font-size: 18px;
+      max-width: 800px;
+      margin: 0 auto 30px;
+      line-height: 1.6;
+      animation: fadeIn 1.4s ease-in-out;
+    }
+
+    .terms-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 80px 40px;
+    }
+
+    .terms-section {
+      background-color: rgba(0, 22, 34, 0.8);
+      border-radius: 20px;
+      padding: 40px;
+      margin-bottom: 30px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .terms-section h2 {
+      color: #FF7120;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 28px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #FF7120;
+      padding-bottom: 10px;
+    }
+
+    .terms-section h3 {
+      color: #FFFFFF;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 20px;
+      margin: 25px 0 15px 0;
+    }
+
+    .terms-section p, .terms-section li {
+      color: #CCC;
+      line-height: 1.8;
+      margin-bottom: 15px;
+      font-size: 16px;
+    }
+
+    .terms-section ul {
+      padding-left: 20px;
+      margin-bottom: 20px;
+    }
+
+    .terms-section li {
+      margin-bottom: 10px;
+    }
+
+    .highlight {
+      color: #FF7120;
+      font-weight: 600;
+    }
+
+    .contact-info {
+      background-color: rgba(255, 113, 32, 0.1);
+      border: 1px solid #FF7120;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    .last-updated {
+      text-align: center;
+      color: #999;
+      font-style: italic;
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 768px) {
+      .terms-hero {
+        padding: 100px 20px 60px;
+      }
+      .terms-hero h1 {
+        font-size: 36px;
+      }
+      .terms-container {
+        padding: 60px 20px;
+      }
+      .terms-section {
+        padding: 30px 20px;
+      }
+    }
+  </style>
+  {% endblock %}
+</head>
+<body>
+  {% block body %}
+
+  <!-- Hero Section -->
+  <section class="terms-hero">
+    <h1>TERMS AND CONDITIONS</h1>
+    <p>Please read these terms and conditions carefully before using our architectural and construction services.</p>
+  </section>
+
+  <!-- Terms Content -->
+  <div class="terms-container">
+    
+    <!-- Introduction -->
+    <div class="terms-section reveal">
+      <h2>1. Introduction</h2>
+      <p>Welcome to <span class="highlight">Triple G Designs + Construction</span> ("we," "our," or "us"). These Terms and Conditions ("Terms") govern your use of our architectural design and construction services, including our website, client dashboard, and project management system.</p>
+      <p>By engaging our services or using our platform, you agree to be bound by these Terms. If you do not agree with any part of these terms, please do not use our services.</p>
+    </div>
+
+    <!-- Services -->
+    <div class="terms-section reveal">
+      <h2>2. Our Services</h2>
+      <h3>2.1 Architectural Design Services</h3>
+      <ul>
+        <li>Conceptual design and planning</li>
+        <li>Detailed architectural drawings and blueprints</li>
+        <li>3D visualization and rendering</li>
+        <li>Interior design consultation</li>
+        <li>Permit application assistance</li>
+      </ul>
+      
+      <h3>2.2 Construction Services</h3>
+      <ul>
+        <li>Project management and supervision</li>
+        <li>Construction execution and quality control</li>
+        <li>Material procurement and logistics</li>
+        <li>Site safety management</li>
+        <li>Progress reporting through our BuildHub system</li>
+      </ul>
+
+      <h3>2.3 Digital Platform Services</h3>
+      <ul>
+        <li>Client dashboard access for project monitoring</li>
+        <li>Site diary and progress tracking</li>
+        <li>Document management and sharing</li>
+        <li>Communication tools and messaging</li>
+      </ul>
+    </div>
+
+    <!-- Client Responsibilities -->
+    <div class="terms-section reveal">
+      <h2>3. Client Responsibilities</h2>
+      <h3>3.1 Project Information</h3>
+      <p>Clients must provide accurate, complete, and timely information regarding project requirements, site conditions, budget constraints, and any relevant regulations or restrictions.</p>
+      
+      <h3>3.2 Site Access</h3>
+      <p>Clients must ensure safe and reasonable access to the project site for our team, contractors, and equipment during agreed working hours.</p>
+      
+      <h3>3.3 Approvals and Permits</h3>
+      <p>While we assist with permit applications, clients are ultimately responsible for obtaining all necessary approvals, permits, and clearances required for the project.</p>
+      
+      <h3>3.4 Contract Compliance</h3>
+      <p>Clients must adhere to agreed terms, schedules, and obligations as outlined in individual project contracts.</p>
+    </div>
+
+    <!-- Intellectual Property -->
+    <div class="terms-section reveal">
+      <h2>4. Intellectual Property</h2>
+      <h3>4.1 Design Ownership</h3>
+      <p>All architectural designs, plans, drawings, and creative works remain the intellectual property of Triple G Studio until full payment is received. Upon full payment, clients receive usage rights for the specific project.</p>
+      
+      <h3>4.2 Portfolio Usage</h3>
+      <p>We reserve the right to use project images and information for marketing, portfolio, and promotional purposes, unless specifically restricted by written agreement.</p>
+      
+      <h3>4.3 Third-Party Materials</h3>
+      <p>Any third-party materials, software, or designs used in projects remain the property of their respective owners.</p>
+    </div>
+
+    <!-- Privacy and Data Protection -->
+    <div class="terms-section reveal">
+      <h2>5. Privacy and Data Protection</h2>
+      <h3>5.1 Information Collection</h3>
+      <p>We collect and process personal information necessary for project delivery, including contact details, project preferences, and site information.</p>
+      
+      <h3>5.2 Data Security</h3>
+      <p>We implement appropriate security measures to protect client data and project information. Our BuildHub platform uses secure authentication and encrypted data transmission.</p>
+      
+      <h3>5.3 Information Sharing</h3>
+      <p>Client information is shared only with authorized team members, contractors, and suppliers directly involved in project execution.</p>
+    </div>
+
+    <!-- Limitation of Liability -->
+    <div class="terms-section reveal">
+      <h2>6. Limitation of Liability</h2>
+      <h3>6.1 Service Limitations</h3>
+      <p>Our liability is limited to the direct costs of services provided. We are not liable for indirect, consequential, or punitive damages arising from our services.</p>
+      
+      <h3>6.2 Force Majeure</h3>
+      <p>We are not liable for delays or failures caused by circumstances beyond our reasonable control, including natural disasters, government actions, labor disputes, or material shortages.</p>
+      
+      <h3>6.3 Third-Party Actions</h3>
+      <p>We are not responsible for actions, delays, or failures of third-party contractors, suppliers, or regulatory bodies.</p>
+    </div>
+
+    <!-- Service Agreements -->
+    <div class="terms-section reveal">
+      <h2>7. Service Agreements</h2>
+      <h3>7.1 Project Contracts</h3>
+      <p>All architectural and construction services are governed by individual project contracts that specify scope, timeline, deliverables, and compensation terms.</p>
+      
+      <h3>7.2 Service Modifications</h3>
+      <p>Any changes to project scope, materials, or timeline will be documented through formal change orders and require mutual agreement before implementation.</p>
+      
+      <h3>7.3 Professional Standards</h3>
+      <p>All services are provided in accordance with professional architectural and construction industry standards and applicable building codes.</p>
+    </div>
+
+    <!-- Termination -->
+    <div class="terms-section reveal">
+      <h2>8. Termination</h2>
+      <h3>8.1 Client Termination</h3>
+      <p>Clients may terminate services with written notice as specified in project contracts. Compensation for completed work will be handled according to contract terms.</p>
+      
+      <h3>8.2 Our Termination Rights</h3>
+      <p>We may terminate services for non-payment, breach of contract, or circumstances that compromise project safety or quality.</p>
+    </div>
+
+    <!-- Dispute Resolution -->
+    <div class="terms-section reveal">
+      <h2>9. Dispute Resolution</h2>
+      <p>Any disputes arising from our services will be resolved through good-faith negotiation. If resolution cannot be reached, disputes will be subject to arbitration under Philippine law in Cebu, Philippines.</p>
+    </div>
+
+    <!-- Contact Information -->
+    <div class="terms-section reveal">
+      <h2>10. Contact Information</h2>
+      <div class="contact-info">
+        <p><strong>Triple G Designs + Construction</strong></p>
+        <p><i class="fas fa-map-marker-alt"></i> 341 Isidro Kintanar St, Argao, Cebu, Philippines</p>
+        <p><i class="fas fa-phone"></i> +639628924064</p>
+        <p><i class="fas fa-envelope"></i> info@triplegstudio.com</p>
+        <p><i class="fas fa-globe"></i> www.triplegstudio.com</p>
+      </div>
+    </div>
+
+    <!-- Updates -->
+    <div class="terms-section reveal">
+      <h2>11. Updates to Terms</h2>
+      <p>We reserve the right to update these Terms and Conditions. Clients will be notified of significant changes through our platform or email. Continued use of our services constitutes acceptance of updated terms.</p>
+    </div>
+
+    <div class="last-updated">
+      <p>Last updated: January 2025</p>
+      <p>These terms are governed by the laws of the Republic of the Philippines.</p>
+    </div>
+  </div>
+
+  <script src="{% static 'js/chatbot.js' %}"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      // Reveal animations on scroll
+      const revealElements = document.querySelectorAll('.reveal');
+      
+      function checkReveal() {
+        const windowHeight = window.innerHeight;
+        const revealPoint = 150;
+        
+        revealElements.forEach(element => {
+          const elementTop = element.getBoundingClientRect().top;
+          
+          if (elementTop < windowHeight - revealPoint) {
+            element.classList.add('active');
+          }
+        });
+      }
+      
+      checkReveal();
+      window.addEventListener('scroll', checkReveal);
+
+      // Smooth scrolling for anchor links
+      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+          e.preventDefault();
+          const targetId = this.getAttribute('href');
+          if (targetId === '#') return;
+          
+          const targetElement = document.querySelector(targetId);
+          if (targetElement) {
+            const navbarHeight = document.querySelector('.navbar')?.offsetHeight || 0;
+            const targetPosition = targetElement.getBoundingClientRect().top;
+            const offsetPosition = targetPosition + window.pageYOffset - navbarHeight;
+            
+            window.scrollTo({
+              top: offsetPosition,
+              behavior: 'smooth'
+            });
+          }
+        });
+      });
+    });
+  </script>
+  {% endblock %}
+</body>
+</html>

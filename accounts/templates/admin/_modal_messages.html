@@ -1,0 +1,50 @@
+{% load static %}
+{% if messages %}
+<div id="customModalOverlay" class="custom-modal-overlay" role="dialog" aria-modal="true">
+  <div class="custom-modal-content">
+    <button class="custom-modal-close" aria-label="Close modal">&times;</button>
+    {% for message in messages %}
+      {% if forloop.last %}
+      <!-- Only show the latest/most recent message -->
+      <div class="custom-modal-body custom-alert-{{ message.tags }}">
+        <div class="custom-modal-icon">
+          {% if message.tags == 'success' %}
+            <i class="fas fa-check-circle"></i>
+          {% elif message.tags == 'info' %}
+            <i class="fas fa-info-circle"></i>
+          {% elif message.tags == 'warning' %}
+            <i class="fas fa-exclamation-triangle"></i>
+          {% elif message.tags == 'error' %}
+            <i class="fas fa-times-circle"></i>
+          {% endif %}
+        </div>
+        <div class="custom-modal-text">
+          {% if message.tags == 'warning' and 'approved yet' in message %}
+            <h3>Account Pending Approval</h3>
+          {% elif message.tags == 'error' and 'denied' in message %}
+            <h3>Account Access Denied</h3>
+          {% elif message.tags == 'error' and 'suspended' in message %}
+            <h3>Account Suspended</h3>
+          {% else %}
+            <h3>{{ message.tags|title }}</h3>
+          {% endif %}
+          <p>{{ message }}</p>
+        </div>
+        <div class="custom-modal-actions">
+          {% if message.tags == 'warning' and 'approved yet' in message %}
+            <button type="button" class="custom-btn-confirm">I Understand</button>
+          {% elif message.tags == 'error' and 'denied' in message %}
+            <button type="button" class="custom-btn-confirm">Contact Administrator</button>
+          {% elif message.tags == 'error' and 'suspended' in message %}
+            <button type="button" class="custom-btn-confirm">Contact Administrator</button>
+          {% else %}
+            <button type="button" class="custom-btn-confirm">OK</button>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+<!-- CSS and JS should be included in your main template, not here -->

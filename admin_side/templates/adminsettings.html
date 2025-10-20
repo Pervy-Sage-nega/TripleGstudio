@@ -1,0 +1,469 @@
+{% extends 'admin-nav-footer-template/base.html' %}
+{% load static %}
+
+{% block title %}Admin Settings | Triple G BuildHub{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/sitecss/settings.css' %}">
+<link rel="stylesheet" href="{% static 'css/sitecss/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'css/admincss/nav.css' %}">
+<link rel="stylesheet" href="{% static 'css/admincss/header.css' %}">
+{% endblock %}
+
+{% block content %}
+    <!-- Settings Container -->
+    <div class="settings-container">
+        <!-- Settings Sidebar -->
+        <div class="settings-sidebar">
+            <div class="settings-title">
+                <i class="fas fa-cog"></i>
+                <span>Admin Settings</span>
+            </div>
+            <ul class="settings-menu">
+                <li class="settings-menu-item active" data-section="account">
+                    <i class="fas fa-user"></i>
+                    <span>Account Settings</span>
+                </li>
+                <li class="settings-menu-item" data-section="notifications">
+                    <i class="fas fa-bell"></i>
+                    <span>Notifications</span>
+                </li>
+                <li class="settings-menu-item" data-section="security">
+                    <i class="fas fa-lock"></i>
+                    <span>Password & Security</span>
+                </li>
+                <li class="settings-menu-item" data-section="permissions">
+                    <i class="fas fa-user-shield"></i>
+                    <span>Admin Permissions</span>
+                </li>
+                <li class="settings-menu-item" data-section="system">
+                    <i class="fas fa-server"></i>
+                    <span>System Management</span>
+                </li>
+                <li class="settings-menu-item" data-section="logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Settings Content -->
+        <div class="settings-content">
+            <!-- Account Settings Section -->
+            <div class="settings-section active" id="account">
+                <div class="settings-header">
+                    <h2 class="settings-section-title">Account Settings</h2>
+                    <p class="settings-section-desc">Manage your admin profile information and contact details</p>
+                </div>
+
+                <div class="success-message" id="accountSuccess">
+                    <i class="fas fa-check-circle"></i> Your account settings have been updated successfully.
+                </div>
+
+                <form method="post" action="{% url 'admin_side:admin_settings' %}" enctype="multipart/form-data" id="profileForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_profile">
+                    
+                    <div class="profile-preview">
+                        <div class="profile-avatar">
+                            {% if user.adminprofile.profile_pic %}
+                                <img src="{{ user.adminprofile.profile_pic.url }}" alt="Admin Profile" class="logo" id="profileImage">
+                            {% else %}
+                                <img src="{% static 'images/default-profile.png' %}" alt="Default Profile" class="logo" id="profileImage">
+                            {% endif %}
+                        </div>
+                        <div class="profile-info">
+                            <div class="profile-name">{{ user.get_full_name|default:user.username }}</div>
+                            <div class="profile-email">{{ user.email }}</div>
+                            <div class="profile-role">{{ user.adminprofile.get_admin_role_display|default:"Administrator" }}</div>
+                            <label for="avatar-upload" class="upload-btn">
+                                <i class="fas fa-camera"></i> Change Photo
+                            </label>
+                            <input type="file" name="profile_pic" id="avatar-upload" style="display: none;" accept="image/*">
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="firstName" class="form-label">First Name</label>
+                            <input type="text" name="firstName" id="firstName" class="form-input" value="{{ user.first_name }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="lastName" class="form-label">Last Name</label>
+                            <input type="text" name="lastName" id="lastName" class="form-input" value="{{ user.last_name }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email" class="form-label">Email Address</label>
+                            <input type="email" name="email" id="email" class="form-input" value="{{ user.email }}" required>
+                            <div class="input-error" id="emailError">Please enter a valid email address.</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone" class="form-label">Phone Number</label>
+                            <input type="tel" name="phone" id="phone" class="form-input" value="{{ user.adminprofile.phone|default:'' }}" pattern="[\+]?[(]?[0-9]{1,3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}">
+                            <div class="input-error" id="phoneError">Please enter a valid phone number.</div>
+                        </div>
+                    <div class="form-group">
+                        <label for="jobTitle" class="form-label">Admin Role</label>
+                        <input type="text" id="jobTitle" class="form-input" value="{{ user.adminprofile.get_admin_role_display|default:'Administrator' }}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="department" class="form-label">Department</label>
+                        <input type="text" id="department" class="form-input" value="{{ user.adminprofile.department|default:'Administration' }}" readonly>
+                    </div>
+                </div>
+
+                    <div class="action-buttons">
+                        <button type="button" class="btn btn-secondary" id="resetAccount">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="saveAccount">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Notifications Section -->
+            <div class="settings-section" id="notifications">
+                <div class="settings-header">
+                    <h2 class="settings-section-title">Notification Settings</h2>
+                    <p class="settings-section-desc">Manage how and when you receive administrative updates</p>
+                </div>
+
+                <div class="success-message" id="notificationsSuccess">
+                    <i class="fas fa-check-circle"></i> Notification settings have been updated successfully.
+                </div>
+
+                <div class="toggle-container">
+                    <div>
+                        <div class="toggle-label">User Registration Alerts</div>
+                        <div class="toggle-description">Get notified when new users register and require approval</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="toggle-container">
+                    <div>
+                        <div class="toggle-label">System Security Alerts</div>
+                        <div class="toggle-description">Receive notifications about security events and login attempts</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="toggle-container">
+                    <div>
+                        <div class="toggle-label">Blog Post Moderation</div>
+                        <div class="toggle-description">Get notified when blog posts require review or approval</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="toggle-container">
+                    <div>
+                        <div class="toggle-label">System Maintenance Updates</div>
+                        <div class="toggle-description">Receive notifications about system updates and maintenance</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="notification-level">
+                    <div class="notification-level-info">
+                        <div class="notification-level-title">Notification Delivery</div>
+                        <div class="notification-level-desc">Choose how you want to receive notifications</div>
+                    </div>
+                    <select class="form-select" style="width: 140px;">
+                        <option value="email">Email Only</option>
+                        <option value="in-app" selected>In-App Only</option>
+                        <option value="both">Both</option>
+                    </select>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-secondary" id="resetNotifications">Cancel</button>
+                    <button class="btn btn-primary" id="saveNotifications">Save Preferences</button>
+                </div>
+            </div>
+
+            <!-- Password & Security Section -->
+            <div class="settings-section" id="security">
+                <div class="settings-header">
+                    <h2 class="settings-section-title">Password & Security</h2>
+                    <p class="settings-section-desc">Manage your password and administrative security settings</p>
+                </div>
+
+                <div class="success-message" id="securitySuccess">
+                    <i class="fas fa-check-circle"></i> Security settings have been updated successfully.
+                </div>
+
+                <div class="form-group">
+                    <label for="currentPassword" class="form-label">Current Password</label>
+                    <input type="password" id="currentPassword" class="form-input" placeholder="Enter your current password" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="newPassword" class="form-label">New Password</label>
+                    <input type="password" id="newPassword" class="form-input" placeholder="Enter new password">
+                    <div class="password-strength">
+                        <div class="password-strength-bar" id="passwordStrength"></div>
+                    </div>
+                    <div class="password-requirements">
+                        Password must be at least 8 characters and include uppercase, lowercase, number, and special character
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword" class="form-label">Confirm New Password</label>
+                    <input type="password" id="confirmPassword" class="form-input" placeholder="Confirm new password">
+                    <div class="input-error" id="passwordMatchError">Passwords do not match.</div>
+                </div>
+
+                <div class="toggle-container">
+                    <div>
+                        <div class="toggle-label">Two-Factor Authentication</div>
+                        <div class="toggle-description">Add an extra layer of security to your admin account</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="twoFactorToggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="toggle-container">
+                    <div>
+                        <div class="toggle-label">Login Notifications</div>
+                        <div class="toggle-description">Get notified when your admin account is accessed from a new device</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-secondary" id="resetSecurity">Cancel</button>
+                    <button class="btn btn-primary" id="saveSecurity">Update Password</button>
+                </div>
+            </div>
+
+            <!-- Admin Permissions Section -->
+            <div class="settings-section" id="permissions">
+                <div class="settings-header">
+                    <h2 class="settings-section-title">Admin Permissions Overview</h2>
+                    <p class="settings-section-desc">View your current administrative access rights and permissions</p>
+                </div>
+
+                <div class="permissions-info">
+                    <div class="info-box">
+                        <i class="fas fa-shield-alt"></i>
+                        <div class="info-content">
+                            <h4>Current Role</h4>
+                            <p>{{ user.adminprofile.get_admin_role_display|default:"Administrator" }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <table class="permissions-table readonly-table">
+                    <thead>
+                        <tr>
+                            <th>Administrative Feature</th>
+                            <th>Access Level</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>User Management</td>
+                            <td><span class="permission-allowed"><i class="fas fa-check"></i> Full Access</span></td>
+                        </tr>
+                        <tr>
+                            <td>Blog Post Management</td>
+                            <td><span class="permission-allowed"><i class="fas fa-check"></i> Full Access</span></td>
+                        </tr>
+                        <tr>
+                            <td>System Settings</td>
+                            <td><span class="permission-allowed"><i class="fas fa-check"></i> Full Access</span></td>
+                        </tr>
+                        <tr>
+                            <td>Project Management</td>
+                            <td><span class="permission-allowed"><i class="fas fa-check"></i> Full Access</span></td>
+                        </tr>
+                        <tr>
+                            <td>Site Manager Approval</td>
+                            <td><span class="permission-allowed"><i class="fas fa-check"></i> Full Access</span></td>
+                        </tr>
+                        <tr>
+                            <td>Client Registration Approval</td>
+                            <td><span class="permission-allowed"><i class="fas fa-check"></i> Full Access</span></td>
+                        </tr>
+                        <tr>
+                            <td>Database Management</td>
+                            <td><span class="permission-allowed"><i class="fas fa-check"></i> Full Access</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="permissions-note">
+                    <i class="fas fa-info-circle"></i>
+                    <p>As an administrator, you have full access to all system features. Contact the system owner for role modifications.</p>
+                </div>
+            </div>
+
+            <!-- System Management Section -->
+            <div class="settings-section" id="system">
+                <div class="settings-header">
+                    <h2 class="settings-section-title">System Management</h2>
+                    <p class="settings-section-desc">Configure system-wide settings and maintenance options</p>
+                </div>
+
+                <div class="success-message" id="systemSuccess">
+                    <i class="fas fa-check-circle"></i> System settings have been updated successfully.
+                </div>
+
+                <div class="toggle-container">
+                    <div>
+                        <div class="toggle-label">Site Maintenance Mode</div>
+                        <div class="toggle-description">Enable maintenance mode to restrict public access</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="maintenanceMode">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="toggle-container">
+                    <div>
+                        <div class="toggle-label">Auto-approve Client Registrations</div>
+                        <div class="toggle-description">Automatically approve new client registrations</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="autoApproveClients">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="toggle-container">
+                    <div>
+                        <div class="toggle-label">Auto-approve Site Manager Registrations</div>
+                        <div class="toggle-description">Automatically approve new site manager registrations</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="autoApproveSiteManagers">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label for="maxFileSize" class="form-label">Maximum File Upload Size (MB)</label>
+                    <select id="maxFileSize" class="form-select">
+                        <option value="5">5 MB</option>
+                        <option value="10" selected>10 MB</option>
+                        <option value="25">25 MB</option>
+                        <option value="50">50 MB</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="sessionTimeout" class="form-label">Session Timeout (minutes)</label>
+                    <select id="sessionTimeout" class="form-select">
+                        <option value="30">30 minutes</option>
+                        <option value="60" selected>1 hour</option>
+                        <option value="120">2 hours</option>
+                        <option value="240">4 hours</option>
+                    </select>
+                </div>
+
+                <div class="backup-item">
+                    <div class="backup-info">
+                        <h4>System Backup</h4>
+                        <p>Create a full system backup including database and files</p>
+                    </div>
+                    <div class="backup-actions">
+                        <button class="backup-btn backup-btn-download" id="createBackup">Create Backup</button>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-secondary" id="resetSystem">Cancel</button>
+                    <button class="btn btn-primary" id="saveSystem">Save Settings</button>
+                </div>
+            </div>
+
+            <!-- Logout Section -->
+            <div class="settings-section" id="logout">
+                <div class="settings-header">
+                    <h2 class="settings-section-title">Admin Logout</h2>
+                    <p class="settings-section-desc">Securely log out from your admin account</p>
+                </div>
+
+                <!-- Session Information -->
+                <div class="session-info">
+                    <div class="info-box">
+                        <i class="fas fa-user-circle"></i>
+                        <div class="info-content">
+                            <h4>Current Session</h4>
+                            <p><strong>Admin:</strong> {{ user.get_full_name|default:user.username }}</p>
+                            <p><strong>Role:</strong> {{ user.adminprofile.get_admin_role_display|default:"Administrator" }}</p>
+                            <p><strong>Last Login:</strong> {{ user.last_login|date:"M d, Y H:i" }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Security Notice -->
+                <div class="security-notice">
+                    <div class="info-box warning">
+                        <i class="fas fa-shield-alt"></i>
+                        <div class="info-content">
+                            <h4>Security Information</h4>
+                            <p>When you logout, the following actions will occur:</p>
+                            <ul class="security-list">
+                                <li><i class="fas fa-times-circle"></i> End your current admin session</li>
+                                <li><i class="fas fa-trash-alt"></i> Clear all cached admin data</li>
+                                <li><i class="fas fa-lock"></i> Prevent access to admin pages</li>
+                                <li><i class="fas fa-sign-in-alt"></i> Redirect to admin login page</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Logout Confirmation -->
+                <div class="logout-confirmation">
+                    <div class="toggle-container">
+                        <div>
+                            <div class="toggle-label">Clear Browser Data</div>
+                            <div class="toggle-description">Also clear saved form data and temporary files from browser</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="clearBrowserData" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button class="btn btn-danger logout-btn" data-action="logout">
+                        <i class="fas fa-sign-out-alt"></i> Logout from Admin Panel
+                    </button>
+                </div>
+
+                <!-- Security Note -->
+                <div class="security-note">
+                    <i class="fas fa-info-circle"></i>
+                    <span>For security reasons, always log out when finished with admin tasks, especially on shared computers.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'js/sitejs/settings.js' %}"></script>
+    <script src="{% static 'js/adminjs/mobile-btn.js' %}"></script>
+    <script src="{% static 'js/adminjs/admin-logout.js' %}"></script>
+{% endblock %}
+

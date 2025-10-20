@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm Your Newsletter Subscription</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #FF7120;
+        }
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #FF7120;
+            margin-bottom: 10px;
+        }
+        .tagline {
+            color: #666;
+            font-size: 14px;
+        }
+        .content {
+            margin-bottom: 30px;
+        }
+        .content h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .confirm-button {
+            display: inline-block;
+            background-color: #FF7120;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .confirm-button:hover {
+            background-color: #e55a0d;
+        }
+        .benefits {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .benefits ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .benefits li {
+            margin-bottom: 8px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            color: #666;
+            font-size: 12px;
+        }
+        .social-links {
+            margin: 20px 0;
+        }
+        .social-links a {
+            display: inline-block;
+            margin: 0 10px;
+            color: #FF7120;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">Triple G BuildHub</div>
+            <div class="tagline">Building Excellence, Delivering Dreams</div>
+        </div>
+        
+        <div class="content">
+            <h2>Welcome to Triple G BuildHub Newsletter!</h2>
+            
+            <p>Hi{% if subscriber.name %} {{ subscriber.name }}{% endif %},</p>
+            
+            <p>Thank you for subscribing to the Triple G BuildHub newsletter! We're excited to have you join our community of construction professionals, homeowners, and industry enthusiasts.</p>
+            
+            <p>To complete your subscription and start receiving our valuable content, please confirm your email address by clicking the button below:</p>
+            
+            <div style="text-align: center;">
+                <a href="{{ confirmation_url }}" class="confirm-button">Confirm My Subscription</a>
+            </div>
+            
+            <div class="benefits">
+                <h3>What you'll receive:</h3>
+                <ul>
+                    <li><strong>Industry Insights:</strong> Latest trends and innovations in construction</li>
+                    <li><strong>Expert Tips:</strong> Professional advice from our experienced team</li>
+                    <li><strong>Project Showcases:</strong> Featured projects and case studies</li>
+                    <li><strong>Exclusive Content:</strong> Behind-the-scenes looks at our work</li>
+                    <li><strong>Special Offers:</strong> Early access to promotions and events</li>
+                </ul>
+            </div>
+            
+            <p>If you didn't subscribe to this newsletter, you can safely ignore this email. Your email address will not be added to our mailing list.</p>
+            
+            <p>If the button above doesn't work, you can copy and paste this link into your browser:</p>
+            <p style="word-break: break-all; color: #666; font-size: 12px;">{{ confirmation_url }}</p>
+        </div>
+        
+        <div class="footer">
+            <div class="social-links">
+                <a href="#">Facebook</a> |
+                <a href="#">Twitter</a> |
+                <a href="#">LinkedIn</a> |
+                <a href="#">Instagram</a>
+            </div>
+            
+            <p>© {{ "now"|date:"Y" }} Triple G BuildHub. All rights reserved.</p>
+            <p>Building Excellence, Delivering Dreams</p>
+            
+            <p style="margin-top: 20px;">
+                <strong>Triple G BuildHub</strong><br>
+                Your trusted construction partner<br>
+                Email: info@triplegbuildhub.com
+            </p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,254 @@
+
+{% extends 'layout.html' %}
+{% load static %}
+{% load blog_filters %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% block head %} 
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Industry Insights | Triple G BuildHub</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'css/bloglist.css' %}">
+{% endblock %}
+</head>
+<body>
+
+    {% block body %}
+    
+    <!-- Blog Header Section -->
+    <header class="blog-header">
+        <div class="video-background">
+            <video autoplay muted loop playsinline id="header-bg-video">
+                <!-- Video files will be provided by the company -->
+                <source src="{% static 'media/videos/Sksca9hO.mp4' %}" type="video/mp4">
+                <!-- Fallback for browsers that don't support video tag -->
+                Your browser does not support the video tag.
+            </video>
+            <!-- Overlay to ensure text readability -->
+            <div class="video-overlay"></div>
+        </div>
+     
+        <div class="container">
+            <h1>Industry Insights & Expert Articles</h1>
+            <p>Stay informed with the latest trends, expert advice, and innovative solutions in construction and design.</p>
+        </div>
+    </header>
+
+    <!-- Blog Content Area -->
+    <main class="blog-content">
+        <div class="container">
+            <div class="blog-layout">
+                <!-- Main Content -->
+                <div class="blog-main">
+                    <!-- Featured Post -->
+                    {% if featured_posts %}
+                    <section class="featured-post">
+                        <h2 class="section-title">Featured Article</h2>
+                        {% for post in featured_posts|slice:":1" %}
+                        <div class="featured-post-card">
+                            <div class="featured-image">
+                                {% if post.featured_image %}
+                                    <img src="{{ post.featured_image.url }}" alt="{{ post.title }}">
+                                {% else %}
+                                    <img src="{% static 'images/image6.jpg' %}" alt="{{ post.title }}">
+                                {% endif %}
+                                {% if post.category %}
+                                    <div class="category-badge">{{ post.category.name }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="featured-content">
+                                <h3>{{ post.title }}</h3>
+                                <div class="post-meta">
+                                    <span class="author"><i class="fas fa-user"></i> {{ post.author.get_full_name|default:post.author.username }}</span>
+                                    <span class="date"><i class="fas fa-calendar"></i> {{ post.published_date|date:"F j, Y" }}</span>
+                                    <span class="read-time"><i class="fas fa-clock"></i> {{ post.reading_time }} min read</span>
+                                </div>
+                                <p>{{ post.excerpt|default:post.content|unescape_html|truncatewords:30|striptags }}</p>
+                                <a href="{{ post.get_absolute_url }}" class="btn btn-secondary">Read Article <i class="fas fa-arrow-right"></i></a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </section>
+                    {% endif %}
+
+                    <!-- Search and Filter Section -->
+                    <section class="blog-filter-section">
+                        <form method="get" action="{% url 'blog:blog_list' %}" class="search-form">
+                            <div class="search-bar">
+                                <input type="text" id="blogSearch" name="search" placeholder="Search articles..." value="{{ search_query }}">
+                                <button type="submit" id="searchButton"><i class="fas fa-search"></i></button>
+                            </div>
+                            <div class="filter-options">
+                                <span class="filter-label">Filter by:</span>
+                                <div class="filter-tags">
+                                    <a href="{% url 'blog:blog_list' %}" class="filter-tag {% if not selected_category %}active{% endif %}">All</a>
+                                    {% for category in categories %}
+                                        <a href="{% url 'blog:blog_list' %}?category={{ category.slug }}" 
+                                           class="filter-tag {% if selected_category.id == category.id %}active{% endif %}">
+                                            {{ category.name }}
+                                        </a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </form>
+                    </section>
+
+                    <!-- Blog Posts Grid -->
+                    <section class="blog-posts-grid" id="blogPostsContainer">
+                        {% for post in posts %}
+                        <article class="blog-card" data-category="{% if post.category %}{{ post.category.slug }}{% endif %}">
+                            <div class="blog-card-image">
+                                {% if post.featured_image %}
+                                    <img src="{{ post.featured_image.url }}" alt="{{ post.title }}">
+                                {% else %}
+                                    <img src="{% static 'images/image1.jpg' %}" alt="{{ post.title }}">
+                                {% endif %}
+                                {% if post.category %}
+                                    <div class="category-badge">{{ post.category.name }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="blog-card-content">
+                                <h3><a href="{{ post.get_absolute_url }}">{{ post.title }}</a></h3>
+                                <div class="post-meta">
+                                    <span class="author"><i class="fas fa-user"></i> {{ post.author.get_full_name|default:post.author.username }}</span>
+                                    <span class="date"><i class="fas fa-calendar"></i> {{ post.published_date|date:"F j, Y" }}</span>
+                                </div>
+                                <p>{{ post.excerpt|default:post.content|unescape_html|truncatewords:20|striptags }}</p>
+                                <a href="{{ post.get_absolute_url }}" class="read-more">Read More <i class="fas fa-arrow-right"></i></a>
+                            </div>
+                        </article>
+                        {% empty %}
+                        <div class="no-posts">
+                            <i class="fas fa-newspaper"></i>
+                            <h3>No blog posts found</h3>
+                            <p>{% if search_query %}No posts match your search "{{ search_query }}".{% else %}No blog posts have been published yet.{% endif %}</p>
+                        </div>
+                        {% endfor %}
+                    </section>
+
+                    <!-- Pagination -->
+                    {% if page_obj.has_other_pages %}
+                    <div class="pagination">
+                        {% if page_obj.has_previous %}
+                            <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category.slug }}{% endif %}" class="pagination-btn">
+                                <i class="fas fa-chevron-left"></i> Previous
+                            </a>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <span class="pagination-btn active">{{ num }}</span>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category.slug }}{% endif %}" class="pagination-btn">{{ num }}</a>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category.slug }}{% endif %}" class="pagination-btn pagination-next">
+                                Next <i class="fas fa-chevron-right"></i>
+                            </a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Sidebar -->
+                <aside class="blog-sidebar">
+                    <!-- Popular Posts Widget -->
+                    <div class="sidebar-widget popular-posts">
+                        <h3 class="widget-title">Popular Posts</h3>
+                        <ul class="popular-posts-list">
+                            {% if featured_posts %}
+                                {% for post in featured_posts %}
+                                <li>
+                                    <div class="post-thumbnail">
+                                        {% if post.featured_image %}
+                                            <img src="{{ post.featured_image.url }}" alt="{{ post.title }}">
+                                        {% else %}
+                                            <img src="{% static 'images/image8.jpg' %}" alt="{{ post.title }}">
+                                        {% endif %}
+                                    </div>
+                                    <div class="post-info">
+                                        <h4><a href="{% url 'blog:blog_detail' slug=post.slug %}">{{ post.title }}</a></h4>
+                                        <span class="post-date">{{ post.published_date|date:"F j, Y" }}</span>
+                                    </div>
+                                </li>
+                                {% endfor %}
+                            {% else %}
+                                <li>
+                                    <div class="post-thumbnail">
+                                        <img src="{% static 'images/image8.jpg' %}" alt="No Posts">
+                                    </div>
+                                    <div class="post-info">
+                                        <h4><a href="#" onclick="alert('No blog posts available yet. Please create some blog posts first.')">No Popular Posts Yet</a></h4>
+                                        <span class="post-date">Create your first blog post!</span>
+                                    </div>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    
+                    <!-- Categories Widget -->
+                    <div class="sidebar-widget categories">
+                        <h3 class="widget-title">Categories</h3>
+                        <ul class="categories-list">
+                            {% if categories %}
+                                {% for category in categories %}
+                                <li><a href="{% url 'blog:category_list' slug=category.slug %}">{{ category.name }} <span>({{ category.post_count }})</span></a></li>
+                                {% endfor %}
+                            {% else %}
+                                <li><a href="#" onclick="alert('No categories available yet.')">No Categories Yet</a></li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    
+                    <!-- Newsletter Signup Widget
+                    <div class="sidebar-widget newsletter">
+                        <p>Subscribe to our newsletter for the latest construction insights and industry updates.</p>
+                        <form class="newsletter-form" id="newsletterForm">
+                            <input type="email" placeholder="Your email address" required>
+                            <button type="submit" class="btn btn-primary">Subscribe</button>
+                        </form>
+                    </div> -->
+                    
+                    <!-- Tags Widget -->
+                    <div class="sidebar-widget tags">
+                        <h3 class="widget-title">Popular Tags</h3>
+                        <div class="tags-cloud">
+                            {% if popular_tags %}
+                                {% for tag in popular_tags %}
+                                <a href="{% url 'blog:tag_list' slug=tag.slug %}" class="tag">{{ tag.name }}</a>
+                                {% endfor %}
+                            {% else %}
+                                <span class="tag">No tags available yet</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </main>
+
+    <!-- Call To Action Section -->
+    <section class="cta-section">
+        <div class="container">
+            <div class="cta-content">
+                <h2>Ready to Start Your Next Construction Project?</h2>
+                <p>Contact our team of experts to discuss your building needs and get a customized quote.</p>
+                <a href="{% url 'core:contact' %}" class="btn btn-primary btn-large">Contact Us Today</a>
+            </div>
+        </div>
+    </section>
+
+    
+  
+
+    <script src="{% static 'js/main.js' %}"></script>
+    <script src="{% static 'js/bloglist.js' %}"></script>
+ 
+</body>
+{% endblock %}
+</html>

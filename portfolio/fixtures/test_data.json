@@ -1,0 +1,191 @@
+[
+  {
+    "model": "portfolio.category",
+    "pk": 1,
+    "fields": {
+      "name": "Residential",
+      "slug": "residential"
+    }
+  },
+  {
+    "model": "portfolio.category",
+    "pk": 2,
+    "fields": {
+      "name": "Commercial",
+      "slug": "commercial"
+    }
+  },
+  {
+    "model": "portfolio.category",
+    "pk": 3,
+    "fields": {
+      "name": "Industrial",
+      "slug": "industrial"
+    }
+  },
+  {
+    "model": "portfolio.project",
+    "pk": 1,
+    "fields": {
+      "title": "Modern Villa Residence",
+      "description": "A stunning modern villa featuring contemporary design elements with sustainable materials and energy-efficient systems.",
+      "category": 1,
+      "year": 2024,
+      "location": "Makati City, Philippines",
+      "size": "450 m²",
+      "duration": "18 Months",
+      "completion_date": "2024-12-15",
+      "lead_architect": "Maria Santos",
+      "status": "ongoing",
+      "featured": true,
+      "created_at": "2024-01-15T10:00:00Z",
+      "updated_at": "2024-01-15T10:00:00Z"
+    }
+  },
+  {
+    "model": "portfolio.project",
+    "pk": 2,
+    "fields": {
+      "title": "Corporate Office Tower",
+      "description": "A 25-story corporate office building with state-of-the-art facilities and green building certifications.",
+      "category": 2,
+      "year": 2023,
+      "location": "Bonifacio Global City, Philippines",
+      "size": "12,000 m²",
+      "duration": "36 Months",
+      "completion_date": "2023-11-30",
+      "lead_architect": "Juan Dela Cruz",
+      "status": "completed",
+      "featured": true,
+      "created_at": "2023-01-10T09:00:00Z",
+      "updated_at": "2023-11-30T17:00:00Z"
+    }
+  },
+  {
+    "model": "portfolio.project",
+    "pk": 3,
+    "fields": {
+      "title": "Eco-Friendly Warehouse",
+      "description": "An environmentally conscious warehouse facility with solar panels and rainwater harvesting systems.",
+      "category": 3,
+      "year": 2024,
+      "location": "Laguna, Philippines",
+      "size": "8,500 m²",
+      "duration": "12 Months",
+      "completion_date": "2024-08-30",
+      "lead_architect": "Ana Rodriguez",
+      "status": "planned",
+      "featured": false,
+      "created_at": "2024-02-01T11:00:00Z",
+      "updated_at": "2024-02-01T11:00:00Z"
+    }
+  },
+  {
+    "model": "portfolio.projecttimeline",
+    "pk": 1,
+    "fields": {
+      "project": 1,
+      "title": "Design Phase Complete",
+      "date": "2024-03-15",
+      "description": "Architectural designs and blueprints finalized and approved by client.",
+      "completed": true,
+      "order": 1
+    }
+  },
+  {
+    "model": "portfolio.projecttimeline",
+    "pk": 2,
+    "fields": {
+      "project": 1,
+      "title": "Foundation Work",
+      "date": "2024-06-01",
+      "description": "Excavation and foundation construction in progress.",
+      "completed": true,
+      "order": 2
+    }
+  },
+  {
+    "model": "portfolio.projecttimeline",
+    "pk": 3,
+    "fields": {
+      "project": 1,
+      "title": "Structure Completion",
+      "date": "2024-10-15",
+      "description": "Main structural work and roofing to be completed.",
+      "completed": false,
+      "order": 3
+    }
+  },
+  {
+    "model": "portfolio.projecttimeline",
+    "pk": 4,
+    "fields": {
+      "project": 2,
+      "title": "Project Handover",
+      "date": "2023-11-30",
+      "description": "Final inspection completed and keys handed over to client.",
+      "completed": true,
+      "order": 1
+    }
+  },
+  {
+    "model": "portfolio.projectstat",
+    "pk": 1,
+    "fields": {
+      "project": 1,
+      "label": "Bedrooms",
+      "value": "4",
+      "order": 1
+    }
+  },
+  {
+    "model": "portfolio.projectstat",
+    "pk": 2,
+    "fields": {
+      "project": 1,
+      "label": "Bathrooms",
+      "value": "3",
+      "order": 2
+    }
+  },
+  {
+    "model": "portfolio.projectstat",
+    "pk": 3,
+    "fields": {
+      "project": 1,
+      "label": "Parking Spaces",
+      "value": "2",
+      "order": 3
+    }
+  },
+  {
+    "model": "portfolio.projectstat",
+    "pk": 4,
+    "fields": {
+      "project": 2,
+      "label": "Floors",
+      "value": "25",
+      "order": 1
+    }
+  },
+  {
+    "model": "portfolio.projectstat",
+    "pk": 5,
+    "fields": {
+      "project": 2,
+      "label": "Office Units",
+      "value": "150",
+      "order": 2
+    }
+  },
+  {
+    "model": "portfolio.projectstat",
+    "pk": 6,
+    "fields": {
+      "project": 2,
+      "label": "Parking Levels",
+      "value": "3",
+      "order": 3
+    }
+  }
+]

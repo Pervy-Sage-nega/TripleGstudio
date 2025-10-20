@@ -1,0 +1,804 @@
+{% extends 'admin-nav-footer-template/base.html' %}
+{% load static %}
+{% block title %}Admin Project Portfolio Management | Triple G BuildHub{% endblock %}
+{% block extra_head %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Diary History | Triple G BuildHub</title>
+    <link rel="stylesheet" href="{% static 'css/sitecss/history.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admincss/adminhistory.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admincss/header.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admincss/nav.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    {% endblock %}
+    {% block content %}
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-title">
+                <i class="fas fa-history"></i>
+                <h1>Site Diary History</h1>
+            </div>
+
+            <div class="export-options">
+                <button class="btn btn-primary" id="refreshBtn"><i class="fas fa-sync-alt"></i> Refresh</button>
+                <button class="btn btn-primary" id="exportPdfBtn"><i class="fas fa-file-pdf"></i> PDF</button>
+                <button class="btn btn-primary" id="exportCsvBtn"><i class="fas fa-file-csv"></i> CSV</button>
+                <button class="btn btn-secondary" id="printBtn"><i class="fas fa-print"></i> Print</button>
+            </div>
+        </div>
+
+        <!-- View Toggle Section -->
+        <div class="view-toggle-section">
+            <div class="view-toggle">
+                <button id="timelineViewBtn" class="view-btn active" title="Timeline View">
+                    <i class="fas fa-stream" style="color: #2a5254;"></i> Timeline
+                </button>
+                <button id="tableViewBtn" class="view-btn" title="Table View">
+                    <i class="fas fa-table"></i> Table
+                </button>
+            </div>
+        </div>
+
+        <!-- Filter and Search Section -->
+        <div class="filter-container">
+            <div class="filter-header">
+                <div class="filter-title">
+                    <i class="fas fa-filter"></i>
+                    <span>Filter Entries</span>
+                </div>
+                <button class="filter-toggle" id="filterToggle">
+                    <span>Show Filters</span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+            </div>
+
+            <div class="search-box">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="search-input" placeholder="Search entries...">
+            </div>
+
+            <div class="filter-options" id="filterOptions" style="display: none;">
+                <div class="filter-group">
+                    <label for="filter-project">Project Name</label>
+                    <select id="filter-project">
+                        <option value="">All Projects</option>
+                        <option value="Central Business District Tower">Central Business District Tower</option>
+                        <option value="Highway Bridge Expansion">Highway Bridge Expansion</option>
+                        <option value="Residential Complex Phase 2">Residential Complex Phase 2</option>
+                        <option value="Waterfront Development">Waterfront Development</option>
+                        <option value="Tech Innovation Hub">Tech Innovation Hub</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="filter-architect">Architect</label>
+                    <select id="filter-architect">
+                        <option value="">All Architects</option>
+                        <option value="John Smith">John Smith</option>
+                        <option value="Sarah Johnson">Sarah Johnson</option>
+                        <option value="Michael Brown">Michael Brown</option>
+                        <option value="Emily Davis">Emily Davis</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="filter-date-from">Date From</label>
+                    <input type="date" id="filter-date-from">
+                </div>
+
+                <div class="filter-group">
+                    <label for="filter-date-to">Date To</label>
+                    <input type="date" id="filter-date-to">
+                </div>
+
+                <div class="filter-group">
+                    <label for="filter-weather">Weather Condition</label>
+                    <select id="filter-weather">
+                        <option value="">All Weather</option>
+                        <option value="Sunny">Sunny</option>
+                        <option value="Cloudy">Cloudy</option>
+                        <option value="Rainy">Rainy</option>
+                        <option value="Windy">Windy</option>
+                        <option value="Stormy">Stormy</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="filter-status">Entry Status</label>
+                    <select id="filter-status">
+                        <option value="">All Status</option>
+                        <option value="New">New</option>
+                        <option value="Approved">Approved</option>
+                        <option value="Revision">Revision Requested</option>
+                        <option value="Revised">Revised</option>
+                    </select>
+                </div>
+
+                <div class="filter-buttons">
+                    <button class="btn btn-secondary" id="resetFilters">
+                        <i class="fas fa-undo"></i>
+                        Reset
+                    </button>
+                    <button class="btn btn-primary" id="applyFilters">
+                        <i class="fas fa-check"></i>
+                        Apply Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports Section with View Toggle -->
+        <div class="reports-section">
+            <div class="section-header">
+                <div class="section-title">
+                    <i class="fas fa-list"></i>
+                    Site Diary Entries
+                </div>
+                <div class="view-toggle">
+                    <button id="timelineViewBtn" class="view-btn active" title="Timeline View">
+                        <i class="fas fa-stream"></i> Timeline View
+                    </button>
+                    <button id="tableViewBtn" class="view-btn" title="Table View">
+                        <i class="fas fa-table"></i> Table View
+                    </button>
+                    <button id="expandAllBtn" class="view-btn" title="Expand All">
+                        <i class="fas fa-expand-alt"></i> Expand All
+                    </button>
+                    <button id="collapseAllBtn" class="view-btn" title="Collapse All">
+                        <i class="fas fa-compress-alt"></i> Collapse All
+                    </button>
+                </div>
+            </div>
+
+            <!-- Timeline View -->
+            <div class="timeline-view" id="timelineView">
+                <div class="timeline-line"></div>
+
+                <!-- Timeline Item 1 -->
+                <div class="timeline-item">
+                    <div class="timeline-header" data-id="1">
+                        <div class="timeline-date">
+                            <i class="fas fa-calendar-alt"></i>
+                            <div>
+                                <h3>Central Business District Tower</h3>
+                                <span>Mar 17, 2025</span>
+                            </div>
+                        </div>
+                        <div class="timeline-status">
+                            <span class="status-badge status-new">New</span>
+                            <span class="architect-badge"><i class="fas fa-hard-hat"></i> John Smith</span>
+                        </div>
+                        <div class="timeline-actions">
+                            <button class="action-btn view" title="View Full Entry"
+                                onclick="location.href='{/adminside/diaryreviewer/admindairy.html?id=1}'">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="action-btn download" title="Download PDF">
+                                <i class="fas fa-file-pdf"></i>
+                            </button>
+                            <button class="action-btn verify" title="Mark as Verified">
+                                <i class="fas fa-check-circle"></i>
+                            </button>
+                            <button class="action-btn revision" title="Submit Revision">
+                                <i class="fas fa-history"></i>
+                            </button>
+                            <button class="action-btn expand" title="Expand/Collapse">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="timeline-content" id="content1">
+                        <div class="project-info">
+                            <div class="info-group">
+                                <div class="info-label">Location</div>
+                                <div class="info-value">Downtown, Central Business District</div>
+                            </div>
+                            <div class="info-group">
+                                <div class="info-label">Supervisor</div>
+                                <div class="info-value">John Smith</div>
+                            </div>
+                            <div class="info-group">
+                                <div class="info-label">Personnel Count</div>
+                                <div class="info-value">42</div>
+                            </div>
+                            <div class="info-group">
+                                <div class="info-label">Equipment</div>
+                                <div class="info-value">Tower Crane, Concrete Pump, Excavator</div>
+                            </div>
+                        </div>
+
+                        <div class="weather-info">
+                            <i class="fas fa-sun weather-icon"></i>
+                            <div class="weather-details">
+                                <div class="weather-detail">
+                                    <i class="fas fa-thermometer-half"></i>
+                                    <span>24°C</span>
+                                </div>
+                                <div class="weather-detail">
+                                    <i class="fas fa-cloud"></i>
+                                    <span>Clear Sky</span>
+                                </div>
+                                <div class="weather-detail">
+                                    <i class="fas fa-wind"></i>
+                                    <span>8 km/h NE</span>
+                                </div>
+                                <div class="weather-detail">
+                                    <i class="fas fa-tint"></i>
+                                    <span>Humidity: 55%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="activities-section">
+                            <div class="section-title">
+                                <i class="fas fa-tasks"></i>
+                                <span>Work Performed</span>
+                            </div>
+                            <p class="activity-text">
+                                Completed concrete pouring for the 12th floor slab. Inspected and approved formwork for
+                                columns on the 13th floor. Electrical conduit installation began on the 11th floor.
+                                Plumbing rough-in work continued on floors 9-10.
+                            </p>
+                        </div>
+
+                        <div class="activities-section">
+                            <div class="section-title">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>Delays & Issues</span>
+                            </div>
+                            <p class="activity-text">
+                                Concrete delivery was delayed by 2 hours due to traffic congestion. Minor rework
+                                required on 11th floor electrical placement due to design updates.
+                            </p>
+                        </div>
+
+                        <div class="timeline-footer">
+                            <button class="btn btn-secondary view-full" onclick="location.href='/adminside/diaryreviewer/admindairy.html?id=1'">
+                                <i class="fas fa-eye"></i> View Full Entry
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timeline Item 2 -->
+                <div class="timeline-item">
+                    <div class="timeline-header" data-id="2">
+                        <div class="timeline-date">
+                            <i class="fas fa-calendar-alt"></i>
+                            <div>
+                                <h3>Highway Bridge Expansion</h3>
+                                <span>Mar 16, 2025</span>
+                            </div>
+                        </div>
+                        <div class="timeline-status">
+                            <span class="status-badge status-approved">Approved</span>
+                            <span class="architect-badge"><i class="fas fa-hard-hat"></i> Sarah Johnson</span>
+                        </div>
+                        <div class="timeline-actions">
+                            <button class="action-btn view" title="View Full Entry"
+                                onclick="location.href='/adminside/diaryreviewer/admindairy.html?id=2'">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="action-btn download" title="Download PDF">
+                                <i class="fas fa-file-pdf"></i>
+                            </button>
+                            <button class="action-btn verify disabled" title="Already Verified" disabled>
+                                <i class="fas fa-check-circle"></i>
+                            </button>
+                            <button class="action-btn revision" title="Submit Revision">
+                                <i class="fas fa-history"></i>
+                            </button>
+                            <button class="action-btn expand" title="Expand/Collapse">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="timeline-content" id="content2">
+                        <div class="project-info">
+                            <div class="info-group">
+                                <div class="info-label">Location</div>
+                                <div class="info-value">North Highway, River Crossing</div>
+                            </div>
+                            <div class="info-group">
+                                <div class="info-label">Supervisor</div>
+                                <div class="info-value">Sarah Johnson</div>
+                            </div>
+                            <div class="info-group">
+                                <div class="info-label">Personnel Count</div>
+                                <div class="info-value">28</div>
+                            </div>
+                            <div class="info-group">
+                                <div class="info-label">Equipment</div>
+                                <div class="info-value">Mobile Crane, Pile Driver, Concrete Mixers</div>
+                            </div>
+                        </div>
+
+                        <div class="weather-info">
+                            <i class="fas fa-cloud-rain weather-icon"></i>
+                            <div class="weather-details">
+                                <div class="weather-detail">
+                                    <i class="fas fa-thermometer-half"></i>
+                                    <span>17°C</span>
+                                </div>
+                                <div class="weather-detail">
+                                    <i class="fas fa-cloud"></i>
+                                    <span>Light Rain</span>
+                                </div>
+                                <div class="weather-detail">
+                                    <i class="fas fa-wind"></i>
+                                    <span>12 km/h SW</span>
+                                </div>
+                                <div class="weather-detail">
+                                    <i class="fas fa-tint"></i>
+                                    <span>Humidity: 78%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="activities-section">
+                            <div class="section-title">
+                                <i class="fas fa-tasks"></i>
+                                <span>Work Performed</span>
+                            </div>
+                            <p class="activity-text">
+                                Installed rebar for the north pier foundation. Waterproofing application on completed
+                                southern section. Traffic management team redirected vehicles to single lane operation.
+                            </p>
+                        </div>
+
+                        <div class="activities-section">
+                            <div class="section-title">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>Delays & Issues</span>
+                            </div>
+                            <p class="activity-text">
+                                Work slowed due to light rain showers. Suspended external painting operations. Site
+                                drainage system working effectively in managing rainfall.
+                            </p>
+                        </div>
+
+                        <div class="admin-approval-info">
+                            <div class="approval-details">
+                                <div class="approved-by">
+                                    <i class="fas fa-user-check"></i> Approved by:
+                                    <span>Admin (Robert Wilson)</span>
+                                </div>
+                                <div class="approval-date">
+                                    <i class="fas fa-calendar-check"></i>
+                                    <span>Mar 16, 2025 - 4:30 PM</span>
+                                </div>
+                            </div>
+                            <div class="approval-notes">
+                                <strong>Notes:</strong> All documentation is complete and accurate. Photos verify the
+                                work completed.
+                            </div>
+                        </div>
+
+                        <div class="timeline-footer">
+                            <button class="btn btn-secondary view-full" onclick="location.href='/adminside/diaryreviewer/admindairy.html?id=2'">
+                                <i class="fas fa-eye"></i> View Full Entry
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timeline Item 3 -->
+                <div class="timeline-item">
+                    <div class="timeline-header" data-id="3">
+                        <div class="timeline-date">
+                            <i class="fas fa-calendar-alt"></i>
+                            <div>
+                                <h3>Residential Complex Phase 2</h3>
+                                <span>Mar 15, 2025</span>
+                            </div>
+                        </div>
+                        <div class="timeline-status">
+                            <span class="status-badge status-revision">Revision Requested</span>
+                            <span class="architect-badge"><i class="fas fa-hard-hat"></i> Michael Brown</span>
+                        </div>
+                        <div class="timeline-actions">
+                            <button class="action-btn view" title="View Full Entry"
+                                onclick="location.href='/adminside/diaryreviewer/admindairy.html?id=3'">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="action-btn download" title="Download PDF">
+                                <i class="fas fa-file-pdf"></i>
+                            </button>
+                            <button class="action-btn verify disabled" title="Revision Requested" disabled>
+                                <i class="fas fa-check-circle"></i>
+                            </button>
+                            <button class="action-btn revision" title="Submit Revision">
+                                <i class="fas fa-history"></i>
+                            </button>
+                            <button class="action-btn expand" title="Expand/Collapse">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="timeline-content" id="content3">
+                        <div class="revision-request-info">
+                            <div class="revision-header">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <span>Revision Requested on Mar 15, 2025 at 2:45 PM</span>
+                            </div>
+                            <div class="revision-details">
+                                <div class="revision-item">
+                                    <strong>Revision Type:</strong> Data Correction
+                                </div>
+                                <div class="revision-item">
+                                    <strong>Sections:</strong> Materials, Budget
+                                </div>
+                                <div class="revision-item">
+                                    <strong>Impact Level:</strong> Moderate
+                                </div>
+                                <div class="revision-item">
+                                    <strong>Admin:</strong> David Thompson
+                                </div>
+                                <div class="revision-description">
+                                    <strong>Description:</strong> Material costs appear to be inconsistent with current
+                                    market prices. Please verify and correct the material costs, particularly for
+                                    Building B roofing materials. Also update the remaining budget calculation
+                                    accordingly.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="project-info">
+                            <div class="info-group">
+                                <div class="info-label">Location</div>
+                                <div class="info-value">Westside Development Zone</div>
+                            </div>
+                            <div class="info-group">
+                                <div class="info-label">Supervisor</div>
+                                <div class="info-value">Michael Brown</div>
+                            </div>
+                            <div class="info-group">
+                                <div class="info-label">Personnel Count</div>
+                                <div class="info-value">35</div>
+                            </div>
+                            <div class="info-group">
+                                <div class="info-label">Equipment</div>
+                                <div class="info-value">Backhoe, Concrete Pump, Boom Lift</div>
+                            </div>
+                        </div>
+
+                        <div class="activities-section">
+                            <div class="section-title">
+                                <i class="fas fa-tasks"></i>
+                                <span>Work Performed</span>
+                            </div>
+                            <p class="activity-text">
+                                Framing for Building C units 15-20 completed. Roofing installation began on Building B.
+                                Window installation continued on Building A. Site landscaping work started around
+                                completed Building D.
+                            </p>
+                        </div>
+
+                        <div class="timeline-footer">
+                            <button class="btn btn-secondary view-full" onclick="location.href='/adminside/diaryreviewer/admindairy.html?id=3'">
+                                <i class="fas fa-eye"></i> View Full Entry
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table View -->
+            <div class="table-view" id="tableView" style="display: none;">
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Project</th>
+                                <th>Architect</th>
+                                <th>Location</th>
+                                <th>Weather</th>
+                                <th>Personnel</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Mar 17, 2025</td>
+                                <td class="table-project-name">Central Business District Tower</td>
+                                <td>John Smith</td>
+                                <td>Downtown, Central Business District</td>
+                                <td>
+                                    <div class="table-weather">
+                                        <i class="fas fa-sun"></i>
+                                        <span>Sunny, 24°C</span>
+                                    </div>
+                                </td>
+                                <td>42</td>
+                                <td><span class="status-badge status-new">New</span></td>
+                                <td>
+                                    <div class="table-actions">
+                                        <button class="action-btn view" title="View Full Entry"
+                                            onclick="location.href='/adminside/diaryreviewer/admindairy.html?id=1'">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="action-btn download" title="Download PDF">
+                                            <i class="fas fa-file-pdf"></i>
+                                        </button>
+                                        <button class="action-btn verify" title="Mark as Verified">
+                                            <i class="fas fa-check-circle"></i>
+                                        </button>
+                                        <button class="action-btn revision" title="Submit Revision">
+                                            <i class="fas fa-history"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Mar 16, 2025</td>
+                                <td class="table-project-name">Highway Bridge Expansion</td>
+                                <td>Sarah Johnson</td>
+                                <td>North Highway, River Crossing</td>
+                                <td>
+                                    <div class="table-weather">
+                                        <i class="fas fa-cloud-rain"></i>
+                                        <span>Rainy, 17°C</span>
+                                    </div>
+                                </td>
+                                <td>28</td>
+                                <td><span class="status-badge status-approved">Approved</span></td>
+                                <td>
+                                    <div class="table-actions">
+                                        <button class="action-btn view" title="View Full Entry"
+                                            onclick="location.href='/adminside/diaryreviewer/admindairy.html?id=2'">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="action-btn download" title="Download PDF">
+                                            <i class="fas fa-file-pdf"></i>
+                                        </button>
+                                        <button class="action-btn verify disabled" title="Already Verified" disabled>
+                                            <i class="fas fa-check-circle"></i>
+                                        </button>
+                                        <button class="action-btn revision" title="Submit Revision">
+                                            <i class="fas fa-history"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Mar 15, 2025</td>
+                                <td class="table-project-name">Residential Complex Phase 2</td>
+                                <td>Michael Brown</td>
+                                <td>Westside Development Zone</td>
+                                <td>
+                                    <div class="table-weather">
+                                        <i class="fas fa-cloud"></i>
+                                        <span>Cloudy, 19°C</span>
+                                    </div>
+                                </td>
+                                <td>35</td>
+                                <td><span class="status-badge status-revision">Revision Requested</span></td>
+                                <td>
+                                    <div class="table-actions">
+                                        <button class="action-btn view" title="View Full Entry"
+                                            onclick="location.href='/adminside/diaryreviewer/admindairy.html?id=3'">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="action-btn download" title="Download PDF">
+                                            <i class="fas fa-file-pdf"></i>
+                                        </button>
+                                        <button class="action-btn verify disabled" title="Revision Requested" disabled>
+                                            <i class="fas fa-check-circle"></i>
+                                        </button>
+                                        <button class="action-btn revision" title="Submit Revision">
+                                            <i class="fas fa-history"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Mar 14, 2025</td>
+                                <td class="table-project-name">Tech Innovation Hub</td>
+                                <td>Emily Davis</td>
+                                <td>North Technology Park</td>
+                                <td>
+                                    <div class="table-weather">
+                                        <i class="fas fa-sun"></i>
+                                        <span>Sunny, 22°C</span>
+                                    </div>
+                                </td>
+                                <td>20</td>
+                                <td><span class="status-badge status-revised">Revised</span></td>
+                                <td>
+                                    <div class="table-actions">
+                                        <button class="action-btn view" title="View Full Entry"
+                                            onclick="location.href='/adminside/diaryreviewer/admindairy.html?id=4'">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="action-btn download" title="Download PDF">
+                                            <i class="fas fa-file-pdf"></i>
+                                        </button>
+                                        <button class="action-btn verify" title="Mark as Verified">
+                                            <i class="fas fa-check-circle"></i>
+                                        </button>
+                                        <button class="action-btn revision" title="Submit Revision">
+                                            <i class="fas fa-history"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pagination Controls -->
+            <div class="pagination">
+                <button class="page-btn disabled">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button class="page-btn active">1</button>
+                <button class="page-btn">2</button>
+                <button class="page-btn">3</button>
+                <span class="pagination-ellipsis">...</span>
+                <button class="page-btn">10</button>
+                <button class="page-btn">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Revision Request Modal -->
+        <div class="modal" id="revisionModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>
+                        <i class="fas fa-history"></i>
+                        Submit Revision Request
+                    </h2>
+                    <button class="modal-close" id="closeRevisionModal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="revisionForm">
+                        <div class="form-section">
+                            <h3><i class="fas fa-info-circle"></i> Revision Details</h3>
+
+                            <div class="form-group">
+                                <label for="revisionDate">Revision Date <span class="required">*</span></label>
+                                <input type="date" id="revisionDate" name="revisionDate" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="revisionType">Revision Type <span class="required">*</span></label>
+                                <select id="revisionType" name="revisionType" required>
+                                    <option value="">Select type</option>
+                                    <option value="correction">Data Correction</option>
+                                    <option value="update">Progress Update</option>
+                                    <option value="addition">Additional Information</option>
+                                    <option value="documentation">Documentation Update</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Sections Requiring Revision <span class="required">*</span></label>
+                                <div class="checkbox-group">
+                                    <label><input type="checkbox" name="sections" value="weather"> Weather Data</label>
+                                    <label><input type="checkbox" name="sections" value="personnel"> Personnel</label>
+                                    <label><input type="checkbox" name="sections" value="materials"> Materials</label>
+                                    <label><input type="checkbox" name="sections" value="work"> Work Performed</label>
+                                    <label><input type="checkbox" name="sections" value="delays"> Delays/Issues</label>
+                                    <label><input type="checkbox" name="sections" value="equipment"> Equipment</label>
+                                    <label><input type="checkbox" name="sections" value="photos"> Photos</label>
+                                    <label><input type="checkbox" name="sections" value="budget"> Budget</label>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="revisionImpact">Impact Level <span class="required">*</span></label>
+                                <select id="revisionImpact" name="revisionImpact" required>
+                                    <option value="">Select impact</option>
+                                    <option value="minor">Minor (no impact)</option>
+                                    <option value="moderate">Moderate (small adjustments)</option>
+                                    <option value="major">Major (significant changes)</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="revisionDescription">Revision Description <span
+                                        class="required">*</span></label>
+                                <textarea id="revisionDescription" name="revisionDescription" rows="4"
+                                    placeholder="Describe the revision details, including what changes are needed and why..."
+                                    required></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Supporting Documents</label>
+                                <input type="file" id="supportingDocs" name="supportingDocs" multiple>
+                                <small class="form-text">Upload any documents that support this revision request (max 5
+                                    files)</small>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3><i class="fas fa-user-tie"></i> Admin Verification</h3>
+                            <div class="form-group">
+                                <label for="adminName">Admin Name <span class="required">*</span></label>
+                                <input type="text" id="adminName" name="adminName" placeholder="Enter your name"
+                                    required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="adminSignature">Admin Signature <span class="required">*</span></label>
+                                <div class="photo-upload-container">
+                                    <div class="photo-preview" id="adminSignaturePreview">
+                                        <i class="fas fa-signature"></i>
+                                        <span>No signature selected</span>
+                                    </div>
+                                    <div class="photo-upload">
+                                        <input type="file" id="adminSignature" name="adminSignature" accept="image/*"
+                                            required>
+                                        <label for="adminSignature" class="upload-btn">
+                                            <i class="fas fa-upload"></i> Upload Signature
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" id="cancelRevision">Cancel</button>
+                            <button type="submit" class="btn btn-primary" id="submitRevision">Submit Revision
+                                Request</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Verification Modal -->
+        <div class="modal" id="verifyModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>
+                        <i class="fas fa-check-circle"></i>
+                        Verify Entry
+                    </h2>
+                    <button class="modal-close" id="closeVerifyModal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to mark this diary entry as verified? This action will approve the entry
+                        for record-keeping.</p>
+                    <div class="form-group">
+                        <label for="verifyNotes">Verification Notes (Optional)</label>
+                        <textarea id="verifyNotes" rows="3"
+                            placeholder="Add any notes about this verification..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="adminNameVerify">Admin Name <span class="required">*</span></label>
+                        <input type="text" id="adminNameVerify" name="adminNameVerify" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancelVerify">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="confirmVerify">Verify Entry</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+      
+        {% endblock %}
+        {% block extra_scripts %}
+
+        <script src="{% static 'js/adminjs/mobile-btn.js' %}"></script>
+        <script src="{% static 'js/adminjs/adminhistory.js' %}"></script>
+        {% endblock %}
+</body>
+
+</html>

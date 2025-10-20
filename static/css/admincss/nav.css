@@ -1,0 +1,226 @@
+/* Admin Navigation Styles - Valorant Style */
+:root {
+  --primary-color: #3c6e71;
+  --secondary-color: #d9d9d9;
+  --accent-color: #284b63;
+  --success-color: #4caf50;
+  --danger-color: #f44336;
+  --warning-color: #ff9800;
+  --info-color: #2196f3;
+  --light-gray: #f5f5f5;
+  --dark-gray: #353535;
+  --mid-gray: #757575;
+  --border-color: #dddddd;
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --nav-bg: #00273C;
+  --nav-highlight: #FF7120;
+  --nav-text: #FFFFFF;
+  --primary-bg: #00273C;
+  --secondary-bg: #001C2B;
+  --highlight-color: #FF7120;
+  --text-primary: #FFFFFF;
+  --text-secondary: #d9d9d9;
+  --text-dark: #353535;
+  --card-bg: rgba(0, 50, 76, 0.5);
+  --card-hover: rgba(0, 60, 90, 0.8);
+  --success: #4caf50;
+  --danger: #f44336;
+  --warning: #ff9800;
+  --info: #2196f3;
+  --radius: 8px;
+  --transition: all 0.3s ease;
+  font-size: 16px;
+}
+
+
+
+/* Main Navigation Bar */
+.navbar {
+     position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 40px;
+    background-color: rgba(0, 28, 43, 0.95);
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+}
+
+/* Logo */
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.logo {
+  height: 30px;
+  width: auto;
+  transition: transform 0.5s ease-out, opacity 0.5s ease, filter 0.5s ease;
+}
+
+.logo:hover {
+  transform: scale(1.09);
+  opacity: 1;
+  filter: brightness(1.2) contrast(1.2);
+}
+
+.logo1 {
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--nav-text);
+  opacity: 0.8;
+  text-shadow: 2px 2px 4px rgba(0, 39, 60, 0.7);
+}
+
+.logo1 a {
+  color: #FF7120;
+  font-size: 23px;
+  font-weight: 15px;
+  transition: color 0.3s ease;
+  padding-top: 1px;
+  text-decoration: none;
+}
+
+.nav-links {
+  list-style: none;
+  display: flex;
+  padding: 3px 18px;
+  gap: 25px;
+  margin: 0;
+  font-size: 18px;
+}
+
+.nav-links li {
+  position: relative;
+}
+
+.nav-links a {
+  text-decoration: none;
+  color: #fff;
+  font-weight: 500;
+  position: relative;
+  padding: 5px 0;
+  transition: color 0.3s ease;
+}
+
+.nav-links a::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 0;
+  height: 2px;
+  background-color: #FF7120;
+  transition: all 0.4s ease;
+  transform: translateX(-50%);
+}
+
+.nav-links a:hover::after,
+.nav-links a.active::after {
+  width: 100%;
+}
+
+
+
+/* Dropdown styles */
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  background-color: #00273C;
+  list-style: none;
+  padding: 10px 0;
+  margin: 0;
+  opacity: 0;
+  visibility: hidden;
+  border-radius: 6px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  min-width: 200px;
+  transition: opacity 0.3s ease, visibility 0.5s ease;
+  transition-delay: 0s;
+}
+
+.dropdown-menu li a {
+  padding: 10px 20px;
+  display: block;
+  color: #fff;
+  font-size:  15px;
+  position: relative;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.dropdown-menu li a::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 5px;
+  width: 0;
+  height: 2px;
+  background-color: #FF7120;
+  transition: all 0.4s ease;
+  transform: translateX(-50%);
+}
+
+.dropdown-menu li a:hover {
+  background-color: #001a2a;
+  color: #fff;
+}
+
+.dropdown-menu li a:hover::after,
+.dropdown-menu li a.active::after {
+  width: 80%;
+}
+
+.dropdown-menu li a.active {
+  background-color: #001a2a;
+  color: #FF7120;
+}
+
+.dropdown:hover .dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0.2s;
+}
+
+.dropdown-menu:hover {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+.mobile-menu-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+/* Mobile Navigation Styles */
+@media (max-width: 900px) {
+  .nav-links {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+    background-color: #00273C;
+    position: absolute;
+    top: 70px;
+    left: 0;
+    text-align: center;
+  }
+
+  .nav-links.active {
+    display: flex;
+  }
+
+  .mobile-menu-btn {
+    display: block;
+  }
+}

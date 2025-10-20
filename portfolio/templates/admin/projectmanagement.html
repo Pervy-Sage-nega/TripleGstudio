@@ -1,0 +1,503 @@
+{% extends 'admin-nav-footer-template/base.html' %}
+{% load static %}
+{% block title %}Admin Project Portfolio Management | Triple G BuildHub{% endblock %}
+{% block extra_head %}
+    <link rel="stylesheet" href="{% static 'css/admincss/header.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/dashboard.css' %}">
+    
+    <link rel="stylesheet" href="{% static 'css/sitecss/reports.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/history.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admincss/blogmanagement.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/blog-ui-fixes.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admincss/nav.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/admincss/projectmanagement.css' %}">
+    
+     
+{% endblock %}
+{% block content %}
+
+
+
+        
+
+    <div class="container">
+        <!-- Page Header (Admin Theme) -->
+        <div class="page-header">
+            <div class="page-title">
+                <i class="fas fa-folder-plus"></i>
+                <h1>Project Portfolio Management</h1>
+            </div>
+            <div class="export-options">
+                <a href="{% url 'portfolio:projecttable' %}" class="btn btn-secondary"><i class="fas fa-table"></i> Table</a>
+                <button class="btn btn-info" id="refreshBtn"><i class="fas fa-sync-alt"></i> Refresh</button>
+            </div>
+        </div>
+        <p style="margin-bottom:2rem; color:#777; font-size:1rem;">Manage project entries that will be publicly visible in the Triple G Studio project showcase.</p>
+
+        
+        <!-- Summary Section -->
+        <div class="summary-cards">
+            <div class="summary-card" onclick="filterProjects('all')" style="cursor: pointer;" title="View all projects">
+                <i class="fas fa-folder-open summary-icon"></i>
+                <div class="summary-title">Total Projects</div>
+                <div class="summary-value" id="totalProjects">{{ total_projects }}</div>
+                <div class="summary-change">
+                    <span>All portfolio projects</span>
+                </div>
+            </div>
+            
+            <div class="summary-card success" onclick="filterProjects('completed')" style="cursor: pointer;" title="View completed projects">
+                <i class="fas fa-check-circle summary-icon"></i>
+                <div class="summary-title">Completed</div>
+                <div class="summary-value" id="completedProjects">{{ completed_projects }}</div>
+                <div class="summary-change">
+                    <span>Finished projects</span>
+                </div>
+            </div>
+            
+            <div class="summary-card warning" onclick="filterProjects('ongoing')" style="cursor: pointer;" title="View ongoing projects">
+                <i class="fas fa-clock summary-icon"></i>
+                <div class="summary-title">Ongoing</div>
+                <div class="summary-value" id="ongoingProjects">{{ ongoing_projects }}</div>
+                <div class="summary-change">
+                    <span>In progress</span>
+                </div>
+            </div>
+            
+            <div class="summary-card info" onclick="filterProjects('planned')" style="cursor: pointer;" title="View planned projects">
+                <i class="fas fa-calendar-alt summary-icon"></i>
+                <div class="summary-title">Planned</div>
+                <div class="summary-value" id="plannedProjects">{{ planned_projects }}</div>
+                <div class="summary-change">
+                    <span>Upcoming projects</span>
+                </div>
+            </div>
+            
+            <div class="summary-card danger" onclick="filterProjects('featured')" style="cursor: pointer;" title="View featured projects">
+                <i class="fas fa-star summary-icon"></i>
+                <div class="summary-title">Featured</div>
+                <div class="summary-value" id="featuredProjects">{{ featured_projects }}</div>
+                <div class="summary-change">
+                    <span>Highlighted projects</span>
+                </div>
+            </div>
+        </div>
+       
+        <!-- Project Management View Wrapper -->
+        <div id="pmViewWrapper">
+        
+        <!-- Project Entry Form -->
+        <div class="form-container card" id="formContainer">
+            <form id="projectForm" method="post" action="{% url 'portfolio:create_project' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="form-columns">
+                    <!-- Left Column -->
+                    <div class="form-column">
+                        <div class="form-group">
+                            <label for="title">Project Title <span style="color:red">*</span></label>
+                            <input type="text" id="title" name="title" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="category">Project Category</label>
+                            <select id="category" name="category" required>
+                                <option value="">Select Category</option>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}">{{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="lead_architect">Lead Architect</label>
+                            <input type="text" id="lead_architect" name="lead_architect">
+                        </div>
+                        <div class="form-group">
+                            <label for="status">Project Status</label>
+                            <select id="status" name="status" required>
+                                <option value="">Select Status</option>
+                                <option value="planned">Planned</option>
+                                <option value="ongoing">Ongoing</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="completion_date">Completion Date</label>
+                            <input type="date" id="completion_date" name="completion_date">
+                        </div>
+                        <div class="form-group">
+                            <label for="duration">Project Duration</label>
+                            <input type="text" id="duration" name="duration" placeholder="e.g. 14 Months">
+                        </div>
+                        <div class="form-group">
+                            <label for="size">Project Size</label>
+                            <input type="text" id="size" name="size" placeholder="e.g. 350 m²">
+                        </div>
+                        <div class="form-group">
+                            <label for="tagline">Tagline / Short Highlight</label>
+                            <input type="text" id="tagline" name="tagline">
+                        </div>
+                        <div class="form-group">
+                            <label for="hero_image">Cover Image <span style="color:red">*</span></label>
+                            <input type="file" id="hero_image" name="hero_image" accept="image/png, image/jpeg" required>
+                            <div id="coverPreview" class="img-preview"></div>
+                            <small>Used as hero banner on project-detail.html</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="gallery">Project Gallery (up to 6)</label>
+                            <input type="file" id="gallery" name="gallery_images" accept="image/png, image/jpeg" multiple>
+                            <div id="galleryPreview" class="img-preview-grid"></div>
+                            <small>Accepted: JPG, PNG, ≤ 5MB each</small>
+                        </div>
+                        
+                    </div>
+                    <!-- Right Column -->
+                    <div class="form-column">
+                        <div class="form-group">
+                            <label for="video">Background Video (Optional)</label>
+                            <input type="file" id="video" name="video" accept="video/mp4, video/webm, video/ogg">
+                            <div id="videoPreview" class="video-preview"></div>
+                            <small>Accepted: MP4, WebM, OGG ≤ 50MB. Used as background video on project detail page.</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="description">Project Overview <span style="color:red">*</span></label>
+                            <textarea id="description" name="description" rows="4" required></textarea>
+                        </div>
+                        
+                        <!-- SEO Fields Section -->
+                        <fieldset style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 1rem; margin: 1rem 0; background: #fafafa;">
+                            <legend style="font-weight: 600; color: #333; padding: 0 0.5rem; font-size: 0.9rem;">
+                                <i class="fas fa-search" style="margin-right: 0.5rem; color: #4a90e2;"></i>
+                                SEO Optimization
+                            </legend>
+                            <div class="form-group">
+                                <label for="seo_meta_title">SEO Meta Title (60 chars max)</label>
+                                <input type="text" id="seo_meta_title" name="seo_meta_title" maxlength="60" placeholder="Leave blank to use project title">
+                                <small style="color: #666; font-size: 0.8rem;">
+                                    <span id="seo_title_count">0</span>/60 characters
+                                </small>
+                            </div>
+                            <div class="form-group">
+                                <label for="seo_meta_description">SEO Meta Description (160 chars max)</label>
+                                <textarea id="seo_meta_description" name="seo_meta_description" rows="2" maxlength="160" placeholder="Leave blank to auto-generate from project overview"></textarea>
+                                <small style="color: #666; font-size: 0.8rem;">
+                                    <span id="seo_desc_count">0</span>/160 characters
+                                </small>
+                            </div>
+                            <div class="form-group">
+                                <label for="hero_image_alt">Hero Image Alt Text</label>
+                                <input type="text" id="hero_image_alt" name="hero_image_alt" maxlength="200" placeholder="Describe the hero image for accessibility">
+                                <small style="color: #666; font-size: 0.8rem;">For screen readers and SEO</small>
+                            </div>
+                        </fieldset>
+                        
+                        <div class="form-group">
+                            <label for="location">Project Location</label>
+                            <input type="text" id="location" name="location" placeholder="e.g. Manila, Philippines">
+                        </div>
+                        <div class="form-group">
+                            <label for="year">Project Year</label>
+                            <input type="number" id="year" name="year" min="2000" max="2030" placeholder="e.g. 2024" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; transition: border-color 0.2s;" onfocus="this.style.borderColor='#4a90e2';" onblur="this.style.borderColor='#ddd';">
+                        </div>
+                        <div class="form-group">
+                            <label for="sustainability">Sustainability / Tech / Goals</label>
+                            <textarea id="sustainability" name="sustainability" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div class="project-milestones">
+                    <div class="milestone-item">
+                <div class="milestone-actions" 
+                         style="display: flex; justify-content: flex-end; margin-top: 1rem; width: 100%;">
+                        <button type="button" class="btn btn-secondary" onclick="addMilestone()">
+                            <i class="fas fa-plus"></i> Add Milestone
+                        </button>
+                    </div>
+                <!-- Milestones / Timeline Builder -->
+                <fieldset class="card" >
+                    <legend><i class="fas fa-tasks"></i> Project Milestones</legend>           
+                    <!-- Align Add Milestone button to the right -->                  
+                    <div id="milestoneList" 
+                         style="display: flex; flex-direction: column; gap: 0;"></div>
+                </fieldset>
+                <!-- Visibility Controls -->
+                <div class="form-group visibility-controls">
+                    <label><input type="checkbox" id="featured" name="featured"> Mark as Featured Project</label>
+                    <label class="second-checkbox"><input type="checkbox" id="publish" name="publish" checked> Publish to Public Projects Page</label>
+                </div>
+                <!-- Form Buttons -->
+                <input type="hidden" id="hiddenStatus" name="status" value="">
+                <div class="form-actions">
+                    <button type="reset" class="btn btn-secondary"><i class="fas fa-trash"></i> Reset Form</button>
+                    <button type="button" class="btn btn-primary" onclick="saveAsDraft()"><i class="fas fa-save"></i> Save as Draft</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-upload"></i> Publish Project</button>
+                </div>
+            </form>
+        </div>
+
+       
+        
+        </div>
+        <!-- End Project Management View Wrapper -->
+    </div>
+{{ ... }}
+    <div class="modal" id="actionModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle"></h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+            <div class="modal-footer" id="modalFooter"></div>
+        </div>
+    </div>
+    {% endblock %}
+{% block extra_scripts %}
+<script src="{% static 'js/adminjs/projectmanagement.js' %}"></script>
+<script src="{% static 'js/adminjs/mobile-btn.js' %}"></script>
+
+{% if edit_project %}
+<script>
+// Auto-populate form fields when editing a project
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Populating form for editing project:', {{ edit_project.id }});
+    
+    // Basic project information
+    document.getElementById('title').value = '{{ edit_project.title|escapejs }}';
+    document.getElementById('lead_architect').value = '{{ edit_project.lead_architect|escapejs|default:"" }}';
+    document.getElementById('duration').value = '{{ edit_project.duration|escapejs|default:"" }}';
+    document.getElementById('size').value = '{{ edit_project.size|escapejs|default:"" }}';
+    document.getElementById('tagline').value = '{{ edit_project.tagline|escapejs|default:"" }}';
+    document.getElementById('description').value = '{{ edit_project.description|escapejs|default:"" }}';
+    document.getElementById('location').value = '{{ edit_project.location|escapejs|default:"" }}';
+    document.getElementById('sustainability').value = '{{ edit_project.sustainability|escapejs|default:"" }}';
+    
+    // SEO fields
+    document.getElementById('seo_meta_title').value = '{{ edit_project.seo_meta_title|escapejs|default:"" }}';
+    document.getElementById('seo_meta_description').value = '{{ edit_project.seo_meta_description|escapejs|default:"" }}';
+    document.getElementById('hero_image_alt').value = '{{ edit_project.hero_image_alt|escapejs|default:"" }}';
+    
+    // Year field
+    {% if edit_project.year %}
+    document.getElementById('year').value = {{ edit_project.year }};
+    {% endif %}
+    
+    // Completion date
+    {% if edit_project.completion_date %}
+    document.getElementById('completion_date').value = '{{ edit_project.completion_date|date:"Y-m-d" }}';
+    {% endif %}
+    
+    // Category selection
+    {% if edit_project.category %}
+    document.getElementById('category').value = '{{ edit_project.category.id }}';
+    {% endif %}
+    
+    // Status selection
+    {% if edit_project.status %}
+    document.getElementById('status').value = '{{ edit_project.status }}';
+    {% endif %}
+    
+    // Checkboxes
+    {% if edit_project.featured %}
+    document.getElementById('featured').checked = true;
+    {% endif %}
+    
+    // Set publish checkbox based on project status (if not draft, it's published)
+    {% if edit_project.status != 'draft' %}
+    document.getElementById('publish').checked = true;
+    {% else %}
+    document.getElementById('publish').checked = false;
+    {% endif %}
+    
+    // Handle image previews for existing project
+    {% if edit_project.hero_image %}
+    displayImagePreview('{{ edit_project.hero_image.url }}', 'coverPreview');
+    {% endif %}
+    
+    {% if edit_project.images.all %}
+    const galleryPreview = document.getElementById('galleryPreview');
+    if (galleryPreview) {
+        galleryPreview.innerHTML = '';
+        {% for image in edit_project.images.all %}
+        displayGalleryImage('{{ image.image.url }}');
+        {% endfor %}
+    }
+    {% endif %}
+    
+    // Handle video preview for existing project
+    {% if edit_project.video %}
+    displayVideoPreview('{{ edit_project.video.url }}', 'videoPreview');
+    {% endif %}
+    
+    // Populate milestones if they exist
+    {% if edit_project.timeline.all %}
+    const milestoneList = document.getElementById('milestoneList');
+    if (milestoneList) {
+        milestoneList.innerHTML = '';
+        
+        // Create milestones directly without relying on external functions
+        const milestoneData = [
+            {% for milestone in edit_project.timeline.all %}
+            {
+                title: '{{ milestone.title|escapejs }}',
+                description: '{{ milestone.description|escapejs }}',
+                date: '{{ milestone.date|date:"Y-m-d" }}'
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+        
+        // Create milestone cards directly
+        milestoneData.forEach((milestone, index) => {
+            createMilestoneCard(milestone.title, milestone.description, milestone.date, index);
+        });
+    }
+    {% endif %}
+    
+    // Update form action to edit instead of create
+    const form = document.getElementById('projectForm');
+    form.action = '{% url "portfolio:edit_project" edit_project.id %}';
+    
+    // Update form title/heading to indicate editing
+    const formContainer = document.querySelector('.form-container.card');
+    if (formContainer) {
+        const existingTitle = formContainer.querySelector('h2, h3, .form-title');
+        if (!existingTitle) {
+            const titleElement = document.createElement('h3');
+            titleElement.className = 'form-title';
+            titleElement.innerHTML = '<i class="fas fa-edit"></i> Editing: {{ edit_project.title|escapejs }}';
+            titleElement.style.cssText = 'margin-bottom: 1rem; color: #3c6e71; border-bottom: 2px solid #3c6e71; padding-bottom: 0.5rem;';
+            formContainer.insertBefore(titleElement, formContainer.firstChild);
+        }
+    }
+    
+    // Update character counters for SEO fields
+    updateSEOCounters();
+    
+    console.log('Form populated successfully for project editing');
+});
+
+// Helper functions for image and milestone handling
+function displayImagePreview(imageUrl, containerId) {
+    const container = document.getElementById(containerId);
+    if (container) {
+        container.innerHTML = `
+            <div class="preview-item">
+                <img src="${imageUrl}" alt="Preview" style="max-width: 200px; max-height: 150px; border-radius: 4px;">
+                <p style="margin: 0.5rem 0; font-size: 0.8rem; color: #666;">Current image</p>
+            </div>
+        `;
+    }
+}
+
+function displayGalleryImage(imageUrl) {
+    const galleryPreview = document.getElementById('galleryPreview');
+    if (galleryPreview) {
+        const imageDiv = document.createElement('div');
+        imageDiv.className = 'gallery-preview-item';
+        imageDiv.innerHTML = `
+            <img src="${imageUrl}" alt="Gallery Image" style="width: 100px; height: 100px; object-fit: cover; border-radius: 4px; margin: 0.25rem;">
+        `;
+        galleryPreview.appendChild(imageDiv);
+    }
+}
+
+function displayVideoPreview(videoUrl, containerId) {
+    const container = document.getElementById(containerId);
+    if (container) {
+        container.innerHTML = `
+            <div class="preview-item">
+                <video controls style="max-width: 200px; max-height: 150px; border-radius: 4px;">
+                    <source src="${videoUrl}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                <p style="margin: 0.5rem 0; font-size: 0.8rem; color: #666;">Current video</p>
+            </div>
+        `;
+    }
+}
+
+function createMilestoneCard(title, description, date, index) {
+    const milestoneList = document.getElementById('milestoneList');
+    if (!milestoneList) return;
+    
+    const milestoneCard = document.createElement('div');
+    milestoneCard.className = 'milestone-card';
+    milestoneCard.style.cssText = `
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    `;
+    
+    milestoneCard.innerHTML = `
+        <div style="background: #fff; border-radius: 6px; padding: 1.25rem; border: 1px solid #e9ecef;">
+            <div style="margin-bottom: 1.25rem;">
+                <h4 style="margin: 0; color: #495057; font-size: 1rem; font-weight: 600;">Milestone ${index + 1}</h4>
+            </div>
+            
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #495057;">Title</label>
+                <input type="text" name="milestone_title[]" value="${title}" style="width: 100%; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 4px; font-size: 0.9rem;" placeholder="e.g., Foundation Complete">
+            </div>
+            
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #495057;">Date</label>
+                <input type="date" name="milestone_date[]" value="${date}" style="width: 100%; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 4px; font-size: 0.9rem;">
+            </div>
+            
+            <div style="margin-bottom: 1.25rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #495057;">Description</label>
+                <textarea name="milestone_description[]" rows="3" style="width: 100%; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 4px; resize: vertical; font-size: 0.9rem;" placeholder="Brief description of this milestone...">${description}</textarea>
+            </div>
+            
+            <div style="border-top: 1px solid #e9ecef; padding-top: 1rem; display: flex; justify-content: flex-end;">
+                <button type="button" class="btn btn-outline-danger btn-sm remove-milestone" onclick="removeMilestone(this)" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                    <i class="fas fa-trash"></i> Remove
+                </button>
+            </div>
+        </div>
+    `;
+    
+    milestoneList.appendChild(milestoneCard);
+}
+
+function addMilestoneWithData(title, description, date) {
+    // Use the existing addMilestone function first
+    if (typeof window.addMilestone === 'function') {
+        window.addMilestone();
+        
+        // Then populate the newly created milestone with data
+        const milestoneCards = document.querySelectorAll('.milestone-card');
+        const lastCard = milestoneCards[milestoneCards.length - 1];
+        
+        if (lastCard) {
+            const titleInput = lastCard.querySelector('input[name*="title"]');
+            const descInput = lastCard.querySelector('textarea[name*="description"]');
+            const dateInput = lastCard.querySelector('input[name*="date"]');
+            
+            if (titleInput) titleInput.value = title;
+            if (descInput) descInput.value = description;
+            if (dateInput) dateInput.value = date;
+        }
+    }
+}
+
+function updateSEOCounters() {
+    const seoTitle = document.getElementById('seo_meta_title');
+    const seoDesc = document.getElementById('seo_meta_description');
+    const titleCount = document.getElementById('seo_title_count');
+    const descCount = document.getElementById('seo_desc_count');
+    
+    if (seoTitle && titleCount) {
+        titleCount.textContent = seoTitle.value.length;
+    }
+    if (seoDesc && descCount) {
+        descCount.textContent = seoDesc.value.length;
+    }
+}
+</script>
+{% endif %}
+{% endblock %}

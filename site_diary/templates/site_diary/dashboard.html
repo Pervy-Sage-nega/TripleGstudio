@@ -1,0 +1,176 @@
+{% extends "site_diary/layout_format.html" %}
+{% load static %}
+
+{% block title %}Triple G BuildHub - Dashboard{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'css/sitecss/global-footer.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/createblog.css' %}">
+    
+{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <!-- Dashboard Header -->
+        <div class="dashboard-header">
+            <div class="dashboard-title">
+                <i class="fas fa-tachometer-alt"></i>
+                <h1>Project Dashboard</h1>
+            </div>
+            <div class="user-info">
+                <div class="user-greeting">
+                    <div class="user-name">{{ user.get_full_name|default:user.email }}</div>
+                    <div class="user-role">{% if user.is_staff %}Site Manager{% else %}Project Member{% endif %}</div>
+                </div>
+                <div class="user-avatar">{{ user.first_name.0|default:user.email.0|upper }}{{ user.last_name.0|default:'' }}</div>
+            </div>
+        </div>
+        
+        <!-- Dashboard Stats -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-building"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ stats.total_projects }}</div>
+                    <div class="stat-label">Total Projects</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ stats.active_projects }}</div>
+                    <div class="stat-label">Active Projects</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-pause-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ stats.at_risk }}</div>
+                    <div class="stat-label">At Risk</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-edit"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ stats.draft_entries }}</div>
+                    <div class="stat-label">Draft Entries</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Controls -->
+        <div class="dashboard-controls">
+            <div class="controls-title">Site Manager Projects</div>
+            <div class="filter-controls">
+                <select class="filter-dropdown" id="categoryFilter">
+                    <option value="">All Categories</option>
+                    <option value="commercial">Commercial</option>
+                    <option value="residential">Residential</option>
+                    <option value="industrial">Industrial</option>
+                    <option value="infrastructure">Infrastructure</option>
+                </select>
+                <select class="filter-dropdown" id="statusFilter">
+                    <option value="">All Statuses</option>
+                    <option value="active">Active</option>
+                    <option value="completed">Completed</option>
+                    <option value="delayed">Delayed</option>
+                    <option value="planning">Planning</option>
+                </select>
+                <div class="search-box">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-input" id="projectSearch" placeholder="Search by project name or code...">
+                </div>
+                <button class="btn btn-primary" onclick="window.location.href='{% url 'site_diary:newproject' %}'">
+                    <i class="fas fa-plus"></i> New Project
+                </button>
+            </div>
+        </div>
+        
+        <!-- Project Grid -->
+        <div class="project-grid">
+            {% for project in projects %}
+            <div class="project-card" data-category="commercial" data-status="{{ project.status }}">
+                {% if project.image %}
+                    <img src="{{ project.image.url }}" alt="{{ project.name }}" class="project-image">
+                {% else %}
+                    <img src="{% static 'images/image6.jpg' %}" alt="{{ project.name }}" class="project-image">
+                {% endif %}
+                <div class="project-content">
+                    <h3 class="project-title">{{ project.name }}</h3>
+                    <p class="project-description">{{ project.current_phase|default:'Project in progress with multiple phases and milestones.' }}</p>
+                    <div class="progress-container">
+                        <div class="progress-label">PROGRESS:</div>
+                        <div class="progress-track">
+                            <div class="progress-bar" style="width: {{ project.progress }}%;"></div>
+                        </div>
+                        <div class="milestone-markers">
+                            <div class="milestone {% if project.progress > 25 %}completed{% endif %}">
+                                <div class="milestone-dot"></div>
+                                <div class="milestone-label">Planning</div>
+                            </div>
+                            <div class="milestone {% if project.progress > 50 %}completed{% endif %}">
+                                <div class="milestone-dot"></div>
+                                <div class="milestone-label">Foundation</div>
+                            </div>
+                            <div class="milestone {% if project.progress > 75 %}completed{% endif %}">
+                                <div class="milestone-dot"></div>
+                                <div class="milestone-label">Structure</div>
+                            </div>
+                            <div class="milestone {% if project.progress > 90 %}completed{% endif %}">
+                                <div class="milestone-dot"></div>
+                                <div class="milestone-label">Finishing</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <a href="{% url 'site_diary:project_detail' project.id %}" class="btn btn-outline">
+                            <i class="fas fa-folder-open"></i> View Details
+                        </a>
+                        <a href="{% url 'site_diary:diary' %}" class="btn btn-secondary">
+                            <i class="fas fa-book"></i> Diary Logs
+                        </a>
+                        <button class="btn btn-primary" onclick="generateReport({{ project.id }})">
+                            <i class="fas fa-chart-bar"></i> Reports
+                        </button>
+                    </div>
+                </div>
+                <div class="performance-analytics">
+                    <h4 class="analytics-title">Performance Analytics</h4>
+                    <div class="analytics-item">
+                        <span class="analytics-label">Budget Usage:</span>
+                        <span class="analytics-value {% if project.budget_used < 70 %}good{% elif project.budget_used < 85 %}warning{% else %}danger{% endif %}">{{ project.budget_used|floatformat:0 }}% Used</span>
+                    </div>
+                    <div class="analytics-item">
+                        <span class="analytics-label">Schedule Adherence:</span>
+                        <span class="analytics-value {% if project.schedule_status == 'On Track' %}good{% elif project.schedule_status == 'Minor Delays' %}warning{% else %}danger{% endif %}">{{ project.schedule_status }}</span>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="no-projects">
+                <p>No projects found. <a href="{% url 'site_diary:newproject' %}">Create your first project</a></p>
+            </div>
+            {% endfor %}
+
+
+           
+        </div>
+        
+    </div>
+   
+
+    <!-- Scripts -->
+    <script src="{% static 'js/sitejs/sitemanager-dashboard.js' %}"></script>
+    <script src="{% static 'js/sitejs/dashboardjs' %}"></script>
+    <!-- loader.js will be loaded by loader-init.js -->
+    {% include "site_diary/navtemplate/layoutfooter.html" %}
+{% endblock %}

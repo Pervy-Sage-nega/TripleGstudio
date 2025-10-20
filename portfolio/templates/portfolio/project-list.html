@@ -1,0 +1,161 @@
+{% extends 'layout.html' %}
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% block head %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projects - Triple G Studio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'css/projects.css' %}">
+    {% endblock %}
+</head>
+<body>
+    {% block body %}
+    <!-- Hero Section -->
+    <section class="projects-hero">
+        <div class="hero-content">
+            <h1>Our Projects</h1>
+            <p>Discover our portfolio of innovative architectural designs and construction projects</p>
+        </div>
+    </section>
+
+    <!-- Filters Section -->
+    <section class="projects-filters">
+        <div class="section-container">
+            <div class="filters-wrapper">
+                <div class="filter-group">
+                    <label for="year-filter">Filter by Year:</label>
+                    <select id="year-filter" name="year">
+                        <option value="all" {% if current_year == 'all' %}selected{% endif %}>All Years</option>
+                        {% for year in years %}
+                        <option value="{{ year }}" {% if current_year == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="category-filter">Filter by Category:</label>
+                    <select id="category-filter" name="category">
+                        <option value="all" {% if current_category == 'all' %}selected{% endif %}>All Categories</option>
+                        <option value="featured" {% if current_category == 'featured' %}selected{% endif %}>Featured</option>
+                        {% for category in categories %}
+                        <option value="{{ category.slug }}" {% if current_category == category.slug %}selected{% endif %}>{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group search-group">
+                    <label for="search-input">Search Projects:</label>
+                    <input type="text" id="search-input" name="search" placeholder="Search by title, location, architect..." value="{{ search_query }}">
+                    <button type="button" id="search-btn"><i class="fas fa-search"></i></button>
+                </div>
+            </div>
+            
+            {% if search_query or current_year != 'all' or current_category != 'all' %}
+            <div class="active-filters">
+                <span class="filter-label">Active filters:</span>
+                {% if search_query %}
+                <span class="filter-tag">Search: "{{ search_query }}"</span>
+                {% endif %}
+                {% if current_year != 'all' %}
+                <span class="filter-tag">Year: {{ current_year }}</span>
+                {% endif %}
+                {% if current_category != 'all' %}
+                <span class="filter-tag">Category: {% if current_category == 'featured' %}Featured{% else %}{{ current_category|title }}{% endif %}</span>
+                {% endif %}
+                <a href="{% url 'portfolio:project_list' %}" class="clear-filters">Clear All</a>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Projects Grid -->
+    <section class="projects-section">
+        <div class="section-container">
+            {% if projects %}
+            <div class="projects-stats">
+                <p>Showing {{ projects|length }} of {{ total_projects }} projects</p>
+            </div>
+            
+            <div class="projects-grid">
+                {% for project in projects %}
+                <div class="project-card" data-category="{{ project.category.slug }}" data-year="{{ project.year }}">
+                    <div class="project-image">
+                        {% if project.hero_image %}
+                            <img src="{{ project.hero_image.url }}?v={{ project.updated_at|date:'U' }}" alt="{{ project.title }}" onerror="this.src='/static/images/image1.jpg'">
+                        {% elif project.images.first %}
+                            <img src="{{ project.images.first.image.url }}?v={{ project.updated_at|date:'U' }}" alt="{{ project.title }}" onerror="this.src='/static/images/image1.jpg'">
+                        {% else %}
+                            <img src="{% static 'images/image1.jpg' %}" alt="{{ project.title }}">
+                        {% endif %}
+                        <div class="layer"></div>
+                        {% if project.featured %}
+                        <div class="featured-badge">
+                            <i class="fas fa-star"></i> Featured
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="project-info">
+                        <h3>{{ project.title }}</h3>
+                        <p>{{ project.description|truncatewords:20 }}</p>
+                        <div class="project-metadata">
+                            <span class="project-year">{{ project.year }}</span>
+                            <span class="project-category">{{ project.category.name }}</span>
+                            <span class="project-location">{{ project.location }}</span>
+                        </div>
+                        <div class="project-status">
+                            <span class="status-badge status-{{ project.status }}">{{ project.get_status_display }}</span>
+                        </div>
+                        <a href="{% url 'portfolio:project_detail' project.id %}" class="project-link">View Details</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <div class="pagination-wrapper">
+                <div class="pagination">
+                    {% if page_obj.has_previous %}
+                        <a href="?page=1{% if current_year != 'all' %}&year={{ current_year }}{% endif %}{% if current_category != 'all' %}&category={{ current_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" class="page-link">&laquo; First</a>
+                        <a href="?page={{ page_obj.previous_page_number }}{% if current_year != 'all' %}&year={{ current_year }}{% endif %}{% if current_category != 'all' %}&category={{ current_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" class="page-link">Previous</a>
+                    {% endif %}
+                    
+                    <span class="page-info">
+                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                    </span>
+                    
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}{% if current_year != 'all' %}&year={{ current_year }}{% endif %}{% if current_category != 'all' %}&category={{ current_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" class="page-link">Next</a>
+                        <a href="?page={{ page_obj.paginator.num_pages }}{% if current_year != 'all' %}&year={{ current_year }}{% endif %}{% if current_category != 'all' %}&category={{ current_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" class="page-link">Last &raquo;</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            
+            {% else %}
+            <div class="no-projects">
+                <div class="no-projects-content">
+                    <i class="fas fa-search fa-3x"></i>
+                    <h3>No Projects Found</h3>
+                    <p>{% if search_query or current_year != 'all' or current_category != 'all' %}No projects match your current filters. Try adjusting your search criteria.{% else %}No projects are currently available.{% endif %}</p>
+                    {% if search_query or current_year != 'all' or current_category != 'all' %}
+                    <a href="{% url 'portfolio:project_list' %}" class="btn-primary">View All Projects</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <script src="{% static 'js/project-list-filters.js' %}"></script>
+    <script src="{% static 'js/chatbot.js' %}"></script>
+    {% endblock %}
+</body>
+</html>

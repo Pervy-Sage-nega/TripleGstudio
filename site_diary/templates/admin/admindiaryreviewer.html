@@ -1,0 +1,574 @@
+{% extends 'admin-nav-footer-template/base.html' %}
+{% load static %}
+{% block title %}Admin Project Portfolio Management | Triple G BuildHub{% endblock %}
+{% block extra_head %}
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site Diary Review | Triple G BuildHub</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="{% static 'css/sitecss/diary.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/history.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admincss/nav.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admincss/header.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admincss/admindiaryreviewer.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    {% endblock %}
+    {% block content %}
+    <!-- Main Content Container -->
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-title">
+                <i class="fas fa-clipboard-check"></i>
+                <h1>Site Diary Review</h1>
+            </div>
+            
+            <div class="export-options">
+                <button class="btn btn-primary" id="refreshBtn"><i class="fas fa-sync-alt"></i> Refresh</button>
+                                <button class="btn btn-primary" id="exportPdfBtn">                    <i class="fas fa-file-pdf"></i> PDF                </button>                <button class="btn btn-primary" id="exportCsvBtn">                    <i class="fas fa-file-csv"></i> CSV                </button>
+                <button class="btn btn-secondary" id="printBtn">
+                    <i class="fas fa-print"></i> Print
+                </button>
+            </div>
+        </div>
+        
+        <!-- Status Tracker Section -->
+        <div class="summary-section">
+            <div class="summary-card">
+                <i class="fas fa-hourglass-half summary-icon"></i>
+                <div class="summary-title">Pending Review</div>
+                <div class="summary-value" id="totalPending">15</div>
+                <div class="summary-change">
+                    <span>Awaiting approval</span>
+                </div>
+            </div>
+            <div class="summary-card success">
+                <i class="fas fa-check-circle summary-icon"></i>
+                <div class="summary-title">Approved</div>
+                <div class="summary-value" id="totalApproved">42</div>
+                <div class="summary-change">
+                    <span>Diary entries</span>
+                </div>
+            </div>
+            <div class="summary-card warning">
+                <i class="fas fa-history summary-icon"></i>
+                <div class="summary-title">Needs Revision</div>
+                <div class="summary-value" id="totalRevision">8</div>
+                <div class="summary-change">
+                    <span>Sent back to architects</span>
+                </div>
+            </div>
+            <div class="summary-card info">
+                <i class="fas fa-clipboard-list summary-icon"></i>
+                <div class="summary-title">Total Entries</div>
+                <div class="summary-value" id="totalEntries">65</div>
+                <div class="summary-change">
+                    <span>All submitted entries</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Filter and Search Section -->
+        <div class="filter-container">
+            <div class="filter-header">
+                <div class="filter-title">
+                    <i class="fas fa-filter"></i>
+                    <span>Filter Entries</span>
+                </div>
+                
+                <button class="filter-toggle" id="filterToggle">
+                    <span>Hide Filters</span>
+                    <i class="fas fa-chevron-up"></i>
+                </button>
+            </div>
+            
+            <div class="filter-content" id="filterOptions">
+                <div class="filter-options">
+                    <div class="filter-group">
+                        <label for="filter-architect">Architect/Site Manager</label>
+                        <select id="filter-architect">
+                            <option value="">All Architects</option>
+                            <option value="john-smith">John Smith</option>
+                            <option value="emily-rodriguez">Emily Rodriguez</option>
+                            <option value="michael-chen">Michael Chen</option>
+                            <option value="sarah-johnson">Sarah Johnson</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="filter-project">Project</label>
+                        <select id="filter-project">
+                            <option value="">All Projects</option>
+                            <option value="central-business-district">Central Business District Tower</option>
+                            <option value="riverside-residential">Riverside Residential Complex</option>
+                            <option value="tech-campus">Tech Innovation Campus</option>
+                            <option value="city-hospital">City Hospital Expansion</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="filter-status">Status</label>
+                        <select id="filter-status">
+                            <option value="">All Status</option>
+                            <option value="pending">Pending Review</option>
+                            <option value="approved">Approved</option>
+                            <option value="revision">Needs Revision</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="filter-date-from">Date From</label>
+                        <input type="date" id="filter-date-from" class="flatpickr">
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="filter-date-to">Date To</label>
+                        <input type="date" id="filter-date-to" class="flatpickr">
+                    </div>
+                    
+                    <div class="filter-group" style="grid-column: span 2;">
+                        <label for="search">Search</label>
+                        <input type="text" id="search" class="search-input" placeholder="Search by project name, architect, location...">
+                    </div>
+                </div>
+                
+                <div class="filter-buttons">
+                    <button class="btn btn-secondary" id="resetFilters">
+                        <i class="fas fa-undo"></i>
+                        Reset Filters
+                    </button>
+                    <button class="btn btn-primary" id="applyFilters">
+                        <i class="fas fa-search"></i>
+                        Apply Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Reports Section with View Toggle -->
+        <div class="reports-section">
+            <div class="section-header">
+                <div class="section-title">
+                    <i class="fas fa-list"></i>
+                    Submitted Diary Entries
+                </div>
+                <div class="view-toggle">
+                    <button id="timelineViewBtn" class="view-btn active" title="Timeline View">
+                        <i class="fas fa-stream" style="color: #2a5254;"></i> Timeline View
+                    </button>
+                    <button id="tableViewBtn" class="view-btn" title="Table View">
+                        <i class="fas fa-table"></i> Table View
+                    </button>
+                    <button id="expandAllBtn" class="view-btn" title="Expand All">
+                        <i class="fas fa-expand-alt"></i> Expand All
+                    </button>
+                    <button id="collapseAllBtn" class="view-btn" title="Collapse All">
+                        <i class="fas fa-compress-alt"></i> Collapse All
+                    </button>
+                </div>
+            </div>
+            
+            <div class="content-container">
+                <!-- Timeline View -->
+                <div class="timeline-container" id="timelineView">
+                    <div class="timeline">
+                        <!-- Timeline Date Header -->
+                        <div class="timeline-date-header">
+                            <h3><i class="fas fa-calendar-day"></i> Today - March 17, 2025</h3>
+                        </div>
+                        
+                        <!-- Timeline Entry 1 - Pending Review -->
+                        <div class="timeline-item status-pending">
+                            <div class="timeline-header" data-id="1">
+                                <div class="timeline-date">
+                                    <div class="timeline-time">09:45 AM</div>
+                                    <div class="timeline-status">
+                                        <span class="status-badge status-pending-badge">Pending Review</span>
+                                    </div>
+                                </div>
+                                <h3>Central Business District Tower</h3>
+                                <div class="timeline-meta">
+                                    <span class="entry-id">SDR-2025-042</span>
+                                    <div class="action-btn expand">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="timeline-content" id="content1">
+                                <div class="content-grid">
+                                    <div class="info-section">
+                                        <div class="info-item">
+                                            <div class="info-label">Architect:</div>
+                                            <div class="info-value">John Smith</div>
+                                        </div>
+                                        <div class="info-item">
+                                            <div class="info-label">Location:</div>
+                                            <div class="info-value">Downtown, Central Business District</div>
+                                        </div>
+                                        <div class="info-item">
+                                            <div class="info-label">Tasks:</div>
+                                            <div class="info-value">Structural Framework, 12th Floor Column Installation</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="timeline-description">
+                                    <h4>Description</h4>
+                                    <p>Completed concrete pouring for the 12th floor slab. Inspected and approved formwork for columns on the 13th floor. Electrical conduit installation began on the 11th floor.</p>
+                                </div>
+                                <div class="timeline-actions">
+                                    <button class="btn btn-primary view-entry-btn" data-entry-id="SDR-2025-042">
+                                        <i class="fas fa-eye"></i> View Entry
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Timeline Entry 2 - Approved -->
+                        <div class="timeline-item status-approved">
+                            <div class="timeline-header" data-id="2">
+                                <div class="timeline-date">
+                                    <div class="timeline-time">08:30 AM</div>
+                                    <div class="timeline-status">
+                                        <span class="status-badge status-approved-badge">Approved</span>
+                                    </div>
+                                </div>
+                                <h3>Tech Innovation Campus</h3>
+                                <div class="timeline-meta">
+                                    <span class="entry-id">SDR-2025-041</span>
+                                    <div class="action-btn expand">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="timeline-content" id="content2">
+                                <div class="content-grid">
+                                    <div class="info-section">
+                                        <div class="info-item">
+                                            <div class="info-label">Architect:</div>
+                                            <div class="info-value">Emily Rodriguez</div>
+                                        </div>
+                                        <div class="info-item">
+                                            <div class="info-label">Location:</div>
+                                            <div class="info-value">North Tech District</div>
+                                        </div>
+                                        <div class="info-item">
+                                            <div class="info-label">Tasks:</div>
+                                            <div class="info-value">Exterior Facade Installation</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="timeline-description">
+                                    <h4>Description</h4>
+                                    <p>Installation of glass curtain wall sections on the west facade. Weather conditions optimal for exterior work. Team completed 35% of planned facade installation.</p>
+                                </div>
+                                <div class="timeline-actions">
+                                    <button class="btn btn-primary view-entry-btn" data-entry-id="SDR-2025-041">
+                                        <i class="fas fa-eye"></i> View Entry
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Timeline Date Header -->
+                        <div class="timeline-date-header">
+                            <h3><i class="fas fa-calendar-day"></i> March 16, 2025</h3>
+                        </div>
+                        
+                        <!-- Timeline Entry 3 - Needs Revision -->
+                        <div class="timeline-item status-revision">
+                            <div class="timeline-header" data-id="3">
+                                <div class="timeline-date">
+                                    <div class="timeline-time">04:15 PM</div>
+                                    <div class="timeline-status">
+                                        <span class="status-badge status-revision-badge">Needs Revision</span>
+                                    </div>
+                                </div>
+                                <h3>Riverside Residential Complex</h3>
+                                <div class="timeline-meta">
+                                    <span class="entry-id">SDR-2025-040</span>
+                                    <div class="action-btn expand">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="timeline-content" id="content3">
+                                <div class="content-grid">
+                                    <div class="info-section">
+                                        <div class="info-item">
+                                            <div class="info-label">Architect:</div>
+                                            <div class="info-value">Michael Chen</div>
+                                        </div>
+                                        <div class="info-item">
+                                            <div class="info-label">Location:</div>
+                                            <div class="info-value">Eastbank Riverside Area</div>
+                                        </div>
+                                        <div class="info-item">
+                                            <div class="info-label">Tasks:</div>
+                                            <div class="info-value">Interior Finishing, Building A</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="timeline-description">
+                                    <h4>Description</h4>
+                                    <p>Interior drywall installation in Building A residential units. Materials delivery delayed by 2 hours. Budget discrepancies noted in material costs section.</p>
+                                </div>
+                                <div class="timeline-actions">
+                                    <button class="btn btn-primary view-entry-btn" data-entry-id="SDR-2025-040">
+                                        <i class="fas fa-eye"></i> View Entry
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Timeline Entry 4 - Approved -->
+                        <div class="timeline-item status-approved">
+                            <div class="timeline-header" data-id="4">
+                                <div class="timeline-date">
+                                    <div class="timeline-time">10:20 AM</div>
+                                    <div class="timeline-status">
+                                        <span class="status-badge status-approved-badge">Approved</span>
+                                    </div>
+                                </div>
+                                <h3>City Hospital Expansion</h3>
+                                <div class="timeline-meta">
+                                    <span class="entry-id">SDR-2025-039</span>
+                                    <div class="action-btn expand">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="timeline-content" id="content4">
+                                <div class="content-grid">
+                                    <div class="info-section">
+                                        <div class="info-item">
+                                            <div class="info-label">Architect:</div>
+                                            <div class="info-value">Sarah Johnson</div>
+                                        </div>
+                                        <div class="info-item">
+                                            <div class="info-label">Location:</div>
+                                            <div class="info-value">Medical District</div>
+                                        </div>
+                                        <div class="info-item">
+                                            <div class="info-label">Tasks:</div>
+                                            <div class="info-value">Medical Equipment Installation, Wing B</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="timeline-description">
+                                    <h4>Description</h4>
+                                    <p>HVAC system testing in medical wing B. Equipment installation for operating rooms 3 and 4 completed. Specialized medical gas lines installed and pressure tested.</p>
+                                </div>
+                                <div class="timeline-actions">
+                                    <button class="btn btn-primary view-entry-btn" data-entry-id="SDR-2025-039">
+                                        <i class="fas fa-eye"></i> View Entry
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Load More Button -->
+                    <div class="load-more-container">
+                        <button class="btn btn-secondary load-more-btn">
+                            <i class="fas fa-sync"></i>
+                            Load More Entries
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Table View -->
+                <div class="table-container" id="tableView" style="display: none;">
+                    <div class="table-responsive">
+                        <table class="entries-table">
+                            <thead>
+                                <tr>
+                                    <th>
+                                        <div class="th-content">
+                                            <span>Entry ID</span>
+                                            <i class="fas fa-sort"></i>
+                                        </div>
+                                    </th>
+                                    <th>
+                                        <div class="th-content">
+                                            <span>Date</span>
+                                            <i class="fas fa-sort"></i>
+                                        </div>
+                                    </th>
+                                    <th>
+                                        <div class="th-content">
+                                            <span>Project</span>
+                                            <i class="fas fa-sort"></i>
+                                        </div>
+                                    </th>
+                                    <th>
+                                        <div class="th-content">
+                                            <span>Architect</span>
+                                            <i class="fas fa-sort"></i>
+                                        </div>
+                                    </th>
+                                    <th>
+                                        <div class="th-content">
+                                            <span>Milestone</span>
+                                            <i class="fas fa-sort"></i>
+                                        </div>
+                                    </th>
+                                    <th>
+                                        <div class="th-content">
+                                            <span>Status</span>
+                                            <i class="fas fa-sort"></i>
+                                        </div>
+                                    </th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Entry 1 -->
+                                <tr data-status="pending">
+                                    <td>SDR-2025-042</td>
+                                    <td>Mar 17, 2025</td>
+                                    <td>Central Business District Tower</td>
+                                    <td>John Smith</td>
+                                    <td>Structural Framework</td>
+                                    <td>
+                                        <span class="status-badge status-pending-badge">Pending</span>
+                                    </td>
+                                    <td>
+                                        <div class="table-actions">
+                                            <button class="action-btn view" title="View Entry" data-entry-id="SDR-2025-042">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Entry 2 -->
+                                <tr data-status="approved">
+                                    <td>SDR-2025-041</td>
+                                    <td>Mar 17, 2025</td>
+                                    <td>Tech Innovation Campus</td>
+                                    <td>Emily Rodriguez</td>
+                                    <td>Exterior Facade</td>
+                                    <td>
+                                        <span class="status-badge status-approved-badge">Approved</span>
+                                    </td>
+                                    <td>
+                                        <div class="table-actions">
+                                            <button class="action-btn view" title="View Entry" data-entry-id="SDR-2025-041">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Entry 3 -->
+                                <tr data-status="revision">
+                                    <td>SDR-2025-040</td>
+                                    <td>Mar 16, 2025</td>
+                                    <td>Riverside Residential Complex</td>
+                                    <td>Michael Chen</td>
+                                    <td>Interior Finishing</td>
+                                    <td>
+                                        <span class="status-badge status-revision-badge">Revision</span>
+                                    </td>
+                                    <td>
+                                        <div class="table-actions">
+                                            <button class="action-btn view" title="View Entry" data-entry-id="SDR-2025-040">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Entry 4 -->
+                                <tr data-status="approved">
+                                    <td>SDR-2025-039</td>
+                                    <td>Mar 16, 2025</td>
+                                    <td>City Hospital Expansion</td>
+                                    <td>Sarah Johnson</td>
+                                    <td>Medical Equipment</td>
+                                    <td>
+                                        <span class="status-badge status-approved-badge">Approved</span>
+                                    </td>
+                                    <td>
+                                        <div class="table-actions">
+                                            <button class="action-btn view" title="View Entry" data-entry-id="SDR-2025-039">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Entry 5 -->
+                                <tr data-status="pending">
+                                    <td>SDR-2025-038</td>
+                                    <td>Mar 15, 2025</td>
+                                    <td>Central Business District Tower</td>
+                                    <td>John Smith</td>
+                                    <td>Electrical Work</td>
+                                    <td>
+                                        <span class="status-badge status-pending-badge">Pending</span>
+                                    </td>
+                                    <td>
+                                        <div class="table-actions">
+                                            <button class="action-btn view" title="View Entry" data-entry-id="SDR-2025-038">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Entry 6 -->
+                                <tr data-status="approved">
+                                    <td>SDR-2025-037</td>
+                                    <td>Mar 15, 2025</td>
+                                    <td>Riverside Residential Complex</td>
+                                    <td>Michael Chen</td>
+                                    <td>Plumbing Installation</td>
+                                    <td>
+                                        <span class="status-badge status-approved-badge">Approved</span>
+                                    </td>
+                                    <td>
+                                        <div class="table-actions">
+                                            <button class="action-btn view" title="View Entry" data-entry-id="SDR-2025-037">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    <div class="pagination">
+                        <button class="page-btn disabled">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button class="page-btn active">1</button>
+                        <button class="page-btn">2</button>
+                        <button class="page-btn">3</button>
+                        <span class="pagination-ellipsis">...</span>
+                        <button class="page-btn">10</button>
+                        <button class="page-btn">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    
+
+    {% endblock %}
+    {% block extra_scripts %}
+    <script src="{% static 'js/adminjs/mobile-btn.js' %}"></script>
+    <script src="{% static 'js/adminjs/admindiaryreviewer.js' %}"></script>
+    {% endblock %}
+
+</body>
+</html>

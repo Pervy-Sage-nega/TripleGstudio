@@ -1,0 +1,300 @@
+
+{% extends 'layout.html' %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {% block head %} 
+  
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About Us - Triple G Studio</title>
+  <link rel="stylesheet" href="{% static 'css/home.css' %}">
+  <link rel="stylesheet" href="{% static 'css/about.css' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap">
+  {% endblock %}
+</head>
+<body>
+
+  <!-- Navigation -->
+  {% block body %}
+
+  <!-- Hero Section -->
+  <section class="about-hero">
+    <h1>TRIPLE G DESIGNS + CONSTRUCTION</h1>
+    <h2>WHERE INNOVATION MEETS FUNCTIONALITY</h2>
+    <p>At Triple G Studio, we create architectural masterpieces that blend cutting-edge design with practical functionality. Our team of experts is dedicated to transforming your vision into reality, delivering exceptional results that exceed expectations.</p>
+    <div class="buttons">
+      <a href="#mission" class="btn-primary" data-color="#FF7120"><span>Our Mission</span></a>
+      <a href="#team" class="btn-secondary" data-color="#00BFFF"><span>Meet The Team</span></a>
+    </div>
+  </section>
+
+  <!-- Company Description Section -->
+  <section class="about-section" id="mission">
+    <div class="about-container">
+      <div class="mission-vision reveal">
+        <div class="mission">
+          <h3>Our Mission</h3>
+          <p>At Triple G Studio, our mission is to create innovative architectural solutions that seamlessly blend aesthetics with functionality. We strive to push the boundaries of conventional design, delivering spaces that inspire and enhance the lives of our clients.</p>
+          <p>Through our commitment to excellence and sustainable practices, we aim to leave a positive impact on the built environment and the communities we serve.</p>
+          <a href="#" class="btn-primary" data-color="#FF7120"><span>Learn More</span></a>
+        </div>
+        <div class="vision">
+          <h3>Our Vision</h3>
+          <p>Our vision is to be recognized as a leading architectural and construction firm that consistently delivers exceptional designs and high-quality construction services. We aim to set new standards in the industry through our innovative approach and dedication to client satisfaction.</p>
+          <p>We envision a future where our architectural creations stand as testaments to our passion for design excellence and our commitment to sustainable development.</p>
+          <a href="#" class="btn-primary" data-color="#FF7120"><span>Learn More</span></a>
+        </div>
+      </div>
+
+      <!-- CEO & Founder Section -->
+      <div class="ceo-section reveal">
+        <div class="ceo-image">
+          <img src="{% static 'images/grifin.png' %}" alt="CEO & Founder">
+        </div>
+        <div class="ceo-info">
+          <h3>Griff'n Galeos Reyes </h3>
+          <h4>CEO & Founder</h4>
+          <p>With over 20 years of experience in architecture and construction, John Doe has established Triple G Studio as a beacon of innovation and excellence in the industry. His visionary approach to design and unwavering commitment to quality have earned him recognition among peers and clients alike.</p>
+          <p>John's philosophy centers on creating spaces that not only meet functional requirements but also enrich the lives of those who inhabit them. His dedication to sustainable practices and cutting-edge technology has positioned Triple G Studio at the forefront of modern architectural solutions.</p>
+          <div class="ceo-socials">
+            <a href="#"><i class="fab fa-linkedin"></i></a>
+            <a href="#"><i class="fab fa-twitter"></i></a>
+            <a href="#"><i class="fab fa-instagram"></i></a>
+            <a href="#"><i class="fas fa-envelope"></i></a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Team Section -->
+      <div class="team-section reveal" id="team">
+        <h2>OUR EXPERT TEAM</h2>
+        <div class="team-grid">
+          <div class="team-member">
+            <div class="member-image">
+              <img src="{% static '/images/arkiii.jpg' %}" alt="Team Member">
+            </div>
+            <div class="member-info">
+              <h3>Jane Smith</h3>
+              <h4>Lead Architect</h4>
+              <div class="member-bio">
+                <p>Jane brings 15 years of architectural expertise to the team, specializing in sustainable design and innovative solutions for commercial spaces.</p>
+              </div>
+              <div class="read-more">Read More</div>
+            </div>
+          </div>
+          <div class="team-member">
+            <div class="member-image">
+              <img src="{% static 'images/arki.avif' %}" alt="Team Member">
+            </div>
+            <div class="member-info">
+              <h3>Michael Johnson</h3>
+              <h4>Senior Designer</h4>
+              <div class="member-bio">
+                <p>With a keen eye for detail and a passion for modern aesthetics, Michael creates stunning designs that seamlessly blend form and function.</p>
+              </div>
+              <div class="read-more">Read More</div>
+            </div>
+          </div>
+          <div class="team-member">
+            <div class="member-image">
+              <img src="{% static '/images/engi.jpg' %}" alt="Team Member">
+            </div>
+            <div class="member-info">
+              <h3>Sarah Williams</h3>
+              <h4>Construction Manager</h4>
+              <div class="member-bio">
+                <p>Sarah ensures that every project is executed with precision and quality, managing the construction process from start to finish.</p>
+              </div>
+              <div class="read-more">Read More</div>
+            </div>
+          </div>
+          <div class="team-member">
+            <div class="member-image">
+              <img src="{% static 'images/engineer.avif' %}" alt="Team Member">
+            </div>
+            <div class="member-info">
+              <h3>Robert Chen</h3>
+              <h4>Interior Designer</h4>
+              <div class="member-bio">
+                <p>Robert specializes in creating interior spaces that reflect the unique style and needs of each client, with a focus on comfort and elegance.</p>
+              </div>
+              <div class="read-more">Read More</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Company Story & Vision Statement -->
+  <section class="company-story reveal">
+    <div class="story-content">
+      <h2>OUR STORY</h2>
+      <p>Founded in 2010, Triple G Studio was born out of a passion for creating architectural masterpieces that stand the test of time. What started as a small design firm has now evolved into a full-service architectural and construction company, known for its innovative approach and commitment to excellence.</p>
+      <div class="quote">
+        "We don't just build structures; we create experiences, memories, and lasting impressions through our designs. Our goal is to transform the way people interact with their environment."
+      </div>
+      <p>Over the years, we have completed numerous projects across various sectors, from residential homes to commercial complexes, each bearing the distinctive Triple G mark of quality and innovation. Our journey has been one of continuous growth, learning, and adaptation to the ever-evolving needs of our clients and the industry.</p>
+      <a href="{% url 'core:index' %}" class="btn-primary" data-color="#FF7120"><span>View Our Projects</span></a>
+    </div>
+  </section>
+
+  
+
+  <script src="{% static 'js/chatbot.js' %}"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      // Mobile Menu Toggle
+      const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+      const navLinks = document.getElementById("navLinks");
+      
+      const style = document.createElement("style");
+  style.textContent = `
+    /* Ensure scrollbar is OVERLAYING content, not affecting layout */
+    html, body {
+      overflow-y: overlay; /* Enables scrollbar without taking space */
+    }
+
+    /* Webkit Browsers (Chrome, Safari, Edge) */
+    ::-webkit-scrollbar {
+      width: 8px; /* Visible but thin */
+      position: absolute;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent; /* Fully see-through */
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.3); /* Slight transparency */
+      border-radius: 5px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.6); /* More visible on hover */
+    }
+
+    /* Firefox */
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+    }
+  `;
+  document.head.appendChild(style);
+
+ 
+
+      if (mobileMenuBtn && navLinks) {
+        mobileMenuBtn.addEventListener("click", function() {
+          navLinks.classList.toggle("active");
+          this.querySelector("i").classList.toggle("fa-bars");
+          this.querySelector("i").classList.toggle("fa-times");
+        });
+      }
+      
+      // Close mobile menu when clicking outside
+      document.addEventListener("click", function(event) {
+        if (
+          navLinks && mobileMenuBtn &&
+          !event.target.closest(".navbar") &&
+          navLinks.classList.contains("active")
+        ) {
+          navLinks.classList.remove("active");
+          const icon = mobileMenuBtn.querySelector("i");
+          if (icon) {
+            icon.classList.add("fa-bars");
+            icon.classList.remove("fa-times");
+          }
+        }
+      });
+      
+      // Smooth scrolling for anchor links
+      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+          e.preventDefault();
+          
+          const targetId = this.getAttribute('href');
+          if (targetId === '#') return;
+          
+          const targetElement = document.querySelector(targetId);
+          if (targetElement) {
+            const navbarHeight = document.querySelector('.navbar').offsetHeight;
+            const targetPosition = targetElement.getBoundingClientRect().top;
+            const offsetPosition = targetPosition + window.pageYOffset - navbarHeight;
+            
+            window.scrollTo({
+              top: offsetPosition,
+              behavior: 'smooth'
+            });
+          }
+        });
+      });
+      
+      // Reveal animations on scroll
+      const revealElements = document.querySelectorAll('.reveal');
+      
+      function checkReveal() {
+        const windowHeight = window.innerHeight;
+        const revealPoint = 150;
+        
+        revealElements.forEach(element => {
+          const elementTop = element.getBoundingClientRect().top;
+          
+          if (elementTop < windowHeight - revealPoint) {
+            element.classList.add('active');
+          }
+        });
+      }
+      
+      // Check on initial load
+      checkReveal();
+      
+      // Check on scroll
+      window.addEventListener('scroll', checkReveal);
+      
+      // Team member bio toggle
+      const readMoreBtns = document.querySelectorAll('.read-more');
+      
+      readMoreBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+          const teamMember = this.closest('.team-member');
+          teamMember.classList.toggle('active');
+          this.textContent = teamMember.classList.contains('active') ? 'Read Less' : 'Read More';
+        });
+      });
+      
+      // Sticky navbar
+      const navbar = document.getElementById('navbar');
+      let sticky = 0;
+      if (navbar) {
+        sticky = navbar.offsetTop;
+        window.addEventListener('scroll', function stickyNavbar() {
+          if (window.pageYOffset > sticky) {
+            navbar.classList.add('sticky-navbar');
+          } else {
+            navbar.classList.remove('sticky-navbar');
+          }
+        });
+      }
+      
+      // Button hover effect
+      let btns = document.querySelectorAll("a[data-color]");
+      btns.forEach((btn) => {
+        btn.onmousemove = function(e) {
+          let x = e.pageX - btn.offsetLeft;
+          let y = e.pageY - btn.offsetTop;
+          
+          btn.style.setProperty("--x", x + "px");
+          btn.style.setProperty("--y", y + "px");
+          btn.style.setProperty("--clr", btn.getAttribute("data-color"));
+        };
+      });
+    });
+  </script>
+  {% endblock %}
+</body>
+</html>

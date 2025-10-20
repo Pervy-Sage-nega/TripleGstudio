@@ -1,0 +1,13 @@
+# backend_implementation
+
+This directory will contain notes, code, and resources for implementing the backend of the project using Django and PostgreSQL, following robust data handling, transaction management, and security best practices as outlined in our project vision.
+
+Key principles:
+- Use Django ORM for all database operations to prevent SQL injection
+- Use @transaction.atomic for critical operations to ensure data consistency
+- Validate all data using Django models, forms, and serializers
+- Apply CSRF, XSS, and other security protections built into Django
+- Maintain clear separation of user roles and permissions
+- Modularize code for maintainability
+
+Refer to `notes` and `SiteDiary_Risk_Notes.txt` for detailed risk, mitigation, and implementation strategies.

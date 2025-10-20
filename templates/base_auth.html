@@ -1,0 +1,68 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{% static 'images/tripleGlogo.jpg' %}">
+    <link rel="shortcut icon" type="image/png" href="{% static 'images/tripleGlogo.jpg' %}">
+    
+    <title>{% block title %}Triple G BuildHub{% endblock %}</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/admincss/login.css' %}">
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-sidebar">
+            {% block sidebar_content %}
+            <h1>Welcome to Triple G BuildHub</h1>
+            <p>Professional construction project management platform</p>
+            {% endblock %}
+        </div>
+
+        <div class="auth-main">
+            <div class="auth-content">
+                {% block form_content %}
+                <div class="auth-form-wrapper">
+                    <div class="auth-form-header">
+                        <h2>Welcome</h2>
+                        <p>Please sign in to continue</p>
+                    </div>
+                    <form class="auth-form">
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" class="form-control" placeholder="Enter your email">
+                        </div>
+                        <div class="form-group">
+                            <label>Password</label>
+                            <input type="password" class="form-control" placeholder="Enter your password">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Sign In</button>
+                    </form>
+                </div>
+                {% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+
+    <!-- Custom JS -->
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

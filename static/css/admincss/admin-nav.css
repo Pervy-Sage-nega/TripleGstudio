@@ -1,0 +1,90 @@
+/* Admin Dropdown Navigation CSS */
+
+/* Dropdown styles */
+.nav-links .dropdown {
+    position: relative;
+}
+
+.nav-links .dropdown-toggle {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    text-decoration: none;
+    color: #ffffff;
+    font-size: 18px;
+    padding: 3px 18px;
+    border-radius: 13px;
+    transition: color 0.3s ease;
+}
+
+.nav-links .dropdown-toggle i {
+    margin-left: 0.5rem;
+    transition: transform 0.3s ease;
+}
+
+.nav-links .dropdown.active .dropdown-toggle i {
+    transform: rotate(180deg);
+}
+
+.nav-links .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 180px;
+    background-color: #00273C;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.nav-links .dropdown.active .dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.nav-links .dropdown-menu li {
+    display: block;
+    margin: 0;
+    width: 100%;
+}
+
+.nav-links .dropdown-menu a {
+    display: block;
+    padding: 12px 18px;
+    color: #ffffff;
+    font-size: 16px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.nav-links .dropdown-menu a:hover {
+    
+    color: #fff;
+}
+
+.nav-links .dropdown-menu a.active {
+    background-color: rgba(0, 0, 0, 0.3);
+    color: #fff;
+}
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+    .nav-links .dropdown-menu {
+        position: static;
+        width: 100%;
+        background-color: #001b29;
+        box-shadow: none;
+        border-radius: 0;
+        padding-left: 2rem;
+        display: none;
+    }
+    
+    .nav-links .dropdown.active .dropdown-menu {
+        display: block;
+    }
+} 

@@ -1,0 +1,345 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>401 — Unauthorized | SiteManager</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+  <!-- ✅ Lottie Player -->
+  <script
+    src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.1/dist/dotlottie-wc.js"
+    type="module">
+  </script>
+
+  <style>
+    :root {
+      --primary-color: #3c6e71;
+      --secondary-color: #d9d9d9;
+      --accent-color: #284b63;
+      --success-color: #4caf50;
+      --danger-color: #f44336;
+      --warning-color: #ff9800;
+      --info-color: #2196f3;
+      --light-gray: #e6e6e6;
+      --dark-gray: #353535;
+      --border-color: #dddddd;
+      --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+      background: var(--light-gray);
+      color: var(--dark-gray);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+      overflow-y: auto;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 980px;
+      background: #fff;
+      border-radius: 18px;
+      padding: 28px;
+      box-shadow: var(--shadow);
+      display: grid;
+      grid-template-columns: 1fr 440px;
+      gap: 20px;
+      align-items: center;
+      animation: enter 520ms cubic-bezier(.2,.9,.2,1) forwards;
+    }
+
+    @keyframes enter {
+      from {opacity: 0; transform: translateY(40px) scale(.995);}
+      to {opacity: 1; transform: none;}
+    }
+
+    .left {
+      padding: 20px 28px;
+    }
+
+    .kicker {
+      display: inline-block;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      color: var(--primary-color);
+      background: rgba(60, 110, 113, 0.08);
+      padding: 6px 12px;
+      border-radius: 999px;
+      letter-spacing: .6px;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      margin: 6px 0 12px 0;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 40px;
+      line-height: 1;
+      color: var(--accent-color);
+      letter-spacing: -.4px;
+    }
+
+    p.lead {
+      color: var(--dark-gray);
+      margin: 0 0 18px 0;
+      font-size: 15px;
+      max-width: 58ch;
+      line-height: 1.6;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: 0;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: transform .16s ease, box-shadow .16s ease;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: var(--primary-color);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(60, 110, 113, 0.2);
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-color);
+      transform: translateY(-2px);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--dark-gray);
+    }
+
+    .btn:active {transform: translateY(1px);}
+
+    .right {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+    }
+
+    .card {
+      width: 100%;
+      height: 400px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+
+    }
+
+    .lottie-wrap {
+      max-width: 520px;
+      width: 100%;
+      height: 100%;
+      animation: float 4.8s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0% {transform: translateY(0);}
+      50% {transform: translateY(-8px);}
+      100% {transform: translateY(0);}
+    }
+
+    .meta {
+      margin-top: 18px;
+      color: var(--mid-gray);
+      font-size: 13px;
+    }
+
+    .unauth {
+      display: inline-flex;
+      gap: 10px;
+      align-items: center;
+      background: var(--secondary-color);
+      padding: 8px 10px;
+      border-radius: 10px;
+      margin-top: 8px;
+      color: var(--dark-gray);
+      font-weight: 600;
+    }
+
+    .chip {
+      font-size: 12px;
+      padding: 6px 8px;
+      border-radius: 8px;
+      background: var(--primary-color);
+      color: #fff;
+    }
+
+    .code-badge {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-weight: 600;
+      color: var(--accent-color);
+      margin-top: 20px;
+      font-size: 20px;
+      width: fit-content;
+      box-shadow: var(--shadow);
+    }
+
+    .code-badge small {opacity: .8;}
+
+    /* ✅ Responsive adjustments */
+    @media (max-width: 880px) {
+      body {
+        align-items: flex-start;
+        padding: 16px;
+      }
+
+      .container {
+        display: flex;
+        flex-direction: column;
+        padding: 18px;
+        gap: 30px;
+      }
+
+      .left {
+        padding: 12px 10px;
+      }
+
+      h1 {
+        font-size: 32px;
+      }
+
+      .card {
+        height: 360px;
+      }
+
+      .code-badge {
+        align-self: center;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 14px;
+      }
+
+      h1 {
+        font-size: 28px;
+      }
+
+      .card {
+        height: 320px;
+      }
+
+      .actions {
+        flex-direction: column;
+        width: 100%;
+      }
+
+      .btn {
+        width: 100%;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="container" role="main" aria-labelledby="pageTitle">
+    <section class="left">
+      <div class="kicker">SiteManager</div>
+      <h1 id="pageTitle">Unauthorized access</h1>
+
+      <div class="unauth" role="status" aria-live="polite">
+        <span class="chip">
+          {% if user_type == 'site_manager' %}Site Manager{% elif user_type == 'client' %}Client User{% else %}Restricted{% endif %}
+        </span>
+        <div>
+          {% if user_type == 'site_manager' %}
+            Site Manager access denied — Admin privileges required for this section.
+          {% elif user_type == 'client' %}
+            Client access denied — Admin privileges required for this section.
+          {% else %}
+            Access denied — your credentials do not allow entry to this section.
+          {% endif %}
+        </div>
+      </div>
+
+      <p class="lead">
+        {% if user_type == 'site_manager' %}
+          You are logged in as a Site Manager, but this area requires Administrator privileges. 
+          Please sign in with an Admin account to access this section.
+        {% elif user_type == 'client' %}
+          You are logged in as a Client User, but this area requires Administrator privileges. 
+          Please sign in with an Admin account to access this section.
+        {% else %}
+          You tried to access a page or resource that requires authentication or higher privileges.
+          If you believe this is a mistake, please sign in with an authorized account or contact your system administrator.
+        {% endif %}
+      </p>
+
+      <div class="actions">
+        <a class="btn btn-primary" href="{% url 'accounts:admin_login' %}">Sign in as Admin</a>
+        <a class="btn btn-ghost" href="{% url 'admin_side:admin_home' %}">Return to Dashboard</a>
+      </div>
+
+      <div class="meta">
+        {% if user_type == 'site_manager' %}
+          Tip: As a Site Manager, you have access to blog creation and content management, but not admin functions.
+        {% elif user_type == 'client' %}
+          Tip: As a Client User, you have access to project viewing and user settings, but not administrative functions.
+        {% else %}
+          Tip: Verify your assigned access level in the SiteManager Dashboard.
+          Admins can adjust permissions from the Roles & Privileges panel.
+        {% endif %}
+      </div>
+    </section>
+
+    <aside class="right">
+      <div class="card">
+        <div class="lottie-wrap">
+          <dotlottie-wc
+            src="https://lottie.host/f2297412-8e7b-4744-8299-8810de20890a/j0p1KulehU.lottie"
+            style="width:100%;height:100%"
+            autoplay
+            loop>
+          </dotlottie-wc>
+        </div>
+      </div>
+
+      <div class="code-badge" aria-hidden="true">
+        <small>HTTP</small><strong>401</strong><span style="opacity:.6">• Unauthorized</span>
+      </div>
+    </aside>
+  </main>
+</body>
+</html>

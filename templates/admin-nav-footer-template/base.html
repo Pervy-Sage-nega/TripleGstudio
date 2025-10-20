@@ -1,0 +1,23 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{% static 'images/logostick.png' %}">
+    <link rel="shortcut icon" type="image/png" href="{% static 'images/logostick.png' %}">    
+    
+    <title>{% block title %}Admin | Triple G{% endblock %}</title>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    {% include 'admin-nav-footer-template/layoutnav.html' %} {# adminlayoutnav #}
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    {% include 'admin-nav-footer-template/layoutfooter.html' %}
+    
+    <!-- Admin Logout Functionality -->
+    <script src="{% static 'js/adminjs/admin-logout.js' %}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

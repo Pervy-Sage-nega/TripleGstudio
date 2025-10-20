@@ -1,0 +1,245 @@
+{% extends "layout.html" %}
+{% load static %}
+
+{% block head %}
+    <title>{{ project.name }} - Project Details</title>
+    <link rel="stylesheet" href="{% static 'css/sitecss/global-footer.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/clientdashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <!-- Header -->
+        <div class="dashboard-header">
+            <div class="dashboard-title">
+                <i class="fas fa-building"></i>
+                <h1>{{ project.name }}</h1>
+            </div>
+            <div class="project-actions">
+                <a href="{% url 'core:clientdashboard' %}" style="display: inline-block; background-color: #FF7120; color: white; padding: 6px 15px; border-radius: 10px; font-size: 14px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; transition: all 0.3s ease; text-decoration: none;">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+
+        <!-- Project Overview -->
+        <div class="project-overview-section">
+            <div class="project-card main-project">
+                <img src="{% if project.image %}{{ project.image.url }}{% else %}{% static 'images/image6.jpg' %}{% endif %}" alt="{{ project.name }} Image" class="project-image">
+                <div class="project-content">
+                    <div class="project-header">
+                        <h3 class="project-title">{{ project.name }}</h3>
+                    </div>
+                    <p class="project-description">{{ project.description|default:"Construction project in progress" }}</p>
+                    <div class="project-meta">
+                        <div class="meta-item">
+                            <i class="fas fa-user-tie"></i>
+                            <span>{{ project.project_manager.get_full_name|default:project.project_manager.username }}</span>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-calendar"></i>
+                            <span>{{ project.start_date|date:"M Y" }}{% if project.expected_end_date %} - {{ project.expected_end_date|date:"M Y" }}{% else %} - Ongoing{% endif %}</span>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-cog"></i>
+                            <span>{{ project.get_status_display }}</span>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>{{ project.location }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="progress-circle-container">
+                    <div class="project-code">PRJ-{{ project.created_at.year }}-{{ project.id|stringformat:"03d" }}</div>
+                    <div class="progress-circle" style="--progress-deg: {% widthratio project.get_progress_percentage 100 360 %}deg;">
+                        <div class="progress-value">{{ project.get_progress_percentage }}%</div>
+                        <div class="progress-label">Complete</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Analytics Section -->
+        <div class="analytics-section">
+            <div class="analytics-card">
+                <div class="analytics-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="analytics-content">
+                    <div class="analytics-value">{{ project.get_progress_percentage }}%</div>
+                    <div class="analytics-label">Overall Progress</div>
+                </div>
+            </div>
+            <div class="analytics-card">
+                <div class="analytics-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="analytics-content">
+                    <div class="analytics-value">{% if project.expected_end_date %}{{ project.expected_end_date|timeuntil }}{% else %}TBD{% endif %}</div>
+                    <div class="analytics-label">Days Remaining</div>
+                </div>
+            </div>
+            <div class="analytics-card">
+                <div class="analytics-icon">
+                    <i class="fas fa-dollar-sign"></i>
+                </div>
+                <div class="analytics-content">
+                    <div class="analytics-value">0%</div>
+                    <div class="analytics-label">Budget Used</div>
+                </div>
+            </div>
+            <div class="analytics-card">
+                <div class="analytics-icon">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <div class="analytics-content">
+                    <div class="analytics-value">{% if project.status == 'completed' %}4/4{% elif project.status == 'active' %}2/4{% else %}1/4{% endif %}</div>
+                    <div class="analytics-label">Phases Complete</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Milestone Timeline Section -->
+        <div class="timeline-section">
+            <h2 class="section-title">Project Timeline</h2>
+            <div class="timeline-container">
+                <div class="milestone {% if project.status == 'completed' or project.status == 'active' %}completed{% else %}current{% endif %}" data-phase="planning">
+                    <div class="milestone-dot"></div>
+                    <div class="milestone-content">
+                        <h4>Planning & Design</h4>
+                        <p>Target: {{ project.start_date|date:"M Y" }}</p>
+                        <span class="status-badge {% if project.status == 'completed' or project.status == 'active' %}completed{% else %}current{% endif %}">{% if project.status == 'completed' or project.status == 'active' %}Completed{% else %}In Progress{% endif %}</span>
+                    </div>
+                </div>
+                <div class="milestone {% if project.status == 'completed' %}completed{% elif project.status == 'active' %}current{% else %}pending{% endif %}" data-phase="foundation">
+                    <div class="milestone-dot"></div>
+                    <div class="milestone-content">
+                        <h4>Foundation Work</h4>
+                        <p>Target: {% if project.start_date %}{{ project.start_date|date:"M Y" }}{% else %}TBD{% endif %}</p>
+                        <span class="status-badge {% if project.status == 'completed' %}completed{% elif project.status == 'active' %}in-progress{% else %}pending{% endif %}">{% if project.status == 'completed' %}Completed{% elif project.status == 'active' %}In Progress{% else %}Pending{% endif %}</span>
+                    </div>
+                </div>
+                <div class="milestone {% if project.status == 'completed' %}completed{% else %}pending{% endif %}" data-phase="structure">
+                    <div class="milestone-dot"></div>
+                    <div class="milestone-content">
+                        <h4>Structural Framework</h4>
+                        <p>Target: {% if project.expected_end_date %}{{ project.expected_end_date|date:"M Y" }}{% else %}TBD{% endif %}</p>
+                        <span class="status-badge {% if project.status == 'completed' %}completed{% else %}pending{% endif %}">{% if project.status == 'completed' %}Completed{% else %}Pending{% endif %}</span>
+                    </div>
+                </div>
+                <div class="milestone pending" data-phase="finishing">
+                    <div class="milestone-dot"></div>
+                    <div class="milestone-content">
+                        <h4>Finishing & Handover</h4>
+                        <p>Target: {% if project.expected_end_date %}{{ project.expected_end_date|date:"M Y" }}{% else %}TBD{% endif %}</p>
+                        <span class="status-badge pending">Pending</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Feed and Budget Summary -->
+        <div class="bottom-section">
+            <!-- Activity Feed -->
+            <div class="activity-section">
+                <h2 class="section-title">Recent Updates</h2>
+                <div class="activity-feed">
+                    <div class="activity-item">
+                        <div class="activity-date">{{ project.created_at|date:"M d, Y" }}</div>
+                        <div class="activity-content">
+                            <h4>Project {{ project.name }} created</h4>
+                            <p>{{ project.description|default:"Project initiated and planning phase started" }}</p>
+                        </div>
+                        <div class="activity-icon">
+                            <i class="fas fa-plus-circle"></i>
+                        </div>
+                    </div>
+                    {% if project.status == 'active' %}
+                    <div class="activity-item">
+                        <div class="activity-date">{{ project.start_date|date:"M d, Y" }}</div>
+                        <div class="activity-content">
+                            <h4>Construction work commenced</h4>
+                            <p>Project moved to active phase</p>
+                        </div>
+                        <div class="activity-icon">
+                            <i class="fas fa-hammer"></i>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if project.status == 'completed' %}
+                    <div class="activity-item">
+                        <div class="activity-date">{{ project.expected_end_date|date:"M d, Y" }}</div>
+                        <div class="activity-content">
+                            <h4>Project completed successfully</h4>
+                            <p>All phases completed and project delivered</p>
+                        </div>
+                        <div class="activity-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Budget Summary -->
+            <div class="budget-section">
+                <h2 class="section-title">Budget Summary</h2>
+                <div class="budget-widget">
+                    {% if project.budget %}
+                    <div class="budget-item">
+                        <span class="budget-label">Total Budget</span>
+                        <span class="budget-value">₱{{ project.budget|floatformat:0 }}</span>
+                    </div>
+                    <div class="budget-item">
+                        <span class="budget-label">Used</span>
+                        <span class="budget-value used">₱0</span>
+                    </div>
+                    <div class="budget-item">
+                        <span class="budget-label">Remaining</span>
+                        <span class="budget-value remaining">₱{{ project.budget|floatformat:0 }}</span>
+                    </div>
+                    <div class="budget-progress">
+                        <div class="budget-bar" style="width: 0%;"></div>
+                    </div>
+                    {% else %}
+                    <div class="budget-item">
+                        <span class="budget-label">Total Budget</span>
+                        <span class="budget-value">To be determined</span>
+                    </div>
+                    <div class="budget-item">
+                        <span class="budget-label">Used</span>
+                        <span class="budget-value used">-</span>
+                    </div>
+                    <div class="budget-item">
+                        <span class="budget-label">Remaining</span>
+                        <span class="budget-value remaining">-</span>
+                    </div>
+                    <div class="budget-progress">
+                        <div class="budget-bar" style="width: 0%;"></div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Weather Widget -->
+                <div class="weather-widget">
+                    <h3>Site Weather - {{ project.location|default:"Project Site" }}</h3>
+                    <div class="weather-content">
+                        <div class="weather-icon">
+                            <i class="fas fa-cloud-sun"></i>
+                        </div>
+                        <div class="weather-info">
+                            <div class="temperature">Weather data</div>
+                            <div class="condition">Available on site</div>
+                            <div class="humidity">Contact project manager</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'js/sitejs/clientdashboard.js' %}"></script>
+{% endblock %}

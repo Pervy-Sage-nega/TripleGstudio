@@ -1,0 +1,719 @@
+{% extends 'admin-nav-footer-template/base.html' %}
+{% load static %}
+{% include 'admin-nav-footer-template/layoutnav.html' %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Diary Entry Viewer | Triple G BuildHub</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="{% static 'css/sitecss/diary.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admincss/adminside/diaryreviewer/admindiary.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admincss/admin-nav.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+
+   
+    
+    <!-- Main Content Container -->
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-title">
+                <i class="fas fa-clipboard-check"></i>
+                <h1>Site Diary Entry Review</h1>
+            </div>
+            <div class="export-options">
+                <button class="btn btn-secondary" id="requestRevision">
+                    <i class="fas fa-history"></i> Request Revision
+                </button>
+                <button class="btn btn-primary" id="approveEntry">
+                    <i class="fas fa-check-circle"></i> Approve Entry
+                </button>
+                <button class="btn btn-primary" id="exportPdfBtn">
+                    <i class="fas fa-file-pdf"></i> PDF
+                </button>
+                <button class="btn btn-primary" id="exportCsvBtn">
+                    <i class="fas fa-file-csv"></i> CSV
+                </button>
+                <button class="btn btn-secondary" id="printBtn">
+                    <i class="fas fa-print"></i> Print
+                </button>
+            </div>
+        </div>
+        
+        <!-- Summary Stats -->
+        <div class="summary-section">
+            <div class="summary-card">
+                <i class="fas fa-clipboard-list summary-icon"></i>
+                <div class="summary-title">Total Entries</div>
+                <div class="summary-value">{{ total_entries }}</div>
+            </div>
+            <div class="summary-card warning">
+                <i class="fas fa-exclamation-triangle summary-icon"></i>
+                <div class="summary-title">Pending Approval</div>
+                <div class="summary-value">{{ pending_entries }}</div>
+            </div>
+            <div class="summary-card success">
+                <i class="fas fa-check-circle summary-icon"></i>
+                <div class="summary-title">Approved</div>
+                <div class="summary-value">{{ approved_entries }}</div>
+            </div>
+            <div class="summary-card">
+                <i class="fas fa-edit summary-icon"></i>
+                <div class="summary-title">Drafts</div>
+                <div class="summary-value">{{ draft_entries }}</div>
+            </div>
+        </div>
+        
+        <!-- Diary Entries List -->
+        <div class="project-list-section">
+            <div class="section-header">
+                <div class="section-title">
+                    <i class="fas fa-list"></i>
+                    Recent Diary Entries
+                </div>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Project</th>
+                            <th>Created By</th>
+                            <th>Progress</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in page_obj %}
+                        <tr>
+                            <td>{{ entry.entry_date }}</td>
+                            <td>
+                                <div class="project-title">{{ entry.project.name }}</div>
+                                <div class="project-code">{{ entry.project.client_name }}</div>
+                            </td>
+                            <td>{{ entry.created_by.get_full_name|default:entry.created_by.username }}</td>
+                            <td>{{ entry.progress_percentage }}%</td>
+                            <td>
+                                <span class="status-badge {% if entry.approved %}status-approved{% elif entry.draft %}status-draft{% else %}status-pending{% endif %}">
+                                    {% if entry.approved %}Approved{% elif entry.draft %}Draft{% else %}Pending{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                {% if not entry.approved and not entry.draft %}
+                                <form method="post" style="display: inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="approve">
+                                    <input type="hidden" name="entry_id" value="{{ entry.id }}">
+                                    <button type="submit" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-check"></i> Approve
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 2rem;">
+                                <p>No diary entries found.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Show first entry details if available -->
+        {% if page_obj %}
+        {% with entry=page_obj.0 %}
+        <div class="form-container readonly-container">
+            <form id="siteEntryForm" method="post">{% csrf_token %}
+                <!-- Project Information Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <i class="fas fa-project-diagram"></i>
+                        <h2 class="section-title">Project Information</h2>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="projectSelect">Project Name</label>
+                            <input type="text" class="form-control readonly" value="{{ entry.project.name }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="projectNumber">Project Number</label>
+                            <input type="text" class="form-control readonly" value="PRJ-{{ entry.project.created_at.year }}-{{ entry.project.id|stringformat:'03d' }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="projectBudget">Project Budget</label>
+                            <input type="text" class="form-control readonly" value="₱ {{ entry.project.budget|floatformat:2|default:'0.00' }}" readonly>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="location">Location</label>
+                            <input type="text" class="form-control readonly" value="{{ entry.project.location }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="entryDate">Date</label>
+                            <input type="text" class="form-control readonly" value="{{ entry.entry_date }}" readonly>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Milestone Update Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <i class="fas fa-flag"></i>
+                        <h2 class="section-title">Milestone Update</h2>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Current Milestone Phase</label>
+                            <input type="text" class="form-control readonly" value="Structural Framework" readonly>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Custom Milestone Phase</label>
+                            <input type="text" class="form-control readonly" value="12th Floor Column Installation" readonly>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Weather Conditions Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <i class="fas fa-cloud-sun"></i>
+                        <h2 class="section-title">Weather Conditions</h2>
+                    </div>
+                    <div class="weather-display">
+                        <div class="weather-icon"><i class="fas fa-sun"></i></div>
+                        <div class="weather-label">Sunny</div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Temperature (°C)</label>
+                            <input type="text" class="form-control readonly" value="24" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Wind Speed (km/h)</label>
+                            <input type="text" class="form-control readonly" value="8" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Precipitation (mm)</label>
+                            <input type="text" class="form-control readonly" value="0" readonly>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Weather Condition</label>
+                        <input type="text" class="form-control readonly" value="{{ entry.get_weather_condition_display|default:'Not specified' }}" readonly>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Temperature High</label>
+                            <input type="text" class="form-control readonly" value="{{ entry.temperature_high|default:'--' }}°C" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Temperature Low</label>
+                            <input type="text" class="form-control readonly" value="{{ entry.temperature_low|default:'--' }}°C" readonly>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Labor and Personnel Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <i class="fas fa-hard-hat"></i>
+                        <h2 class="section-title">Labor and Personnel</h2>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Supervisors</label>
+                            <input type="text" class="form-control readonly" value="3" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Skilled Labor</label>
+                            <input type="text" class="form-control readonly" value="24" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Unskilled Labor</label>
+                            <input type="text" class="form-control readonly" value="15" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Subcontractors</label>
+                            <input type="text" class="form-control readonly" value="3" readonly>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Subcontractor Companies</label>
+                        <div class="entry-list readonly">
+                            <div class="entry-item">
+                                <div class="entry-content">
+                                    <strong>ABC Electrical Services</strong> - Electrical work
+                                </div>
+                            </div>
+                            <div class="entry-item">
+                                <div class="entry-content">
+                                    <strong>XYZ Plumbing Co.</strong> - Plumbing rough-in
+                                </div>
+                            </div>
+                            <div class="entry-item">
+                                <div class="entry-content">
+                                    <strong>Metro HVAC Solutions</strong> - HVAC installation
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Personnel Notes</label>
+                        <textarea class="form-control form-control-textarea readonly" readonly>Full crew present today. Specialized team for electrical conduit installation arrived on site at 7:30 AM.</textarea>
+                    </div>
+                </div>
+                
+                <!-- Work Performed Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <i class="fas fa-tasks"></i>
+                        <h2 class="section-title">Work Performed</h2>
+                    </div>
+                    <div class="form-group">
+                        <label>Description of Work Performed</label>
+                        <textarea class="form-control form-control-textarea readonly" readonly>{{ entry.work_description|default:'No work description provided.' }}</textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Start Time</label>
+                            <input type="text" class="form-control readonly" value="07:00" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>End Time</label>
+                            <input type="text" class="form-control readonly" value="17:30" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Total Hours</label>
+                            <input type="text" class="form-control readonly" value="10.5" readonly>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Tasks Completed</label>
+                        <div class="entry-list readonly">
+                            <div class="entry-item">
+                                <div class="entry-content">
+                                    12th floor concrete slab pouring
+                                </div>
+                            </div>
+                            <div class="entry-item">
+                                <div class="entry-content">
+                                    13th floor column formwork
+                                </div>
+                            </div>
+                            <div class="entry-item">
+                                <div class="entry-content">
+                                    11th floor electrical conduit installation
+                                </div>
+                            </div>
+                            <div class="entry-item">
+                                <div class="entry-content">
+                                    9th-10th floor plumbing rough-in
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Materials Delivered Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <i class="fas fa-truck-loading"></i>
+                        <h2 class="section-title">Materials Delivered</h2>
+                    </div>
+                    <div class="entry-list readonly">
+                        <div class="entry-item">
+                            <div class="entry-content">
+                                <strong>Ready-mix Concrete</strong> - 15 m³ - ₱ 75,000.00
+                            </div>
+                        </div>
+                        <div class="entry-item">
+                            <div class="entry-content">
+                                <strong>Reinforcement Steel</strong> - 2 tons - ₱ 120,000.00
+                            </div>
+                        </div>
+                        <div class="entry-item">
+                            <div class="entry-content">
+                                <strong>Electrical Conduit</strong> - 200 m - ₱ 40,000.00
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Equipment Used Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <i class="fas fa-tools"></i>
+                        <h2 class="section-title">Equipment Used</h2>
+                    </div>
+                    <div class="entry-list readonly">
+                        <div class="entry-item">
+                            <div class="entry-content">
+                                <strong>Tower Crane</strong> - 1 unit - 10 hours - ₱ 15,000.00/day
+                            </div>
+                        </div>
+                        <div class="entry-item">
+                            <div class="entry-content">
+                                <strong>Concrete Pump</strong> - 1 unit - 5 hours - ₱ 8,000.00/day
+                            </div>
+                        </div>
+                        <div class="entry-item">
+                            <div class="entry-content">
+                                <strong>Concrete Vibrators</strong> - 3 units - 5 hours - ₱ 1,500.00/day each
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Other Costs Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <h2 class="section-title">Other Costs</h2>
+                    </div>
+                    <div class="entry-list readonly">
+                        <div class="entry-item">
+                            <div class="entry-content">
+                                <strong>Transportation</strong> - ₱ 5,000.00
+                            </div>
+                        </div>
+                        <div class="entry-item">
+                            <div class="entry-content">
+                                <strong>Site Facilities</strong> - ₱ 2,500.00
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Budget Summary Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <i class="fas fa-calculator"></i>
+                        <h2 class="section-title">Budget Summary</h2>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Cost of This Day (₱)</label>
+                            <input type="text" class="form-control readonly" value="267,500.00" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Running Budget Usage (₱)</label>
+                            <input type="text" class="form-control readonly" value="22,450,000.00" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Remaining Budget (₱)</label>
+                            <input type="text" class="form-control readonly" value="22,550,000.00" readonly>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Delays and Issues Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h2 class="section-title">Delays and Issues</h2>
+                    </div>
+                    <div class="entry-list readonly">
+                        <div class="entry-item">
+                            <div class="entry-content">
+                                <strong>Material Delivery - Moderate Impact</strong><br>
+                                Concrete delivery was delayed by 2 hours due to traffic congestion. This pushed back the pour schedule slightly but didn't affect the overall day's productivity.
+                            </div>
+                        </div>
+                        <div class="entry-item">
+                            <div class="entry-content">
+                                <strong>Design Issue - Minor Impact</strong><br>
+                                Minor rework required on 11th floor electrical placement due to design updates. The changes were implemented successfully with minimal delay.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Photo Documentation Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <i class="fas fa-camera"></i>
+                        <h2 class="section-title">Photo Documentation</h2>
+                    </div>
+                    <div class="photo-gallery readonly">
+                        <div class="photo-item">
+                            <img src="{% static 'img/placeholder-12th-floor-concrete.png' %}" alt="Site Photo" class="photo-preview">
+                            <div class="photo-overlay">
+                                <div class="photo-description">12th floor concrete pouring in progress</div>
+                            </div>
+                        </div>
+                        <div class="photo-item">
+                            <img src="{% static 'img/placeholder-13th-floor-formwork.png' %}" alt="Site Photo" class="photo-preview">
+                            <div class="photo-overlay">
+                                <div class="photo-description">13th floor column formwork preparation</div>
+                            </div>
+                        </div>
+                        <div class="photo-item">
+                            <img src="{% static 'img/placeholder-electrical-work.png' %}" alt="Site Photo" class="photo-preview">
+                            <div class="photo-overlay">
+                                <div class="photo-description">Electrical conduit installation on 11th floor</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Digital Signatures Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <i class="fas fa-signature"></i>
+                        <h2 class="section-title">Digital Signatures</h2>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Supervisor Name</label>
+                            <input type="text" class="form-control readonly" value="John Smith" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Supervisor Email</label>
+                            <input type="email" class="form-control readonly" value="john.smith@tripleg.com" readonly>
+                        </div>
+                    </div>
+                    
+                    <div class="signature-container">
+                        <label>Supervisor Signature</label>
+                        <div class="signature-image">
+                            <img src="{% static 'img/signature-john-smith.png' %}" alt="Supervisor Signature">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Client Representative Name</label>
+                            <input type="text" class="form-control readonly" value="Mary Johnson" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Client Representative Email</label>
+                            <input type="email" class="form-control readonly" value="mary.johnson@client.com" readonly>
+                        </div>
+                    </div>
+                    
+                    <div class="signature-container">
+                        <label>Client Representative Signature</label>
+                        <div class="signature-image">
+                            <img src="{% static 'img/signature-mary-johnson.png' %}" alt="Client Signature">
+                        </div>
+                    </div>
+                </div>
+                    
+                <!-- Additional Notes Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <i class="fas fa-sticky-note"></i>
+                        <h2 class="section-title">Additional Notes</h2>
+                    </div>
+                    <div class="form-group">
+                        <label>General Notes</label>
+                        <textarea class="form-control form-control-textarea readonly" readonly>{{ entry.general_notes|default:'No additional notes provided.' }}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Quality Issues</label>
+                        <textarea class="form-control form-control-textarea readonly" readonly>{{ entry.quality_issues|default:'No quality issues reported.' }}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Safety Incidents</label>
+                        <textarea class="form-control form-control-textarea readonly" readonly>{{ entry.safety_incidents|default:'No safety incidents reported.' }}</textarea>
+                    </div>
+                </div>
+                
+                <!-- Admin Review Section -->
+                <div class="form-section admin-section">
+                    <div class="section-header">
+                        <i class="fas fa-user-shield"></i>
+                        <h2 class="section-title">Admin Review</h2>
+                    </div>
+                    <div class="form-group">
+                        <label for="adminNotes">Admin Notes</label>
+                        <textarea class="form-control form-control-textarea" id="adminNotes" placeholder="Add your review notes here..."></textarea>
+                    </div>
+                </div>
+                
+                <!-- Form Footer -->
+                <div class="form-footer">
+                    <div class="action-buttons">
+                        <button type="button" class="btn btn-secondary" id="backButton">
+                            <i class="fas fa-arrow-left"></i> Back to History
+                        </button>
+                        <button type="button" class="btn btn-warning" id="requestRevisionBtn">
+                            <i class="fas fa-history"></i> Request Revision
+                        </button>
+                        <button type="button" class="btn btn-primary" id="approveEntryBtn">
+                            <i class="fas fa-check-circle"></i> Approve Entry
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        {% endwith %}
+        {% else %}
+        <div class="form-container">
+            <p style="text-align: center; padding: 2rem;">No diary entries to review.</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Revision Request Modal -->
+    <div class="modal" id="revisionModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>
+                    <i class="fas fa-history"></i>
+                    Request Revision
+                </h2>
+                <button class="modal-close" id="closeRevisionModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="revisionForm" method="post" enctype="multipart/form-data">{% csrf_token %}
+                    <div class="form-section">
+                        <h3><i class="fas fa-info-circle"></i> Revision Details</h3>
+                        
+                        <div class="form-group">
+                            <label for="revisionDate">Revision Date <span class="required">*</span></label>
+                            <input type="date" id="revisionDate" name="revisionDate" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="revisionType">Revision Type <span class="required">*</span></label>
+                            <select id="revisionType" name="revisionType" required>
+                                <option value="">Select type</option>
+                                <option value="correction">Data Correction</option>
+                                <option value="update">Progress Update</option>
+                                <option value="addition">Additional Information</option>
+                                <option value="documentation">Documentation Update</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Sections Requiring Revision <span class="required">*</span></label>
+                            <div class="checkbox-group">
+                                <label><input type="checkbox" name="sections" value="weather"> Weather Data</label>
+                                <label><input type="checkbox" name="sections" value="personnel"> Personnel</label>
+                                <label><input type="checkbox" name="sections" value="materials"> Materials</label>
+                                <label><input type="checkbox" name="sections" value="work"> Work Performed</label>
+                                <label><input type="checkbox" name="sections" value="delays"> Delays/Issues</label>
+                                <label><input type="checkbox" name="sections" value="equipment"> Equipment</label>
+                                <label><input type="checkbox" name="sections" value="photos"> Photos</label>
+                                <label><input type="checkbox" name="sections" value="budget"> Budget</label>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="revisionImpact">Impact Level <span class="required">*</span></label>
+                            <select id="revisionImpact" name="revisionImpact" required>
+                                <option value="">Select impact</option>
+                                <option value="minor">Minor (no impact)</option>
+                                <option value="moderate">Moderate (small adjustments)</option>
+                                <option value="major">Major (significant changes)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="revisionDescription">Revision Description <span class="required">*</span></label>
+                            <textarea id="revisionDescription" name="revisionDescription" rows="4" 
+                                      placeholder="Describe the revision details, including what changes are needed and why..." required></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Supporting Documents</label>
+                            <input type="file" id="supportingDocs" name="supportingDocs" multiple>
+                            <small class="form-text">Upload any documents that support this revision request (max 5 files)</small>
+                        </div>
+                    </div>
+                    
+                    <div class="form-section">
+                        <h3><i class="fas fa-user-tie"></i> Admin Verification</h3>
+                        <div class="form-group">
+                            <label for="adminName">Admin Name <span class="required">*</span></label>
+                            <input type="text" id="adminName" name="adminName" 
+                                   placeholder="Enter your name" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="adminSignature">Admin Signature <span class="required">*</span></label>
+                            <div class="photo-upload-container">
+                                <div class="photo-preview" id="adminSignaturePreview">
+                                    <i class="fas fa-signature"></i>
+                                    <span>No signature selected</span>
+                                </div>
+                                <div class="photo-upload">
+                                    <input type="file" id="adminSignature" name="adminSignature" 
+                                           accept="image/*" required>
+                                    <label for="adminSignature" class="upload-btn">
+                                        <i class="fas fa-upload"></i> Upload Signature
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancelRevision">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="submitRevision">Submit Revision Request</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Confirmation Modal -->
+    <div class="modal" id="confirmModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="confirmTitle">
+                    <i class="fas fa-check-circle"></i>
+                    Approve Entry
+                </h2>
+                <button class="modal-close" id="closeConfirmModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage">Are you sure you want to approve this diary entry?</p>
+                <div class="form-group">
+                    <label for="confirmNotes">Additional Notes (Optional)</label>
+                    <textarea id="confirmNotes" rows="3" placeholder="Add any additional notes..."></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelConfirm">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmAction">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="copyright">
+                &copy; GG.Squad. All rights reserved.
+            </div>
+            <div class="footer-links">
+                <a href="#">Terms of Service</a>
+                <a href="#">Privacy Policy</a>
+                <a href="#">Support</a>
+            </div>
+        </div>
+    </footer>
+    
+    <script src="{% static 'adminjs/admin-nav.js' %}"></script>
+    <script src="{% static 'adminjs/adminside/diary/admindiary.js' %}"></script>
+    {% include "site_diary/navtemplate/layoutfooter.html" %}
+</body>
+
+</html>

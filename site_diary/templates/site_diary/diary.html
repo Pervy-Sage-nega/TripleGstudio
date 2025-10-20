@@ -1,0 +1,1237 @@
+{% extends "site_diary/layout_format.html" %}
+{% load static %}
+
+{% block head %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site Diary - New Entry</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+    <link rel="stylesheet" href="{% static 'css/sitecss/diary.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/createblog.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/global-footer.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admincss/nav.css' %}">
+    <script src="{% static 'js/sitejs/diary.js' %}"></script>
+    <script src="{% static 'js/weather-api.js' %}"></script>
+    <style>
+        .weather-readings {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 15px;
+        }
+        .weather-reading {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            border-left: 4px solid #007bff;
+        }
+        .weather-reading h3 {
+            margin: 0 0 10px 0;
+            color: #495057;
+            font-size: 16px;
+        }
+        .weather-data {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .weather-icon-large {
+            font-size: 2.5rem;
+        }
+        .weather-description {
+            font-weight: 500;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+        .weather-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .weather-detail {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+            color: #6c757d;
+        }
+        .flatpickr-time {
+            cursor: pointer;
+        }
+        @media (max-width: 768px) {
+            .weather-readings {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <!-- Main Content Container -->
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-title">
+                <i class="fas fa-edit"></i>
+                <h1>New Site Diary Entry</h1>
+            </div>
+            <div class="page-actions"></div>
+        </div>
+        
+        <!-- Form Container with Tabs -->
+        <div class="form-container">
+            <div class="tabs-container">
+                <nav class="tabs-sidebar" role="tablist" aria-orientation="vertical">
+                    <button class="tab-button active" role="tab" aria-selected="true" aria-controls="tab-project" id="tab-btn-project">
+                        <i class="fas fa-clipboard-list"></i>
+                        <span>Project Info</span>
+                    </button>
+                    <button class="tab-button" role="tab" aria-selected="false" aria-controls="tab-labor" id="tab-btn-labor">
+                        <i class="fas fa-hard-hat"></i>
+                        <span>Labor & Work</span>
+                    </button>
+                    <button class="tab-button" role="tab" aria-selected="false" aria-controls="tab-materials" id="tab-btn-materials">
+                        <i class="fas fa-truck-loading"></i>
+                        <span>Materials & Equipment</span>
+                    </button>
+                    <button class="tab-button" role="tab" aria-selected="false" aria-controls="tab-delays" id="tab-btn-delays">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>Delays & Documentation</span>
+                    </button>
+                    <button class="tab-button" role="tab" aria-selected="false" aria-controls="tab-signatures" id="tab-btn-signatures">
+                        <i class="fas fa-signature"></i>
+                        <span>Signatures</span>
+                    </button>
+                    <button class="tab-button" role="tab" aria-selected="false" aria-controls="tab-review" id="tab-btn-review">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Review & Submit</span>
+                    </button>
+                </nav>
+
+                <div class="tabs-content">
+                    <form id="siteEntryForm" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <!-- Project Info Tab -->
+                        <section id="tab-project" class="tab-panel active" role="tabpanel" aria-labelledby="tab-btn-project">
+                            <!-- Project Information Section -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-project-diagram"></i>
+                                    <h2 class="section-title">Project Information</h2>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="{{ diary_form.project.id_for_label }}">Project Name *</label>
+                                        {{ diary_form.project }}
+                                        {% if diary_form.project.errors %}
+                                            <div class="invalid-feedback">{{ diary_form.project.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="{{ diary_form.entry_date.id_for_label }}">Date *</label>
+                                        {{ diary_form.entry_date }}
+                                        {% if diary_form.entry_date.errors %}
+                                            <div class="invalid-feedback">{{ diary_form.entry_date.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Milestone Update Section -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-flag"></i>
+                                    <h2 class="section-title">Milestone Update</h2>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="milestonePhase">Current Milestone Phase</label>
+                                        <select class="form-control" id="milestonePhase" name="milestonePhase" required>
+                                            <option value="">Select Current Phase</option>
+                                            <option value="planning-design">Planning & Design</option>
+                                            <option value="site-preparation">Site Preparation</option>
+                                            <option value="foundation-work">Foundation Work</option>
+                                            <option value="structural-framework">Structural Framework</option>
+                                            <option value="mep">Mechanical, Electrical, Plumbing (MEP)</option>
+                                            <option value="finishing">Interior & Exterior Finishing</option>
+                                            <option value="inspection">Punch List & Inspection</option>
+                                            <option value="handover">Project Completion / Handover</option>
+                                        </select>
+                                        <div class="invalid-feedback">Please select a milestone phase</div>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="customMilestone">Custom Milestone Phase (Optional)</label>
+                                        <input type="text" class="form-control" id="customMilestone" name="customMilestone" placeholder="Enter custom phase (optional)">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Time Shifts Section -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-clock"></i>
+                                    <h2 class="section-title">Work Shifts</h2>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="morningStart">Morning Start</label>
+                                        <input type="text" class="form-control flatpickr-time" id="morningStart" placeholder="08:00">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="morningEnd">Morning End</label>
+                                        <input type="text" class="form-control flatpickr-time" id="morningEnd" placeholder="12:00">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="afternoonStart">Afternoon Start</label>
+                                        <input type="text" class="form-control flatpickr-time" id="afternoonStart" placeholder="13:00">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="afternoonEnd">Afternoon End</label>
+                                        <input type="text" class="form-control flatpickr-time" id="afternoonEnd" placeholder="17:00">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Weather Conditions Section -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-cloud-sun"></i>
+                                    <h2 class="section-title">Weather Conditions</h2>
+                                </div>
+                                
+                                <!-- Weather Form Fields -->
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="{{ diary_form.weather_condition.id_for_label }}">Weather Condition</label>
+                                        {{ diary_form.weather_condition }}
+                                        {% if diary_form.weather_condition.errors %}
+                                            <div class="invalid-feedback">{{ diary_form.weather_condition.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="{{ diary_form.temperature_high.id_for_label }}">Temperature High (°C)</label>
+                                        {{ diary_form.temperature_high }}
+                                        {% if diary_form.temperature_high.errors %}
+                                            <div class="invalid-feedback">{{ diary_form.temperature_high.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="{{ diary_form.temperature_low.id_for_label }}">Temperature Low (°C)</label>
+                                        {{ diary_form.temperature_low }}
+                                        {% if diary_form.temperature_low.errors %}
+                                            <div class="invalid-feedback">{{ diary_form.temperature_low.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="{{ diary_form.humidity.id_for_label }}">Humidity (%)</label>
+                                        {{ diary_form.humidity }}
+                                        {% if diary_form.humidity.errors %}
+                                            <div class="invalid-feedback">{{ diary_form.humidity.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="{{ diary_form.wind_speed.id_for_label }}">Wind Speed (km/h)</label>
+                                        {{ diary_form.wind_speed }}
+                                        {% if diary_form.wind_speed.errors %}
+                                            <div class="invalid-feedback">{{ diary_form.wind_speed.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Weather Display Section -->
+                                <div class="weather-readings">
+                                    <div class="weather-reading morning">
+                                        <h3><i class="fas fa-sun"></i> Morning Weather</h3>
+                                        <div class="weather-data">
+                                            <div class="weather-main">
+                                                <div class="weather-icon-large" id="morningWeatherIcon">
+                                                    <i class="fas fa-cloud text-secondary"></i>
+                                                </div>
+                                                <div class="weather-description" id="morningWeatherDesc">Set morning shift time to fetch weather</div>
+                                            </div>
+                                            <div class="weather-details">
+                                                <div class="weather-detail">
+                                                    <i class="fas fa-temperature-high"></i>
+                                                    <span id="morningTemp">--</span>°C
+                                                </div>
+                                                <div class="weather-detail">
+                                                    <i class="fas fa-wind"></i>
+                                                    <span id="morningWind">--</span> km/h
+                                                </div>
+                                                <div class="weather-detail">
+                                                    <i class="fas fa-tint"></i>
+                                                    <span id="morningHumidity">--</span>%
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="weather-reading afternoon">
+                                        <h3><i class="fas fa-sun"></i> Afternoon Weather</h3>
+                                        <div class="weather-data">
+                                            <div class="weather-main">
+                                                <div class="weather-icon-large" id="afternoonWeatherIcon">
+                                                    <i class="fas fa-cloud text-secondary"></i>
+                                                </div>
+                                                <div class="weather-description" id="afternoonWeatherDesc">Set afternoon shift time to fetch weather</div>
+                                            </div>
+                                            <div class="weather-details">
+                                                <div class="weather-detail">
+                                                    <i class="fas fa-temperature-high"></i>
+                                                    <span id="afternoonTemp">--</span>°C
+                                                </div>
+                                                <div class="weather-detail">
+                                                    <i class="fas fa-wind"></i>
+                                                    <span id="afternoonWind">--</span> km/h
+                                                </div>
+                                                <div class="weather-detail">
+                                                    <i class="fas fa-tint"></i>
+                                                    <span id="afternoonHumidity">--</span>%
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Project location for weather fetching -->
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="siteLocation">Project Location</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" id="siteLocation" placeholder="Select a project to load location" readonly>
+                                            <button type="button" class="btn btn-primary" id="fetch-weather-btn">
+                                                <i class="fas fa-cloud-sun"></i> Fetch Weather
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <script>
+                                // Auto-populate location when project is selected
+                                document.getElementById('{{ diary_form.project.id_for_label }}').addEventListener('change', function() {
+                                    const projectId = this.value;
+                                    if (projectId) {
+                                        fetch(`/diary/api/project-location/${projectId}/`)
+                                            .then(response => response.json())
+                                            .then(data => {
+                                                document.getElementById('siteLocation').value = data.location || '';
+                                            })
+                                            .catch(error => console.error('Error fetching location:', error));
+                                    } else {
+                                        document.getElementById('siteLocation').value = '';
+                                    }
+                                });
+                                </script>
+                            </div>
+                        </section>
+
+                        <!-- Labor & Work Tab -->
+                        <section id="tab-labor" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-labor">
+                            <!-- Labor and Personnel Section -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-hard-hat"></i>
+                                    <h2 class="section-title">Labor and Personnel</h2>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="supervisorCount">Supervisors</label>
+                                        <input type="number" class="form-control count-input" id="supervisorCount" min="0" value="0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="skilledCount">Skilled Labor</label>
+                                        <input type="number" class="form-control count-input" id="skilledCount" min="0" value="0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="unskilledCount">Unskilled Labor</label>
+                                        <input type="number" class="form-control count-input" id="unskilledCount" min="0" value="0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="subcontractorCount">Subcontractors</label>
+                                        <input type="number" class="form-control count-input" id="subcontractorCount" min="0" value="0">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Subcontractor Companies</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="subcontractorInput" placeholder="Enter subcontractor company name">
+                                        <button type="button" class="add-btn" id="addSubcontractor">
+                                            <i class="fas fa-plus-circle"></i>
+                                        </button>
+                                    </div>
+                                    <div class="entry-list" id="subcontractorList">
+                                        <!-- Dynamically added subcontractors will appear here -->
+                                        <div class="entry-item">
+                                            <div class="entry-content">
+                                                <strong>ABC Electrical Services</strong> - Electrical work
+                                            </div>
+                                            <div class="entry-actions">
+                                                <button type="button" class="entry-action-btn edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button type="button" class="entry-action-btn delete">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="personnelNotes">Personnel Notes</label>
+                                    <textarea class="form-control form-control-textarea" id="personnelNotes" placeholder="Additional notes about personnel"></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Work Performed Section -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-tasks"></i>
+                                    <h2 class="section-title">Work Performed</h2>
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ diary_form.work_description.id_for_label }}">Description of Work Performed *</label>
+                                    {{ diary_form.work_description }}
+                                    {% if diary_form.work_description.errors %}
+                                        <div class="invalid-feedback">{{ diary_form.work_description.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ diary_form.progress_percentage.id_for_label }}">Progress Percentage (%)</label>
+                                    {{ diary_form.progress_percentage }}
+                                    {% if diary_form.progress_percentage.errors %}
+                                        <div class="invalid-feedback">{{ diary_form.progress_percentage.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="startTime">Start Time</label>
+                                        <input type="text" class="form-control flatpickr" id="startTime" data-enable-time="true" data-no-calendar="true" data-date-format="H:i" placeholder="Select start time">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="endTime">End Time</label>
+                                        <input type="text" class="form-control flatpickr" id="endTime" data-enable-time="true" data-no-calendar="true" data-date-format="H:i" placeholder="Select end time">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="totalHours">Total Hours</label>
+                                        <input type="number" class="form-control" id="totalHours" placeholder="Auto-calculated" readonly>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Tasks Completed</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="taskInput" placeholder="Enter completed task">
+                                        <button type="button" class="add-btn" id="addTask">
+                                            <i class="fas fa-plus-circle"></i>
+                                        </button>
+                                    </div>
+                                    <div class="entry-list" id="taskList">
+                                        <!-- Dynamically added tasks will appear here -->
+                                        <div class="entry-item">
+                                            <div class="entry-content">
+                                                Foundation concrete pouring - Building B
+                                            </div>
+                                            <div class="entry-actions">
+                                                <button type="button" class="entry-action-btn edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button type="button" class="entry-action-btn delete">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Materials & Equipment Tab -->
+                        <section id="tab-materials" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-materials">
+                            <!-- Materials Delivered Section -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-truck-loading"></i>
+                                    <h2 class="section-title">Materials Delivered</h2>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="materialName">Material Name</label>
+                                        <input type="text" class="form-control" id="materialName" placeholder="Enter material name">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="materialQuantity">Quantity</label>
+                                        <input type="number" class="form-control" id="materialQuantity" placeholder="Enter quantity">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="materialUnit">Unit</label>
+                                        <select class="form-control" id="materialUnit">
+                                            <option value="">Select Unit</option>
+                                            <option value="kg">kg</option>
+                                            <option value="ton">ton</option>
+                                            <option value="m3">m³</option>
+                                            <option value="m2">m²</option>
+                                            <option value="m">m</option>
+                                            <option value="pcs">pcs</option>
+                                            <option value="bags">bags</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="materialCost">Cost (₱)</label>
+                                        <input type="number" class="form-control" id="materialCost" placeholder="Enter cost">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="materialAdd">&nbsp;</label>
+                                        <button type="button" class="btn btn-primary" id="addMaterial" style="width: 100%;">
+                                            <i class="fas fa-plus"></i> Add Material
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="entry-list" id="materialsList">
+                                    <!-- Dynamically added materials will appear here -->
+                                </div>
+                            </div>
+
+                            <!-- Equipment Used Section -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-tools"></i>
+                                    <h2 class="section-title">Equipment Used</h2>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="equipmentName">Equipment Name</label>
+                                        <input type="text" class="form-control" id="equipmentName" placeholder="Enter equipment name">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="equipmentQuantity">Quantity</label>
+                                        <input type="number" class="form-control" id="equipmentQuantity" min="1" value="1">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="equipmentHours">Hours Used</label>
+                                        <input type="number" class="form-control" id="equipmentHours" min="0" step="0.5" placeholder="Enter hours">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="equipmentCost">Daily Cost (₱)</label>
+                                        <input type="number" class="form-control" id="equipmentCost" placeholder="Enter daily cost">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="equipmentAdd">&nbsp;</label>
+                                        <button type="button" class="btn btn-primary" id="addEquipment" style="width: 100%;">
+                                            <i class="fas fa-plus"></i> Add Equipment
+                                        </button>
+                                    </div>
+                                    
+                                </div>
+                                <div class="entry-list" id="equipmentList">
+                                    <!-- Dynamically added equipment will appear here -->
+                                </div>
+                            </div>
+
+                            <!-- Other Costs Section -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                    <h2 class="section-title">Other Costs</h2>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="otherCostName">Cost Name</label>
+                                        <input type="text" class="form-control" id="otherCostName" placeholder="Enter cost description">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="otherCostAmount">Amount (₱)</label>
+                                        <input type="number" class="form-control" id="otherCostAmount" placeholder="Enter amount">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="addOtherCost">&nbsp;</label>
+                                        <button type="button" class="btn btn-primary" id="addOtherCost" style="width: 100%;">
+                                            <i class="fas fa-plus"></i> Add Cost
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="entry-list" id="otherCostsList">
+                                    <!-- Dynamically added other costs will appear here -->
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Delays & Documentation Tab -->
+                        <section id="tab-delays" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-delays">
+                            <!-- Quality and Safety Section -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-shield-alt"></i>
+                                    <h2 class="section-title">Quality and Safety</h2>
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ diary_form.quality_issues.id_for_label }}">Quality Issues</label>
+                                    {{ diary_form.quality_issues }}
+                                    {% if diary_form.quality_issues.errors %}
+                                        <div class="invalid-feedback">{{ diary_form.quality_issues.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ diary_form.safety_incidents.id_for_label }}">Safety Incidents</label>
+                                    {{ diary_form.safety_incidents }}
+                                    {% if diary_form.safety_incidents.errors %}
+                                        <div class="invalid-feedback">{{ diary_form.safety_incidents.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ diary_form.general_notes.id_for_label }}">General Notes</label>
+                                    {{ diary_form.general_notes }}
+                                    {% if diary_form.general_notes.errors %}
+                                        <div class="invalid-feedback">{{ diary_form.general_notes.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="form-group">
+                                    <div class="form-check">
+                                        {{ diary_form.photos_taken }}
+                                        <label class="form-check-label" for="{{ diary_form.photos_taken.id_for_label }}">
+                                            Photos were taken today
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Delays and Issues Section -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <h2 class="section-title">Delays and Issues</h2>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="delayType">Type of Delay/Issue</label>
+                                        <select class="form-control" id="delayType">
+                                            <option value="">Select Type</option>
+                                            <option value="weather">Weather Related</option>
+                                            <option value="material">Material Shortage</option>
+                                            <option value="equipment">Equipment Failure</option>
+                                            <option value="labor">Labor Shortage</option>
+                                            <option value="approval">Approval Delay</option>
+                                            <option value="design">Design Issue</option>
+                                            <option value="access">Site Access</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="delayImpact">Impact Level</label>
+                                        <select class="form-control" id="delayImpact">
+                                            <option value="">Select Impact</option>
+                                            <option value="minor">Minor - No schedule impact</option>
+                                            <option value="moderate">Moderate - Small schedule impact</option>
+                                            <option value="major">Major - Significant delay</option>
+                                            <option value="critical">Critical - Requires immediate action</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="delayDescription">Description</label>
+                                    <textarea class="form-control form-control-textarea" id="delayDescription" placeholder="Describe the delay or issue in detail"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="delaySolution">Solution/Mitigation</label>
+                                    <textarea class="form-control form-control-textarea" id="delaySolution" placeholder="Describe any solutions or mitigation measures taken"></textarea>
+                                </div>
+                                <button type="button" class="btn btn-primary" id="addDelay">
+                                    <i class="fas fa-plus"></i> Add Delay/Issue
+                                </button>
+                                <div class="entry-list" id="delayList">
+                                    <!-- Dynamically added delays will appear here -->
+                                    <div class="entry-item">
+                                        <div class="entry-content">
+                                            <strong>Material Shortage - Major Impact</strong><br>
+                                            Reinforcement steel delivery delayed by supplier. Expected to arrive tomorrow. Rescheduled concrete pour for foundation section F.
+                                        </div>
+                                        <div class="entry-actions">
+                                            <button type="button" class="entry-action-btn edit">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button type="button" class="entry-action-btn delete">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Photo Documentation Section -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-camera"></i>
+                                    <h2 class="section-title">Photo Documentation</h2>
+                                </div>
+                                <div class="photo-upload-container" id="photoDropZone" onclick="document.getElementById('photoUpload').click()">
+                                    <input type="file" id="photoUpload" multiple accept="image/*" style="display: none;">
+                                    <div class="upload-icon">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                    </div>
+                                    <div class="upload-text">Drag and drop photos here or click to browse</div>
+                                    <div class="upload-subtext">JPG, PNG or GIF • Max 10 MB each • Up to 20 photos</div>
+                                </div>
+                                <div class="photo-gallery" id="photoGallery">
+                                    <!-- Photos will be dynamically added here -->
+                                </div>
+                                
+                                <script>
+                                let uploadedPhotos = [];
+                                
+                                document.getElementById('photoUpload').addEventListener('change', function(e) {
+                                    const files = Array.from(e.target.files);
+                                    
+                                    files.forEach((file, index) => {
+                                        if (file.type.startsWith('image/') && file.size <= 10 * 1024 * 1024) {
+                                            const reader = new FileReader();
+                                            reader.onload = function(e) {
+                                                const photoId = Date.now() + index;
+                                                uploadedPhotos.push({ id: photoId, file: file, description: '' });
+                                                
+                                                const photoItem = document.createElement('div');
+                                                photoItem.className = 'photo-item';
+                                                photoItem.innerHTML = `
+                                                    <img src="${e.target.result}" alt="Site Photo" class="photo-preview">
+                                                    <div class="photo-overlay">
+                                                        <div class="photo-description" id="desc-${photoId}">Click to add description</div>
+                                                        <div class="photo-actions">
+                                                            <button type="button" class="photo-action-btn edit-desc" onclick="editPhotoDescription(${photoId})" title="Edit Description">
+                                                                <i class="fas fa-edit"></i>
+                                                            </button>
+                                                            <button type="button" class="photo-action-btn delete-photo" onclick="removePhoto(${photoId})" title="Remove Photo">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                `;
+                                                document.getElementById('photoGallery').appendChild(photoItem);
+                                            };
+                                            reader.readAsDataURL(file);
+                                        } else {
+                                            alert('Please upload images only (max 10MB each)');
+                                        }
+                                    });
+                                });
+                                
+                                function editPhotoDescription(photoId) {
+                                    const description = prompt('Enter photo description:');
+                                    if (description !== null) {
+                                        document.getElementById(`desc-${photoId}`).textContent = description || 'Click to add description';
+                                        const photo = uploadedPhotos.find(p => p.id === photoId);
+                                        if (photo) photo.description = description;
+                                    }
+                                }
+                                
+                                function removePhoto(photoId) {
+                                    uploadedPhotos = uploadedPhotos.filter(p => p.id !== photoId);
+                                    document.querySelector(`[onclick*="${photoId}"]`).closest('.photo-item').remove();
+                                }
+                                </script>
+                            </div>
+                        </section>
+
+                        <!-- Signatures Tab -->
+                        <section id="tab-signatures" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-signatures">
+                            <!-- Digital Signatures Section -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-signature"></i>
+                                    <h2 class="section-title">Digital Signatures</h2>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="supervisorName">Supervisor Name *</label>
+                                        <input type="text" class="form-control" id="supervisorName" placeholder="Enter supervisor name" required>
+                                        <div class="invalid-feedback">Please enter the supervisor name</div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="supervisorEmail">Supervisor Email</label>
+                                        <input type="email" class="form-control" id="supervisorEmail" placeholder="Enter supervisor email">
+                                    </div>
+                                </div>
+                                <div class="signature-container">
+                                    <label>Supervisor Signature *</label>
+                                    <div class="signature-upload-container">
+                                        <input type="file" id="supervisorSignatureUpload" accept="image/*" style="display: none;">
+                                        <div class="signature-preview-container" id="supervisorSignaturePreview">
+                                            <div class="upload-icon">
+                                                <i class="fas fa-cloud-upload-alt"></i>
+                                            </div>
+                                            <div class="upload-text">Click to upload signature image</div>
+                                        </div>
+                                        <div class="signature-actions">
+                                            <button type="button" class="signature-btn clear" id="clearSupervisorSignature">
+                                                <i class="fas fa-eraser"></i> Clear
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="invalid-feedback">Supervisor signature is required</div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="clientRepName">Client Representative Name</label>
+                                        <input type="text" class="form-control" id="clientRepName" placeholder="Enter client representative name">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="clientRepEmail">Client Representative Email</label>
+                                        <input type="email" class="form-control" id="clientRepEmail" placeholder="Enter client representative email">
+                                    </div>
+                                </div>
+                                <div class="signature-container">
+                                    <label>Client Representative Signature</label>
+                                    <div class="signature-upload-container">
+                                        <input type="file" id="clientSignatureUpload" accept="image/*" style="display: none;">
+                                        <div class="signature-preview-container" id="clientSignaturePreview">
+                                            <div class="upload-icon">
+                                                <i class="fas fa-cloud-upload-alt"></i>
+                                            </div>
+                                            <div class="upload-text">Click to upload signature image</div>
+                                        </div>
+                                        <div class="signature-actions">
+                                            <button type="button" class="signature-btn clear" id="clearClientSignature">
+                                                <i class="fas fa-eraser"></i> Clear
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="invalid-feedback">Client signature is required</div>
+                                </div>
+                            </div>
+
+                            <!-- Additional Notes Section -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-sticky-note"></i>
+                                    <h2 class="section-title">Additional Notes</h2>
+                                </div>
+                                <div class="form-group">
+                                    <textarea class="form-control form-control-textarea" id="additionalNotes" placeholder="Enter any additional notes or observations"></textarea>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Review & Submit Tab -->
+                        <section id="tab-review" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-review">
+                            <!-- Hidden formset fields -->
+                            <div style="display: none;">
+                                {{ labor_formset.management_form }}
+                                {% for form in labor_formset %}
+                                    <div id="labor-form-{{ forloop.counter0 }}">
+                                        {% for field in form %}
+                                            {{ field }}
+                                        {% endfor %}
+                                    </div>
+                                {% endfor %}
+                                
+                                {{ material_formset.management_form }}
+                                {% for form in material_formset %}
+                                    <div id="material-form-{{ forloop.counter0 }}">
+                                        {% for field in form %}
+                                            {{ field }}
+                                        {% endfor %}
+                                    </div>
+                                {% endfor %}
+                                
+                                {{ equipment_formset.management_form }}
+                                {% for form in equipment_formset %}
+                                    <div id="equipment-form-{{ forloop.counter0 }}">
+                                        {% for field in form %}
+                                            {{ field }}
+                                        {% endfor %}
+                                    </div>
+                                {% endfor %}
+                                
+                                {{ delay_formset.management_form }}
+                                {{ visitor_formset.management_form }}
+                                {{ photo_formset.management_form }}
+                            </div>
+                            
+                            <!-- Budget Summary Section -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-calculator"></i>
+                                    <h2 class="section-title">Budget Summary</h2>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Cost of This Day (₱)</label>
+                                        <input type="text" class="form-control" id="dailyCost" readonly value="0.00">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Running Budget Usage (₱)</label>
+                                        <input type="text" class="form-control" id="runningCost" readonly value="0.00">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Remaining Budget (₱)</label>
+                                        <input type="text" class="form-control" id="remainingBudget" readonly value="0.00">
+                                    </div>
+                                </div>
+                                
+                                <script>
+                                // Project data from Django
+                                const projectData = {{ project_data|safe }};
+                                let dailyMaterials = [];
+                                let dailyEquipment = [];
+                                let dailyOtherCosts = [];
+                                
+                                // Calculate costs dynamically
+                                function updateBudgetSummary() {
+                                    let dailyTotal = 0;
+                                    
+                                    // Calculate from stored arrays
+                                    dailyTotal += dailyMaterials.reduce((sum, item) => sum + item.cost, 0);
+                                    dailyTotal += dailyEquipment.reduce((sum, item) => sum + item.cost, 0);
+                                    dailyTotal += dailyOtherCosts.reduce((sum, item) => sum + item.cost, 0);
+                                    
+                                    document.getElementById('dailyCost').value = dailyTotal.toLocaleString('en-PH', {minimumFractionDigits: 2});
+                                    
+                                    // Get project budget and calculate remaining
+                                    const projectSelect = document.getElementById('{{ diary_form.project.id_for_label }}');
+                                    if (projectSelect.value) {
+                                        const selectedProject = projectData.find(p => p.id == projectSelect.value);
+                                        if (selectedProject) {
+                                            const runningCost = selectedProject.spent + dailyTotal;
+                                            const remainingBudget = selectedProject.budget - runningCost;
+                                            
+                                            document.getElementById('runningCost').value = runningCost.toLocaleString('en-PH', {minimumFractionDigits: 2});
+                                            document.getElementById('remainingBudget').value = remainingBudget.toLocaleString('en-PH', {minimumFractionDigits: 2});
+                                        }
+                                    }
+                                }
+                                
+                                // Add material function
+                                function addMaterial() {
+                                    const name = document.getElementById('materialName').value;
+                                    const quantity = parseFloat(document.getElementById('materialQuantity').value) || 0;
+                                    const unit = document.getElementById('materialUnit').value;
+                                    const cost = parseFloat(document.getElementById('materialCost').value) || 0;
+                                    
+                                    if (name && quantity && unit && cost) {
+                                        const material = { name, quantity, unit, cost };
+                                        dailyMaterials.push(material);
+                                        
+                                        const listItem = document.createElement('div');
+                                        listItem.className = 'entry-item';
+                                        listItem.innerHTML = `
+                                            <div class="entry-content">
+                                                <strong>${name}</strong> - ${quantity} ${unit} - ₱${cost.toLocaleString('en-PH', {minimumFractionDigits: 2})}
+                                            </div>
+                                            <div class="entry-actions">
+                                                <button type="button" class="entry-action-btn delete" onclick="removeMaterial(this, ${dailyMaterials.length - 1})">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        `;
+                                        document.getElementById('materialsList').appendChild(listItem);
+                                        
+                                        // Clear inputs
+                                        ['materialName', 'materialQuantity', 'materialUnit', 'materialCost'].forEach(id => {
+                                            document.getElementById(id).value = '';
+                                        });
+                                        
+                                        updateBudgetSummary();
+                                    }
+                                }
+                                
+                                // Add equipment function
+                                function addEquipment() {
+                                    const name = document.getElementById('equipmentName').value;
+                                    const quantity = parseFloat(document.getElementById('equipmentQuantity').value) || 1;
+                                    const hours = parseFloat(document.getElementById('equipmentHours').value) || 0;
+                                    const cost = parseFloat(document.getElementById('equipmentCost').value) || 0;
+                                    
+                                    if (name && hours && cost) {
+                                        const equipment = { name, quantity, hours, cost };
+                                        dailyEquipment.push(equipment);
+                                        
+                                        const listItem = document.createElement('div');
+                                        listItem.className = 'entry-item';
+                                        listItem.innerHTML = `
+                                            <div class="entry-content">
+                                                <strong>${name}</strong> - ${quantity} unit(s) - ${hours} hours - ₱${cost.toLocaleString('en-PH', {minimumFractionDigits: 2})}
+                                            </div>
+                                            <div class="entry-actions">
+                                                <button type="button" class="entry-action-btn delete" onclick="removeEquipment(this, ${dailyEquipment.length - 1})">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        `;
+                                        document.getElementById('equipmentList').appendChild(listItem);
+                                        
+                                        // Clear inputs
+                                        ['equipmentName', 'equipmentQuantity', 'equipmentHours', 'equipmentCost'].forEach(id => {
+                                            document.getElementById(id).value = id === 'equipmentQuantity' ? '1' : '';
+                                        });
+                                        
+                                        updateBudgetSummary();
+                                    }
+                                }
+                                
+                                // Add other cost function
+                                function addOtherCost() {
+                                    const name = document.getElementById('otherCostName').value;
+                                    const cost = parseFloat(document.getElementById('otherCostAmount').value) || 0;
+                                    
+                                    if (name && cost) {
+                                        const otherCost = { name, cost };
+                                        dailyOtherCosts.push(otherCost);
+                                        
+                                        const listItem = document.createElement('div');
+                                        listItem.className = 'entry-item';
+                                        listItem.innerHTML = `
+                                            <div class="entry-content">
+                                                <strong>${name}</strong> - ₱${cost.toLocaleString('en-PH', {minimumFractionDigits: 2})}
+                                            </div>
+                                            <div class="entry-actions">
+                                                <button type="button" class="entry-action-btn delete" onclick="removeOtherCost(this, ${dailyOtherCosts.length - 1})">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        `;
+                                        document.getElementById('otherCostsList').appendChild(listItem);
+                                        
+                                        // Clear inputs
+                                        ['otherCostName', 'otherCostAmount'].forEach(id => {
+                                            document.getElementById(id).value = '';
+                                        });
+                                        
+                                        updateBudgetSummary();
+                                    }
+                                }
+                                
+                                // Remove functions
+                                function removeMaterial(button, index) {
+                                    dailyMaterials.splice(index, 1);
+                                    button.closest('.entry-item').remove();
+                                    updateBudgetSummary();
+                                }
+                                
+                                function removeEquipment(button, index) {
+                                    dailyEquipment.splice(index, 1);
+                                    button.closest('.entry-item').remove();
+                                    updateBudgetSummary();
+                                }
+                                
+                                function removeOtherCost(button, index) {
+                                    dailyOtherCosts.splice(index, 1);
+                                    button.closest('.entry-item').remove();
+                                    updateBudgetSummary();
+                                }
+                                
+                                // Add task, subcontractor, and delay functions
+                                function addTask() {
+                                    const task = document.getElementById('taskInput').value.trim();
+                                    if (task) {
+                                        const listItem = document.createElement('div');
+                                        listItem.className = 'entry-item';
+                                        listItem.innerHTML = `
+                                            <div class="entry-content">${task}</div>
+                                            <div class="entry-actions">
+                                                <button type="button" class="entry-action-btn delete" onclick="this.closest('.entry-item').remove()">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        `;
+                                        document.getElementById('taskList').appendChild(listItem);
+                                        document.getElementById('taskInput').value = '';
+                                    }
+                                }
+                                
+                                function addSubcontractor() {
+                                    const subcontractor = document.getElementById('subcontractorInput').value.trim();
+                                    if (subcontractor) {
+                                        const listItem = document.createElement('div');
+                                        listItem.className = 'entry-item';
+                                        listItem.innerHTML = `
+                                            <div class="entry-content"><strong>${subcontractor}</strong></div>
+                                            <div class="entry-actions">
+                                                <button type="button" class="entry-action-btn delete" onclick="this.closest('.entry-item').remove()">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        `;
+                                        document.getElementById('subcontractorList').appendChild(listItem);
+                                        document.getElementById('subcontractorInput').value = '';
+                                    }
+                                }
+                                
+                                function addDelay() {
+                                    const type = document.getElementById('delayType').value;
+                                    const impact = document.getElementById('delayImpact').value;
+                                    const description = document.getElementById('delayDescription').value.trim();
+                                    
+                                    if (type && impact && description) {
+                                        const listItem = document.createElement('div');
+                                        listItem.className = 'entry-item';
+                                        listItem.innerHTML = `
+                                            <div class="entry-content">
+                                                <strong>${type} - ${impact}</strong><br>
+                                                ${description}
+                                            </div>
+                                            <div class="entry-actions">
+                                                <button type="button" class="entry-action-btn delete" onclick="this.closest('.entry-item').remove()">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        `;
+                                        document.getElementById('delayList').appendChild(listItem);
+                                        
+                                        // Clear inputs
+                                        ['delayType', 'delayImpact', 'delayDescription', 'delaySolution'].forEach(id => {
+                                            document.getElementById(id).value = '';
+                                        });
+                                    }
+                                }
+                                
+                                // Populate formsets before submission
+                                function populateFormsets() {
+                                    // Populate material formset
+                                    dailyMaterials.forEach((material, index) => {
+                                        const prefix = `material-${index}`;
+                                        document.querySelector(`[name="${prefix}-material_name"]`).value = material.name;
+                                        document.querySelector(`[name="${prefix}-quantity_delivered"]`).value = material.quantity;
+                                        document.querySelector(`[name="${prefix}-unit"]`).value = material.unit;
+                                        document.querySelector(`[name="${prefix}-unit_cost"]`).value = material.cost / material.quantity;
+                                    });
+                                    
+                                    // Populate equipment formset
+                                    dailyEquipment.forEach((equipment, index) => {
+                                        const prefix = `equipment-${index}`;
+                                        document.querySelector(`[name="${prefix}-equipment_name"]`).value = equipment.name;
+                                        document.querySelector(`[name="${prefix}-hours_operated"]`).value = equipment.hours;
+                                        document.querySelector(`[name="${prefix}-rental_cost_per_hour"]`).value = equipment.cost / equipment.hours;
+                                    });
+                                    
+                                    // Update formset counts
+                                    document.querySelector('[name="material-TOTAL_FORMS"]').value = dailyMaterials.length;
+                                    document.querySelector('[name="equipment-TOTAL_FORMS"]').value = dailyEquipment.length;
+                                }
+                                
+                                // Initialize event listeners
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    document.getElementById('addMaterial').addEventListener('click', addMaterial);
+                                    document.getElementById('addEquipment').addEventListener('click', addEquipment);
+                                    document.getElementById('addOtherCost').addEventListener('click', addOtherCost);
+                                    document.getElementById('addTask').addEventListener('click', addTask);
+                                    document.getElementById('addSubcontractor').addEventListener('click', addSubcontractor);
+                                    document.getElementById('addDelay').addEventListener('click', addDelay);
+                                    
+                                    // Update budget when project changes
+                                    document.getElementById('{{ diary_form.project.id_for_label }}').addEventListener('change', updateBudgetSummary);
+                                    
+                                    // Calculate total hours when start/end time changes
+                                    ['startTime', 'endTime'].forEach(id => {
+                                        document.getElementById(id).addEventListener('change', function() {
+                                            const start = document.getElementById('startTime').value;
+                                            const end = document.getElementById('endTime').value;
+                                            if (start && end) {
+                                                const startTime = new Date('1970-01-01T' + start + ':00');
+                                                const endTime = new Date('1970-01-01T' + end + ':00');
+                                                const diff = (endTime - startTime) / (1000 * 60 * 60);
+                                                document.getElementById('totalHours').value = diff > 0 ? diff.toFixed(1) : '';
+                                            }
+                                        });
+                                    });
+                                    
+                                    // Handle form submission
+                                    document.getElementById('siteEntryForm').addEventListener('submit', function(e) {
+                                        populateFormsets();
+                                    });
+                                });
+                                </script>
+                            </div>
+
+                            <!-- Form Footer -->
+                            <div class="form-footer">
+                                <div class="save-status">
+                                    <i class="fas fa-save"></i>
+                                    <span>Ready to submit</span>
+                                </div>
+                                <div class="action-buttons">
+                                    <button type="button" class="btn btn-secondary" id="saveAsDraft">
+                                        <i class="fas fa-save"></i> Save as Draft
+                                    </button>
+                                    <button type="submit" class="btn btn-primary" id="submitDiary">
+                                        <i class="fas fa-check-circle"></i> Submit Entry
+                                    </button>
+                                </div>
+                            </div>
+                        </section>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include "site_diary/navtemplate/layoutfooter.html" %}
+{% endblock %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var saveAsDraftBtn = document.getElementById('saveAsDraft');
+    var submitBtn = document.getElementById('submitDiary');
+    var siteEntryForm = document.getElementById('siteEntryForm');
+    
+    console.log('Form elements found:', {
+        saveAsDraftBtn: !!saveAsDraftBtn,
+        submitBtn: !!submitBtn,
+        siteEntryForm: !!siteEntryForm
+    });
+    
+    if (saveAsDraftBtn && siteEntryForm) {
+        saveAsDraftBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Save as draft clicked');
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'save_as_draft';
+            input.value = '1';
+            siteEntryForm.appendChild(input);
+            siteEntryForm.submit();
+        });
+    }
+    
+    if (submitBtn && siteEntryForm) {
+        submitBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Submit diary clicked');
+            
+            // Comprehensive validation
+            const missingFields = [];
+            
+            const project = document.getElementById('{{ diary_form.project.id_for_label }}').value;
+            const entryDate = document.getElementById('{{ diary_form.entry_date.id_for_label }}').value;
+            const workDescription = document.getElementById('{{ diary_form.work_description.id_for_label }}').value;
+            const progressPercentage = document.getElementById('{{ diary_form.progress_percentage.id_for_label }}').value;
+            
+            if (!project) missingFields.push('Project Name');
+            if (!entryDate) missingFields.push('Entry Date');
+            if (!workDescription.trim()) missingFields.push('Work Description');
+            if (!progressPercentage) missingFields.push('Progress Percentage');
+            
+            if (missingFields.length > 0) {
+                alert('Please fill out the following required fields:\n\n• ' + missingFields.join('\n• '));
+                return;
+            }
+            
+            console.log('Form validation passed, submitting...');
+            siteEntryForm.submit();
+        });
+    }
+    
+    // Auto-fetch weather when page loads if location is available
+    var locationInput = document.getElementById('siteLocation');
+    if (locationInput && locationInput.value) {
+        setTimeout(() => {
+            if (typeof fetchWeatherData === 'function') {
+                fetchWeatherData();
+            }
+        }, 1000);
+    }
+});
+</script>

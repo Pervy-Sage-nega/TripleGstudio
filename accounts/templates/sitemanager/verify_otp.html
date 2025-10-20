@@ -1,0 +1,275 @@
+{% extends "base_auth.html" %}
+{% load static %}
+
+{% block modal_messages %}
+    {% include 'admin/_modal_messages.html' %}
+{% endblock %}
+
+{% block title %}Verify Email - Site Manager{% endblock %}
+
+{% block sidebar_content %}
+    <div class="sidebar-logo">
+        <img src="{% static 'images/tripleGlogo.jpg' %}" alt="Triple G BuildHub Logo">
+    </div>
+    <h1>Email Verification</h1>
+    <p>Please check your email and enter the 6-digit verification code to activate your Site Manager account.</p>
+    <div class="auth-features">
+        <div class="feature"><i class="fas fa-shield-check"></i><span>Secure verification process</span></div>
+        <div class="feature"><i class="fas fa-clock"></i><span>Code expires in 10 minutes</span></div>
+        <div class="feature"><i class="fas fa-envelope"></i><span>Check spam folder if needed</span></div>
+    </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .otp-container {
+        max-width: 500px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    
+    .otp-input {
+        text-align: center;
+        font-size: 2rem;
+        font-weight: bold;
+        letter-spacing: 0.5rem;
+        padding: 1rem;
+        border: 2px solid #e1e5e9;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+    }
+    
+    .otp-input:focus {
+        border-color: #6f42c1;
+        box-shadow: 0 0 0 0.2rem rgba(111, 66, 193, 0.25);
+        outline: none;
+    }
+    
+    .email-display {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 8px;
+        border-left: 4px solid #6f42c1;
+        margin-bottom: 1.5rem;
+    }
+    
+    .resend-section {
+        text-align: center;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid #e1e5e9;
+    }
+    
+    .btn-resend {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        border: none;
+        color: white;
+        padding: 0.75rem 2rem;
+        border-radius: 25px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-resend:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+    }
+    
+    .btn-resend:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+    
+    .countdown {
+        font-weight: bold;
+        color: #6f42c1;
+    }
+    
+    .verification-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #6f42c1, #9b59b6);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 2rem;
+        color: white;
+        font-size: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block form_content %}
+
+<div class="otp-container">
+    <div class="verification-icon">
+        <i class="fas fa-envelope-open-text"></i>
+    </div>
+    
+    <div class="text-center mb-4">
+        <h2 class="h3 mb-2">Verify Your Email</h2>
+        <p class="text-muted">We've sent a 6-digit code to your email address</p>
+    </div>
+    
+    {% if email %}
+    <div class="email-display">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-envelope text-primary me-2"></i>
+            <strong>{{ email }}</strong>
+        </div>
+        <small class="text-muted">Check your inbox and spam folder</small>
+    </div>
+    {% endif %}
+    
+    <form method="post" id="otpForm">
+        {% csrf_token %}
+        
+        <div class="mb-4">
+            <label for="otp" class="form-label">
+                <strong>Enter OTP Code</strong>
+            </label>
+            <input type="text" id="otp" name="otp" class="form-control text-center" 
+                   placeholder="Enter 6-digit code" maxlength="6" required 
+                   style="font-size: 1.5rem; letter-spacing: 0.5rem;">
+            
+            <!-- Display Django messages for errors -->
+            {% if messages %}
+                {% for message in messages %}
+                    {% if message.tags == 'error' %}
+                        <div class="invalid-feedback d-block">
+                            <small>{{ message }}</small>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+            <small class="form-text text-muted">
+                <i class="fas fa-clock me-1"></i>
+                Code expires in 10 minutes
+            </small>
+        </div>
+        
+        <button type="submit" class="btn btn-primary btn-lg w-100 mb-3">
+            <i class="fas fa-check-circle me-2"></i>
+            Verify Email
+        </button>
+    </form>
+    
+    <div class="resend-section">
+        <p class="text-muted mb-3">Didn't receive the code?</p>
+        
+        <button type="button" id="resendBtn" class="btn btn-resend">
+            <i class="fas fa-paper-plane me-2"></i>
+            Resend OTP
+        </button>
+        
+        <div id="countdownText" class="mt-2 text-muted" style="display: none;">
+            You can request a new code in <span class="countdown" id="countdown">60</span> seconds
+        </div>
+        
+        <div class="mt-3">
+            <a href="{% url 'accounts:sitemanager_register' %}" class="text-decoration-none">
+                <i class="fas fa-arrow-left me-1"></i>
+                Back to Registration
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const otpInput = document.getElementById('{{ form.otp.id_for_label }}');
+    const resendBtn = document.getElementById('resendBtn');
+    const countdownText = document.getElementById('countdownText');
+    const countdownSpan = document.getElementById('countdown');
+    
+    let countdownTimer;
+    let resendCooldown = 60;
+    
+    // Auto-focus OTP input
+    otpInput.focus();
+    
+    // Auto-submit when 6 digits entered
+    otpInput.addEventListener('input', function() {
+        if (this.value.length === 6) {
+            document.getElementById('otpForm').submit();
+        }
+    });
+    
+    // Only allow numbers
+    otpInput.addEventListener('keypress', function(e) {
+        if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'Tab', 'Enter'].includes(e.key)) {
+            e.preventDefault();
+        }
+    });
+    
+    // Resend OTP functionality
+    resendBtn.addEventListener('click', function() {
+        fetch('{% url "accounts:sitemanager_resend_otp" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('success', data.message);
+                startCountdown();
+            } else {
+                showToast('error', data.message);
+            }
+        })
+        .catch(error => {
+            showToast('error', 'Failed to resend OTP. Please try again.');
+        });
+    });
+    
+    function startCountdown() {
+        resendBtn.disabled = true;
+        countdownText.style.display = 'block';
+        resendCooldown = 60;
+        
+        countdownTimer = setInterval(function() {
+            resendCooldown--;
+            countdownSpan.textContent = resendCooldown;
+            
+            if (resendCooldown <= 0) {
+                clearInterval(countdownTimer);
+                resendBtn.disabled = false;
+                countdownText.style.display = 'none';
+            }
+        }, 1000);
+    }
+    
+    function showToast(type, message) {
+        // Create toast notification
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+        toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        toast.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 5000);
+    }
+});
+</script>
+{% endblock %}

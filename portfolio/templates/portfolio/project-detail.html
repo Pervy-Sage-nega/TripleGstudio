@@ -1,28 +1,83 @@
 {% extends 'layout.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    {% block head %}
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project Details - Triple G Studio Design</title>
+
+{% block head %}
+    <!-- SEO Meta Tags -->
+    <title>{{ seo_meta.title }}</title>
+    <meta name="description" content="{{ seo_meta.description }}">
+    <meta name="keywords" content="{{ seo_meta.keywords }}">
+    <link rel="canonical" href="{{ seo_meta.canonical_url }}">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="{{ seo_meta.og_title }}">
+    <meta property="og:description" content="{{ seo_meta.og_description }}">
+    <meta property="og:url" content="{{ seo_meta.og_url }}">
+    <meta property="og:type" content="{{ seo_meta.og_type }}">
+    <meta property="og:site_name" content="{{ seo_meta.og_site_name }}">
+    {% if seo_meta.og_image %}
+    <meta property="og:image" content="{{ seo_meta.og_image }}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="{{ project.hero_image_alt|default:project.title }}">
+    {% endif %}
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="{{ seo_meta.twitter_card }}">
+    <meta name="twitter:title" content="{{ seo_meta.twitter_title }}">
+    <meta name="twitter:description" content="{{ seo_meta.twitter_description }}">
+    {% if seo_meta.twitter_image %}
+    <meta name="twitter:image" content="{{ seo_meta.twitter_image }}">
+    <meta name="twitter:image:alt" content="{{ project.hero_image_alt|default:project.title }}">
+    {% endif %}
+    
+    <!-- Project-specific Meta Tags -->
+    {% if seo_meta.project_location %}
+    <meta name="project:location" content="{{ seo_meta.project_location }}">
+    {% endif %}
+    {% if seo_meta.project_year %}
+    <meta name="project:year" content="{{ seo_meta.project_year }}">
+    {% endif %}
+    {% if seo_meta.project_status %}
+    <meta name="project:status" content="{{ seo_meta.project_status }}">
+    {% endif %}
+    {% if seo_meta.project_category %}
+    <meta name="project:category" content="{{ seo_meta.project_category }}">
+    {% endif %}
+    {% if seo_meta.project_architect %}
+    <meta name="project:architect" content="{{ seo_meta.project_architect }}">
+    {% endif %}
+    
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {{ structured_data|safe }}
+    </script>
+    
+    <script type="application/ld+json">
+    {{ breadcrumb_data|safe }}
+    </script>
+    
+    <script type="application/ld+json">
+    {{ organization_data|safe }}
+    </script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/home.css' %}">
     <link rel="stylesheet" href="{% static 'css/project-detail.css' %}">
-    {% endblock %}
-</head>
-<body>
-    <!-- Navigation -->
-    {% block body %}
+{% endblock %}
+
+{% block body %}
     
     <!-- Hero Section with Video Background -->
     <section class="project-hero">
         <div class="video-background">
             <video autoplay muted loop playsinline id="project-hero-video">
-                <source src="{% static 'videos/Sksca9hO.mp4' %}" type="video/mp4">
+                {% if project.video %}
+                    <source src="{{ project.video.url }}" type="video/mp4">
+                {% else %}
+                    <source src="{% static 'media/videos/Sksca9hO.mp4' %}" type="video/mp4">
+                {% endif %}
                 <!-- Fallback for browsers that don't support video tag -->
                 Your browser does not support the video tag.
             </video>
@@ -83,9 +138,13 @@
                     </div>
                     
                     <div class="overview-image">
+                
                         {% if project.hero_image %}
-                            <img src="{{ project.hero_image.url }}" alt="{{ project.title }} Overview">
+                            <img src="{{ project.hero_image.url }}?v={{ project.updated_at|date:'U' }}" 
+                                 alt="{{ project.hero_image_alt|default:project.title|add:' Overview' }}" 
+                                 onerror="console.log('Image failed to load: {{ project.hero_image.url }}'); this.src='{% static 'images/image1.jpg' %}';">
                         {% else %}
+                            <p style="color: orange;">No hero image found, using fallback</p>
                             <img src="{% static 'images/image1.jpg' %}" alt="{{ project.title }} Overview">
                         {% endif %}
                     </div>
@@ -107,25 +166,23 @@
                         </div>
                     </div>
                     {% empty %}
-                    <!-- Fallback images if no gallery images exist -->
+                    <!-- Show hero image if no gallery images exist -->
+                    {% if project.hero_image %}
                     <div class="gallery-item">
-                        <img src="{% static 'images/image1.jpg' %}" alt="{{ project.title }} Image 1">
+                        <img src="{{ project.hero_image.url }}" alt="{{ project.title }} Hero Image">
                         <div class="gallery-overlay">
                             <i class="fas fa-search-plus"></i>
                         </div>
                     </div>
-                    <div class="gallery-item">
-                        <img src="{% static 'images/image2.jpeg' %}" alt="{{ project.title }} Image 2">
-                        <div class="gallery-overlay">
-                            <i class="fas fa-search-plus"></i>
+                    {% else %}
+                    <div class="no-gallery">
+                        <div class="no-gallery-content">
+                            <i class="fas fa-images fa-3x"></i>
+                            <h3>No Gallery Images</h3>
+                            <p>Gallery images for this project will be available soon.</p>
                         </div>
                     </div>
-                    <div class="gallery-item">
-                        <img src="{% static 'images/image3.jpg' %}" alt="{{ project.title }} Image 3">
-                        <div class="gallery-overlay">
-                            <i class="fas fa-search-plus"></i>
-                        </div>
-                    </div>
+                    {% endif %}
                     {% endfor %}
                 </div>
             </div>
@@ -157,11 +214,11 @@
                             <span class="timeline-date">{{ timeline_item.date|date:"F Y" }}</span>
                             <p>{{ timeline_item.description }}</p>
                             <div class="progress-bar">
-                            {% if timeline_item.completed %}
-                                <div class="progress" style="width: 100%"></div>
-                            {% else %}
-                                <div class="progress" style="width: 0%"></div>
-                            {% endif %}
+                          {% if timeline_item.completed %}
+  <div class="progress" style="width: 100%"></div>
+{% else %}
+  <div class="progress" style="width: 0%"></div>
+{% endif %}
                             </div>
                         </div>
                     </div>
@@ -190,48 +247,15 @@
                     <h2>Ready to Build Your Dream Home?</h2>
                     <p>Let Triple G Studio bring your vision to life with our expert design and construction services.</p>
                     <div class="cta-buttons">
-                        <a href="contacts.html" class="btn-primary">Contact Us</a>
-                        <a href="{% url 'core:index' %}" class="btn-secondary">View More Projects</a>
+                        <a href="{% url 'core:contact' %}" class="btn-primary">Contact Us</a>
+                        <a href="{% url 'portfolio:project_list' %}" class="btn-secondary">View More Projects</a>
                     </div>
                 </div>
             </div>
         </section>
     </main>
 
-    <footer class="footer">
-      <div class="footer-content">
-        <div class="footer-left">
-          <h1>TRIPLE G STUDIO</h1>
-          <h2>WHERE UNIQUE DESIGNS AND CONSTRUCTION ARE BEING DEVELOPED</h2>
-          <p>WE ARE HERE TO CHANGE THE WORLD SOMETHING DESCRIPTION</p>
-          <div class="contact-details">
-            <p>LOCATION DETAILS:</p>
-            <p>COORDINATES</p>
-            <p>TripleGStudio@gmail.com</p>
-            <p>📞 091231876231826</p>
-          </div>
-        </div>
-        <div class="footer-right">
-          <div class="socials">
-             <a href="https://twitter.com" target="_blank" class="social-link">
-              <i class="fab fa-twitter"></i>
-             </a>
-             <a href="https://instagram.com" target="_blank" class="social-link">
-              <i class="fab fa-instagram"></i>
-             </a>
-             <a href="https://facebook.com" target="_blank" class="social-link">
-              <i class="fab fa-facebook"></i>
-             </a>
-          </div>
-          <div class="footer-logo">
-            <img src="{% static 'images/tripleGlogo.jpg' %}" alt="Logo" class="logo-img">
-          </div>
-        </div>
-      </div>
-    </footer>
 
     <script src="{% static 'js/project-detail.js' %}"></script>
     <script src="{% static 'js/chatbot.js' %}"></script>
-    {% endblock %}
-</body>
-</html>
+{% endblock %}

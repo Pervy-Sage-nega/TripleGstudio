@@ -1,0 +1,327 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ 
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Double Slider Login | Registration Form</title>
+  <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'fontawesome/css/all.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/register.css' %}">
+  <link rel="stylesheet" href="{% static 'css/sitecss/modal_messages.css' %}">
+  <link rel="stylesheet" href="{% static 'css/loader.css' %}">
+  
+  
+</head>
+<body>
+<!-- Modal will be handled by layout.html if this page extends it, or by base_auth.html if converted -->
+
+<div class="container" id="container">
+  <div class="mobile-nav">
+    <button type="button" id="mobileLoginBtn">Login</button>
+    <button type="button" id="mobileRegisterBtn">Register</button>
+  </div>
+  <div class="form-container login-container">
+    <form method="POST" action="" autocomplete="on">
+      <h1>login here</h1>
+      {% csrf_token %}
+     
+      <input type="text" id="login-username" name="username" placeholder="Email or Username" required />
+      <input type="password" id="login-password" name="password" placeholder="Password" required />
+      <i class="fas fa-eye password-eye" id="loginPasswordToggle"></i>
+      <div class="error-message" id="loginError" style="display: none;"></div>
+      <div class="content">
+        <div class="checkbox">
+          <input type="checkbox" name="remember" id="login-remember" />
+          <label for="remember-me">Remember me</label>
+        </div>
+        <div class="pass-link">
+          <a href="{% url 'accounts:client_forgot_password' %}">Forgot your password?</a>
+        </div>
+      </div>
+      <button type="submit">Login</button>
+    
+      
+      <!-- Mobile/Tablet Toggle Button -->
+      <div class="mobile-toggle-wrapper login-toggle">
+        <button type="button" class="mobile-toggle-btn" id="loginToRegisterBtn">
+          Don't have an account? Register
+        </button>
+      </div>
+    </form>
+  </div>
+  
+  <div class="form-container register-container">
+    <form method="POST" action="" autocomplete="on" id="registerForm">
+      <h1>Register Here.</h1>
+      {% csrf_token %}
+      <input type="text" id="register-firstname" name="first_name" placeholder="Firstname" required />
+      <input type="text" id="register-lastname" name="last_name" placeholder="Lastname" required />
+      <input type="email" id="register-email" name="email" placeholder="Email" required />
+      <input type="password" id="register-password" name="reg_password" placeholder="Password" required />
+      <i class="fas fa-eye password-eye" id="registerPasswordToggle"></i>
+      
+      <button type="submit" name="register">Register</button>
+      <div class="content">
+        <div class="checkbox">
+          <input type="checkbox" name="terms" id="register-terms" required />
+          <label for="register-terms">I agree to the <a href="{% url 'core:terms' %}" target="_blank">Terms and Conditions</a></label>
+        </div>
+      </div>
+      <p class="terms-notice">By creating an account, you agree to our <a href="{% url 'core:terms' %}" target="_blank">Terms and Conditions</a>.</p>
+     
+     
+      <!-- Mobile/Tablet Toggle Button -->
+      <div class="mobile-toggle-wrapper register-toggle">
+        <button type="button" class="mobile-toggle-btn" id="registerToLoginBtn">
+          Already have an account? Login
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="overlay-container">
+    <div class="overlay">
+      <div class="overlay-panel overlay-left">
+            <h1 class="title">TRIPLE G DESIGN <br> STUDIO + CONSTRUCTION</h1>
+            <p>If you have an account, login here and have fun!</p>
+            <button class="ghost" id="login">Login
+                <i class="lni lni-arrow-right login"></i>
+            </button>
+      </div>
+      <div class="overlay-panel overlay-right">
+            <h1 class="title">Start your <br> journey now!</h1>
+            <p>If you don't have an account yet, join us and start knowing Triple G Studio.</p>
+            <button class="ghost" id="register">Register
+                <i class="lni lni-arrow-left register"></i>
+            </button>
+      </div>    
+    </div>
+  </div>
+</div>
+<script src="{% static 'js/register.js' %}"></script>
+<script src="{% static 'js/sitejs/modal_messages.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if we should show the success modal after OTP verification
+    if (sessionStorage.getItem('show_success_modal') === 'true') {
+        sessionStorage.removeItem('show_success_modal');
+        
+        // Wait a bit for the page to load, then show the success modal
+        setTimeout(() => {
+            showCustomModal('success', 'Success', 'Account verified! You can now log in.');
+        }, 500);
+    }
+    
+    // Check for Django error messages and show modal
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.tags == 'error' %}
+                showCustomModal('error', 'Login Failed', '{{ message|escapejs }}');
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+    
+    // Form validation
+    setupFormValidation();
+});
+
+// Form validation setup
+function setupFormValidation() {
+    const loginForm = document.querySelector('.login-container form');
+    const registerForm = document.querySelector('#registerForm');
+    
+    // Login form validation
+    if (loginForm) {
+        loginForm.addEventListener('submit', function(e) {
+            if (!validateLoginForm()) {
+                e.preventDefault();
+            }
+        });
+    }
+    
+    // Register form validation
+    if (registerForm) {
+        registerForm.addEventListener('submit', function(e) {
+            if (!validateRegisterForm()) {
+                e.preventDefault();
+            }
+        });
+    }
+    
+    // Real-time validation
+    const emailInput = document.getElementById('register-email');
+    const passwordInput = document.getElementById('register-password');
+    
+    if (emailInput) {
+        emailInput.addEventListener('blur', validateEmail);
+    }
+    
+    if (passwordInput) {
+        passwordInput.addEventListener('input', validatePassword);
+    }
+}
+
+// Login form validation
+function validateLoginForm() {
+    const username = document.getElementById('login-username').value.trim();
+    const password = document.getElementById('login-password').value;
+    
+    if (!username) {
+        showCustomModal('error', 'Validation Error', 'Please enter your email or username.');
+        return false;
+    }
+    
+    if (!password) {
+        showCustomModal('error', 'Validation Error', 'Please enter your password.');
+        return false;
+    }
+    
+    if (username.includes('@') && !isValidEmail(username)) {
+        showCustomModal('error', 'Validation Error', 'Please enter a valid email address.');
+        return false;
+    }
+    
+    return true;
+}
+
+// Register form validation
+function validateRegisterForm() {
+    const firstName = document.getElementById('register-firstname').value.trim();
+    const lastName = document.getElementById('register-lastname').value.trim();
+    const email = document.getElementById('register-email').value.trim();
+    const password = document.getElementById('register-password').value;
+    const termsChecked = document.getElementById('register-terms').checked;
+    
+    if (!firstName) {
+        showCustomModal('error', 'Validation Error', 'Please enter your first name.');
+        return false;
+    }
+    
+    if (!lastName) {
+        showCustomModal('error', 'Validation Error', 'Please enter your last name.');
+        return false;
+    }
+    
+    if (!email) {
+        showCustomModal('error', 'Validation Error', 'Please enter your email address.');
+        return false;
+    }
+    
+    if (!isValidEmail(email)) {
+        showCustomModal('error', 'Validation Error', 'Please enter a valid email address.');
+        return false;
+    }
+    
+    if (!password) {
+        showCustomModal('error', 'Validation Error', 'Please enter a password.');
+        return false;
+    }
+    
+    if (password.length < 8) {
+        showCustomModal('error', 'Validation Error', 'Password must be at least 8 characters long.');
+        return false;
+    }
+    
+    if (!termsChecked) {
+        showCustomModal('error', 'Validation Error', 'Please agree to the Terms and Conditions.');
+        return false;
+    }
+    
+    return true;
+}
+
+// Email validation
+function validateEmail() {
+    const email = document.getElementById('register-email').value.trim();
+    const emailInput = document.getElementById('register-email');
+    
+    if (email && !isValidEmail(email)) {
+        emailInput.style.borderColor = '#f44336';
+    } else {
+        emailInput.style.borderColor = '';
+    }
+}
+
+// Password validation
+function validatePassword() {
+    const password = document.getElementById('register-password').value;
+    const passwordInput = document.getElementById('register-password');
+    
+    if (password.length > 0 && password.length < 8) {
+        passwordInput.style.borderColor = '#f44336';
+    } else {
+        passwordInput.style.borderColor = '';
+    }
+}
+
+// Email validation helper
+function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
+function showCustomModal(type, title, message) {
+    // Create modal HTML using your modal CSS classes
+    const modalHTML = `
+        <div id="customModalOverlay" class="modal-backdrop active" role="dialog" aria-modal="true">
+            <div class="modal">
+                <button class="close-btn" aria-label="Close modal">&times;</button>
+                <div class="modal-content">
+                    <div class="icon-section">
+                        <div class="icon-container">
+                            ${type === 'success' ? '<i class="fas fa-check-circle"></i>' : 
+                              type === 'info' ? '<i class="fas fa-info-circle"></i>' : 
+                              type === 'warning' ? '<i class="fas fa-exclamation-triangle"></i>' : 
+                              '<i class="fas fa-times-circle"></i>'}
+                        </div>
+                        <h2 class="modal-title">${title}</h2>
+                    </div>
+                    <div class="content-section">
+                        <div class="modal-description">
+                            <p>${message}</p>
+                        </div>
+                        <div class="modal-buttons">
+                            <button type="button" class="custom-btn-confirm">OK</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('customModalOverlay');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Show modal
+    const modal = document.getElementById('customModalOverlay');
+    
+    // Add event listeners
+    const closeBtn = modal.querySelector('.close-btn');
+    const confirmBtn = modal.querySelector('.custom-btn-confirm');
+    
+    function hideModal() {
+        modal.classList.add('closing');
+        setTimeout(() => {
+            modal.remove();
+        }, 300);
+    }
+    
+    closeBtn.addEventListener('click', hideModal);
+    confirmBtn.addEventListener('click', hideModal);
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) hideModal();
+    });
+}
+</script>
+</body>
+</html>

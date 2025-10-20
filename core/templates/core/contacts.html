@@ -1,0 +1,947 @@
+{% extends 'layout.html' %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {% block head %}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact Us - Triple G Studio</title>
+  <link rel="stylesheet" href="{% static 'css/home.css' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap">
+  <style>
+    /* Contact Us Page Specific Styles */
+    .contact-hero {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 120px 40px 80px;
+      background-image: url("/static/images/HOUSEtriGdesign.jpg");
+      background-repeat: no-repeat;
+      background-size: cover;
+      background-position: center;
+      width: 100%;
+      min-height: 50vh;
+      background-blend-mode: darken;
+      background-color: rgba(0, 0, 0, 0.7);
+      text-align: center;
+    }
+
+    .contact-hero h1 {
+      margin-top: 60px;
+      font-size: 60px;
+      margin-bottom: 20px;
+      font-family: 'Montserrat', sans-serif;
+      letter-spacing: 2px;
+      animation: fadeIn 1s ease-in-out;
+    }
+
+    .contact-hero p {
+      font-size: 18px;
+      max-width: 800px;
+      margin: 0 auto 50px;
+      line-height: 1.6;
+      animation: fadeIn 1.4s ease-in-out;
+    }
+
+    .contact-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 80px 40px;
+    }
+b
+    .contact-info-section {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      margin-bottom: 80px;
+      gap: 30px;
+    }
+
+    .contact-info {
+      flex: 1;
+      min-width: 300px;
+      margin-bottom: 20px;
+      padding: 40px;
+      border-radius: 20px;
+      background-color: rgba(0, 22, 34, 0.8);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .contact-info:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .contact-info h2 {
+      font-size: 30px;
+      margin-bottom: 30px;
+      font-family: 'Montserrat', sans-serif;
+      color: #FF7120;
+    }
+
+    .contact-method {
+      display: flex;
+      align-items: center;
+      margin-bottom: 25px;
+    }
+
+    .contact-icon {
+      font-size: 24px;
+      margin-right: 15px;
+      color: #FF7120;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: rgba(255, 113, 32, 0.1);
+      border-radius: 50%;
+      transition: transform 0.3s ease, background-color 0.3s ease;
+    }
+
+    .contact-method:hover .contact-icon {
+      transform: scale(1.1);
+      background-color: rgba(255, 113, 32, 0.2);
+    }
+
+    .contact-details {
+      flex: 1;
+    }
+
+    .contact-details h3 {
+      font-size: 18px;
+      margin-bottom: 5px;
+      color: #FFFFFF;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .contact-details p {
+      font-size: 16px;
+      color: #CCC;
+      line-height: 1.4;
+    }
+
+    .map-container {
+      flex: 1;
+      min-width: 300px;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      height: 540px;
+    }
+
+    .map-container:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .map-container iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    .form-section {
+      padding: 60px 0;
+    }
+
+    .form-section h2 {
+      font-size: 40px;
+      margin-bottom: 50px;
+      text-align: center;
+      color: #FFFFFF;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .contact-form {
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: rgba(0, 22, 34, 0.8);
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .form-row {
+      display: flex;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+      gap: 20px;
+    }
+
+    .form-group {
+      flex: 1;
+      min-width: 250px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 16px;
+      color: #FFFFFF;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 12px 15px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background-color: rgba(0, 0, 0, 0.3);
+      color: #FFFFFF;
+      border-radius: 10px;
+      font-size: 16px;
+      font-family: 'Poppins', sans-serif;
+      transition: all 0.3s ease;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #FF7120;
+      box-shadow: 0 0 10px rgba(255, 113, 32, 0.3);
+    }
+
+    .form-group textarea {
+      min-height: 150px;
+      resize: vertical;
+    }
+
+    .form-actions {
+      text-align: center;
+      margin-top: 30px;
+    }
+
+    .form-status {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+      font-family: 'Poppins', sans-serif;
+      display: none;
+    }
+
+    .success-message {
+      background-color: rgba(76, 175, 80, 0.2);
+      color: #4CAF50;
+      border: 1px solid #4CAF50;
+    }
+
+    .error-message {
+      background-color: rgba(244, 67, 54, 0.2);
+      color: #F44336;
+      border: 1px solid #F44336;
+    }
+
+    .social-section {
+      position: relative;
+      padding: 60px 0;
+      text-align: center;
+      background-image: url('{% static "images/HOUSEtriGdesign.jpg" %}');
+      background-repeat: no-repeat;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .social-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      z-index: 1;
+    }
+
+    .social-container {
+      position: relative;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 20px;
+      z-index: 2;
+    }
+
+    .social-section h2 {
+      font-size: 40px;
+      margin-bottom: 20px;
+      color: #FFFFFF;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .social-section p {
+      font-size: 18px;
+      margin-bottom: 40px;
+      color: #FFFFFF;
+      line-height: 1.6;
+    }
+
+    .social-icons {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin-bottom: 40px;
+    }
+
+    .social-icon {
+      width: 60px;
+      height: 60px;
+      background-color: rgba(0, 22, 34, 0.8);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #FFFFFF;
+      font-size: 24px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .social-icon:hover {
+      transform: translateY(-10px);
+      background-color: #FF7120;
+      box-shadow: 0 10px 20px rgba(255, 113, 32, 0.3);
+    }
+
+    .social-section .buttons {
+      display: flex;
+      justify-content: center;
+    }
+
+    .faq-section {
+      padding: 80px 0;
+    }
+
+    .faq-section h2 {
+      font-size: 40px;
+      margin-bottom: 50px;
+      text-align: center;
+      color: #FFFFFF;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .faq-container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .faq-item {
+      margin-bottom: 20px;
+      border-radius: 10px;
+      overflow: hidden;
+      background-color: rgba(0, 22, 34, 0.8);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .faq-question {
+      padding: 20px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 18px;
+      font-weight: 600;
+      color: #FFFFFF;
+      font-family: 'Montserrat', sans-serif;
+      transition: background-color 0.3s ease;
+    }
+
+    .faq-question:hover {
+      background-color: rgba(255, 113, 32, 0.1);
+    }
+
+    .faq-question i {
+      transition: transform 0.3s ease;
+    }
+
+    .faq-answer {
+      padding: 0 20px;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.5s ease, padding 0.5s ease;
+      font-size: 16px;
+      color: #CCC;
+      line-height: 1.6;
+    }
+
+    .faq-item.active .faq-question i {
+      transform: rotate(180deg);
+    }
+
+    .faq-item.active .faq-answer {
+      max-height: 300px;
+      padding: 0 20px 20px;
+    }
+
+    .reveal {
+      position: relative;
+      opacity: 0;
+      transform: translateY(50px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+
+    .reveal.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .sticky-navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 1000;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Responsive styles */
+    @media (max-width: 1024px) {
+      .contact-hero h1 {
+        font-size: 50px;
+      }
+      
+      .contact-hero p {
+        font-size: 16px;
+      }
+      
+      .contact-info h2 {
+        font-size: 26px;
+      }
+      
+      .form-section h2,
+      .social-section h2,
+      .faq-section h2 {
+        font-size: 36px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .contact-hero {
+        padding: 100px 20px 60px;
+      }
+      
+      .contact-hero h1 {
+        font-size: 40px;
+      }
+      
+      .contact-container {
+        padding: 60px 20px;
+      }
+      
+      .contact-info {
+        padding: 30px;
+      }
+      
+      .contact-info h2 {
+        font-size: 24px;
+      }
+      
+      .form-section h2,
+      .social-section h2,
+      .faq-section h2 {
+        font-size: 30px;
+      }
+      
+      .social-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .contact-hero h1 {
+        font-size: 30px;
+      }
+      
+      .contact-hero p {
+        font-size: 14px;
+      }
+      
+      .contact-info h2 {
+        font-size: 22px;
+      }
+      
+      .contact-method {
+        margin-bottom: 20px;
+      }
+      
+      .contact-icon {
+        font-size: 20px;
+        width: 35px;
+        height: 35px;
+      }
+      
+      .contact-details h3 {
+        font-size: 16px;
+      }
+      
+      .contact-details p {
+        font-size: 14px;
+      }
+      
+      .form-section h2,
+      .social-section h2,
+      .faq-section h2 {
+        font-size: 26px;
+      }
+      
+      .contact-form {
+        padding: 30px 20px;
+      }
+      
+      .social-icons {
+        gap: 15px;
+      }
+      
+      .social-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+      }
+      
+      .faq-question {
+        font-size: 16px;
+        padding: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  
+
+  <!-- Hero Section -->
+  <section class="contact-hero">
+    <h1>GET IN TOUCH</h1>
+    <p>Reach out to Triple G Studio for inquiries, collaborations, or to discuss your next architectural project. Our team is ready to bring your vision to life with innovative design and expert execution.</p>
+    <div class="buttons">
+      <a href="#contact-form" class="btn-primary" data-color="#FF7120"><span>Contact Us</span></a>
+      <a href="#faq" class="btn-secondary" data-color="#00BFFF"><span>View FAQs</span></a>
+    </div>
+  </section>
+
+  <!-- Main Contact Section -->
+  <div class="contact-container">
+    <!-- Contact Info Section -->
+    <section class="contact-info-section reveal">
+      <div class="contact-info">
+        <h2>Contact Information</h2>
+        
+        <div class="contact-method">
+          <div class="contact-icon">
+            <i class="fas fa-map-marker-alt"></i>
+          </div>
+          <div class="contact-details">
+            <h3>Address</h3>
+            <p>341 Isidro Kintanar St, </p>
+            <p>Argao, Cebu, Philippines</p>
+          </div>
+        </div>
+        
+        <div class="contact-method">
+          <div class="contact-icon">
+            <i class="fas fa-phone-alt"></i>
+          </div>
+          <div class="contact-details">
+            <h3>Phone</h3>
+            <p>+639628924064</p>       
+          </div>
+        </div>
+        
+        <div class="contact-method">
+          <div class="contact-icon">
+            <i class="fas fa-envelope"></i>
+          </div>
+          <div class="contact-details">
+            <h3>Email</h3>
+            <p>info@triplegstudio.com</p>
+            <p>projects@triplegstudio.com</p>
+          </div>
+        </div>
+        
+        <div class="contact-method">
+          <div class="contact-icon">
+            <i class="fas fa-clock"></i>
+          </div>
+          <div class="contact-details">
+            <h3>Working Hours</h3>
+            <p>Monday - Friday: 9:00 AM - 5:00 PM</p>
+            <p>Saturday: Closed </p>
+            <p>Sunday: Closed </p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="map-container">
+        <!-- Replace the src with your actual Google Maps embed URL -->
+        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d472.1388504794269!2d123.59910131844855!3d9.879543980485542!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33abc5005f442a59%3A0xb27c93f7cdf0cae4!2sTriple%20G%20-%20Design%20Studio%20%26%20Construction!5e1!3m2!1sen!2suk!4v1742267012963!5m2!1sen!2suk" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+    </section>
+
+    <!-- Contact Form Section -->
+    <section class="form-section reveal" id="contact-form">
+      <h2>SEND US A MESSAGE</h2>
+      <form class="contact-form" id="contactForm" method="post">
+        {% csrf_token %}
+        <div class="form-row">
+          <div class="form-group">
+            <label for="name">Full Name*</label>
+            <input type="text" id="name" name="name" placeholder="Your Name" required>
+          </div>
+          <div class="form-group">
+            <label for="email">Email Address*</label>
+            <input type="email" id="email" name="email" placeholder="Your Email" required>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="phone">Phone Number</label>
+            <input type="tel" id="phone" name="phone" placeholder="Your Phone Number">
+          </div>
+          <div class="form-group">
+            <label for="subject">Subject*</label>
+            <select id="subject" name="subject" required>
+              <option value="" disabled selected>Select Subject</option>
+              <option value="general">General Inquiry</option>
+              <option value="project">Project Consultation</option>
+              <option value="quote">Request a Quote</option>
+              <option value="career">Career Opportunities</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="message">Your Message*</label>
+          <textarea id="message" name="message" placeholder="Type your message here..." required></textarea>
+        </div>
+        
+        <!-- Form actions -->
+        
+          <div class="buttons">
+            <div class="form-actions">
+          <button type="submit" class="btn-primary" data-color="#FF7120">
+            <span>Send Message</span>
+          </button>
+          </div>
+        </div>
+       
+        
+        <div class="form-status" id="formStatus"></div>
+      </form>
+    </section>
+  </div>
+
+  <!-- Social Media Section -->
+  <section class="social-section reveal">
+    <div class="social-overlay"></div>
+    <div class="social-container">
+      <h2>CONNECT WITH US</h2>
+      <p>Follow Triple G Studio on social media for the latest projects, design inspiration, and architectural insights.</p>
+      
+      <div class="social-icons">
+        <a href="https://www.facebook.com/TGGG6000" target="_blank" class="social-icon">
+          <i class="fab fa-facebook-f"></i>
+        </a>
+        <a href="https://www.instagram.com/tggg6000/" target="_blank" class="social-icon">
+          <i class="fab fa-instagram"></i>
+        </a>
+        <a href="https://www.linkedin.com/company/tggg6000/" target="_blank" class="social-icon">
+          <i class="fab fa-linkedin-in"></i>
+        </a>
+        <a href="https://x.com/design86737" target="_blank" class="social-icon">
+          <i class="fab fa-twitter"></i>
+        </a>
+      </div>
+      <div class="buttons">
+      <a href="{% url 'core:index' %}" class="btn-primary" data-color="#FF7120"><span>View Our Portfolio</span></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <div class="contact-container">
+    <section class="faq-section reveal" id="faq">
+      <h2>FREQUENTLY ASKED QUESTIONS</h2>
+      <div class="faq-container">
+        <div class="faq-item">
+          <div class="faq-question">
+            What services does Triple G Studio offer?
+            <i class="fas fa-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>Triple G Studio offers a comprehensive range of architectural and construction services, including architectural design, interior design, construction management, project consultation, 3D visualization, and sustainable design solutions. Our team specializes in both residential and commercial projects, bringing innovative designs to life with expert execution.</p>
+          </div>
+        </div>
+        
+        <div class="faq-item">
+          <div class="faq-question">
+            How do I request a quote for my project?
+            <i class="fas fa-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>To request a quote, you can fill out our contact form specifying your project details, or call us directly at +1 (123) 456-7890. We'll schedule an initial consultation to discuss your requirements, after which our team will prepare a detailed proposal tailored to your specific needs and budget.</p>
+          </div>
+        </div>
+        
+        <div class="faq-item">
+          <div class="faq-question">
+            What is your typical project timeline?
+            <i class="fas fa-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>Project timelines vary depending on scope and complexity. Small residential projects typically take 3-6 months from design to completion, while larger commercial projects may take 8-18 months. During our initial consultation, we'll provide a more accurate timeline based on your specific project requirements.</p>
+          </div>
+        </div>
+        
+        <div class="faq-item">
+          <div class="faq-question">
+            Do you handle renovation projects or only new constructions?
+            <i class="fas fa-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>We handle both renovation projects and new constructions. Our team has extensive experience in transforming existing spaces as well as creating entirely new structures. Whether you're looking to refresh your current space or build something from the ground up, we have the expertise to bring your vision to life.</p>
+          </div>
+        </div>
+        
+        <div class="faq-item">
+          <div class="faq-question">
+            How do you approach sustainable design?
+            <i class="fas fa-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>Sustainability is at the core of our design philosophy. We incorporate eco-friendly materials, energy-efficient systems, and sustainable practices throughout our projects. Our team stays updated on the latest green building technologies and certification standards, ensuring that your project not only looks beautiful but also minimizes environmental impact.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  
+
+  <script src="{% static 'js/chatbot.js' %}"></script>
+  <script src="{% static 'js/contact-buttons.js' %}"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      // Mobile Menu Toggle
+      const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+      const navLinks = document.getElementById("navLinks");
+      
+      // Apply custom scrollbar styles
+    const style = document.createElement('style');
+    style.textContent = `
+      /* Webkit browsers (Chrome, Safari, newer versions of Opera) */
+      ::-webkit-scrollbar {
+        width: 5px;
+        background-color: transparent;
+      }
+      
+      ::-webkit-scrollbar-track {
+        background-color: transparent;
+        border-radius: 5px;
+      }
+      
+      ::-webkit-scrollbar-thumb {
+        background-color: rgba(255, 255, 255, 0);
+        border-radius: 5px;
+        border: 2px solid transparent;
+        background-clip: content-box;
+        transition: background-color 0.3s;
+      }
+      
+      ::-webkit-scrollbar-thumb:hover {
+        background-color: rgba(255, 255, 255, 0);
+      }
+      
+      /* For Firefox */
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+      }
+      
+      /* Hide scrollbar when not scrolling (optional) */
+      body:not(:hover)::-webkit-scrollbar-thumb {
+        background-color: rgba(255, 255, 255, 0);
+      }
+    `;
+    document.head.appendChild(style);
+
+      if (mobileMenuBtn && navLinks) {
+        mobileMenuBtn.addEventListener("click", function() {
+          navLinks.classList.toggle("active");
+          this.querySelector("i").classList.toggle("fa-bars");
+          this.querySelector("i").classList.toggle("fa-times");
+        });
+      }
+      
+      // Close mobile menu when clicking outside
+      if (mobileMenuBtn && navLinks) {
+        document.addEventListener("click", function(event) {
+          if (!event.target.closest(".navbar") && navLinks.classList.contains("active")) {
+            navLinks.classList.remove("active");
+            mobileMenuBtn.querySelector("i").classList.add("fa-bars");
+            mobileMenuBtn.querySelector("i").classList.remove("fa-times");
+          }
+        });
+      }
+      
+      // Smooth scrolling for anchor links
+      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+          e.preventDefault();
+          
+          const targetId = this.getAttribute('href');
+          if (targetId === '#') return;
+          
+          const targetElement = document.querySelector(targetId);
+          if (targetElement) {
+            const navbar = document.querySelector('.navbar');
+            const navbarHeight = navbar ? navbar.offsetHeight : 0;
+            const targetPosition = targetElement.getBoundingClientRect().top;
+            const offsetPosition = targetPosition + window.pageYOffset - navbarHeight;
+            
+            window.scrollTo({
+              top: offsetPosition,
+              behavior: 'smooth'
+            });
+          }
+        });
+      });
+      
+      // Reveal animations on scroll
+      const revealElements = document.querySelectorAll('.reveal');
+      
+      function checkReveal() {
+        const windowHeight = window.innerHeight;
+        const revealPoint = 150;
+        
+        revealElements.forEach(element => {
+          const elementTop = element.getBoundingClientRect().top;
+          
+          if (elementTop < windowHeight - revealPoint) {
+            element.classList.add('active');
+          }
+        });
+      }
+      
+      // Check on initial load
+      checkReveal();
+      
+      // Check on scroll
+      window.addEventListener('scroll', checkReveal);
+      
+      // Sticky navbar
+      const navbar = document.getElementById('navbar');
+      if (navbar) {
+        const sticky = navbar.offsetTop;
+        
+        function stickyNavbar() {
+          if (window.pageYOffset > sticky) {
+            navbar.classList.add('sticky-navbar');
+          } else {
+            navbar.classList.remove('sticky-navbar');
+          }
+        }
+        
+        window.addEventListener('scroll', stickyNavbar);
+      }
+      
+      // FAQ Toggle
+      const faqItems = document.querySelectorAll('.faq-item');
+      
+      faqItems.forEach(item => {
+        const question = item.querySelector('.faq-question');
+        
+        question.addEventListener('click', () => {
+          // Close all other items
+          faqItems.forEach(otherItem => {
+            if (otherItem !== item) {
+              otherItem.classList.remove('active');
+            }
+          });
+          
+          // Toggle current item
+          item.classList.toggle('active');
+        });
+      });
+      
+      // Form Validation and Submission
+      const contactForm = document.getElementById('contactForm');
+      const formStatus = document.getElementById('formStatus');
+      
+      contactForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Basic validation
+        let isValid = true;
+        const requiredFields = contactForm.querySelectorAll('[required]');
+        
+        requiredFields.forEach(field => {
+          if (!field.value.trim()) {
+            isValid = false;
+            field.style.borderColor = '#F44336';
+          } else {
+            field.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+          }
+        });
+        
+        // Email validation
+        const emailField = document.getElementById('email');
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        
+        if (emailField.value && !emailPattern.test(emailField.value)) {
+          isValid = false;
+          emailField.style.borderColor = '#F44336';
+        }
+        
+        // Form submission
+        if (isValid) {
+          // Submit the form to Django backend
+          contactForm.submit();
+        } else {
+          formStatus.textContent = 'Please fill in all required fields correctly.';
+          formStatus.className = 'form-status error-message';
+          formStatus.style.display = 'block';
+        }
+      });
+      
+      // Button hover effect
+      let btns = document.querySelectorAll("a[data-color], button[data-color]");
+      btns.forEach((btn) => {
+        btn.onmousemove = function(e) {
+          let x = e.pageX - btn.offsetLeft;
+          let y = e.pageY - btn.offsetTop;
+          
+          btn.style.setProperty("--x", x + "px");
+          btn.style.setProperty("--y", y + "px");
+          btn.style.setProperty("--clr", btn.getAttribute("data-color"));
+        };
+      });
+    });
+    
+  </script>
+  {% endblock %}
+</body>
+</html>

@@ -1,18 +1,15 @@
 #!/usr/bin/env bash
-# exit on error
-set -o errexit
+# Render.com build script for Triple G Blog
 
-echo "Current directory: $(pwd)"
-echo "Listing files:"
-ls -la
+set -o errexit  # exit on error
 
+# Install dependencies
 pip install -r requirements.txt
 
-echo "Changing to TripleG directory"
-cd TripleG
-echo "Current directory after cd: $(pwd)"
-echo "Listing TripleG files:"
-ls -la
-
+# Collect static files (including media)
 python manage.py collectstatic --no-input
+
+# Run database migrations
 python manage.py migrate
+
+echo "✅ Build completed successfully!"

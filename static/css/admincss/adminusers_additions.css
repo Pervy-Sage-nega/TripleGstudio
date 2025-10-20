@@ -1,0 +1,315 @@
+/* Additional styles for user management */
+
+.user-header-card {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+}
+
+.user-avatar-large {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    overflow: hidden;
+    background-color: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.user-avatar-large img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.user-avatar-large i {
+    font-size: 40px;
+    color: #999;
+}
+
+.user-header-info {
+    flex: 1;
+}
+
+.user-header-info h2 {
+    margin: 0 0 5px 0;
+    color: #333;
+}
+
+.user-role {
+    font-size: 16px;
+    color: #666;
+    margin: 0 0 5px 0;
+}
+
+.user-email {
+    font-size: 14px;
+    color: #888;
+    margin: 0 0 10px 0;
+}
+
+.user-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.tabs-container {
+    padding: 20px;
+}
+
+.tabs {
+    display: flex;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 20px;
+}
+
+.tab-btn {
+    padding: 10px 20px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.tab-btn.active {
+    border-bottom-color: #00273C;
+    color: #00273C;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.permissions-section h3 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.permissions-note {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #fff8e1;
+    border-radius: 4px;
+    border-left: 4px solid #ffc107;
+    font-size: 14px;
+}
+
+.permissions-note i {
+    color: #ffa000;
+    margin-right: 8px;
+}
+
+/* Status badge colors */
+.status-active {
+    background-color: #e8f5e9;
+    color: #4caf50;
+}
+
+.status-inactive {
+    background-color: #efebe9;
+    color: #795548;
+}
+
+.status-approved {
+    background-color: #e8f5e9;
+    color: #4caf50;
+}
+
+.status-pending {
+    background-color: #fff3e0;
+    color: #ff9800;
+}
+
+.status-denied {
+    background-color: #ffebee;
+    color: #f44336;
+}
+
+.status-suspended {
+    background-color: #ffebee;
+    color: #f44336;
+}
+
+/* Role badge colors */
+.role-client {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+.role-sitemanager {
+    background-color: #f3e5f5;
+    color: #7b1fa2;
+}
+
+/* Online status indicator */
+.user-avatar {
+    position: relative;
+}
+
+.online-indicator {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 12px;
+    height: 12px;
+    background-color: #4caf50;
+    border: 2px solid white;
+    border-radius: 50%;
+    animation: pulse-online 2s infinite;
+}
+
+@keyframes pulse-online {
+    0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
+    70% { box-shadow: 0 0 0 6px rgba(76, 175, 80, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+}
+
+.online-text {
+    color: #4caf50;
+    font-weight: 500;
+    font-size: 12px;
+}
+
+/* Employee ID container */
+.form-group .employee-id-container {
+    display: flex !important;
+    gap: 8px !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    width: auto !important;
+    max-width: none !important;
+}
+
+.form-group .employee-id-container input {
+    width: 280px !important;
+    height: 40px !important;
+    padding: 8px 12px !important;
+    border: 1px solid #ddd !important;
+    border-radius: 4px !important;
+    font-size: 14px !important;
+    box-sizing: border-box !important;
+    flex: none !important;
+    margin: 0 !important;
+}
+
+.form-group .employee-id-container .btn {
+    white-space: nowrap !important;
+    padding: 8px 12px !important;
+    font-size: 14px !important;
+    height: 40px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    margin: 0 !important;
+    min-width: auto !important;
+    width: auto !important;
+    background-color: #3c6e71 !important;
+    border-color: #3c6e71 !important;
+    color: white !important;
+}
+
+.form-group .employee-id-container .btn:hover {
+    background-color: #2d5356 !important;
+    border-color: #2d5356 !important;
+}
+
+/* Secondary buttons styling */
+.btn-secondary {
+    background-color: #3c6e71 !important;
+    border-color: #3c6e71 !important;
+    color: white !important;
+}
+
+.btn-secondary:hover {
+    background-color: #2d5356 !important;
+    border-color: #2d5356 !important;
+    color: white !important;
+}
+
+/* User action buttons positioning */
+.user-actions {
+    display: flex !important;
+    gap: 10px !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+}
+
+.user-actions .btn {
+    margin: 0 !important;
+    white-space: nowrap !important;
+}
+
+/* Modal footer button alignment */
+.modal-footer {
+    display: flex !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 15px 20px !important;
+}
+
+.modal-footer .btn {
+    margin: 0 !important;
+    height: 40px !important;
+    padding: 8px 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.form-help {
+    color: #666;
+    font-size: 12px;
+    margin-top: 8px;
+    display: block;
+    line-height: 1.4;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+    color: #333;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+}
+
+@media (max-width: 768px) {
+    .employee-id-container {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+    
+    .employee-id-container .btn {
+        min-width: auto;
+        width: 100%;
+    }
+}

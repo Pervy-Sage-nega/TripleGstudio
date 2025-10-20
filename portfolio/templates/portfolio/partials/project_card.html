@@ -1,0 +1,32 @@
+{% load static %}
+{% load portfolio_extras %}
+
+<div class="project-card" data-category="{{ project.category.slug }}" data-year="{{ project.year }}">
+    <div class="project-image">
+        <img src="{% project_image_url project %}" alt="{{ project.title }}" onerror="this.src='/static/images/image1.jpg'">
+        <div class="layer"></div>
+        {% if project.featured and show_featured_badge %}
+        <div class="featured-badge">
+            <i class="fas fa-star"></i> Featured
+        </div>
+        {% endif %}
+    </div>
+    <div class="project-info">
+        <h3>{{ project.title }}</h3>
+        <p>{{ project.description|truncate_description:20 }}</p>
+        <div class="project-metadata">
+            <span class="project-year">{{ project.year }}</span>
+            <span class="project-category">{{ project.category.name }}</span>
+            <span class="project-location">{{ project.location }}</span>
+        </div>
+        <div class="project-status">
+            <span class="status-badge {{ project.status|status_badge_class }}">{{ project.get_status_display }}</span>
+        </div>
+        <div class="project-progress">
+            <div class="progress-info">
+                <span>Progress: {% get_project_timeline_progress project %}%</span>
+            </div>
+        </div>
+        <a href="{% url 'portfolio:project_detail' project.id %}" class="project-link">View Details</a>
+    </div>
+</div>

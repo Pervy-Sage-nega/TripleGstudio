@@ -1,0 +1,43 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>{% block title %}Auth | Triple G BuildHub{% endblock %}</title>
+   
+    
+    <!-- Font Awesome - Load first to override any cached CDN references -->
+    <link rel="stylesheet" href="{% static 'fontawesome/css/all-fixed.min.css' %}?v=20250115003" media="all">
+    <link rel="stylesheet" href="{% static 'css/admincss/login.css' %}?v=2024092501">
+    <link rel="stylesheet" href="{% static 'css/sitecss/modal_messages.css' %}">
+    <link rel="stylesheet" href="{% static 'lineicons/lineicons.css' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    {% block modal_messages %}
+        <!-- Modal will be included by specific templates based on user type -->
+    {% endblock %}
+    <div class="auth-container">
+        <div class="auth-sidebar">
+            <div class="sidebar-logo">
+                <img src="{% static 'images/tripleGlogo.jpg' %}" alt="Triple G BuildHub Logo">
+            </div>
+            <div class="auth-content">
+                {% block sidebar_content %}{% endblock %}
+            </div>
+            <div class="auth-footer">
+                <p>&copy; 2023 Triple G BuildHub. All rights reserved.</p>
+            </div>
+        </div>
+        <div class="auth-form-container">
+            {% block form_content %}{% endblock %}
+        </div>
+    </div>
+    <script src="{% static 'js/sitejs/modal_messages.js' %}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

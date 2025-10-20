@@ -1,0 +1,757 @@
+/* Import base styles from projectmanagement.css */
+@import url('projectmanagement.css');
+
+/* Admin User Management CSS */
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #e6e6e6;
+    color: #333;
+    margin: 0;
+}
+
+/* Page Title Styles */
+.page-title {
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.page-title h1 {
+    margin: 0 10px;
+    white-space: nowrap;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 2rem;
+}
+
+/* Page Header Layout */
+.page-header {
+    margin-bottom: 20px;
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    width: fit-content;
+    margin: 0 auto;
+}
+
+/* Export Options */
+.export-options {
+    display: flex;
+    gap: 0;
+    flex-shrink: 0;
+    margin-left: 10px;
+}
+
+.export-options .btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+    padding: 8px 12px;
+    min-width: 0;
+}
+
+/* Status Cards */
+.status-tracker {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.status-card {
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    transition: transform 0.3s ease;
+}
+
+.status-card:hover {
+    transform: translateY(-5px);
+}
+
+.status-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+}
+
+.status-icon i {
+    font-size: 24px;
+    color: white;
+}
+
+.status-admin-icon {
+    background-color: #3f51b5;
+}
+
+.status-architect-icon {
+    background-color: #ff9800;
+}
+
+.status-client-icon {
+    background-color: #4caf50;
+}
+
+.status-pending-icon {
+    background-color: #9e9e9e;
+}
+
+.status-info h3 {
+    font-size: 24px;
+    margin: 0;
+    color: #333;
+}
+
+.status-info p {
+    font-size: 14px;
+    margin: 5px 0 0;
+    color: #666;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.action-buttons .btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Users Table - Match blog management style */
+.users-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin: 0;
+}
+
+.users-table th {
+    padding: 15px;
+    text-align: left;
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #3c6e71;
+    border-bottom: 2px solid #e9ecef;
+    font-family: 'Poppins', sans-serif;
+}
+
+.users-table td {
+    padding: 15px;
+    vertical-align: middle;
+    border-bottom: 1px solid #e9ecef;
+    font-family: 'Poppins', sans-serif;
+}
+
+.users-table tr:last-child td {
+    border-bottom: none;
+}
+
+.users-table tr:hover td {
+    background-color: rgba(60, 110, 113, 0.05);
+}
+
+.th-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.th-content i {
+    cursor: pointer;
+    color: #999;
+    font-size: 12px;
+}
+
+.th-content i:hover {
+    color: #333;
+}
+
+/* User Info in Table */
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    background-color: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.user-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.user-avatar i {
+    font-size: 20px;
+    color: #999;
+}
+
+.user-name {
+    font-weight: 600;
+    color: #333;
+}
+
+/* Role and Status Badges */
+.role-badge, .status-badge {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.role-admin {
+    background-color: #e8eaf6;
+    color: #3f51b5;
+}
+
+.role-architect {
+    background-color: #fff3e0;
+    color: #ff9800;
+}
+
+.role-client {
+    background-color: #e8f5e9;
+    color: #4caf50;
+}
+
+.status-active {
+    background-color: #e8f5e9;
+    color: #4caf50;
+}
+
+.status-inactive {
+    background-color: #efebe9;
+    color: #795548;
+}
+
+.status-pending {
+    background-color: #f5f5f5;
+    color: #616161;
+}
+
+/* Action Buttons in Table */
+.action-buttons-cell {
+    display: flex;
+    gap: 5px;
+}
+
+.action-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background-color: #f5f5f5;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+    background-color: #e0e0e0;
+}
+
+.action-btn i {
+    font-size: 14px;
+    color: #757575;
+}
+
+.action-btn.edit:hover i {
+    color: #2196f3;
+}
+
+.action-btn.deactivate:hover i,
+.action-btn.reject:hover i {
+    color: #f44336;
+}
+
+.action-btn.activate:hover i,
+.action-btn.approve:hover i {
+    color: #4caf50;
+}
+
+.action-btn.reset-password:hover i {
+    color: #ff9800;
+}
+
+.action-btn.view:hover i {
+    color: #673ab7;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background-color: white;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.large-modal {
+    max-width: 800px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #333;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.modal-footer {
+    padding: 15px 20px;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* Form Styles */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #555;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: #00273C;
+    outline: none;
+}
+
+.required {
+    color: #f44336;
+}
+
+/* Password Input Container */
+.password-input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-input-container input {
+    flex-grow: 1;
+    padding-right: 40px;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 10px;
+    background: none;
+    border: none;
+    color: #757575;
+    cursor: pointer;
+}
+
+.password-toggle:hover {
+    color: #333;
+}
+
+/* Photo Upload */
+.photo-upload {
+    grid-column: span 2;
+}
+
+.photo-upload-container {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.photo-preview {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background-color: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.photo-preview i {
+    font-size: 40px;
+    color: #bdbdbd;
+}
+
+.photo-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.photo-upload-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Generate Password Container */
+.generate-password-container {
+    margin-top: 10px;
+}
+
+/* Permissions Table */
+.permissions-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.permissions-table th, 
+.permissions-table td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.permissions-table th {
+    background-color: #f5f5f5;
+    font-weight: 600;
+}
+
+.text-success {
+    color: #4caf50;
+}
+
+.text-danger {
+    color: #f44336;
+}
+
+.text-muted {
+    color: #757575;
+}
+
+.permissions-note {
+    margin-top: 20px;
+    padding: 10px;
+    background-color: #fff8e1;
+    border-radius: 4px;
+    border-left: 4px solid #ffc107;
+    font-size: 14px;
+}
+
+.permissions-note i {
+    color: #ffa000;
+    margin-right: 8px;
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+    gap: 5px;
+}
+
+.page-btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #ddd;
+    background-color: white;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.page-btn:hover:not(.disabled) {
+    background-color: #f5f5f5;
+}
+
+.page-btn.active {
+    background-color: #00273C;
+    color: white;
+    border-color: #00273C;
+}
+
+.page-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination-ellipsis {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+}
+
+/* Filter Container - Match blog management style */
+.filter-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    margin-bottom: 1rem;
+}
+
+.filter-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    color: #333;
+    flex-shrink: 0;
+}
+
+.filter-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    color: #333;
+}
+
+.search-box {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+    position: relative;
+    max-width: 300px;
+}
+
+.search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+    font-size: 0.8rem;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.search-input {
+    width: 100%;
+    padding: 0.4rem 0.6rem 0.4rem 2.5rem !important;
+    border: 1px solid #dee2e6;
+    background: #fff;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    transition: all 0.2s ease;
+    height: 32px;
+    box-sizing: border-box;
+    line-height: 1.5;
+    vertical-align: middle;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+}
+
+.filter-options {
+    display: flex;
+    gap: 0.75rem;
+    flex-shrink: 0;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0px !important;
+}
+
+.filter-group select {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #dee2e6;
+    background: #fff;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    height: 38px;
+    min-width: 140px;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+}
+
+.filter-group select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+}
+
+/* Table Responsive */
+.table-responsive {
+    overflow-x: auto;
+    margin-bottom: 20px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .status-tracker {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .header-content {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .export-options {
+        margin-left: 0;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .filter-options {
+        grid-template-columns: 1fr;
+    }
+    
+    .photo-upload-container {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .photo-upload-actions {
+        width: 100%;
+    }
+}
+
+/* Container - Match blog management style */
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    overflow-x: hidden;
+}
+
+.card {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+    
+    .card {
+        padding: 1.5rem;
+    }
+    
+    .filter-container {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+    
+    .filter-options {
+        order: 1;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .search-box {
+        order: 2;
+        justify-content: stretch;
+        max-width: none;
+    }
+}

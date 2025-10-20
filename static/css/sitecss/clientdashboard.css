@@ -1,0 +1,752 @@
+/* Triple G Client Dashboard Styles */
+:root {
+    --primary-color: #1E293B;
+    --accent-color: #10B981;
+    --secondary-color: #d9d9d9;
+    --success-color: #4caf50;
+    --danger-color: #f44336;
+    --warning-color: #ff9800;
+    --info-color: #2196f3;
+    --light-gray: #f5f5f5;
+    --dark-gray: #353535;
+    --mid-gray: #757575;
+    --border-color: #dddddd;
+    --shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --nav-bg: #00273C;
+    --nav-highlight: #0ef;
+    --nav-text: #FFFFFF;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background-color: #00273C;
+    color: #FFFFFF;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 2000px;
+    margin: 0;
+    padding: 80px 40px 40px 40px;
+}
+
+/* Dashboard Header */
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    background: rgba(0, 39, 60, 0.95);
+    padding: 20px 30px;
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dashboard-title {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.dashboard-title i {
+    font-size: 2rem;
+    color: #FF7120;
+}
+
+.dashboard-title h1 {
+    color: #FFFFFF;
+    font-size: 1.8rem;
+    font-weight: 600;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.user-greeting {
+    text-align: right;
+}
+
+.user-name {
+    font-weight: 600;
+    color: #FFFFFF;
+    font-size: 1.1rem;
+}
+
+.user-role {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+}
+
+.user-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #FF7120;
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1.2rem;
+}
+
+/* Project Overview Section */
+.project-overview-section {
+    margin-bottom: 30px;
+}
+
+.main-project {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    padding: 20px;
+    position: relative;
+    min-height: 250px;
+}
+
+.project-image {
+    width: 300px;
+    height: 250px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.project-content {
+    flex: 1;
+    padding: 10px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    justify-content: center;
+}
+
+.project-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.project-title {
+    color: #FFFFFF;
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.project-code {
+    background: #FF7120;
+    color: #FFFFFF;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.project-description {
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.6;
+    margin: 0;
+}
+
+.project-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.95rem;
+}
+
+.meta-item i {
+    color: #FF7120;
+    width: 16px;
+}
+
+.progress-circle-container {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    flex-shrink: 0;
+}
+
+.progress-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: conic-gradient(#FF7120 0deg var(--progress-deg, 0deg), rgba(255, 255, 255, 0.2) var(--progress-deg, 0deg) 360deg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.progress-circle::before {
+    content: '';
+    position: absolute;
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: rgba(0, 39, 60, 0.9);
+}
+
+.progress-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #FFFFFF;
+    z-index: 1;
+}
+
+.progress-label {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.7);
+    z-index: 1;
+}
+
+/* Analytics Section */
+.analytics-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.analytics-card {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    transition: transform 0.3s ease;
+}
+
+.analytics-card:hover {
+    transform: translateY(-5px);
+}
+
+.analytics-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #FF7120, #ff8c42);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #FFFFFF;
+    font-size: 1.5rem;
+}
+
+.analytics-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #FFFFFF;
+    margin-bottom: 5px;
+}
+
+.analytics-label {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+}
+
+/* Timeline Section */
+.timeline-section {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 30px;
+}
+
+.section-title {
+    color: #FFFFFF;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.timeline-container {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    padding: 20px 0;
+}
+
+.timeline-container::before {
+    content: '';
+    position: absolute;
+    top: 30px;
+    left: 10px;
+    right: 10px;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.2);
+    z-index: 1;
+}
+
+.milestone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+    flex: 1;
+}
+
+.milestone-dot {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    border: 3px solid rgba(0, 39, 60, 0.9);
+    margin: 0 auto 15px auto;
+    transition: all 0.3s ease;
+}
+
+.milestone.completed .milestone-dot {
+    background: var(--success-green);
+}
+
+.milestone.current .milestone-dot {
+    background: #FF7120;
+    box-shadow: 0 0 20px rgba(255, 113, 32, 0.5);
+    animation: pulse 2s infinite;
+}
+
+.milestone-content {
+    text-align: center;
+    max-width: 150px;
+}
+
+.milestone-content h4 {
+    color: #FFFFFF;
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.milestone-content p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.8rem;
+    margin-bottom: 8px;
+}
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 500;
+}
+
+.status-badge.completed {
+    background: rgba(76, 175, 80, 0.2);
+    color: #4caf50;
+}
+
+.status-badge.in-progress {
+    background: rgba(255, 113, 32, 0.2);
+    color: #FF7120;
+}
+
+.status-badge.pending {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* Bottom Section */
+.bottom-section {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 30px;
+}
+
+/* Activity Section */
+.activity-section {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.activity-feed {
+    margin-bottom: 20px;
+}
+
+.activity-item {
+    display: grid;
+    grid-template-columns: 100px 1fr auto;
+    gap: 15px;
+    padding: 15px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-date {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.activity-content h4 {
+    color: #FFFFFF;
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.activity-content p {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.85rem;
+}
+
+.activity-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 113, 32, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #FF7120;
+}
+
+/* Budget Section */
+.budget-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.budget-widget {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.budget-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.budget-label {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+}
+
+.budget-value {
+    font-weight: 600;
+    color: #FFFFFF;
+}
+
+.budget-value.used {
+    color: #FF7120;
+}
+
+.budget-value.remaining {
+    color: #4caf50;
+}
+
+.budget-progress {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 15px;
+}
+
+.budget-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #4caf50, #FF7120);
+    transition: width 0.5s ease;
+}
+
+/* Weather Widget */
+.weather-widget {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.weather-widget h3 {
+    color: #FFFFFF;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.weather-content {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.weather-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #FFFFFF;
+    font-size: 1.5rem;
+}
+
+.temperature {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+
+.condition {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+}
+
+.humidity {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.8rem;
+}
+
+/* Buttons */
+.btn {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.btn-primary {
+    background: #FF7120;
+    color: #FFFFFF;
+}
+
+.btn-primary:hover {
+    background: #e6640e;
+    transform: translateY(-2px);
+}
+
+.btn-outline {
+    background: transparent;
+    color: #FFFFFF;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.btn-outline:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #FFFFFF;
+    border-color: #FF7120;
+}
+
+/* Animations */
+@keyframes pulse {
+    0% { box-shadow: 0 0 20px rgba(255, 113, 32, 0.5); }
+    50% { box-shadow: 0 0 30px rgba(255, 113, 32, 0.8); }
+    100% { box-shadow: 0 0 20px rgba(255, 113, 32, 0.5); }
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .main-project {
+        gap: 20px;
+    }
+    
+    .project-image {
+        width: 250px;
+    }
+}
+
+@media (max-width: 992px) {
+    .main-project {
+        flex-direction: column;
+        text-align: center;
+        min-height: auto;
+    }
+    
+    .project-image {
+        width: 100%;
+        height: 200px;
+    }
+    
+    .project-content {
+        padding: 20px;
+    }
+    
+    .progress-circle-container {
+        flex-direction: row;
+        justify-content: space-between;
+        width: 100%;
+        padding: 20px;
+    }
+    
+    .bottom-section {
+        grid-template-columns: 1fr;
+    }
+    
+    .timeline-container {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .timeline-container::before {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 60px 20px 20px 20px;
+        margin: 0 auto;
+        max-width: 100%;
+    }
+    
+    .dashboard-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .main-project {
+        padding: 20px;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .progress-circle-container {
+        flex-direction: column;
+        gap: 15px;
+        align-items: center;
+        padding: 20px;
+    }
+    
+    .analytics-section {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .analytics-card {
+        padding: 20px;
+        margin: 0;
+    }
+    
+    .timeline-section {
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .activity-section {
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .budget-widget, .weather-widget {
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .activity-item {
+        grid-template-columns: 1fr;
+        text-align: left;
+        gap: 15px;
+        padding: 15px 0;
+    }
+    
+    .bottom-section {
+        gap: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 60px 15px 20px 15px;
+    }
+    
+    .dashboard-header {
+        padding: 15px;
+    }
+    
+    .main-project {
+        padding: 15px;
+        gap: 15px;
+    }
+    
+    .analytics-card {
+        padding: 15px;
+    }
+    
+    .timeline-section, .activity-section {
+        padding: 15px;
+    }
+    
+    .budget-widget, .weather-widget {
+        padding: 15px;
+    }
+    
+    .progress-circle {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .progress-circle::before {
+        width: 75px;
+        height: 75px;
+    }
+    
+    .progress-value {
+        font-size: 1.2rem;
+    }
+}

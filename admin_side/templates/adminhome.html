@@ -1,0 +1,278 @@
+
+{% extends 'admin-nav-footer-template/base.html' %}
+{% load static %}
+
+{% block title %}Admin Dashboard | Triple G BuildHub{% endblock %}
+
+{% block extra_head %}
+    <link rel="stylesheet" href="{% static 'css/admincss/nav.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admincss/header.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admincss/adminhome.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admincss/blog-management.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+   
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <!-- Header -->
+        <div class="page-header">
+            <div class="page-title">
+                <i class="fas fa-gauge"></i>
+                <h1>Admin Dashboard</h1>
+            </div>
+            <div class="quick-actions">
+                <a class="btn btn-primary" href="{% url 'portfolio:projectmanagement' %}"><i class="fas fa-plus"></i> Add New Project</a>
+                <a class="btn btn-secondary" href="{% url 'admin_side:assign_project' %}"><i class="fas fa-tasks"></i> Assign Projects</a>
+                <a class="btn btn-outline" href="{% url 'admin_side:admin_user_list' %}"><i class="fas fa-users-cog"></i> Manage Users</a>
+            </div>
+        </div>
+
+        <!-- Top Stats -->
+        <div class="grid" style="grid-template-columns: repeat(12, 1fr);">
+            <div class="card" style="grid-column: span 3;">
+                <div class="stat">
+                    <div class="icon blue"><i class="fas fa-diagram-project"></i></div>
+                    <div class="meta">
+                        <span class="label">Total Projects</span>
+                        <span class="value" id="totalProjects">{{ total_projects|default:"18" }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card" style="grid-column: span 5;">
+                <div class="stat">
+                    <div class="icon green"><i class="fas fa-spinner"></i></div>
+                    <div class="meta" style="width:100%">
+                        <span class="label">Ongoing Projects</span>
+                        <span class="value" id="ongoingCount">{{ ongoing_projects|default:"7" }}</span>
+                        <div class="progress" aria-label="Overall progress">
+                            <span id="ongoingProgress" style="width: 64%;"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card" style="grid-column: span 4;">
+                <div class="stat">
+                    <div class="icon amber"><i class="fas fa-clipboard-check"></i></div>
+                    <div class="meta">
+                        <span class="label">Pending Site Manager Approvals</span>
+                        <span class="value" id="pendingCount">{{ pending_site_managers|default:"0" }}</span>
+                        <div style="margin-top:8px;">
+                            <a href="{% url 'admin_side:admin_user_list' %}" class="btn btn-primary btn-sm"><i class="fas fa-bolt"></i>
+                                Review Now</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Middle Row: Recent Diary, Client Requests, Notifications -->
+        <div class="grid" style="margin-top: 16px;">
+            <!-- Recent Site Diary Entries -->
+            <div class="card" style="grid-column: span 6;">
+                <div class="section-header">
+                    <div class="section-title"><i class="fas fa-book"></i> Recent Site Diary Entries</div>
+                    <a href="#" class="btn btn-outline"><i class="fas fa-list"></i> View All</a>
+                </div>
+                <ul class="list" id="recentDiary">
+                    <li class="list-item">
+                        <div class="left">
+                            <span class="badge">Mar 16</span>
+                            <div>
+                                <div><strong>Central Business District Tower</strong> — Day 142 update</div>
+                                <small>By Foreman: A. Reyes</small>
+                            </div>
+                        </div>
+                        <a href="#" class="btn btn-secondary btn-sm"><i class="fas fa-eye"></i> View</a>
+                    </li>
+                    <li class="list-item">
+                        <div class="left">
+                            <span class="badge">Mar 15</span>
+                            <div>
+                                <div><strong>Highway Bridge Expansion</strong> — Concrete pour log</div>
+                                <small>By Engineer: M. Santos</small>
+                            </div>
+                        </div>
+                        <a href="#" class="btn btn-secondary btn-sm"><i class="fas fa-eye"></i> View</a>
+                    </li>
+                    <li class="list-item">
+                        <div class="left">
+                            <span class="badge">Mar 15</span>
+                            <div>
+                                <div><strong>Residential Complex Phase 2</strong> — Inspection notes</div>
+                                <small>By Supervisor: K. Dalisay</small>
+                            </div>
+                        </div>
+                        <a href="#" class="btn btn-secondary btn-sm"><i class="fas fa-eye"></i> View</a>
+                    </li>
+                    <li class="list-item">
+                        <div class="left">
+                            <span class="badge">Mar 14</span>
+                            <div>
+                                <div><strong>Waterfront Development</strong> — Weather delay report</div>
+                                <small>By Foreman: P. Cruz</small>
+                            </div>
+                        </div>
+                        <a href="#" class="btn btn-secondary btn-sm"><i class="fas fa-eye"></i> View</a>
+                    </li>
+                    <li class="list-item">
+                        <div class="left">
+                            <span class="badge">Mar 14</span>
+                            <div>
+                                <div><strong>Tech Innovation Hub</strong> — Material delivery</div>
+                                <small>By Engineer: L. Tan</small>
+                            </div>
+                        </div>
+                        <a href="#" class="btn btn-secondary btn-sm"><i class="fas fa-eye"></i> View</a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Client Requests -->
+            <div class="card" style="grid-column: span 3;">
+                <div class="section-header">
+                    <div class="section-title"><i class="fas fa-handshake-angle"></i> Client Requests</div>
+                </div>
+                <ul class="list">
+                    <li class="list-item">
+                        <div class="left">
+                            <i class="fas fa-circle text-amber" style="color:#f59e0b"></i>
+                            <div>
+                                <div><strong>Design change</strong> — CBD Tower</div>
+                                <small>Awaiting admin review</small>
+                            </div>
+                        </div>
+                        <span class="badge">Open</span>
+                    </li>
+                    <li class="list-item">
+                        <div class="left">
+                            <i class="fas fa-circle" style="color:#16a34a"></i>
+                            <div>
+                                <div><strong>Budget clarification</strong> — Phase 2</div>
+                                <small>In discussion</small>
+                            </div>
+                        </div>
+                        <span class="badge" style="background:#ecfdf5;color:#065f46">Active</span>
+                    </li>
+                    <li class="list-item">
+                        <div class="left">
+                            <i class="fas fa-circle" style="color:#ef4444"></i>
+                            <div>
+                                <div><strong>Schedule update</strong> — Bridge Expansion</div>
+                                <small>Needs action</small>
+                            </div>
+                        </div>
+                        <span class="badge" style="background:#fef2f2;color:#991b1b">Urgent</span>
+                    </li>
+                </ul>
+                <div style="margin-top:12px;">
+                    <a href="#" class="btn btn-primary" style="width:100%"><i
+                            class="fas fa-sliders"></i> Manage</a>
+                </div>
+            </div>
+
+            <!-- Notifications -->
+            <div class="card" style="grid-column: span 3;">
+                <div class="section-header">
+                    <div class="section-title"><i class="fas fa-bell"></i> Notifications</div>
+                    <a href="#" class="btn btn-outline btn-sm"><i class="fas fa-gear"></i></a>
+                </div>
+                <ul class="list" id="notifications">
+                    <li class="list-item">
+                        <div class="left"><i class="fas fa-user-plus" style="color:#0a6cf1"></i> New user registered:
+                            jcarlo</div>
+                        <small>2m</small>
+                    </li>
+                    <li class="list-item">
+                        <div class="left"><i class="fas fa-file-alt" style="color:#7c3aed"></i> Diary pending approval
+                            (Phase 2)</div>
+                        <small>20m</small>
+                    </li>
+                    <li class="list-item">
+                        <div class="left"><i class="fas fa-envelope" style="color:#16a34a"></i> Client message received
+                        </div>
+                        <small>1h</small>
+                    </li>
+                    <li class="list-item">
+                        <div class="left"><i class="fas fa-warning" style="color:#ef4444"></i> Weather alert for Bridge
+                            site</div>
+                        <small>3h</small>
+                    </li>
+                    <li class="list-item">
+                        <div class="left"><i class="fas fa-pen-ruler" style="color:#f59e0b"></i> Revision requested on
+                            CBD plan</div>
+                        <small>6h</small>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Bottom Row: Blog Management Shortcut and Quick Access -->
+        <div class="grid" style="margin-top: 16px;">
+            <div class="card" style="grid-column: span 8;">
+                <div class="section-header">
+                    <div class="section-title"><i class="fas fa-blog"></i> Blog Management</div>
+                    <div class="blog-actions">
+                        <a href="{% url 'blog:createblog' %}" class="btn btn-primary"><i class="fas fa-plus"></i> New Post</a>
+                        <a href="{% url 'blog:blogmanagement' %}" class="btn btn-secondary"><i class="fas fa-cog"></i> Manage</a>
+                    </div>
+                </div>
+                <div class="blog-stats">
+                    <div class="stat-item">
+                        <span class="stat-number">{{ total_posts|default:"0" }}</span>
+                        <span class="stat-label">Total Posts</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">{{ published_posts|default:"0" }}</span>
+                        <span class="stat-label">Published</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">{{ draft_posts|default:"0" }}</span>
+                        <span class="stat-label">Drafts</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">{{ pending_posts|default:"0" }}</span>
+                        <span class="stat-label">Pending</span>
+                    </div>
+                </div>
+                <div class="recent-posts">
+                    <h4>Recent Posts</h4>
+                    <ul class="post-list">
+                        {% for post in recent_posts %}
+                        <li><a href="{% url 'blog:blog_detail' post.slug %}">{{ post.title|truncatechars:40 }}</a> <span class="post-status {{ post.status }}">{{ post.get_status_display }}</span></li>
+                        {% empty %}
+                        <li>No recent posts available</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card" style="grid-column: span 4;">
+                <div class="section-header">
+                    <div class="section-title"><i class="fas fa-bolt"></i> Quick Actions</div>
+                </div>
+                <div class="quick-actions-grid">
+                    <a class="quick-action-item" href="{% url 'portfolio:projectmanagement' %}">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Add Project</span>
+                    </a>
+                    <a class="quick-action-item" href="{% url 'blog:createblog' %}">
+                        <i class="fas fa-pen"></i>
+                        <span>Write Blog</span>
+                    </a>
+                    <a class="quick-action-item" href="{% url 'admin_side:admin_user_list' %}">
+                        <i class="fas fa-user-gear"></i>
+                        <span>Manage Users</span>
+                    </a>
+                    <a class="quick-action-item" href="{% url 'admin_side:assign_project' %}">
+                        <i class="fas fa-tasks"></i>
+                        <span>Assign Projects</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="{% static 'js/adminjs/mobile-btn.js' %}"></script>
+    <script src="{% static 'js/adminjs/admin-logout.js' %}"></script>
+{% endblock %}

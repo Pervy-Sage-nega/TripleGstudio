@@ -1,0 +1,53 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {% block head %} 
+  {% endblock %}
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo-container">
+            <img class="logo" src="{% static 'images/logostick.png' %}" alt="Logo">
+            <div class="logo1">TRIPLE<a href="index.html">G</a></div>
+        </div>
+        <ul class="nav-links" id="navLinks">
+            <!-- General Pages -->
+            {# Consider using {% url 'home' %} if you have a named URL pattern #}
+            <li><a href="{% url 'diary' %}">Site Diary</a></li>
+            <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+            <li><a href="{% url 'chatbot' %}">Message Center</a></li>
+            <li><a href="{% url 'newproject' %}">Create Project</a></li>
+            
+            <li class="dropdown">
+                <a href="#" class="dropbtn">Blog ▾</a>
+                <div class="dropdown-content">
+                <a href="{% url 'createblog' %}">Create Blog</a>
+                <a href="{% url 'drafts' %}">Drafts</a>              
+                </div>
+            </li>
+
+            <!-- Site Diary Module -->
+            <li class="dropdown">
+                <a href="#" class="dropbtn">Site Diary ▾</a>
+                <div class="dropdown-content">
+                <a href="{% url 'diary' %}">New Entry</a>
+                <a href="{% url 'history' %}">History</a>
+                <a href="{% url 'reports' %}">Reports</a>
+                </div>
+            </li>
+
+            <!-- Settings -->
+            <li><a href="{% url 'settings' %}">Settings</a></li>
+        </ul>
+        <button class="mobile-menu-btn">
+            <i class="fas fa-bars"></i>
+        </button>
+    </nav>
+    
+   
+  {% block body %}
+  {% endblock %}
+</body>
+</html>

@@ -1,0 +1,514 @@
+{% extends "site_diary/layout_format.html" %}
+{% load static %}
+
+{% block head %}
+    <title>Site Diary - Chatbot Logs</title>
+    <link rel="stylesheet" href="{% static 'css/sitecss/global-header.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/global-footer.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/history.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/createblog.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/chatbot.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}
+
+{% block body %}
+    <div class="container chatbot-container">
+        <!-- Navigation Bar -->
+     
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-title">
+                <i class="fas fa-comments"></i>
+                <h1>Client Chatbot Logs</h1>
+                <span>5 Unread</span>
+            </div>
+
+            <div class="view-toggle">
+                <button id="timelineViewBtn" class="view-btn active" title="Timeline View">
+                    <i class="fas fa-stream"></i>
+                </button>
+                <button id="tableViewBtn" class="view-btn" title="Table View">
+                    <i class="fas fa-table"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Filter and Search Section -->
+        <div class="filter-container">
+            <div class="filter-header">
+                <div class="filter-title">
+                    <i class="fas fa-filter"></i>
+                    <span>Filter Logs</span>
+                </div>
+                <button class="filter-toggle" id="filterToggle">
+                    <span>Show Filters</span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+            </div>
+            
+            <div class="search-box">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="search-input" placeholder="Search logs by client name, email, or content...">
+            </div>
+            
+            <div class="filter-options" id="filterOptions" style="display: none;">
+                <div class="filter-group">
+                    <label for="filter-project">Project Name</label>
+                    <select id="filter-project">
+                        <option value="">All Projects</option>
+                        <option value="Central Business District Tower">Central Business District Tower</option>
+                        <option value="Highway Bridge Expansion">Highway Bridge Expansion</option>
+                        <option value="Residential Complex Phase 2">Residential Complex Phase 2</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="filter-date-from">Date From</label>
+                    <input type="date" id="filter-date-from">
+                </div>
+                
+                <div class="filter-group">
+                    <label for="filter-date-to">Date To</label>
+                    <input type="date" id="filter-date-to">
+                </div>
+                
+                <div class="filter-group">
+                    <label for="filter-inquiry">Inquiry Type</label>
+                    <select id="filter-inquiry">
+                        <option value="">All Types</option>
+                        <option value="Appointment">Appointment Request</option>
+                        <option value="Milestone">Milestone Question</option>
+                        <option value="General">General Question</option>
+                        <option value="Complaint">Complaint</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="filter-status">Status</label>
+                    <select id="filter-status">
+                        <option value="">All Status</option>
+                        <option value="New">New</option>
+                        <option value="Read">Read</option>
+                        <option value="Reviewed">Reviewed</option>
+                    </select>
+                </div>
+                
+                <div class="filter-buttons">
+                    <button class="btn btn-secondary" id="resetFilters">
+                        <i class="fas fa-undo"></i>
+                        Reset
+                    </button>
+                    <button class="btn btn-primary" id="applyFilters">
+                        <i class="fas fa-check"></i>
+                        Apply Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Timeline View -->
+        <div class="timeline-view" id="timelineView">
+            <div class="timeline-line"></div>
+            
+            <!-- Timeline Item 1 -->
+            <div class="timeline-item">
+                <div class="timeline-header" data-id="1">
+                    <div class="timeline-date">
+                        <i class="fas fa-user-circle"></i>
+                        <div>
+                            <h3>Sarah Thompson</h3>
+                            <span>May 16, 2025 • 10:23 AM</span>
+                            <span class="log-status status-new">New</span>
+                        </div>
+                    </div>
+                    <div class="timeline-actions">
+                        <button class="action-btn mark-read" title="Mark as Read">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        <button class="action-btn delete" title="Delete Log">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                        <button class="action-btn expand" title="Expand/Collapse">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="timeline-content" id="content1">
+                    <div class="timeline-client-info">
+                        <div class="info-group">
+                            <div class="info-label">Project</div>
+                            <div class="info-value">Central Business District Tower</div>
+                        </div>
+                        <div class="info-group">
+                            <div class="info-label">Email</div>
+                            <div class="info-value">s.thompson@example.com</div>
+                        </div>
+                        <div class="info-group">
+                            <div class="info-label">Phone</div>
+                            <div class="info-value">(555) 123-4567</div>
+                        </div>
+                        <div class="info-group">
+                            <div class="info-label">Inquiry Type</div>
+                            <div class="info-value">
+                                <span class="inquiry-type inquiry-appointment">Appointment Request</span>
+                                <i class="fas fa-exclamation-circle priority-high" title="High Priority"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="activities-section">
+                        <div class="section-title">
+                            <i class="fas fa-comment-alt"></i>
+                            <span>Message</span>
+                        </div>
+                        <div class="message-content">
+                            Hello, I need to schedule an urgent meeting regarding changes to the penthouse layout on the Central Business District Tower. Our stakeholders have some concerns about the current design and would like to discuss alternatives as soon as possible. Would it be possible to arrange a meeting this week?
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Timeline Item 2 -->
+            <div class="timeline-item">
+                <div class="timeline-header" data-id="2">
+                    <div class="timeline-date">
+                        <i class="fas fa-user-circle"></i>
+                        <div>
+                            <h3>Marcus Chen</h3>
+                            <span>May 15, 2025 • 3:45 PM</span>
+                            <span class="log-status status-read">Read</span>
+                        </div>
+                    </div>
+                    <div class="timeline-actions">
+                        <button class="action-btn mark-unread" title="Mark as Unread">
+                            <i class="fas fa-undo"></i>
+                        </button>
+                        <button class="action-btn delete" title="Delete Log">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                        <button class="action-btn expand" title="Expand/Collapse">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="timeline-content" id="content2">
+                    <div class="timeline-client-info">
+                        <div class="info-group">
+                            <div class="info-label">Project</div>
+                            <div class="info-value">Highway Bridge Expansion</div>
+                        </div>
+                        <div class="info-group">
+                            <div class="info-label">Email</div>
+                            <div class="info-value">m.chen@example.com</div>
+                        </div>
+                        <div class="info-group">
+                            <div class="info-label">Phone</div>
+                            <div class="info-value">(555) 987-6543</div>
+                        </div>
+                        <div class="info-group">
+                            <div class="info-label">Inquiry Type</div>
+                            <div class="info-value">
+                                <span class="inquiry-type inquiry-milestone">Milestone Question</span>
+                                <i class="fas fa-exclamation-circle priority-medium" title="Medium Priority"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="activities-section">
+                        <div class="section-title">
+                            <i class="fas fa-comment-alt"></i>
+                            <span>Message</span>
+                        </div>
+                        <div class="message-content">
+                            I've noticed on the project portal that the completion of Phase 1 of the Highway Bridge Expansion has been delayed by two weeks. Could you provide more details about the reason for this delay and whether it will affect the overall project timeline? We need to coordinate with local businesses about traffic disruptions.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Timeline Item 3 -->
+            <div class="timeline-item">
+                <div class="timeline-header" data-id="3">
+                    <div class="timeline-date">
+                        <i class="fas fa-user-circle"></i>
+                        <div>
+                            <h3>Elena Rodriguez</h3>
+                            <span>May 14, 2025 • 9:12 AM</span>
+                            <span class="log-status status-reviewed">Reviewed</span>
+                        </div>
+                    </div>
+                    <div class="timeline-actions">
+                        <button class="action-btn mark-unread" title="Mark as Unread">
+                            <i class="fas fa-undo"></i>
+                        </button>
+                        <button class="action-btn delete" title="Delete Log">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                        <button class="action-btn expand" title="Expand/Collapse">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="timeline-content" id="content3">
+                    <div class="timeline-client-info">
+                        <div class="info-group">
+                            <div class="info-label">Project</div>
+                            <div class="info-value">Residential Complex Phase 2</div>
+                        </div>
+                        <div class="info-group">
+                            <div class="info-label">Email</div>
+                            <div class="info-value">e.rodriguez@example.com</div>
+                        </div>
+                        <div class="info-group">
+                            <div class="info-label">Phone</div>
+                            <div class="info-value">(555) 234-5678</div>
+                        </div>
+                        <div class="info-group">
+                            <div class="info-label">Inquiry Type</div>
+                            <div class="info-value">
+                                <span class="inquiry-type inquiry-question">General Question</span>
+                                <i class="fas fa-exclamation-circle priority-low" title="Low Priority"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="activities-section">
+                        <div class="section-title">
+                            <i class="fas fa-comment-alt"></i>
+                            <span>Message</span>
+                        </div>
+                        <div class="message-content">
+                            I'm interested in the customization options for the kitchen cabinetry in Building C of the Residential Complex. The brochure mentions premium finishes but doesn't specify what materials or colors are available. Could you provide more information about the options and if there would be any additional costs?
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Table View -->
+        <div class="table-view" id="tableView">
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>Client</th>
+                            <th>Project</th>
+                            <th>Inquiry Type</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>May 16, 2025 • 10:23 AM</td>
+                            <td>
+                                <div class="client-name">Sarah Thompson</div>
+                                <div style="font-size: 12px; color: var(--mid-gray);">s.thompson@example.com</div>
+                            </td>
+                            <td>Central Business District Tower</td>
+                            <td>
+                                <div class="table-inquiry-type">
+                                    <span class="inquiry-type inquiry-appointment">Appointment</span>
+                                    <i class="fas fa-exclamation-circle priority-high"></i>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="log-status status-new">New</span>
+                            </td>
+                            <td>
+                                <div class="table-actions">
+                                    <button class="action-btn mark-read" title="Mark as Read">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    <button class="action-btn delete" title="Delete">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>May 15, 2025 • 3:45 PM</td>
+                            <td>
+                                <div class="client-name">Marcus Chen</div>
+                                <div style="font-size: 12px; color: var(--mid-gray);">m.chen@example.com</div>
+                            </td>
+                            <td>Highway Bridge Expansion</td>
+                            <td>
+                                <div class="table-inquiry-type">
+                                    <span class="inquiry-type inquiry-milestone">Milestone</span>
+                                    <i class="fas fa-exclamation-circle priority-medium"></i>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="log-status status-read">Read</span>
+                            </td>
+                            <td>
+                                <div class="table-actions">
+                                    <button class="action-btn mark-unread" title="Mark as Unread">
+                                        <i class="fas fa-undo"></i>
+                                    </button>
+                                    <button class="action-btn delete" title="Delete">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>May 14, 2025 • 9:12 AM</td>
+                            <td>
+                                <div class="client-name">Elena Rodriguez</div>
+                                <div style="font-size: 12px; color: var(--mid-gray);">e.rodriguez@example.com</div>
+                            </td>
+                            <td>Residential Complex Phase 2</td>
+                            <td>
+                                <div class="table-inquiry-type">
+                                    <span class="inquiry-type inquiry-question">General</span>
+                                    <i class="fas fa-exclamation-circle priority-low"></i>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="log-status status-reviewed">Reviewed</span>
+                            </td>
+                            <td>
+                                <div class="table-actions">
+                                    <button class="action-btn mark-unread" title="Mark as Unread">
+                                        <i class="fas fa-undo"></i>
+                                    </button>
+                                    <button class="action-btn delete" title="Delete">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Pagination section -->
+        <div class="pagination">
+            <button class="page-btn disabled"><i class="fas fa-chevron-left"></i></button>
+            <button class="page-btn active">1</button>
+            <button class="page-btn">2</button>
+            <button class="page-btn">3</button>
+            <button class="page-btn"><i class="fas fa-chevron-right"></i></button>
+        </div>
+    </div>
+
+   
+
+    <script>
+        // Toggle between timeline and table views
+ 
+        document.addEventListener('DOMContentLoaded', function() {
+            const timelineViewBtn = document.getElementById('timelineViewBtn');
+            const tableViewBtn = document.getElementById('tableViewBtn');
+            const timelineView = document.getElementById('timelineView');
+            const tableView = document.getElementById('tableView');
+            
+            if (timelineViewBtn && tableViewBtn && timelineView && tableView) {
+                timelineViewBtn.addEventListener('click', function() {
+                    timelineViewBtn.classList.add('active');
+                    tableViewBtn.classList.remove('active');
+                    timelineView.style.display = 'block';
+                    tableView.style.display = 'none';
+                });
+                
+                tableViewBtn.addEventListener('click', function() {
+                    tableViewBtn.classList.add('active');
+                    timelineViewBtn.classList.remove('active');
+                    tableView.style.display = 'block';
+                    timelineView.style.display = 'none';
+                });
+            }
+            
+            // Toggle timeline items to expand/collapse
+            const timelineHeaders = document.querySelectorAll('.timeline-header');
+            timelineHeaders.forEach(header => {
+                header.addEventListener('click', function() {
+                    const content = this.nextElementSibling;
+                    content.classList.toggle('active');
+                });
+            });
+            
+            // Handle filter toggle
+            const filterToggle = document.querySelector('.filter-toggle');
+            const filterOptions = document.querySelector('.filter-options');
+            if (filterToggle && filterOptions) {
+                filterToggle.addEventListener('click', function() {
+                    filterOptions.style.display = filterOptions.style.display === 'none' ? 'grid' : 'none';
+                    const icon = this.querySelector('i');
+                    icon.className = filterOptions.style.display === 'none' ? 'fas fa-chevron-down' : 'fas fa-chevron-up';
+                });
+            }
+            
+            // Mark as read/unread functionality (timeline view)
+            const markReadButtons = document.querySelectorAll('.action-btn.mark-read');
+            markReadButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    // Timeline view
+                    const timelineStatus = this.closest('.timeline-header')?.querySelector('.log-status');
+                    if (timelineStatus) {
+                        timelineStatus.textContent = 'Read';
+                        timelineStatus.className = 'log-status status-read';
+                    }
+                    // Table view
+                    const tableRow = this.closest('tr');
+                    const tableStatus = tableRow?.querySelector('.log-status');
+                    if (tableStatus) {
+                        tableStatus.textContent = 'Read';
+                        tableStatus.className = 'log-status status-read';
+                    }
+                });
+            });
+
+            const markUnreadButtons = document.querySelectorAll('.action-btn.mark-unread');
+            markUnreadButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    // Timeline view
+                    const timelineStatus = this.closest('.timeline-header')?.querySelector('.log-status');
+                    if (timelineStatus) {
+                        timelineStatus.textContent = 'New';
+                        timelineStatus.className = 'log-status status-new';
+                    }
+                    // Table view
+                    const tableRow = this.closest('tr');
+                    const tableStatus = tableRow?.querySelector('.log-status');
+                    if (tableStatus) {
+                        tableStatus.textContent = 'New';
+                        tableStatus.className = 'log-status status-new';
+                    }
+                });
+            });
+            
+            // Delete button functionality
+            const deleteButtons = document.querySelectorAll('.action-btn.delete');
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    if (confirm('Are you sure you want to delete this chat log?')) {
+                        const timelineItem = this.closest('.timeline-item');
+                        if (timelineItem) {
+                            timelineItem.remove();
+                        }
+                        const tableRow = this.closest('tr');
+                        if (tableRow) {
+                            tableRow.remove();
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+    <script src="./sitecss/sitejs/mobile-menu-btn.js"></script>
+    </div>
+    {% include "admin-nav-footer-template/layoutfooter.html" %}
+{% endblock %}

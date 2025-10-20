@@ -1,0 +1,23 @@
+{% extends 'base_auth.html' %}
+{% block title %}Account Locked | Triple G BuildHub{% endblock %}
+
+{% block modal_messages %}
+    {% include 'client/_modal_messages.html' %}
+{% endblock %}
+{% block form_content %}
+<div class="custom-modal-overlay custom-visible" role="dialog" aria-modal="true">
+  <div class="custom-modal-content">
+    <button class="custom-modal-close" aria-label="Close modal">&times;</button>
+    <div class="custom-modal-body custom-alert-warning">
+      <h3>Your Account is Locked</h3>
+      <p>Too many failed login or OTP attempts.<br>
+         Please try again in one hour or contact support if you need assistance.</p>
+    </div>
+    <div class="custom-modal-footer">
+      <button class="custom-modal-btn custom-cancel">Back</button>
+      <button class="custom-modal-btn custom-confirm">Contact Support</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

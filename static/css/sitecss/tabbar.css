@@ -1,0 +1,130 @@
+/* Vertical Tab Bar for Site Diary Entry (responsive, modern, theme-matching) */
+.diary-flex-layout {
+    display: flex;
+    align-items: flex-start;
+    gap: 32px;
+    margin-top: 18px;
+}
+
+.tab-bar {
+    position: sticky;
+    top: 70px;
+    background: white;
+    z-index: 10;
+}
+
+.tab-bar.vertical {
+    flex-direction: column;
+    min-width: 220px;
+    width: 220px;
+    border-right: 2px solid var(--primary-color);
+    border-bottom: none;
+    height: fit-content;
+    box-shadow: 2px 0 10px 0 rgba(44,44,44,0.03);
+    background: var(--background-color, #f7f7fa);
+    border-radius: 14px;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.tab-bar.vertical .tab {
+    color: var(--accent-color);
+    font-weight: 600;
+    cursor: pointer;
+    padding: 18px 24px;
+    margin: 0;
+    background: none;
+    border: none;
+    outline: none;
+    border-radius: 0 12px 12px 0;
+    border-left: 4px solid transparent;
+    border-bottom: none;
+    text-align: left;
+    transition: background 0.2s, color 0.2s, border-left 0.2s;
+    font-size: 1.08rem;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.tab-bar.vertical .tab.active {
+    color: var(--primary-color);
+    border-left: 4px solid var(--primary-color);
+    background: rgba(60,110,113,0.09);
+}
+
+.tab-bar .tab {
+    color: var(--accent-color);
+    font-weight: 600;
+    cursor: pointer;
+    padding: 12px 28px;
+    background: none;
+    border: none;
+    outline: none;
+    border-radius: 8px 8px 0 0;
+    border-bottom: 3px solid transparent;
+    transition: background 0.2s, color 0.2s, border-bottom 0.2s;
+    font-size: 1.1rem;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.tab-bar .tab.active {
+    color: var(--primary-color);
+    border-bottom: 3px solid var(--primary-color);
+    background: rgba(60,110,113,0.08);
+}
+
+.tab-content {
+    display: none;
+    opacity: 0;
+    animation: fadeInTab 0.35s;
+    padding-top: 24px;
+}
+
+.tab-content.active {
+    display: block;
+    opacity: 1;
+}
+
+.form-container {
+    flex: 1 1 0%;
+    min-width: 0;
+}
+
+@keyframes fadeInTab {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@media (max-width: 900px) {
+    .diary-flex-layout {
+        flex-direction: column;
+        gap: 0;
+    }
+    .tab-bar.vertical {
+        flex-direction: row;
+        min-width: 0;
+        width: 100%;
+        border-right: none;
+        border-bottom: 2px solid var(--primary-color);
+        border-radius: 0;
+        box-shadow: none;
+    }
+    .tab-bar.vertical .tab {
+        border-radius: 8px 8px 0 0;
+        border-left: none;
+        border-bottom: 3px solid transparent;
+        text-align: center;
+        padding: 12px 10px;
+        justify-content: center;
+    }
+    .tab-bar.vertical .tab.active {
+        border-bottom: 3px solid var(--primary-color);
+        border-left: none;
+        background: rgba(60,110,113,0.08);
+    }
+}

@@ -1,0 +1,149 @@
+{% extends "layout.html" %}
+{% load static %}
+{% load profile_tags %}
+
+{% block head %}
+    <title>Triple G BuildHub - Client Dashboard</title>
+    <link rel="stylesheet" href="{% static 'css/sitecss/global-footer.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/clientdashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <!-- Dashboard Header -->
+        <div class="dashboard-header">
+            <div class="dashboard-title">
+                <i class="fas fa-tachometer-alt"></i>
+                <h1>My Project Dashboard</h1>
+            </div>
+            <div class="user-info">
+                <div class="user-greeting">
+                    <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
+                    <div class="user-role">{{ profile.get_role_display|default:"Client" }}</div>
+                </div>
+                <div class="user-avatar">
+                    <img src="{% profile_image_url user %}" alt="{{ user.get_full_name|default:user.username }}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;">
+                </div>
+            </div>
+        </div>
+
+        <!-- Project Overview Card -->
+        <div class="project-overview-section">
+            {% if client_projects %}
+                {% for project in client_projects %}
+                <div class="project-card main-project" style="margin-bottom: 20px;">
+                    <img src="{% if project.image %}{{ project.image.url }}{% else %}{% static 'images/image6.jpg' %}{% endif %}" alt="{{ project.name }} Image" class="project-image">
+                    <div class="project-content">
+                        <div class="project-header">
+                            <h3 class="project-title" id="projectTitle">{{ project.name }}</h3>
+                        </div>
+                        <p class="project-description" id="projectDescription">{{ project.description|default:"Construction project in progress" }}</p>
+                        <div class="project-meta">
+                            <div class="meta-item">
+                                <i class="fas fa-user-tie"></i>
+                                <span id="projectArchitect">{{ project.project_manager.get_full_name|default:project.project_manager.username }}</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fas fa-calendar"></i>
+                                <span id="projectDates">{{ project.start_date|date:"M Y" }}{% if project.expected_end_date %} - {{ project.expected_end_date|date:"M Y" }}{% else %} - Ongoing{% endif %}</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fas fa-cog"></i>
+                                <span id="currentPhase">{{ project.get_status_display }}</span>
+                            </div>
+                        </div>
+                        <div class="card-actions">
+                            <a href="{% url 'core:client_project_detail' project.id %}" class="btn btn-primary">View Project Details</a>
+                        </div>
+                    </div>
+                    <div class="progress-circle-container">
+                        <div class="project-code" id="projectCode">PRJ-{{ project.created_at.year }}-{{ project.id|stringformat:"03d" }}</div>
+                        <div class="progress-circle" id="overallProgress" style="--progress-deg: {% widthratio project.get_progress_percentage 100 360 %}deg;">
+                            <div class="progress-value">{{ project.get_progress_percentage }}%</div>
+                            <div class="progress-label">Complete</div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="project-card main-project" style="margin-bottom: 20px;">
+                    <img src="{% static 'images/image6.jpg' %}" alt="No Project" class="project-image">
+                    <div class="project-content">
+                        <div class="project-header">
+                            <h3 class="project-title" id="projectTitle">No Project Assigned</h3>
+                        </div>
+                        <p class="project-description" id="projectDescription">No project description available</p>
+                        <div class="project-meta">
+                            <div class="meta-item">
+                                <i class="fas fa-user-tie"></i>
+                                <span id="projectArchitect">Not Assigned</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fas fa-calendar"></i>
+                                <span id="projectDates">Not Started</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fas fa-cog"></i>
+                                <span id="currentPhase">Planning</span>
+                            </div>
+                        </div>
+                        <div class="card-actions">
+                            <a href="#" class="btn btn-primary">Contact Us</a>
+                        </div>
+                    </div>
+                    <div class="progress-circle-container">
+                        <div class="project-code" id="projectCode">No Project</div>
+                        <div class="progress-circle" id="overallProgress">
+                            <div class="progress-value">0%</div>
+                            <div class="progress-label">Complete</div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Quick Stats Section -->
+        <div class="analytics-section">
+            <div class="analytics-card">
+                <div class="analytics-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="analytics-content">
+                    <div class="analytics-value">{{ total_projects }}</div>
+                    <div class="analytics-label">Total Projects</div>
+                </div>
+            </div>
+            <div class="analytics-card">
+                <div class="analytics-icon">
+                    <i class="fas fa-cog"></i>
+                </div>
+                <div class="analytics-content">
+                    <div class="analytics-value">{{ active_projects }}</div>
+                    <div class="analytics-label">Active Projects</div>
+                </div>
+            </div>
+            <div class="analytics-card">
+                <div class="analytics-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="analytics-content">
+                    <div class="analytics-value">{{ completed_projects }}</div>
+                    <div class="analytics-label">Completed</div>
+                </div>
+            </div>
+            <div class="analytics-card">
+                <div class="analytics-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="analytics-content">
+                    <div class="analytics-value">{{ planning_projects }}</div>
+                    <div class="analytics-label">Planning</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'js/sitejs/clientdashboard.js' %}"></script>
+{% endblock %}

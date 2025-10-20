@@ -1,0 +1,76 @@
+/*!
+ * Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com
+ * License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License)
+ * Copyright 2022 Fonticons, Inc.
+ */
+
+/* Font Face Definitions with Django Static URLs */
+@font-face {
+    font-family: "Font Awesome 6 Free";
+    font-style: normal;
+    font-weight: 900;
+    font-display: block;
+    src: url('/static/fontawesome/webfonts/fa-solid-900.woff2') format("woff2"),
+         url('/static/fontawesome/webfonts/fa-solid-900.ttf') format("truetype");
+}
+
+@font-face {
+    font-family: "Font Awesome 6 Free";
+    font-style: normal;
+    font-weight: 400;
+    font-display: block;
+    src: url('/static/fontawesome/webfonts/fa-regular-400.woff2') format("woff2"),
+         url('/static/fontawesome/webfonts/fa-regular-400.ttf') format("truetype");
+}
+
+@font-face {
+    font-family: "Font Awesome 6 Brands";
+    font-style: normal;
+    font-weight: 400;
+    font-display: block;
+    src: url('/static/fontawesome/webfonts/fa-brands-400.woff2') format("woff2"),
+         url('/static/fontawesome/webfonts/fa-brands-400.ttf') format("truetype");
+}
+
+/* Font Awesome Core Styles */
+.fa {
+    font-family: var(--fa-style-family, "Font Awesome 6 Free");
+    font-weight: var(--fa-style, 900);
+}
+
+.fa, .fa-brands, .fa-duotone, .fa-light, .fa-regular, .fa-solid, .fa-thin, .fab, .fad, .fal, .far, .fas, .fat {
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+    display: var(--fa-display, inline-block);
+    font-style: normal;
+    font-variant: normal;
+    line-height: 1;
+    text-rendering: auto;
+}
+
+/* Font Classes */
+.fa-solid, .fas { 
+    font-family: "Font Awesome 6 Free"; 
+    font-weight: 900; 
+}
+
+.fa-regular, .far { 
+    font-family: "Font Awesome 6 Free"; 
+    font-weight: 400; 
+}
+
+.fa-brands, .fab { 
+    font-family: "Font Awesome 6 Brands"; 
+    font-weight: 400; 
+}
+
+/* Essential Icon Definitions */
+.fa-envelope:before { content: "\f0e0"; }
+.fa-lock:before { content: "\f023"; }
+.fa-eye:before { content: "\f06e"; }
+.fa-calendar-check:before { content: "\f274"; }
+.fa-tasks:before { content: "\f0ae"; }
+.fa-chart-line:before { content: "\f201"; }
+.fa-exclamation-circle:before { content: "\f06a"; }
+.fa-google:before { content: "\f1a0"; }
+.fa-microsoft:before { content: "\f3ca"; }

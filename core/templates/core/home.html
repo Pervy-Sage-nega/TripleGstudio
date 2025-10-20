@@ -1,0 +1,149 @@
+{% extends 'layout.html' %}
+{% load static %}
+
+{% block head %}
+  {{ block.super }}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Triple G Studio</title>
+  <!-- Preload critical resources -->
+  <link rel="preload" href="{% static 'images/logostick.png' %}" as="image">
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="{% static 'css/projects.css' %}">
+  <link rel="stylesheet" href="{% static 'css/loader.css' %}">
+
+  <!-- Modal CSS loaded last to ensure proper specificity -->
+
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap">
+  
+  <!-- Preload Lottie library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.10.2/lottie.min.js"></script>
+
+{% endblock %}
+
+{% block body %}
+  <!-- Content will be hidden until loader completes -->
+
+  
+  <section class="home" id="homeSection">
+   
+    <div class="home-left">
+      <h1>EXPLORE TRIPLE G's</h1>
+      <h2>DESIGNS + CONSTRUCTION</h2>
+      <p>we’re committed to shaping the built environment by bringing visionary design and hands-on craftsmanship together. From concept to completion, we partner with you to transform spaces that stand the test of time – changing the world, one structure at a time</p>
+      <div class="buttons">
+        <a href="{% url 'core:about' %}" class="btn-primary" data-color="#FF7120"><span>About</span></a>
+        <a href="{% url 'core:contact' %}" class="btn-secondary" data-color="#00BFFF"><span>Contact</span></a>
+      </div>
+    </div>
+
+   
+    <div class="home-right">
+      <div class="main-img-container" id="mainImageContainer">
+        {% if recent_projects.first.hero_image %}
+          <img src="{{ recent_projects.first.hero_image.url }}" alt="Main Photo" id="mainImage" class="main-img">
+        {% elif recent_projects.first.images.first %}
+          <img src="{{ recent_projects.first.images.first.image.url }}" alt="Main Photo" id="mainImage" class="main-img">
+        {% else %}
+          <img src="{% static 'images/kristelle.jpg' %}" alt="Main Photo" id="mainImage" class="main-img">
+        {% endif %}
+      </div>
+      <h3>RECENT PROJECTS</h3>
+      <div class="recent-projects-container">
+        <button id="prevBtn" class="scroll-btn">⬅</button>
+        
+        <div class="recent-projects" id="recentProjects">
+          {% for project in recent_projects %}
+            {% if project.hero_image %}
+              <img src="{{ project.hero_image.url }}" alt="{{ project.title }}" class="recent-img" 
+                   onclick="changeMainImage('{{ project.hero_image.url }}', this)">
+            {% elif project.images.first %}
+              <img src="{{ project.images.first.image.url }}" alt="{{ project.title }}" class="recent-img" 
+                   onclick="changeMainImage('{{ project.images.first.image.url }}', this)">
+            {% else %}
+              <img src="{% static 'images/image1.jpg' %}" alt="{{ project.title }}" class="recent-img" 
+                   onclick="changeMainImage('{% static 'images/image1.jpg' %}', this)">
+            {% endif %}
+          {% empty %}
+            <!-- Fallback to static images if no projects -->
+            <img src="{% static 'images/samplerecent1.jpg' %}" alt="Project 1" class="recent-img" 
+                 onclick="changeMainImage('{% static 'images/image1.jpg' %}', this)">
+            <img src="{% static 'images/image1.jpg' %}" alt="Project 2" class="recent-img" 
+                 onclick="changeMainImage('{% static 'images/image2.jpeg' %}', this)">
+          {% endfor %}
+        </div>
+        
+        <button id="nextBtn" class="scroll-btn">➡</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="filter-container">
+    <h2>ALL</h2>
+    <div class="filters">
+      <select id="year-filter">
+        <option value="all">All</option>
+        {% for year in years %}
+          <option value="{{ year }}">{{ year }}</option>
+        {% endfor %}
+      </select>
+      <select id="category-filter">
+        <option value="all">All</option>
+        <option value="featured">Featured Projects</option>
+        {% for category in categories %}
+          <option value="{{ category.slug }}">{{ category.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <div class="projects-grid">
+    {% for project in projects %}
+      <div class="project-card" data-category="{{ project.category.slug }}" data-year="{{ project.year }}">
+        <div class="project-image">
+          {% if project.hero_image %}
+            <img src="{{ project.hero_image.url }}?v={{ project.updated_at|date:'U' }}" alt="{{ project.title }}" onerror="this.src='{% static 'images/image1.jpg' %}'">
+          {% elif project.images.first %}
+            <img src="{{ project.images.first.image.url }}?v={{ project.updated_at|date:'U' }}" alt="{{ project.title }}" onerror="this.src='{% static 'images/image1.jpg' %}'">
+          {% else %}
+            <img src="{% static 'images/image1.jpg' %}" alt="{{ project.title }}">
+          {% endif %}
+          <div class="layer"></div>
+          {% if project.featured %}
+            <div class="featured-badge">
+              <i class="fas fa-star"></i> Featured
+            </div>
+          {% endif %}
+        </div>
+        <div class="project-info">
+          <h3>{{ project.title }}</h3>
+          <p>{{ project.description|truncatewords:20 }}</p>
+          <div class="project-metadata">
+            <span class="project-year">{{ project.year }}</span>
+            <span class="project-category">{{ project.category.name }}</span>
+          </div>
+          <a href="{% url 'portfolio:project_detail' project_id=project.id %}" class="project-link">View Details</a>
+        </div>
+      </div>
+    {% empty %}
+      <div class="no-projects">
+        <p>No projects available yet. Check back soon!</p>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+  
+ 
+
+  <!-- Scripts -->
+  <script src="{% static 'js/chatbot.js' %}"></script>
+  <script src="{% static 'js/home.js' %}"></script>
+  <script src="{% static 'js/loader.js' %}"></script>
+  <script src="{% static 'js/projects.js' %}"></script>
+  <!-- <script src="{% static 'js/loader.js' %}"></script> -->
+  <!-- loader.js will be loaded by loader-init.js -->
+{% endblock %}

@@ -1,0 +1,337 @@
+{% extends 'layout.html' %}
+{% load static %}
+{% load profile_tags %}
+
+{% block head %}
+  {{ block.super }}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Settings | Triple G Studio - {{ cache_buster }}</title>
+  <!-- Preload critical resources -->
+  <link rel="preload" href="{% static 'images/logostick.png' %}" as="image">
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="{% static 'css/home.css' %}">
+  <link rel="stylesheet" href="{% static 'css/usersettings.css' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+ 
+ <style>
+    .status-active { color: #28a745; font-weight: 600; }
+    .status-inactive { color: #dc3545; font-weight: 600; }
+    .account-info-value { font-weight: 500; }
+    
+    /* Message alerts */
+    .message-alert { margin-bottom: 20px; padding: 15px; border-radius: 8px; }
+    .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .close-message { float: right; background: none; border: none; font-size: 18px; cursor: pointer; }
+    
+    /* Toggle switches */
+    .toggle-switch { cursor: pointer; }
+    .toggle-switch input[type="checkbox"] { cursor: pointer; }
+    .toggle-slider { cursor: pointer; transition: all 0.3s ease; }
+    .toggle-container { transition: all 0.3s ease; }
+    .toggle-container:hover { background-color: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 5px; }
+    .toggle-active { background-color: rgba(76, 175, 80, 0.1); }
+    
+    /* Profile image upload */
+    .avatar-upload-overlay { cursor: pointer; transition: all 0.3s ease; }
+    .avatar-upload-overlay:hover { background-color: rgba(0, 0, 0, 0.7); }
+    .upload-btn { 
+      cursor: pointer; 
+      transition: all 0.3s ease; 
+      display: inline-block;
+      padding: 8px 16px;
+      background-color: #ff8c42;
+      color: white;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .upload-btn:hover { 
+      background-color: #ff6b35; 
+      transform: translateY(-2px); 
+      box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+    }
+    .upload-btn:active {
+      transform: translateY(0px);
+    }
+  </style>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap">
+{% endblock %}
+
+{% block body %}
+
+  <!-- Main Content -->
+  <!-- DEBUG: Rendering for user {{ user.username }} (ID: {{ user_id }}) at {{ cache_buster }} -->
+  <main class="settings-page">
+    <div class="settings-container">
+      <!-- Settings Sidebar -->
+      <div class="settings-sidebar">
+        <div class="settings-title">
+          <i class="fas fa-cog"></i>
+          <span>User Settings</span>
+        </div>
+        <ul class="settings-menu">
+          <li class="settings-menu-item active" data-section="profile">
+            <i class="fas fa-user"></i>
+            <span>Profile Settings</span>
+          </li>
+         
+          <li class="settings-menu-item" data-section="security">
+            <i class="fas fa-lock"></i>
+            <span>Password & Security</span>
+          </li>
+          <li class="settings-menu-item" data-section="privacy">
+            <i class="fas fa-shield-alt"></i>
+            <span>Privacy & Account</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Settings Content -->
+      <div class="settings-content">
+        <!-- User Profile Section -->
+        <div class="settings-section active" id="profile">
+          <div class="settings-header">
+            <h2 class="settings-section-title">Profile Settings</h2>
+            <p class="settings-section-desc">Manage your personal information for <strong>{{ user.username }}</strong></p>
+            <!-- Security indicator -->
+            <div style="font-size: 0.8em; color: #666; margin-top: 5px;">
+              <i class="fas fa-user-shield"></i> Logged in as: {{ user_full_name }} ({{ user_email }})
+            </div>
+          </div>
+
+          <!-- Django Messages -->
+          {% if messages %}
+            {% for message in messages %}
+              <div class="alert alert-{{ message.tags }} message-alert">
+                <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-exclamation-triangle{% endif %}"></i>
+                {{ message }}
+                <button type="button" class="close-message" onclick="this.parentElement.style.display='none'">&times;</button>
+              </div>
+            {% endfor %}
+          {% endif %}
+
+
+          <div class="profile-preview">
+            <div class="profile-avatar">
+              <img src="{% profile_image_url user %}" alt="Profile Picture" id="profileImage">
+              <div class="avatar-upload-overlay">
+                <i class="fas fa-camera"></i>
+              </div>
+            </div>
+            <div class="profile-info">
+              <div class="profile-name" id="displayName">{{ user_full_name }}</div>
+              <div class="profile-email" id="displayEmail">{{ user_email }}</div>
+              <div class="profile-status">
+                <span class="client-badge">{{ profile_role }}</span>
+                <span class="project-status">Project: <span class="status-ongoing">{% if profile.project_name %}{{ profile.project_name }}{% else %}{{ client_projects.first.name|default:"Not Assigned" }}{% endif %}</span></span>
+              </div>
+              <label for="id_profile_pic_debug" class="upload-btn" id="changePhotoBtn">
+                <i class="fas fa-camera"></i> Change Photo
+              </label>
+            </div>
+          </div>
+
+          <form id="profileForm" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="id_first_name" class="form-label">First Name</label>
+                {{ form.first_name }}
+              </div>
+              <div class="form-group">
+                <label for="id_last_name" class="form-label">Last Name</label>
+                {{ form.last_name }}
+              </div>
+              <div class="form-group">
+                <label for="id_email" class="form-label">Email Address</label>
+                {{ form.email }}
+                <div class="input-error" id="emailError">Please enter a valid email address.</div>
+              </div>
+              <div class="form-group">
+                <label for="id_phone" class="form-label">Phone Number</label>
+                {{ form.phone }}
+                <div class="input-error" id="phoneError">Please enter a valid phone number.</div>
+              </div>
+            </div>
+
+            <!-- Client-specific info (editable) -->
+            <div class="client-info">
+              <div class="info-box">
+                <div class="info-group">
+                  <label for="id_assigned_architect" class="form-label">Assigned Architect:</label>
+                  {{ form.assigned_architect }}
+                </div>
+                <div class="info-group">
+                  <label for="id_project_name" class="form-label">Project Name:</label>
+                  {{ form.project_name }}
+                </div>
+                <div class="info-group">
+                  <label for="id_project_start" class="form-label">Project Start:</label>
+                  {{ form.project_start }}
+                </div>
+                <div class="info-group" style="position: absolute; left: -9999px; opacity: 0; pointer-events: none;">
+                  {{ form.profile_pic }}
+                </div>
+                
+                <!-- Hidden file input that works with the Change Photo button -->
+                <div class="info-group" style="position: absolute; left: -9999px; opacity: 0;">
+                  <input type="file" name="profile_pic" accept="image/*" class="form-input" id="id_profile_pic_debug">
+                </div>
+              </div>
+              <a href="projects.html" class="btn btn-primary view-project-btn">
+                <i class="fas fa-eye"></i> View My Project
+              </a>
+            </div>
+
+            <div class="action-buttons">
+              <button type="reset" class="btn btn-secondary">Cancel</button>
+              <button type="submit" class="btn btn-primary" id="saveProfile">Save Changes</button>
+            </div>
+          </form>
+        </div>
+
+      
+
+        <!-- Security Section -->
+        <div class="settings-section" id="security">
+          <div class="settings-header">
+            <h2 class="settings-section-title">Password & Security</h2>
+            <p class="settings-section-desc">Update your password and manage security settings</p>
+          </div>
+
+          <div class="success-message" id="securitySuccess">
+            <i class="fas fa-check-circle"></i> Security settings have been updated successfully.
+          </div>
+
+          <form id="securityForm">
+            <div class="form-group">
+              <label for="currentPassword" class="form-label">Current Password</label>
+              <input type="password" id="currentPassword" class="form-input" placeholder="Enter your current password" required>
+            </div>
+
+            <div class="form-group">
+              <label for="newPassword" class="form-label">New Password</label>
+              <input type="password" id="newPassword" class="form-input" placeholder="Enter new password">
+              <div class="password-strength">
+                <div class="password-strength-bar" id="passwordStrength"></div>
+              </div>
+              <div class="password-requirements">
+                Password must be at least 8 characters and include uppercase, lowercase, number, and special character
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="confirmPassword" class="form-label">Confirm New Password</label>
+              <input type="password" id="confirmPassword" class="form-input" placeholder="Confirm new password">
+              <div class="input-error" id="passwordMatchError">Passwords do not match.</div>
+            </div>
+
+            <div class="toggle-container">
+              <div>
+                <div class="toggle-label">Remember Me on This Device</div>
+                <div class="toggle-description">Stay logged in on this device for 30 days</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="rememberDevice" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="action-buttons">
+              <button type="reset" class="btn btn-secondary">Cancel</button>
+              <button type="submit" class="btn btn-primary" id="saveSecurity">Update Password</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Privacy & Account Section -->
+        <div class="settings-section" id="privacy">
+          <div class="settings-header">
+            <h2 class="settings-section-title">Privacy & Account</h2>
+            <p class="settings-section-desc">Manage your account options and privacy settings</p>
+          </div>
+
+          <div class="account-info-container">
+            <div class="account-info-group">
+              <span class="account-info-label">Account Created:</span>
+              <span class="account-info-value">{{ account_created }}</span>
+            </div>
+            <div class="account-info-group">
+              <span class="account-info-label">Account Type:</span>
+              <span class="account-info-value">{{ profile_role }}</span>
+            </div>
+            <div class="account-info-group">
+              <span class="account-info-label">Account Status:</span>
+              <span class="account-info-value {% if user.is_active %}status-active{% else %}status-inactive{% endif %}">{{ account_status }}</span>
+            </div>
+            <div class="account-info-group">
+              <span class="account-info-label">Last Login:</span>
+              <span class="account-info-value">{{ last_login }}</span>
+            </div>
+            <div class="account-info-group">
+              <span class="account-info-label">User ID:</span>
+              <span class="account-info-value">#{{ user_id }}</span>
+            </div>
+          </div>
+
+          <div class="privacy-options">
+            <div class="toggle-container">
+              <div>
+                <div class="toggle-label">Data Sharing</div>
+                <div class="toggle-description">Allow Triple G to use your data to improve services</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="dataSharing" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="toggle-container">
+              <div>
+                <div class="toggle-label">Project Portfolio Showcase</div>
+                <div class="toggle-description">Allow Triple G to showcase your project in their portfolio (anonymized)</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="portfolioShowcase" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="account-actions">
+            <a href="{% url 'accounts:client_logout' %}" class="btn btn-secondary" id="logoutBtn">
+              <i class="fas fa-sign-out-alt"></i> Log Out
+            </a>
+            <button type="button" class="btn btn-danger" id="deleteAccountBtn">
+              <i class="fas fa-trash-alt"></i> Delete Account
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Delete Account Confirmation Modal -->
+  <div class="modal" id="deleteModal">
+    <div class="modal-content">
+      <span class="close-modal">&times;</span>
+      <div class="modal-icon error">
+        <i class="fas fa-exclamation-triangle"></i>
+      </div>
+      <h2 class="modal-title">Delete Account?</h2>
+      <p class="modal-message">This action cannot be undone. All your data will be permanently deleted.</p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="cancelDelete">Cancel</button>
+        <button class="btn btn-danger" id="confirmDelete">Delete Account</button>
+      </div>
+    </div>
+  </div>
+  
+ 
+  <!-- Scripts -->
+  <script src="{% static 'js/usersettings.js' %}"></script>
+{% endblock %}

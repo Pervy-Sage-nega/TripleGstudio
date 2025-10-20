@@ -1,0 +1,394 @@
+{% extends 'admin-nav-footer-template/base.html' %}
+{% load static %}
+{% load blog_filters %}
+{% block title %}Admin Project Portfolio Management | Triple G BuildHub{% endblock %}
+{% block extra_head %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Blog Management | Triple G BuildHub</title>
+    <link rel="stylesheet" href="{% static 'css/admincss/nav.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admincss/header.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/reports.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/history.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admincss/blogmanagement.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/blog-ui-fixes.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    {% endblock %}
+    {% block content %}
+    <!-- Navigation Bar -->
+    
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-title">
+                <i class="fas fa-blog"></i>
+                <h1>Blog Management</h1>
+            </div>
+            
+            <div class="export-options">
+                <button class="btn btn-primary" id="refreshBtn"><i class="fas fa-sync-alt"></i> Refresh</button>
+                
+                <button class="btn btn-secondary"><i class="fas fa-print"></i> Print</button>
+                
+                <button class="view-btn" onclick="window.location.href='{% url 'blog:admin_recently_deleted' %}'" title="Recently Deleted">
+                    <i class="fas fa-trash-restore"></i> Recently Deleted
+                </button>
+            </div>
+        </div>
+   
+        
+        <!-- Compact Summary Section -->
+        <div class="summary-section">
+            <div class="summary-card">
+                <div class="summary-icon">
+                    <i class="fas fa-newspaper"></i>
+                </div>
+                <div class="summary-content">
+                    <div class="summary-title">Total Posts</div>
+                    <div class="summary-value" id="totalBlogs">{{ total_posts|default:0 }}</div>
+                    <div class="summary-change">All submitted blogs</div>
+                </div>
+            </div>
+            
+            <div class="summary-card warning">
+                <div class="summary-icon">
+                    <i class="fas fa-edit"></i>
+                </div>
+                <div class="summary-content">
+                    <div class="summary-title">Drafts</div>
+                    <div class="summary-value" id="draftBlogs">{{ draft_posts|default:0 }}</div>
+                    <div class="summary-change">Awaiting publication</div>
+                </div>
+            </div>
+            
+            <div class="summary-card success">
+                <div class="summary-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="summary-content">
+                    <div class="summary-title">Published</div>
+                    <div class="summary-value" id="publishedBlogs">{{ published_posts|default:0 }}</div>
+                    <div class="summary-change">Live posts</div>
+                </div>
+            </div>
+            
+            <div class="summary-card danger">
+                <div class="summary-icon">
+                    <i class="fas fa-archive"></i>
+                </div>
+                <div class="summary-content">
+                    <div class="summary-title">Archived</div>
+                    <div class="summary-value" id="archivedBlogs">{{ archived_posts|default:0 }}</div>
+                    <div class="summary-change">Archived posts</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Blog Management Section -->
+        <div class="blog-management-section">
+            <div class="section-header">
+                <div class="section-title">
+                    <i class="fas fa-list"></i>
+                    <span>Submitted Articles</span>
+                </div>
+                <div class="view-toggle">
+                    <button id="tableViewBtn" class="view-btn active" title="Table View">
+                        <i class="fas fa-table"></i> Table View
+                    </button>
+                    <button id="gridViewBtn" class="view-btn" title="Grid View">
+                        <i class="fas fa-th-large"></i> Grid View
+                    </button>                   
+                </div>
+            </div>
+                 
+        <!-- Improved Filter + Search + Button Controls -->
+        <div class="filter-search-controls">
+            <div class="filter-section">
+                <div class="filter-group">
+                    <select id="filter-category" class="filter-dropdown">
+                        <option value="">All Categories</option>
+                        {% for category in all_categories %}
+                        <option value="{{ category.slug }}">{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <select id="filter-status" class="filter-dropdown">
+                        <option value="">All Statuses</option>
+                        <option value="draft">Drafts</option>
+                        <option value="published">Published</option>
+                        <option value="archived">Archived</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="search-section">
+                <div class="search-input-wrapper">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="search" placeholder="Search projects…" class="search-input">
+                </div>
+            </div>
+        </div>
+            
+            <div class="content-container">
+                <!-- Table View -->
+                <div class="table-responsive" id="tableView">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Thumbnail</th>
+                                <th>Title</th>
+                                <th>Category</th>
+                                <th>Author</th>
+                                <th>Date</th>
+                                <th>Tags</th>
+                                <th>Reading Time</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for blog in blog_posts %}
+                            <tr class="blog-item" data-id="{{ blog.id }}">
+                                <td>
+                                    {% if blog.featured_image %}
+                                    <img src="{{ blog.featured_image.url }}" alt="{{ blog.title }}" class="blog-thumb">
+                                    {% else %}
+                                    <img src="{% static 'images/default-blog.jpg' %}" alt="{{ blog.title }}" class="blog-thumb">
+                                    {% endif %}
+                                </td>
+                                <td class="blog-title">{{ blog.title }}</td>
+                                <td>{{ blog.category.name|default:"Uncategorized" }}</td>
+                                <td>{{ blog.author.get_full_name|default:blog.author.username }}</td>
+                                <td>{{ blog.created_date|date:"Y-m-d" }}</td>
+                                <td>
+                                    <div class="tag-container">
+                                        {% for tag in blog.tags.all|slice:":2" %}
+                                        <span class="blog-tag">{{ tag.name }}</span>
+                                        {% endfor %}
+                                        {% if blog.tags.count > 2 %}
+                                        <span class="tag-ellipsis" onclick="showAllTags({{ blog.id }}, '{{ blog.title|escapejs }}')" title="View all tags">
+                                            <i class="fas fa-ellipsis-h"></i>
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>{{ blog.reading_time }} min{% if blog.reading_time > 1 %}s{% endif %}</td>
+                                <td>
+                                    <span class="status-badge status-{{ blog.status }}">
+                                        {{ blog.get_status_display }}
+                                    </span>
+                                </td>
+                                <td class="actions">
+                                    <div class="action-buttons">
+                                        <button class="action-btn view" title="View in Modal" onclick="viewBlog({{ blog.id }})"><i class="fas fa-eye"></i></button>
+                                        <button class="action-btn feature {% if blog.featured %}featured{% endif %}" title="{% if blog.featured %}Unfeature{% else %}Feature{% endif %}" onclick="toggleFeature({{ blog.id }})"><i class="fas fa-star"></i></button>
+                                        <button class="action-btn delete" title="Delete" onclick="deleteBlog({{ blog.id }})"><i class="fas fa-trash"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="9" class="no-results">
+                                    <i class="fas fa-inbox"></i>
+                                    <h3>No Blog Posts Found</h3>
+                                    <p>Site managers can create blog posts for review.</p>
+                                    <a href="{% url 'blog:create_blog_post' %}" class="btn btn-primary">
+                                        <i class="fas fa-plus"></i>
+                                        Create New Blog Post
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Grid View -->
+                <div class="grid-view" id="gridView" style="display: none;">
+                    {% for blog in blog_posts %}
+                    <div class="blog-card" data-id="{{ blog.id }}" onclick="viewBlog({{ blog.id }})" style="cursor: pointer;" title="Click to view blog preview">
+                        <div class="blog-card-header">
+                            <div class="blog-card-status status-{{ blog.status }}">{{ blog.get_status_display }}</div>
+                            {% if blog.featured_image %}
+                            <img src="{{ blog.featured_image.url }}" alt="{{ blog.title }}" class="blog-card-image">
+                            {% else %}
+                            <img src="{% static 'images/default-blog.jpg' %}" alt="{{ blog.title }}" class="blog-card-image">
+                            {% endif %}
+                        </div>
+                        <div class="blog-card-body">
+                            <h3 class="blog-card-title">{{ blog.title|truncatechars:60 }}</h3>
+                            <div class="blog-card-info">
+                                <span><i class="fas fa-folder"></i> {{ blog.category.name|default:"Uncategorized" }}</span>
+                                <span><i class="fas fa-user"></i> {{ blog.author.get_full_name|default:blog.author.username }}</span>
+                                <span><i class="fas fa-calendar"></i> {{ blog.created_date|date:"Y-m-d" }}</span>
+                                <span><i class="fas fa-clock"></i> {{ blog.reading_time }} min{% if blog.reading_time > 1 %}s{% endif %}</span>
+                            </div>
+                            <div class="blog-card-tags">
+                                {% for tag in blog.tags.all|slice:":3" %}
+                                <span class="blog-tag">{{ tag.name }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="blog-card-actions" onclick="event.stopPropagation()">
+                            <button class="btn btn-primary" onclick="viewBlog({{ blog.id }})"><i class="fas fa-eye"></i> View</button>
+                            <button class="btn {% if blog.featured %}btn-warning{% else %}btn-secondary{% endif %}" onclick="toggleFeature({{ blog.id }})"><i class="fas fa-star"></i> {% if blog.featured %}Unfeature{% else %}Feature{% endif %}</button>
+                            <button class="btn btn-danger" onclick="deleteBlog({{ blog.id }})"><i class="fas fa-trash"></i> Delete</button>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="no-results">
+                        <i class="fas fa-inbox"></i>
+                        <h3>No Blog Posts Found</h3>
+                        <p>Site managers can create blog posts for review.</p>
+                        <a href="{% url 'blog:create_blog_post' %}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i>
+                            Create New Blog Post
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden blog content for modal display -->
+    {% for blog in blog_posts %}
+    <div id="blogPreview{{ blog.id }}" class="blog-preview" style="display: none;">
+        <div class="blog-preview-header">
+            <h2>{{ blog.title }}</h2>
+            <div class="blog-preview-meta">
+                <span><i class="fas fa-user"></i> {{ blog.author.get_full_name|default:blog.author.username }}</span>
+                <span><i class="fas fa-folder"></i> {{ blog.category.name }}</span>
+                <span><i class="fas fa-calendar"></i> {{ blog.created_date|date:"F d, Y" }}</span>
+                <span class="status-badge status-{{ blog.status }}">{{ blog.get_status_display }}</span>
+            </div>
+        </div>
+        
+        {% if blog.featured_image %}
+        <div class="blog-preview-image">
+            <img src="{{ blog.featured_image.url }}" alt="{{ blog.title }}" style="width: 100%; max-height: 300px; object-fit: cover; border-radius: 8px;">
+        </div>
+        {% endif %}
+        
+        <div class="blog-preview-content">
+            {{ blog.content|unescape_html|safe }}
+        </div>
+        
+        {% if blog.gallery_images.exists %}
+        <div class="blog-preview-gallery">
+            <h4><i class="fas fa-images"></i> Gallery Images</h4>
+            <div class="gallery-grid">
+                {% for gallery_image in blog.gallery_images.all %}
+                <div class="gallery-item">
+                    <img src="{{ gallery_image.image.url }}" alt="{{ gallery_image.alt_text|default:blog.title }}" class="gallery-image">
+                    {% if gallery_image.caption %}
+                    <p class="gallery-caption">{{ gallery_image.caption }}</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="blog-preview-tags">
+            {% for tag in blog.tags.all %}
+            <span class="blog-tag">{{ tag.name }}</span>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+    
+    <!-- Hidden tags data for modal display -->
+    {% for blog in blog_posts %}
+    <div id="blogTags{{ blog.id }}" class="blog-tags-data" style="display: none;">
+        {% for tag in blog.tags.all %}
+        <span class="blog-tag">{{ tag.name }}</span>
+        {% endfor %}
+    </div>
+    {% endfor %}
+    
+    <!-- Blog Preview Modal - Content loaded dynamically via JavaScript -->
+    <div class="modal" id="blogPreviewModal">
+        <div class="modal-content blog-preview-modal">
+            <div class="modal-header">
+                <h3>Blog Preview</h3>
+                <button class="modal-close" id="closeBlogPreviewModal" title="Close Preview">&times;</button>
+            </div>
+            <div class="modal-body" id="blogPreviewContent">
+                <!-- Blog preview content will be loaded dynamically -->
+                <div class="loading-spinner" style="text-align: center; padding: 40px;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 48px; color: #007bff;"></i>
+                    <p>Loading blog preview...</p>
+                </div>
+            </div>
+            <div class="modal-footer" id="blogPreviewActions">
+                <!-- Action buttons will be inserted dynamically based on blog status -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- All Tags Modal -->
+    <div class="modal" id="allTagsModal">
+        <div class="modal-content tags-modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-tags"></i> All Tags</h3>
+                <button class="modal-close" onclick="closeAllTagsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="tags-modal-title" id="tagsModalTitle"></div>
+                <div class="tags-modal-container" id="tagsModalContainer">
+                    <!-- Tags will be populated dynamically -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeAllTagsModal()">Close</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Rejection Reason Modal -->
+    <div class="modal" id="rejectionModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Reject Blog</h3>
+                <button class="modal-close" id="closeRejectionModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Please provide a reason for rejecting this blog:</p>
+                <textarea id="rejectionReason" rows="4" placeholder="Enter rejection reason..."></textarea>
+                <input type="hidden" id="rejectBlogId">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelRejection">Cancel</button>
+                <button class="btn btn-danger" id="confirmRejection">Confirm Rejection</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notification Modal -->
+    <div class="modal" id="notificationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="notificationTitle"></h3>
+                <button class="modal-close" id="closeNotificationModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="notificationMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="confirmNotification">OK</button>
+            </div>
+        </div>
+    </div>
+    
+   
+    {% endblock %}
+    {% block extra_scripts %}
+    <script src="{% static 'js/adminjs/mobile-btn.js' %}"></script>
+    <script src="{% static 'js/adminjs/blogmanagement.js' %}"></script>
+    {% endblock %}
+</body>
+</html>

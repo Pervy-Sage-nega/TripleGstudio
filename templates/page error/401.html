@@ -1,0 +1,309 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>401 — Unauthorized | TripleG BuildHub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+  <!-- ✅ Correct Lottie Player for .lottie files -->
+  <script
+    src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.1/dist/dotlottie-wc.js"
+    type="module">
+  </script>
+
+  <style>
+    :root {
+      --bg: #00273C;
+      --card: rgba(255,255,255,0.04);
+      --accent: #FF7120;
+      --muted: rgba(255,255,255,0.72);
+      --glass: rgba(255,255,255,0.03);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+      background: linear-gradient(180deg, var(--bg), #021726 140%);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-y: auto;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 980px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius: 18px;
+      padding: 28px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+      display: grid;
+      grid-template-columns: 1fr 440px;
+      gap: 20px;
+      align-items: center;
+      animation: enter 520ms cubic-bezier(.2,.9,.2,1) forwards;
+    }
+
+    @keyframes enter {
+      from {opacity: 0; transform: translateY(40px) scale(.995);}
+      to {opacity: 1; transform: none;}
+    }
+
+    .left {
+      padding: 20px 28px;
+    }
+
+    .kicker {
+      display: inline-block;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      color: var(--accent);
+      background: linear-gradient(90deg, rgba(255,113,32,0.08), rgba(255,113,32,0.03));
+      padding: 6px 12px;
+      border-radius: 999px;
+      letter-spacing: .6px;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      margin: 6px 0 12px 0;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 40px;
+      line-height: 1;
+      letter-spacing: -.4px;
+    }
+
+    p.lead {
+      color: var(--muted);
+      margin: 0 0 18px 0;
+      font-size: 15px;
+      max-width: 58ch;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: 0;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: transform .16s ease, box-shadow .16s ease;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(90deg, var(--accent), #ff8a48);
+      color: #071b24;
+      box-shadow: 0 8px 20px rgba(255,113,32,0.12);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.06);
+      color: var(--muted);
+    }
+
+    .btn:active {transform: translateY(1px);}
+
+    .right {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+    }
+
+    .card {
+      width: 100%;
+      height: 400px;
+      border-radius: 14px;
+      
+      padding: 0.1px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .lottie-wrap {
+      max-width: 520px;
+      width: 100%;
+      height: 100%;
+      animation: float 4.8s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0% {transform: translateY(0);}
+      50% {transform: translateY(-8px);}
+      100% {transform: translateY(0);}
+    }
+
+    .meta {
+      margin-top: 18px;
+      color: rgba(255,255,255,0.46);
+      font-size: 13px;
+    }
+
+    .unauth {
+      display: inline-flex;
+      gap: 10px;
+      align-items: center;
+      background: rgba(255,255,255,0.02);
+      padding: 8px 10px;
+      border-radius: 10px;
+      margin-top: 8px;
+      color: #ffd7bf;
+      font-weight: 600;
+    }
+
+    .chip {
+      font-size: 12px;
+      padding: 6px 8px;
+      border-radius: 8px;
+      background: rgba(255,113,32,0.12);
+      color: var(--accent);
+    }
+
+    .code-badge {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.03);
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-weight: 600;
+      color: #fff;
+      margin-top: 20px;
+      font-size: 20px;
+      width: fit-content;
+      backdrop-filter: blur(8px);
+    }
+
+    .code-badge small {opacity: .9;}
+
+    /* ✅ Responsive adjustments */
+    @media (max-width: 880px) {
+      body {
+        align-items: flex-start;
+        padding: 16px;
+      }
+
+      .container {
+        display: flex;
+        flex-direction: column;
+        padding: 18px;
+        gap: 30px;
+      }
+
+      .left {
+        padding: 12px 10px;
+      }
+
+      h1 {
+        font-size: 32px;
+      }
+
+      .card {
+        height: 360px;
+      }
+
+      .code-badge {
+        align-self: center;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 14px;
+      }
+
+      h1 {
+        font-size: 28px;
+      }
+
+      .card {
+        height: 320px;
+      }
+
+      .actions {
+        flex-direction: column;
+        width: 100%;
+      }
+
+      .btn {
+        width: 100%;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="container" role="main" aria-labelledby="pageTitle">
+    <section class="left">
+      <div class="kicker">TripleG BuildHub</div>
+      <h1 id="pageTitle">Unauthorized access</h1>
+
+      <div class="unauth" role="status" aria-live="polite">
+        <span class="chip">chocho</span>
+        <div>Access restricted — your credentials do not allow entry to this section.</div>
+      </div>
+
+      <p class="lead">
+        You tried to access a page or resource that requires authentication or higher privileges.
+        If you believe this is a mistake, please sign in with an authorized account or contact your project administrator.
+      </p>
+
+      <div class="actions">
+        <a class="btn btn-primary" href="{% url 'accounts:client_login' %}">Sign in as Client</a>
+        <a class="btn btn-ghost" href="{% url 'core:index' %}">Return to homepage</a>
+      </div>
+
+      <div class="meta">
+        Tip: If you're a Client User, check your project access in your user settings.
+        Admins can review role permissions in the Admin Dashboard.
+      </div>
+    </section>
+
+    <aside class="right">
+      <div class="card">
+        <div class="lottie-wrap">
+          <dotlottie-wc
+            src="https://lottie.host/f2297412-8e7b-4744-8299-8810de20890a/j0p1KulehU.lottie"
+            style="width:100%;height:100%"
+            autoplay
+            loop>
+          </dotlottie-wc>
+        </div>
+      </div>
+
+      <div class="code-badge" aria-hidden="true">
+        <small>HTTP</small><strong>401</strong><span style="opacity:.6">• Unauthorized</span>
+      </div>
+    </aside>
+  </main>
+</body>
+</html>
