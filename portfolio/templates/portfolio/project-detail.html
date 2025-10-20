@@ -1,0 +1,237 @@
+{% extends 'layout.html' %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% block head %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Details - Triple G Studio Design</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'css/project-detail.css' %}">
+    {% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    {% block body %}
+    
+    <!-- Hero Section with Video Background -->
+    <section class="project-hero">
+        <div class="video-background">
+            <video autoplay muted loop playsinline id="project-hero-video">
+                <source src="{% static 'videos/Sksca9hO.mp4' %}" type="video/mp4">
+                <!-- Fallback for browsers that don't support video tag -->
+                Your browser does not support the video tag.
+            </video>
+            <div class="video-overlay"></div>
+        </div>
+        <div class="back-to-projects">
+            <a href="{% url 'portfolio:project_list' %}"><i class="fas fa-arrow-left"></i> Back to Projects</a>
+        </div>
+        <div class="project-hero-content">
+            <div class="project-category">{{ project.category.name|upper }}</div>
+            <h1>{{ project.title }}</h1>
+            <div class="project-location">
+                <i class="fas fa-map-marker-alt"></i> {{ project.location }}
+            </div>
+        </div>
+    </section>
+
+    <main class="project-content">
+        <!-- Project Overview Section -->
+        <section class="project-overview">
+            <div class="section-container">
+                <h2 class="section-title">Project Overview</h2>
+                
+                <div class="overview-grid">
+                    <div class="overview-details">
+                        <div class="overview-text">
+                            {{ project.description|linebreaks }}
+                        </div>
+                        
+                        <div class="project-stats">
+                            <div class="stat-item">
+                                <div class="stat-label">Completion Date</div>
+                                <div class="stat-value">{{ project.completion_date|date:"F Y" }}</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Project Duration</div>
+                                <div class="stat-value">{{ project.duration }}</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Lead Architect</div>
+                                <div class="stat-value">{{ project.lead_architect }}</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Project Status</div>
+                                <div class="stat-value status-{{ project.status }}">{{ project.get_status_display }}</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Size</div>
+                                <div class="stat-value">{{ project.size }}</div>
+                            </div>
+                            {% for stat in project_stats %}
+                            <div class="stat-item">
+                                <div class="stat-label">{{ stat.label }}</div>
+                                <div class="stat-value">{{ stat.value }}</div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="overview-image">
+                        {% if project.hero_image %}
+                            <img src="{{ project.hero_image.url }}" alt="{{ project.title }} Overview">
+                        {% else %}
+                            <img src="{% static 'images/image1.jpg' %}" alt="{{ project.title }} Overview">
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Photo Gallery Section -->
+        <section class="project-gallery">
+            <div class="section-container">
+                <h2 class="section-title">Project Gallery</h2>
+                
+                <div class="gallery-grid">
+                    {% for image in project_images %}
+                    <div class="gallery-item">
+                        <img src="{{ image.image.url }}" alt="{{ image.alt_text }}" onerror="this.src='/static/images/image1.jpg'">
+                        <div class="gallery-overlay">
+                            <i class="fas fa-search-plus"></i>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <!-- Fallback images if no gallery images exist -->
+                    <div class="gallery-item">
+                        <img src="{% static 'images/image1.jpg' %}" alt="{{ project.title }} Image 1">
+                        <div class="gallery-overlay">
+                            <i class="fas fa-search-plus"></i>
+                        </div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="{% static 'images/image2.jpeg' %}" alt="{{ project.title }} Image 2">
+                        <div class="gallery-overlay">
+                            <i class="fas fa-search-plus"></i>
+                        </div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="{% static 'images/image3.jpg' %}" alt="{{ project.title }} Image 3">
+                        <div class="gallery-overlay">
+                            <i class="fas fa-search-plus"></i>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Lightbox -->
+            <div class="lightbox" id="gallery-lightbox">
+                <div class="lightbox-content">
+                    <span class="lightbox-close">&times;</span>
+                    <img class="lightbox-image" id="lightbox-img">
+                    <div class="lightbox-controls">
+                        <button class="lightbox-prev"><i class="fas fa-chevron-left"></i></button>
+                        <button class="lightbox-next"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Timeline/Milestones Section -->
+        <section class="project-timeline">
+            <div class="section-container">
+                <h2 class="section-title">Project Timeline</h2>
+                
+                <div class="timeline">
+                    {% for timeline_item in project_timeline %}
+                    <div class="timeline-item {% if timeline_item.completed %}completed{% endif %}">
+                        <div class="timeline-point"></div>
+                        <div class="timeline-content">
+                            <h3>{{ timeline_item.title }}</h3>
+                            <span class="timeline-date">{{ timeline_item.date|date:"F Y" }}</span>
+                            <p>{{ timeline_item.description }}</p>
+                            <div class="progress-bar">
+                            {% if timeline_item.completed %}
+                                <div class="progress" style="width: 100%"></div>
+                            {% else %}
+                                <div class="progress" style="width: 0%"></div>
+                            {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <!-- Fallback timeline if no timeline items exist -->
+                    <div class="timeline-item completed">
+                        <div class="timeline-point"></div>
+                        <div class="timeline-content">
+                            <h3>Project Completed</h3>
+                            <span class="timeline-date">{{ project.completion_date|date:"F Y" }}</span>
+                            <p>This project has been successfully completed and delivered.</p>
+                            <div class="progress-bar">
+                                <div class="progress" style="width: 100%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+        
+        <!-- Call to Action -->
+        <section class="project-cta">
+            <div class="section-container">
+                <div class="cta-content">
+                    <h2>Ready to Build Your Dream Home?</h2>
+                    <p>Let Triple G Studio bring your vision to life with our expert design and construction services.</p>
+                    <div class="cta-buttons">
+                        <a href="contacts.html" class="btn-primary">Contact Us</a>
+                        <a href="{% url 'core:index' %}" class="btn-secondary">View More Projects</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-content">
+        <div class="footer-left">
+          <h1>TRIPLE G STUDIO</h1>
+          <h2>WHERE UNIQUE DESIGNS AND CONSTRUCTION ARE BEING DEVELOPED</h2>
+          <p>WE ARE HERE TO CHANGE THE WORLD SOMETHING DESCRIPTION</p>
+          <div class="contact-details">
+            <p>LOCATION DETAILS:</p>
+            <p>COORDINATES</p>
+            <p>TripleGStudio@gmail.com</p>
+            <p>📞 091231876231826</p>
+          </div>
+        </div>
+        <div class="footer-right">
+          <div class="socials">
+             <a href="https://twitter.com" target="_blank" class="social-link">
+              <i class="fab fa-twitter"></i>
+             </a>
+             <a href="https://instagram.com" target="_blank" class="social-link">
+              <i class="fab fa-instagram"></i>
+             </a>
+             <a href="https://facebook.com" target="_blank" class="social-link">
+              <i class="fab fa-facebook"></i>
+             </a>
+          </div>
+          <div class="footer-logo">
+            <img src="{% static 'images/tripleGlogo.jpg' %}" alt="Logo" class="logo-img">
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script src="{% static 'js/project-detail.js' %}"></script>
+    <script src="{% static 'js/chatbot.js' %}"></script>
+    {% endblock %}
+</body>
+</html>
