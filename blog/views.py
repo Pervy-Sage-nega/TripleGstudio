@@ -451,7 +451,7 @@ def delete_blog(request, blog_id):
             })
         messages.error(request, 'Blog post not found or already deleted.')
     
-    return redirect('blog:blogmanagement' if request.user.is_staff else 'blog:drafts')
+    return redirect('blog:blogmanagement' if request.user.is_staff else 'blog:recently_deleted')
 
 @require_site_manager_role
 def recently_deleted(request):
