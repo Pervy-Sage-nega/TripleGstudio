@@ -1,0 +1,454 @@
+TRIPLE G BUILDHUB - ENTITY RELATIONSHIP DIAGRAM (ERD)
+=====================================================
+
+This ERD represents the complete database schema for the Triple G BuildHub Django project.
+The system includes 7 main applications: accounts, admin_side, blog, chatbot, core, portfolio, and site_diary.
+
+=== DJANGO BUILT-IN MODELS ===
+
+User (Django Auth)
+├── id (PK, AutoField)
+├── username (CharField, unique)
+├── first_name (CharField)
+├── last_name (CharField)
+├── email (EmailField)
+├── password (CharField)
+├── is_staff (BooleanField)
+├── is_active (BooleanField)
+├── is_superuser (BooleanField)
+├── date_joined (DateTimeField)
+└── last_login (DateTimeField)
+
+=== ACCOUNTS APP ===
+
+Profile (Client Profile)
+├── id (PK, AutoField)
+├── user (OneToOneField → User)
+├── role (CharField: guest, client, architect)
+├── phone (CharField, optional)
+├── assigned_architect (CharField, optional)
+├── project_name (CharField, optional)
+├── project_start (DateField, optional)
+└── profile_pic (ImageField, optional)
+
+OneTimePassword
+├── id (PK, AutoField)
+├── user (OneToOneField → User)
+├── code (CharField, 6 digits)
+└── created_at (DateTimeField)
+
+AdminProfile
+├── id (PK, AutoField)
+├── user (OneToOneField → User)
+├── admin_role (CharField: admin, manager, supervisor, staff)
+├── approval_status (CharField: pending, approved, denied, suspended)
+├── department (CharField, optional)
+├── employee_id (CharField, unique, optional)
+├── phone (CharField, optional)
+├── emergency_contact (CharField, optional)
+├── hire_date (DateField, optional)
+├── company_department (CharField, optional)
+├── writing_experience (CharField, optional)
+├── portfolio_links (TextField, optional)
+├── specialization (CharField, optional)
+├── profile_pic (ImageField, optional)
+├── email_verified (BooleanField)
+├── email_verified_at (DateTimeField, optional)
+├── approved_by (ForeignKey → User, optional)
+├── approved_at (DateTimeField, optional)
+├── last_login_ip (GenericIPAddressField, optional)
+├── failed_login_attempts (PositiveIntegerField)
+├── account_locked_until (DateTimeField, optional)
+├── created_at (DateTimeField)
+└── updated_at (DateTimeField)
+
+SiteManagerProfile
+├── id (PK, AutoField)
+├── user (OneToOneField → User)
+├── approval_status (CharField: pending, approved, denied, suspended)
+├── department (CharField, optional)
+├── employee_id (CharField, unique, optional)
+├── phone (CharField, optional)
+├── emergency_contact (CharField, optional)
+├── hire_date (DateField, optional)
+├── company_department (CharField, optional)
+├── profile_pic (ImageField, optional)
+├── email_verified (BooleanField)
+├── email_verified_at (DateTimeField, optional)
+├── approved_by (ForeignKey → User, optional)
+├── approved_at (DateTimeField, optional)
+├── last_login_ip (GenericIPAddressField, optional)
+├── failed_login_attempts (PositiveIntegerField)
+├── account_locked_until (DateTimeField, optional)
+├── created_at (DateTimeField)
+└── updated_at (DateTimeField)
+
+SuperAdminProfile
+├── id (PK, AutoField)
+├── user (OneToOneField → User)
+├── title (CharField)
+├── phone (CharField, optional)
+├── emergency_contact (CharField, optional)
+├── notes (TextField, optional)
+├── profile_pic (ImageField, optional)
+├── last_login_ip (GenericIPAddressField, optional)
+├── created_at (DateTimeField)
+└── updated_at (DateTimeField)
+
+=== ADMIN_SIDE APP ===
+
+ProjectAssignment
+├── id (PK, AutoField)
+├── project (ForeignKey → site_diary.Project)
+├── user (ForeignKey → User)
+├── role (CharField: project_manager, architect, site_engineer, foreman, supervisor, quality_controller, safety_officer)
+├── assigned_by (ForeignKey → User)
+├── assigned_date (DateTimeField)
+└── is_active (BooleanField)
+
+=== BLOG APP ===
+
+Category (Blog Category)
+├── id (PK, AutoField)
+├── name (CharField, unique)
+├── slug (SlugField, unique)
+├── description (TextField, optional)
+├── color (CharField, hex color)
+├── icon (CharField, FontAwesome class)
+└── created_date (DateTimeField)
+
+Tag (Blog Tag)
+├── id (PK, AutoField)
+├── name (CharField, unique)
+├── slug (SlugField, unique)
+├── usage_count (IntegerField)
+└── created_date (DateTimeField)
+
+BlogPost
+├── id (PK, AutoField)
+├── title (CharField)
+├── slug (SlugField, unique)
+├── content (TextField)
+├── excerpt (TextField, optional)
+├── featured_image (ImageField, optional)
+├── featured_image_alt (CharField, optional)
+├── author (ForeignKey → User)
+├── category (ForeignKey → Category, optional)
+├── tags (ManyToManyField → Tag)
+├── status (CharField: draft, pending, published, archived)
+├── featured (BooleanField)
+├── rejection_reason (TextField, optional)
+├── rejected_by (ForeignKey → User, optional)
+├── rejected_at (DateTimeField, optional)
+├── seo_meta_title (CharField, optional)
+├── seo_meta_description (TextField, optional)
+├── enable_toc (BooleanField)
+├── reading_time (PositiveIntegerField, optional)
+├── created_date (DateTimeField)
+├── updated_date (DateTimeField)
+├── published_date (DateTimeField, optional)
+├── view_count (IntegerField)
+├── is_deleted (BooleanField)
+└── deleted_at (DateTimeField, optional)
+
+Comment
+├── id (PK, AutoField)
+├── blog_post (ForeignKey → BlogPost)
+├── content (TextField)
+├── author (ForeignKey → User, optional)
+├── author_name (CharField)
+├── author_email (EmailField)
+├── author_website (URLField, optional)
+├── parent (ForeignKey → Comment, optional)
+├── status (CharField: pending, approved, rejected, spam)
+├── moderated_by (ForeignKey → User, optional)
+├── moderated_at (DateTimeField, optional)
+├── moderation_note (TextField, optional)
+├── created_at (DateTimeField)
+├── updated_at (DateTimeField)
+├── ip_address (GenericIPAddressField, optional)
+├── user_agent (TextField, optional)
+├── spam_score (FloatField)
+├── is_spam (BooleanField)
+├── likes (PositiveIntegerField)
+└── dislikes (PositiveIntegerField)
+
+CommentLike
+├── id (PK, AutoField)
+├── comment (ForeignKey → Comment)
+├── user (ForeignKey → User, optional)
+├── ip_address (GenericIPAddressField, optional)
+├── is_like (BooleanField)
+└── created_at (DateTimeField)
+
+BlogImage (Gallery Images)
+├── id (PK, AutoField)
+├── blog_post (ForeignKey → BlogPost)
+├── image (ImageField)
+├── caption (CharField, optional)
+├── alt_text (CharField, optional)
+├── order (IntegerField)
+├── width (PositiveIntegerField, optional)
+├── height (PositiveIntegerField, optional)
+├── file_size (PositiveIntegerField, optional)
+└── uploaded_date (DateTimeField, optional)
+
+ContentImage (Content Images)
+├── id (PK, AutoField)
+├── blog_post (ForeignKey → BlogPost)
+├── image (ImageField)
+├── alt_text (CharField, optional)
+├── caption (CharField, optional)
+└── uploaded_date (DateTimeField)
+
+=== CHATBOT APP ===
+
+(No models defined - empty models.py file)
+
+=== CORE APP ===
+
+ContactMessage
+├── id (PK, AutoField)
+├── name (CharField)
+├── email (EmailField)
+├── phone (CharField, optional)
+├── subject (CharField: general, project, quote, career, other)
+├── message (TextField)
+├── status (CharField: new, read, reviewed, archived)
+├── created_at (DateTimeField)
+└── admin_notes (TextField, optional)
+
+=== PORTFOLIO APP ===
+
+Category (Portfolio Category)
+├── id (PK, AutoField)
+├── name (CharField, unique)
+└── slug (SlugField, unique)
+
+Project (Portfolio Project)
+├── id (PK, AutoField)
+├── title (CharField)
+├── description (TextField)
+├── category (ForeignKey → Category)
+├── year (IntegerField)
+├── location (CharField)
+├── size (CharField)
+├── duration (CharField)
+├── completion_date (DateField)
+├── lead_architect (CharField)
+├── status (CharField: draft, planned, ongoing, completed)
+├── featured (BooleanField)
+├── hero_image (ImageField, optional)
+├── video (FileField, optional)
+├── seo_meta_title (CharField, optional)
+├── seo_meta_description (TextField, optional)
+├── hero_image_alt (CharField, optional)
+├── created_at (DateTimeField)
+└── updated_at (DateTimeField)
+
+ProjectImage
+├── id (PK, AutoField)
+├── project (ForeignKey → Project)
+├── image (ImageField)
+├── alt_text (CharField)
+└── order (PositiveIntegerField)
+
+ProjectStat
+├── id (PK, AutoField)
+├── project (ForeignKey → Project)
+├── label (CharField)
+├── value (CharField)
+└── order (PositiveIntegerField)
+
+ProjectTimeline
+├── id (PK, AutoField)
+├── project (ForeignKey → Project)
+├── title (CharField)
+├── date (DateField)
+├── description (TextField)
+├── completed (BooleanField)
+└── order (PositiveIntegerField)
+
+=== SITE_DIARY APP ===
+
+Project (Site Diary Project)
+├── id (PK, AutoField)
+├── name (CharField)
+├── description (TextField, optional)
+├── client_name (CharField)
+├── client (ForeignKey → User, optional)
+├── project_manager (ForeignKey → User)
+├── architect (ForeignKey → User, optional)
+├── location (CharField)
+├── start_date (DateField)
+├── expected_end_date (DateField)
+├── actual_end_date (DateField, optional)
+├── budget (DecimalField)
+├── status (CharField: pending_approval, planning, active, on_hold, completed, cancelled, rejected)
+├── image (ImageField, optional)
+├── approved_by (ForeignKey → User, optional)
+├── approved_at (DateTimeField, optional)
+├── rejection_reason (TextField, optional)
+├── created_at (DateTimeField)
+└── updated_at (DateTimeField)
+
+DiaryEntry
+├── id (PK, AutoField)
+├── project (ForeignKey → Project)
+├── entry_date (DateField)
+├── created_by (ForeignKey → User)
+├── weather_condition (CharField: sunny, cloudy, rainy, stormy, foggy, windy, snowy)
+├── temperature_high (IntegerField, optional)
+├── temperature_low (IntegerField, optional)
+├── humidity (IntegerField, optional)
+├── wind_speed (DecimalField, optional)
+├── work_description (TextField)
+├── progress_percentage (DecimalField)
+├── quality_issues (TextField, optional)
+├── safety_incidents (TextField, optional)
+├── general_notes (TextField, optional)
+├── photos_taken (BooleanField)
+├── reviewed_by (ForeignKey → User, optional)
+├── approved (BooleanField)
+├── approval_date (DateTimeField, optional)
+├── draft (BooleanField)
+├── created_at (DateTimeField)
+└── updated_at (DateTimeField)
+
+LaborEntry
+├── id (PK, AutoField)
+├── diary_entry (ForeignKey → DiaryEntry)
+├── labor_type (CharField: skilled, unskilled, supervisor, engineer, foreman, specialist)
+├── trade_description (CharField)
+├── workers_count (PositiveIntegerField)
+├── hours_worked (DecimalField)
+├── hourly_rate (DecimalField, optional)
+├── overtime_hours (DecimalField)
+├── work_area (CharField, optional)
+└── notes (TextField, optional)
+
+MaterialEntry
+├── id (PK, AutoField)
+├── diary_entry (ForeignKey → DiaryEntry)
+├── material_name (CharField)
+├── quantity_delivered (DecimalField)
+├── quantity_used (DecimalField)
+├── unit (CharField: kg, tons, m3, m2, m, pcs, bags, liters, rolls)
+├── unit_cost (DecimalField, optional)
+├── supplier (CharField, optional)
+├── delivery_time (TimeField, optional)
+├── quality_check (BooleanField)
+├── storage_location (CharField, optional)
+└── notes (TextField, optional)
+
+EquipmentEntry
+├── id (PK, AutoField)
+├── diary_entry (ForeignKey → DiaryEntry)
+├── equipment_name (CharField)
+├── equipment_type (CharField)
+├── operator_name (CharField, optional)
+├── hours_operated (DecimalField)
+├── fuel_consumption (DecimalField, optional)
+├── status (CharField: operational, maintenance, breakdown, idle)
+├── maintenance_notes (TextField, optional)
+├── breakdown_description (TextField, optional)
+├── rental_cost_per_hour (DecimalField, optional)
+└── work_area (CharField, optional)
+
+DelayEntry
+├── id (PK, AutoField)
+├── diary_entry (ForeignKey → DiaryEntry)
+├── category (CharField: weather, material, equipment, labor, permit, design, client, safety, other)
+├── description (TextField)
+├── start_time (TimeField, optional)
+├── end_time (TimeField, optional)
+├── duration_hours (DecimalField)
+├── impact_level (CharField: low, medium, high, critical)
+├── affected_activities (TextField)
+├── mitigation_actions (TextField, optional)
+├── responsible_party (CharField, optional)
+└── cost_impact (DecimalField, optional)
+
+VisitorEntry
+├── id (PK, AutoField)
+├── diary_entry (ForeignKey → DiaryEntry)
+├── visitor_name (CharField)
+├── company (CharField, optional)
+├── visitor_type (CharField: client, inspector, consultant, supplier, contractor, official, other)
+├── arrival_time (TimeField)
+├── departure_time (TimeField, optional)
+├── purpose_of_visit (TextField)
+├── areas_visited (CharField, optional)
+├── accompanied_by (CharField, optional)
+└── notes (TextField, optional)
+
+DiaryPhoto
+├── id (PK, AutoField)
+├── diary_entry (ForeignKey → DiaryEntry)
+├── photo (ImageField)
+├── caption (CharField, optional)
+├── location (CharField, optional)
+└── uploaded_at (DateTimeField)
+
+=== KEY RELATIONSHIPS ===
+
+1. USER MANAGEMENT:
+   - User (Django) ←→ Profile (OneToOne)
+   - User (Django) ←→ AdminProfile (OneToOne)
+   - User (Django) ←→ SiteManagerProfile (OneToOne)
+   - User (Django) ←→ SuperAdminProfile (OneToOne)
+   - User (Django) ←→ OneTimePassword (OneToOne)
+
+2. BLOG SYSTEM:
+   - User → BlogPost (ForeignKey: author)
+   - Category → BlogPost (ForeignKey)
+   - Tag ←→ BlogPost (ManyToMany)
+   - BlogPost → Comment (ForeignKey)
+   - Comment → Comment (ForeignKey: parent, for threading)
+   - BlogPost → BlogImage (ForeignKey)
+   - BlogPost → ContentImage (ForeignKey)
+   - Comment → CommentLike (ForeignKey)
+
+3. PORTFOLIO SYSTEM:
+   - Category → Project (ForeignKey)
+   - Project → ProjectImage (ForeignKey)
+   - Project → ProjectStat (ForeignKey)
+   - Project → ProjectTimeline (ForeignKey)
+
+4. SITE DIARY SYSTEM:
+   - User → Project (ForeignKey: project_manager, architect, client)
+   - Project → DiaryEntry (ForeignKey)
+   - DiaryEntry → LaborEntry (ForeignKey)
+   - DiaryEntry → MaterialEntry (ForeignKey)
+   - DiaryEntry → EquipmentEntry (ForeignKey)
+   - DiaryEntry → DelayEntry (ForeignKey)
+   - DiaryEntry → VisitorEntry (ForeignKey)
+   - DiaryEntry → DiaryPhoto (ForeignKey)
+
+5. ADMIN SYSTEM:
+   - site_diary.Project → ProjectAssignment (ForeignKey)
+   - User → ProjectAssignment (ForeignKey: user, assigned_by)
+
+6. CONTACT SYSTEM:
+   - ContactMessage (standalone model for contact form submissions)
+
+=== NOTES ===
+
+1. The system uses Django's built-in User model as the central authentication entity
+2. Multiple profile types extend user functionality for different roles
+3. Two separate Project models exist: one for portfolio display, one for site diary management
+4. Blog system includes comprehensive content management with categories, tags, comments, and media
+5. Site diary system provides detailed project tracking with labor, materials, equipment, and progress monitoring
+6. All models include appropriate timestamps and soft delete capabilities where needed
+7. Foreign key relationships maintain data integrity with appropriate cascade behaviors
+8. Many models include approval workflows and status tracking for administrative oversight
+
+=== INDEXES AND PERFORMANCE ===
+
+Key indexes are implemented on:
+- BlogPost: status + published_date, featured + status, category + status
+- Comment: blog_post + status + created_at, status + created_at, parent
+- DiaryEntry: project + entry_date (unique together)
+- ProjectAssignment: project + user + role (unique together)
+
+This ERD represents a comprehensive construction management system with user authentication, content management, project portfolio, and detailed site diary functionality.
