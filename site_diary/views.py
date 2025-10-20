@@ -87,12 +87,13 @@ def diary(request):
                 messages.success(request, 'Diary entry created successfully!')
                 return redirect('site_diary:diary')
     else:
-        # Get user's projects for the form
+            # Get user's approved projects for the form
         if request.user.is_staff:
-            user_projects = Project.objects.all()
+            user_projects = Project.objects.filter(status__in=['planning', 'active', 'on_hold', 'completed'])
         else:
             user_projects = Project.objects.filter(
-                Q(project_manager=request.user) | Q(architect=request.user)
+                Q(project_manager=request.user) | Q(architect=request.user),
+                status__in=['planning', 'active', 'on_hold', 'completed']
             )
         
         diary_form = DiaryEntryForm()
@@ -120,13 +121,14 @@ def diary(request):
 
 @require_site_manager_role
 def dashboard(request):
-    """Site Manager Enhanced dashboard with comprehensive comprehensive project overview"""
-    # Get user's projects
+    """Site Manager Enhanced dashboard with comprehensive project overview"""
+    # Get user's approved projects only
     if request.user.is_staff:
-        projects = Project.objects.all()
+        projects = Project.objects.filter(status__in=['planning', 'active', 'on_hold', 'completed'])
     else:
         projects = Project.objects.filter(
-            Q(project_manager=request.user) | Q(architect=request.user)
+            Q(project_manager=request.user) | Q(architect=request.user),
+            status__in=['planning', 'active', 'on_hold', 'completed']
         )
     
     # Enhanced project data with progress and analytics
@@ -143,17 +145,19 @@ def dashboard(request):
         labor_entries = LaborEntry.objects.filter(diary_entry__in=project_entries)
         delay_entries = DelayEntry.objects.filter(diary_entry__in=project_entries)
         
-        # Calculate actual progress based on project age
-        days_since_start = (timezone.now().date() - project.created_at.date()).days
-        expected_duration = 365  # 1 year project
-        actual_progress = min((days_since_start / expected_duration) * 100, 100) if days_since_start > 0 else 0
+        # Use diary entry progress or calculate based on status
+        if latest_entry:
+            progress = float(latest_entry.progress_percentage)
+        else:
+            progress = project.get_progress_percentage()
         
-        # Use actual progress or diary entry progress
-        progress = latest_entry.progress_percentage if latest_entry else max(actual_progress, 5)
-        
-        # Budget calculations
-        total_labor_cost = sum(labor.total_cost for labor in labor_entries)
-        budget_used_percentage = min((total_labor_cost / 1000000) * 100, 100) if total_labor_cost else (progress * 0.8)
+        # Budget calculations with error handling
+        try:
+            total_labor_cost = sum(labor.total_cost for labor in labor_entries)
+            project_budget = float(project.budget) if project.budget else 1000000
+            budget_used_percentage = min((total_labor_cost / project_budget) * 100, 100) if total_labor_cost else (progress * 0.8)
+        except (AttributeError, TypeError, ZeroDivisionError):
+            budget_used_percentage = progress * 0.8
         
         # Determine current phase based on progress
         if progress < 25:
@@ -178,15 +182,16 @@ def dashboard(request):
             'budget_used': budget_used_percentage,
             'schedule_status': 'On Track' if delay_entries.count() < 3 else 'Minor Delays' if delay_entries.count() < 6 else 'At Risk',
             'delay_count': delay_entries.count(),
-            'image': project.image if hasattr(project, 'image') and project.image else None,
+            'image': project.image if project.image else None,
         }
         project_data.append(project_info)
     
     # Dashboard statistics
     total_projects = projects.count()
     active_projects = projects.filter(status='active').count()
-    completed_projects = projects.filter(status='completed').count()
+    at_risk_projects = projects.filter(status='on_hold').count()
     total_entries = DiaryEntry.objects.filter(project__in=projects).count()
+    draft_entries = DiaryEntry.objects.filter(project__in=projects, draft=True).count()
     
     # Recent delays
     recent_delays = DelayEntry.objects.filter(
@@ -205,10 +210,8 @@ def dashboard(request):
         'stats': {
             'total_projects': total_projects,
             'active_projects': active_projects,
-            'completed_projects': completed_projects,
-            'total_entries': total_entries,
-            'at_risk': sum(1 for p in project_data if p['schedule_status'] == 'At Risk'),
-            'draft_entries': DiaryEntry.objects.filter(project__in=projects, draft=True).count(),
+            'at_risk': at_risk_projects,
+            'draft_entries': draft_entries,
         }
     }
     return render(request, 'site_diary/dashboard.html', context)
@@ -340,9 +343,8 @@ def chatbot(request):
 
 @require_site_manager_role
 def newproject(request):
-    """Create new project with enhanced validation and user experience"""
+    """Create new project - requires admin approval"""
     if request.method == 'POST':
-        # Handle form data from JavaScript
         try:
             client_name = request.POST.get('client_name')
             client_email = request.POST.get('client_email', '')
@@ -363,17 +365,18 @@ def newproject(request):
                     except:
                         pass
             
+            # Create project with pending approval status
             project = Project.objects.create(
                 name=request.POST.get('name'),
                 client_name=client_name,
-                client=client_user,  # Link to user account if found
+                client=client_user,
                 location=request.POST.get('location'),
                 description=request.POST.get('description', ''),
-                budget=float(request.POST.get('budget', 0)) if request.POST.get('budget') else None,
+                budget=float(request.POST.get('budget', 0)) if request.POST.get('budget') else 0,
                 start_date=request.POST.get('start_date'),
                 expected_end_date=request.POST.get('expected_end_date'),
                 project_manager=request.user,
-                status='planning',
+                status='pending_approval',  # Requires admin approval
                 image=request.FILES.get('image') if 'image' in request.FILES else None
             )
             
@@ -390,7 +393,7 @@ def newproject(request):
                 except Exception as e:
                     print(f"Error updating client profile: {e}")
             
-            messages.success(request, f'Project "{project.name}" created successfully!')
+            messages.success(request, f'Project "{project.name}" submitted for admin approval. You will be notified once approved.')
             return redirect('site_diary:dashboard')
         except Exception as e:
             messages.error(request, f'Error creating project: {str(e)}')
@@ -402,13 +405,14 @@ def newproject(request):
 
 @login_required
 def project_list(request):
-    """List all projects with filtering and search capabilities"""
-    # Get user's projects
+    """List approved projects with filtering and search capabilities"""
+    # Get user's approved projects only
     if request.user.is_staff:
-        projects = Project.objects.all()
+        projects = Project.objects.filter(status__in=['planning', 'active', 'on_hold', 'completed'])
     else:
         projects = Project.objects.filter(
-            Q(project_manager=request.user) | Q(architect=request.user)
+            Q(project_manager=request.user) | Q(architect=request.user),
+            status__in=['planning', 'active', 'on_hold', 'completed']
         )
     
     # Apply filters
@@ -470,12 +474,13 @@ def project_edit(request, project_id):
 @require_site_manager_role
 def history(request):
     """View diary entry history with search and filtering"""
-    # Get user's projects
+    # Get user's approved projects
     if request.user.is_staff:
-        projects = Project.objects.all()
+        projects = Project.objects.filter(status__in=['planning', 'active', 'on_hold', 'completed'])
     else:
         projects = Project.objects.filter(
-            Q(project_manager=request.user) | Q(architect=request.user)
+            Q(project_manager=request.user) | Q(architect=request.user),
+            status__in=['planning', 'active', 'on_hold', 'completed']
         )
     
     # Get diary entries
@@ -511,12 +516,13 @@ def history(request):
 @require_site_manager_role
 def reports(request):
     """Generate comprehensive reports and analytics with database data"""
-    # Get user's projects
+    # Get user's approved projects
     if request.user.is_staff:
-        projects = Project.objects.all()
+        projects = Project.objects.filter(status__in=['planning', 'active', 'on_hold', 'completed'])
     else:
         projects = Project.objects.filter(
-            Q(project_manager=request.user) | Q(architect=request.user)
+            Q(project_manager=request.user) | Q(architect=request.user),
+            status__in=['planning', 'active', 'on_hold', 'completed']
         )
     
     # Date filtering
@@ -677,8 +683,9 @@ def reports(request):
         'monthly_progress': monthly_progress,
         'overall_summary': overall_summary,
         'projects': Project.objects.filter(
-            Q(project_manager=request.user) | Q(architect=request.user)
-        ) if not request.user.is_staff else Project.objects.all(),
+            Q(project_manager=request.user) | Q(architect=request.user),
+            status__in=['planning', 'active', 'on_hold', 'completed']
+        ) if not request.user.is_staff else Project.objects.filter(status__in=['planning', 'active', 'on_hold', 'completed']),
         'start_date': start_date,
         'end_date': end_date,
         'selected_project': selected_project,
@@ -931,7 +938,35 @@ def site_manager_logout(request):
 
 @require_admin_role
 def adminclientproject(request):
-    """Admin view for client projects"""
+    """Admin view for client projects with approval functionality"""
+    
+    # Handle project approval/rejection
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        project_id = request.POST.get('project_id')
+        
+        if action and project_id:
+            try:
+                project = Project.objects.get(id=project_id)
+                
+                if action == 'approve':
+                    project.status = 'planning'
+                    project.approved_by = request.user
+                    project.approved_at = timezone.now()
+                    project.save()
+                    messages.success(request, f'Project "{project.name}" approved successfully.')
+                    
+                elif action == 'reject':
+                    rejection_reason = request.POST.get('rejection_reason', '')
+                    project.status = 'rejected'
+                    project.rejection_reason = rejection_reason
+                    project.save()
+                    messages.success(request, f'Project "{project.name}" rejected.')
+                    
+            except Project.DoesNotExist:
+                messages.error(request, 'Project not found.')
+        
+        return redirect('site_diary:adminclientproject')
     
     search_form = ProjectSearchForm(request.GET)
     projects = Project.objects.all().select_related('project_manager', 'architect')
@@ -943,14 +978,18 @@ def adminclientproject(request):
             projects = projects.filter(client_name__icontains=search_form.cleaned_data['client_name'])
         if search_form.cleaned_data['status']:
             projects = projects.filter(status=search_form.cleaned_data['status'])
-        # Remove project_manager filter as it's not in the form
     
-    paginator = Paginator(projects.order_by('-created_at'), 15)
+    # Separate pending projects for easy access
+    pending_projects = projects.filter(status='pending_approval').order_by('-created_at')
+    all_projects = projects.order_by('-created_at')
+    
+    paginator = Paginator(all_projects, 15)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
     context = {
         'page_obj': page_obj,
+        'pending_projects': pending_projects,
         'search_form': search_form,
     }
     return render(request, 'admin/adminclientproject.html', context)

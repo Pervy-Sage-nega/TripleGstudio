@@ -5,11 +5,13 @@ from decimal import Decimal
 
 class Project(models.Model):
     PROJECT_STATUS = [
+        ('pending_approval', 'Pending Approval'),
         ('planning', 'Planning'),
         ('active', 'Active'),
         ('on_hold', 'On Hold'),
         ('completed', 'Completed'),
         ('cancelled', 'Cancelled'),
+        ('rejected', 'Rejected'),
     ]
     
     name = models.CharField(max_length=200)
@@ -23,8 +25,14 @@ class Project(models.Model):
     expected_end_date = models.DateField()
     actual_end_date = models.DateField(null=True, blank=True)
     budget = models.DecimalField(max_digits=12, decimal_places=2)
-    status = models.CharField(max_length=20, choices=PROJECT_STATUS, default='planning')
+    status = models.CharField(max_length=20, choices=PROJECT_STATUS, default='pending_approval')
     image = models.ImageField(upload_to='project_images/', null=True, blank=True)
+    
+    # Admin approval fields
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_projects')
+    approved_at = models.DateTimeField(null=True, blank=True)
+    rejection_reason = models.TextField(blank=True, help_text="Reason for rejection if applicable")
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -41,11 +49,13 @@ class Project(models.Model):
             return int(latest_entry.progress_percentage)
         # Fallback to status-based progress
         status_progress = {
+            'pending_approval': 0,
             'planning': 10,
             'active': 50,
             'on_hold': 25,
             'completed': 100,
             'cancelled': 0,
+            'rejected': 0,
         }
         return status_progress.get(self.status, 0)
 
