@@ -92,14 +92,14 @@
                                             </span>
                                         </td>
                                         <td>
-                                            {% with latest_entry=project.diary_entries.all.first %}
+                                            {% with latest_entry=project.diary_entries.first %}
                                                 {% if latest_entry %}
                                                     <div class="progress" style="height: 20px;">
                                                         <div class="progress-bar" role="progressbar" 
                                                              style="width: {{ latest_entry.progress_percentage }}%"
                                                              aria-valuenow="{{ latest_entry.progress_percentage }}" 
                                                              aria-valuemin="0" aria-valuemax="100">
-                                                            {{ latest_entry.progress_percentage }}%
+                                                            {{ latest_entry.progress_percentage|floatformat:0 }}%
                                                         </div>
                                                     </div>
                                                 {% else %}

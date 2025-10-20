@@ -57,6 +57,38 @@ class DiaryEntryForm(forms.ModelForm):
             'general_notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Additional notes'}),
             'photos_taken': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
+    
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        # FORCE COMPLETE REFRESH - Delete and recreate the field
+        if user:
+            from django.utils import timezone
+            import uuid
+            
+            filtered_projects = Project.objects.filter(
+                project_manager=user,
+                status__in=['planning', 'active', 'on_hold', 'completed']
+            )
+            print(f"FORM DEBUG: User {user.username} has {filtered_projects.count()} projects")
+            for project in filtered_projects:
+                print(f"FORM DEBUG: Project {project.id}: {project.name} (Manager: {project.project_manager})")
+            
+            # Completely replace the field to prevent any caching
+            self.fields['project'] = forms.ModelChoiceField(
+                queryset=filtered_projects,
+                empty_label="Select a project...",
+                widget=forms.Select(attrs={
+                    'class': 'form-control',
+                    'id': f'id_project_{uuid.uuid4().hex[:8]}',
+                    'data-refresh': str(timezone.now().timestamp()),
+                    'data-user': str(user.id)
+                })
+            )
+        else:
+            print("FORM DEBUG: No user provided, showing no projects")
+            self.fields['project'].queryset = Project.objects.none()
 
 class LaborEntryForm(forms.ModelForm):
     class Meta:
@@ -182,7 +214,7 @@ DiaryPhotoFormSet = formset_factory(DiaryPhotoForm, extra=1, can_delete=True)
 # Search and Filter Forms
 class DiarySearchForm(forms.Form):
     project = forms.ModelChoiceField(
-        queryset=Project.objects.all(),
+        queryset=Project.objects.filter(status__in=['planning', 'active', 'on_hold', 'completed']),
         required=False,
         empty_label="All Projects",
         widget=forms.Select(attrs={'class': 'form-control'})
@@ -209,7 +241,7 @@ class DiarySearchForm(forms.Form):
 
 class DiaryEntrySearchForm(forms.Form):
     project = forms.ModelChoiceField(
-        queryset=Project.objects.all(),
+        queryset=Project.objects.filter(status__in=['planning', 'active', 'on_hold', 'completed']),
         required=False,
         empty_label="All Projects",
         widget=forms.Select(attrs={'class': 'form-control'})
