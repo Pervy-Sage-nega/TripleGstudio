@@ -10,7 +10,7 @@ from django.views.decorators.cache import cache_page
 from django.utils.decorators import method_decorator
 from django.utils import timezone
 from .models import BlogPost, Category, Tag, BlogImage, ContentImage
-from accounts.decorators import admin_or_site_manager_required
+
 from .decorators import require_site_manager_role, require_admin_role, allow_public_access
 from .seo import SEOManager
 
@@ -423,12 +423,15 @@ def edit_blog_post(request, post_id):
     return render(request, 'blogcreation/createblog.html', context)
 
 
-@admin_or_site_manager_required
+@require_site_manager_role
 def delete_blog(request, blog_id):
     """Soft delete a blog post"""
     try:
-        # Admin can delete any post, site manager can only delete their own posts
-        if request.user.is_staff:
+        # Check if user is admin (can delete any post) or site manager (can only delete their own posts)
+        from accounts.utils import get_user_role
+        user_role = get_user_role(request.user)
+        
+        if user_role == 'admin' or request.user.is_superuser:
             blog_post = BlogPost.objects.get(id=blog_id, is_deleted=False)
         else:
             blog_post = BlogPost.objects.get(id=blog_id, author=request.user, is_deleted=False)
@@ -452,7 +455,13 @@ def delete_blog(request, blog_id):
             })
         messages.error(request, 'Blog post not found or already deleted.')
     
-    return redirect('blog:blogmanagement' if request.user.is_staff else 'blog:recently_deleted')
+    # Redirect based on user role
+    from accounts.utils import get_user_role
+    user_role = get_user_role(request.user)
+    if user_role == 'admin' or request.user.is_superuser:
+        return redirect('blog:blogmanagement')
+    else:
+        return redirect('blog:recently_deleted')
 
 @require_site_manager_role
 def recently_deleted(request):

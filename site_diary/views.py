@@ -896,7 +896,7 @@ def settings(request):
                 for error in password_form.errors.values():
                     messages.error(request, error[0])
         
-        return redirect('site:settings')
+        return redirect('site_diary:settings')
     
     # Debug: Show current data being passed to template
     print(f"DEBUG: Template context - User: {request.user}")
@@ -933,7 +933,7 @@ def site_manager_logout(request):
         return redirect('accounts:sitemanager_login')
     
     # If GET request, redirect to settings
-    return redirect('site:settings')
+    return redirect('site_diary:settings')
 
 @require_admin_role
 def adminclientproject(request):
