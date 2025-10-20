@@ -33,3 +33,9 @@ Thumbs.db
 venv/
 env/
 .venv/
+
+# Temporary migration scripts
+migrate_*.py
+extract_*.py
+create_superuser.py
+data_dump.json
