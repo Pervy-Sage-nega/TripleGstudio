@@ -422,19 +422,36 @@ def edit_blog_post(request, post_id):
     return render(request, 'blogcreation/createblog.html', context)
 
 
-@require_site_manager_role
+@admin_or_site_manager_required
 def delete_blog(request, blog_id):
     """Soft delete a blog post"""
     try:
-        blog_post = BlogPost.objects.get(id=blog_id, author=request.user, is_deleted=False)
+        # Admin can delete any post, site manager can only delete their own posts
+        if request.user.is_staff:
+            blog_post = BlogPost.objects.get(id=blog_id, is_deleted=False)
+        else:
+            blog_post = BlogPost.objects.get(id=blog_id, author=request.user, is_deleted=False)
+            
         blog_post.is_deleted = True
         blog_post.deleted_at = timezone.now()
         blog_post.save()
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': f'Blog post "{blog_post.title}" moved to recently deleted.'
+            })
+            
         messages.success(request, f'Blog post "{blog_post.title}" moved to recently deleted.')
     except BlogPost.DoesNotExist:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'message': 'Blog post not found or already deleted.'
+            })
         messages.error(request, 'Blog post not found or already deleted.')
     
-    return redirect('blog:drafts')
+    return redirect('blog:blogmanagement' if request.user.is_staff else 'blog:drafts')
 
 @require_site_manager_role
 def recently_deleted(request):
