@@ -459,7 +459,7 @@ def delete_blog(request, blog_id):
     from accounts.utils import get_user_role
     user_role = get_user_role(request.user)
     if user_role == 'admin' or request.user.is_superuser:
-        return redirect('blog:blogmanagement')
+        return redirect('blog:admin_recently_deleted')
     else:
         return redirect('blog:recently_deleted')
 
