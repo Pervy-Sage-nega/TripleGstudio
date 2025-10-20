@@ -615,6 +615,12 @@
                 formData.append('start_date', startDate.value);
                 formData.append('expected_end_date', endDate.value);
                 formData.append('description', document.getElementById('project-description').value);
+                
+                // Add image file if selected
+                if (imageInput.files[0]) {
+                    formData.append('image', imageInput.files[0]);
+                }
+                
                 formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
                 
                 fetch(window.location.href, {

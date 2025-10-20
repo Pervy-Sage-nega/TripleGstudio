@@ -1,9 +1,9 @@
-{% extends 'layout.html' %}
+{% extends 'site_diary/layout_format.html' %}
 {% load static %}
 
 {% block title %}{{ page_title }}{% endblock %}
 
-{% block content %}
+{% block body %}
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
@@ -64,9 +64,20 @@
                                     {% for project in page_obj %}
                                     <tr>
                                         <td>
-                                            <strong>{{ project.name }}</strong>
-                                            <br>
-                                            <small class="text-muted">{{ project.description|truncatechars:50 }}</small>
+                                            <div class="d-flex align-items-center">
+                                                {% if project.image %}
+                                                    <img src="{{ project.image.url }}" alt="{{ project.name }}" 
+                                                         class="rounded me-3" style="width: 50px; height: 50px; object-fit: cover;">
+                                                {% else %}
+                                                    <img src="{% static 'images/image6.jpg' %}" alt="{{ project.name }}" 
+                                                         class="rounded me-3" style="width: 50px; height: 50px; object-fit: cover;">
+                                                {% endif %}
+                                                <div>
+                                                    <strong>{{ project.name }}</strong>
+                                                    <br>
+                                                    <small class="text-muted">{{ project.description|truncatechars:50 }}</small>
+                                                </div>
+                                            </div>
                                         </td>
                                         <td>{{ project.client_name }}</td>
                                         <td>{{ project.location }}</td>
@@ -81,7 +92,7 @@
                                             </span>
                                         </td>
                                         <td>
-                                            {% with latest_entry=project.diary_entries.filter.draft=False.first %}
+                                            {% with latest_entry=project.diary_entries.all.first %}
                                                 {% if latest_entry %}
                                                     <div class="progress" style="height: 20px;">
                                                         <div class="progress-bar" role="progressbar" 
@@ -92,7 +103,14 @@
                                                         </div>
                                                     </div>
                                                 {% else %}
-                                                    <span class="text-muted">No entries yet</span>
+                                                    <div class="progress" style="height: 20px;">
+                                                        <div class="progress-bar" role="progressbar" 
+                                                             style="width: {{ project.get_progress_percentage }}%"
+                                                             aria-valuenow="{{ project.get_progress_percentage }}" 
+                                                             aria-valuemin="0" aria-valuemax="100">
+                                                            {{ project.get_progress_percentage }}%
+                                                        </div>
+                                                    </div>
                                                 {% endif %}
                                             {% endwith %}
                                         </td>

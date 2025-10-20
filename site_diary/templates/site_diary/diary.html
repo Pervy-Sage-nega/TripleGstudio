@@ -307,13 +307,30 @@
                                     <div class="form-group">
                                         <label for="siteLocation">Project Location</label>
                                         <div class="input-group">
-                                            <input type="text" class="form-control" id="siteLocation" placeholder="Select a project to load location">
+                                            <input type="text" class="form-control" id="siteLocation" placeholder="Select a project to load location" readonly>
                                             <button type="button" class="btn btn-primary" id="fetch-weather-btn">
                                                 <i class="fas fa-cloud-sun"></i> Fetch Weather
                                             </button>
                                         </div>
                                     </div>
                                 </div>
+                                
+                                <script>
+                                // Auto-populate location when project is selected
+                                document.getElementById('{{ diary_form.project.id_for_label }}').addEventListener('change', function() {
+                                    const projectId = this.value;
+                                    if (projectId) {
+                                        fetch(`/diary/api/project-location/${projectId}/`)
+                                            .then(response => response.json())
+                                            .then(data => {
+                                                document.getElementById('siteLocation').value = data.location || '';
+                                            })
+                                            .catch(error => console.error('Error fetching location:', error));
+                                    } else {
+                                        document.getElementById('siteLocation').value = '';
+                                    }
+                                });
+                                </script>
                             </div>
                         </section>
 
@@ -479,19 +496,6 @@
                                 </div>
                                 <div class="entry-list" id="materialsList">
                                     <!-- Dynamically added materials will appear here -->
-                                    <div class="entry-item">
-                                        <div class="entry-content">
-                                            <strong>Ready-mix Concrete</strong> - 15 m³ - Delivery note: #RMC-20250315
-                                        </div>
-                                        <div class="entry-actions">
-                                            <button type="button" class="entry-action-btn edit">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button type="button" class="entry-action-btn delete">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
 
@@ -528,19 +532,6 @@
                                 </div>
                                 <div class="entry-list" id="equipmentList">
                                     <!-- Dynamically added equipment will appear here -->
-                                    <div class="entry-item">
-                                        <div class="entry-content">
-                                            <strong>Excavator CAT 320</strong> - 1 unit - 8 hours
-                                        </div>
-                                        <div class="entry-actions">
-                                            <button type="button" class="entry-action-btn edit">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button type="button" class="entry-action-btn delete">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
 
@@ -679,7 +670,7 @@
                                     <i class="fas fa-camera"></i>
                                     <h2 class="section-title">Photo Documentation</h2>
                                 </div>
-                                <div class="photo-upload-container" id="photoDropZone">
+                                <div class="photo-upload-container" id="photoDropZone" onclick="document.getElementById('photoUpload').click()">
                                     <input type="file" id="photoUpload" multiple accept="image/*" style="display: none;">
                                     <div class="upload-icon">
                                         <i class="fas fa-cloud-upload-alt"></i>
@@ -688,36 +679,61 @@
                                     <div class="upload-subtext">JPG, PNG or GIF • Max 10 MB each • Up to 20 photos</div>
                                 </div>
                                 <div class="photo-gallery" id="photoGallery">
-                                    <!-- Sample photo preview - will be dynamically generated -->
-                                    <div class="photo-item">
-                                        <img src="https://via.placeholder.com/300x200/3c6e71/ffffff?text=Site+Photo" alt="Site Photo" class="photo-preview">
-                                        <div class="photo-overlay">
-                                            <div class="photo-description">Foundation work progress</div>
-                                            <div class="photo-actions">
-                                                <button type="button" class="photo-action-btn edit-desc" title="Edit Description">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button type="button" class="photo-action-btn delete-photo" title="Remove Photo">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="photo-item">
-                                        <img src="https://via.placeholder.com/300x200/284b63/ffffff?text=Site+Photo" alt="Site Photo" class="photo-preview">
-                                        <div class="photo-overlay">
-                                            <div class="photo-description">Excavation area north side</div>
-                                            <div class="photo-actions">
-                                                <button type="button" class="photo-action-btn edit-desc" title="Edit Description">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button type="button" class="photo-action-btn delete-photo" title="Remove Photo">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <!-- Photos will be dynamically added here -->
                                 </div>
+                                
+                                <script>
+                                let uploadedPhotos = [];
+                                
+                                document.getElementById('photoUpload').addEventListener('change', function(e) {
+                                    const files = Array.from(e.target.files);
+                                    
+                                    files.forEach((file, index) => {
+                                        if (file.type.startsWith('image/') && file.size <= 10 * 1024 * 1024) {
+                                            const reader = new FileReader();
+                                            reader.onload = function(e) {
+                                                const photoId = Date.now() + index;
+                                                uploadedPhotos.push({ id: photoId, file: file, description: '' });
+                                                
+                                                const photoItem = document.createElement('div');
+                                                photoItem.className = 'photo-item';
+                                                photoItem.innerHTML = `
+                                                    <img src="${e.target.result}" alt="Site Photo" class="photo-preview">
+                                                    <div class="photo-overlay">
+                                                        <div class="photo-description" id="desc-${photoId}">Click to add description</div>
+                                                        <div class="photo-actions">
+                                                            <button type="button" class="photo-action-btn edit-desc" onclick="editPhotoDescription(${photoId})" title="Edit Description">
+                                                                <i class="fas fa-edit"></i>
+                                                            </button>
+                                                            <button type="button" class="photo-action-btn delete-photo" onclick="removePhoto(${photoId})" title="Remove Photo">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                `;
+                                                document.getElementById('photoGallery').appendChild(photoItem);
+                                            };
+                                            reader.readAsDataURL(file);
+                                        } else {
+                                            alert('Please upload images only (max 10MB each)');
+                                        }
+                                    });
+                                });
+                                
+                                function editPhotoDescription(photoId) {
+                                    const description = prompt('Enter photo description:');
+                                    if (description !== null) {
+                                        document.getElementById(`desc-${photoId}`).textContent = description || 'Click to add description';
+                                        const photo = uploadedPhotos.find(p => p.id === photoId);
+                                        if (photo) photo.description = description;
+                                    }
+                                }
+                                
+                                function removePhoto(photoId) {
+                                    uploadedPhotos = uploadedPhotos.filter(p => p.id !== photoId);
+                                    document.querySelector(`[onclick*="${photoId}"]`).closest('.photo-item').remove();
+                                }
+                                </script>
                             </div>
                         </section>
 
@@ -802,6 +818,40 @@
 
                         <!-- Review & Submit Tab -->
                         <section id="tab-review" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-review">
+                            <!-- Hidden formset fields -->
+                            <div style="display: none;">
+                                {{ labor_formset.management_form }}
+                                {% for form in labor_formset %}
+                                    <div id="labor-form-{{ forloop.counter0 }}">
+                                        {% for field in form %}
+                                            {{ field }}
+                                        {% endfor %}
+                                    </div>
+                                {% endfor %}
+                                
+                                {{ material_formset.management_form }}
+                                {% for form in material_formset %}
+                                    <div id="material-form-{{ forloop.counter0 }}">
+                                        {% for field in form %}
+                                            {{ field }}
+                                        {% endfor %}
+                                    </div>
+                                {% endfor %}
+                                
+                                {{ equipment_formset.management_form }}
+                                {% for form in equipment_formset %}
+                                    <div id="equipment-form-{{ forloop.counter0 }}">
+                                        {% for field in form %}
+                                            {{ field }}
+                                        {% endfor %}
+                                    </div>
+                                {% endfor %}
+                                
+                                {{ delay_formset.management_form }}
+                                {{ visitor_formset.management_form }}
+                                {{ photo_formset.management_form }}
+                            </div>
+                            
                             <!-- Budget Summary Section -->
                             <div class="form-section">
                                 <div class="section-header">
@@ -822,6 +872,279 @@
                                         <input type="text" class="form-control" id="remainingBudget" readonly value="0.00">
                                     </div>
                                 </div>
+                                
+                                <script>
+                                // Project data from Django
+                                const projectData = {{ project_data|safe }};
+                                let dailyMaterials = [];
+                                let dailyEquipment = [];
+                                let dailyOtherCosts = [];
+                                
+                                // Calculate costs dynamically
+                                function updateBudgetSummary() {
+                                    let dailyTotal = 0;
+                                    
+                                    // Calculate from stored arrays
+                                    dailyTotal += dailyMaterials.reduce((sum, item) => sum + item.cost, 0);
+                                    dailyTotal += dailyEquipment.reduce((sum, item) => sum + item.cost, 0);
+                                    dailyTotal += dailyOtherCosts.reduce((sum, item) => sum + item.cost, 0);
+                                    
+                                    document.getElementById('dailyCost').value = dailyTotal.toLocaleString('en-PH', {minimumFractionDigits: 2});
+                                    
+                                    // Get project budget and calculate remaining
+                                    const projectSelect = document.getElementById('{{ diary_form.project.id_for_label }}');
+                                    if (projectSelect.value) {
+                                        const selectedProject = projectData.find(p => p.id == projectSelect.value);
+                                        if (selectedProject) {
+                                            const runningCost = selectedProject.spent + dailyTotal;
+                                            const remainingBudget = selectedProject.budget - runningCost;
+                                            
+                                            document.getElementById('runningCost').value = runningCost.toLocaleString('en-PH', {minimumFractionDigits: 2});
+                                            document.getElementById('remainingBudget').value = remainingBudget.toLocaleString('en-PH', {minimumFractionDigits: 2});
+                                        }
+                                    }
+                                }
+                                
+                                // Add material function
+                                function addMaterial() {
+                                    const name = document.getElementById('materialName').value;
+                                    const quantity = parseFloat(document.getElementById('materialQuantity').value) || 0;
+                                    const unit = document.getElementById('materialUnit').value;
+                                    const cost = parseFloat(document.getElementById('materialCost').value) || 0;
+                                    
+                                    if (name && quantity && unit && cost) {
+                                        const material = { name, quantity, unit, cost };
+                                        dailyMaterials.push(material);
+                                        
+                                        const listItem = document.createElement('div');
+                                        listItem.className = 'entry-item';
+                                        listItem.innerHTML = `
+                                            <div class="entry-content">
+                                                <strong>${name}</strong> - ${quantity} ${unit} - ₱${cost.toLocaleString('en-PH', {minimumFractionDigits: 2})}
+                                            </div>
+                                            <div class="entry-actions">
+                                                <button type="button" class="entry-action-btn delete" onclick="removeMaterial(this, ${dailyMaterials.length - 1})">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        `;
+                                        document.getElementById('materialsList').appendChild(listItem);
+                                        
+                                        // Clear inputs
+                                        ['materialName', 'materialQuantity', 'materialUnit', 'materialCost'].forEach(id => {
+                                            document.getElementById(id).value = '';
+                                        });
+                                        
+                                        updateBudgetSummary();
+                                    }
+                                }
+                                
+                                // Add equipment function
+                                function addEquipment() {
+                                    const name = document.getElementById('equipmentName').value;
+                                    const quantity = parseFloat(document.getElementById('equipmentQuantity').value) || 1;
+                                    const hours = parseFloat(document.getElementById('equipmentHours').value) || 0;
+                                    const cost = parseFloat(document.getElementById('equipmentCost').value) || 0;
+                                    
+                                    if (name && hours && cost) {
+                                        const equipment = { name, quantity, hours, cost };
+                                        dailyEquipment.push(equipment);
+                                        
+                                        const listItem = document.createElement('div');
+                                        listItem.className = 'entry-item';
+                                        listItem.innerHTML = `
+                                            <div class="entry-content">
+                                                <strong>${name}</strong> - ${quantity} unit(s) - ${hours} hours - ₱${cost.toLocaleString('en-PH', {minimumFractionDigits: 2})}
+                                            </div>
+                                            <div class="entry-actions">
+                                                <button type="button" class="entry-action-btn delete" onclick="removeEquipment(this, ${dailyEquipment.length - 1})">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        `;
+                                        document.getElementById('equipmentList').appendChild(listItem);
+                                        
+                                        // Clear inputs
+                                        ['equipmentName', 'equipmentQuantity', 'equipmentHours', 'equipmentCost'].forEach(id => {
+                                            document.getElementById(id).value = id === 'equipmentQuantity' ? '1' : '';
+                                        });
+                                        
+                                        updateBudgetSummary();
+                                    }
+                                }
+                                
+                                // Add other cost function
+                                function addOtherCost() {
+                                    const name = document.getElementById('otherCostName').value;
+                                    const cost = parseFloat(document.getElementById('otherCostAmount').value) || 0;
+                                    
+                                    if (name && cost) {
+                                        const otherCost = { name, cost };
+                                        dailyOtherCosts.push(otherCost);
+                                        
+                                        const listItem = document.createElement('div');
+                                        listItem.className = 'entry-item';
+                                        listItem.innerHTML = `
+                                            <div class="entry-content">
+                                                <strong>${name}</strong> - ₱${cost.toLocaleString('en-PH', {minimumFractionDigits: 2})}
+                                            </div>
+                                            <div class="entry-actions">
+                                                <button type="button" class="entry-action-btn delete" onclick="removeOtherCost(this, ${dailyOtherCosts.length - 1})">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        `;
+                                        document.getElementById('otherCostsList').appendChild(listItem);
+                                        
+                                        // Clear inputs
+                                        ['otherCostName', 'otherCostAmount'].forEach(id => {
+                                            document.getElementById(id).value = '';
+                                        });
+                                        
+                                        updateBudgetSummary();
+                                    }
+                                }
+                                
+                                // Remove functions
+                                function removeMaterial(button, index) {
+                                    dailyMaterials.splice(index, 1);
+                                    button.closest('.entry-item').remove();
+                                    updateBudgetSummary();
+                                }
+                                
+                                function removeEquipment(button, index) {
+                                    dailyEquipment.splice(index, 1);
+                                    button.closest('.entry-item').remove();
+                                    updateBudgetSummary();
+                                }
+                                
+                                function removeOtherCost(button, index) {
+                                    dailyOtherCosts.splice(index, 1);
+                                    button.closest('.entry-item').remove();
+                                    updateBudgetSummary();
+                                }
+                                
+                                // Add task, subcontractor, and delay functions
+                                function addTask() {
+                                    const task = document.getElementById('taskInput').value.trim();
+                                    if (task) {
+                                        const listItem = document.createElement('div');
+                                        listItem.className = 'entry-item';
+                                        listItem.innerHTML = `
+                                            <div class="entry-content">${task}</div>
+                                            <div class="entry-actions">
+                                                <button type="button" class="entry-action-btn delete" onclick="this.closest('.entry-item').remove()">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        `;
+                                        document.getElementById('taskList').appendChild(listItem);
+                                        document.getElementById('taskInput').value = '';
+                                    }
+                                }
+                                
+                                function addSubcontractor() {
+                                    const subcontractor = document.getElementById('subcontractorInput').value.trim();
+                                    if (subcontractor) {
+                                        const listItem = document.createElement('div');
+                                        listItem.className = 'entry-item';
+                                        listItem.innerHTML = `
+                                            <div class="entry-content"><strong>${subcontractor}</strong></div>
+                                            <div class="entry-actions">
+                                                <button type="button" class="entry-action-btn delete" onclick="this.closest('.entry-item').remove()">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        `;
+                                        document.getElementById('subcontractorList').appendChild(listItem);
+                                        document.getElementById('subcontractorInput').value = '';
+                                    }
+                                }
+                                
+                                function addDelay() {
+                                    const type = document.getElementById('delayType').value;
+                                    const impact = document.getElementById('delayImpact').value;
+                                    const description = document.getElementById('delayDescription').value.trim();
+                                    
+                                    if (type && impact && description) {
+                                        const listItem = document.createElement('div');
+                                        listItem.className = 'entry-item';
+                                        listItem.innerHTML = `
+                                            <div class="entry-content">
+                                                <strong>${type} - ${impact}</strong><br>
+                                                ${description}
+                                            </div>
+                                            <div class="entry-actions">
+                                                <button type="button" class="entry-action-btn delete" onclick="this.closest('.entry-item').remove()">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        `;
+                                        document.getElementById('delayList').appendChild(listItem);
+                                        
+                                        // Clear inputs
+                                        ['delayType', 'delayImpact', 'delayDescription', 'delaySolution'].forEach(id => {
+                                            document.getElementById(id).value = '';
+                                        });
+                                    }
+                                }
+                                
+                                // Populate formsets before submission
+                                function populateFormsets() {
+                                    // Populate material formset
+                                    dailyMaterials.forEach((material, index) => {
+                                        const prefix = `material-${index}`;
+                                        document.querySelector(`[name="${prefix}-material_name"]`).value = material.name;
+                                        document.querySelector(`[name="${prefix}-quantity_delivered"]`).value = material.quantity;
+                                        document.querySelector(`[name="${prefix}-unit"]`).value = material.unit;
+                                        document.querySelector(`[name="${prefix}-unit_cost"]`).value = material.cost / material.quantity;
+                                    });
+                                    
+                                    // Populate equipment formset
+                                    dailyEquipment.forEach((equipment, index) => {
+                                        const prefix = `equipment-${index}`;
+                                        document.querySelector(`[name="${prefix}-equipment_name"]`).value = equipment.name;
+                                        document.querySelector(`[name="${prefix}-hours_operated"]`).value = equipment.hours;
+                                        document.querySelector(`[name="${prefix}-rental_cost_per_hour"]`).value = equipment.cost / equipment.hours;
+                                    });
+                                    
+                                    // Update formset counts
+                                    document.querySelector('[name="material-TOTAL_FORMS"]').value = dailyMaterials.length;
+                                    document.querySelector('[name="equipment-TOTAL_FORMS"]').value = dailyEquipment.length;
+                                }
+                                
+                                // Initialize event listeners
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    document.getElementById('addMaterial').addEventListener('click', addMaterial);
+                                    document.getElementById('addEquipment').addEventListener('click', addEquipment);
+                                    document.getElementById('addOtherCost').addEventListener('click', addOtherCost);
+                                    document.getElementById('addTask').addEventListener('click', addTask);
+                                    document.getElementById('addSubcontractor').addEventListener('click', addSubcontractor);
+                                    document.getElementById('addDelay').addEventListener('click', addDelay);
+                                    
+                                    // Update budget when project changes
+                                    document.getElementById('{{ diary_form.project.id_for_label }}').addEventListener('change', updateBudgetSummary);
+                                    
+                                    // Calculate total hours when start/end time changes
+                                    ['startTime', 'endTime'].forEach(id => {
+                                        document.getElementById(id).addEventListener('change', function() {
+                                            const start = document.getElementById('startTime').value;
+                                            const end = document.getElementById('endTime').value;
+                                            if (start && end) {
+                                                const startTime = new Date('1970-01-01T' + start + ':00');
+                                                const endTime = new Date('1970-01-01T' + end + ':00');
+                                                const diff = (endTime - startTime) / (1000 * 60 * 60);
+                                                document.getElementById('totalHours').value = diff > 0 ? diff.toFixed(1) : '';
+                                            }
+                                        });
+                                    });
+                                    
+                                    // Handle form submission
+                                    document.getElementById('siteEntryForm').addEventListener('submit', function(e) {
+                                        populateFormsets();
+                                    });
+                                });
+                                </script>
                             </div>
 
                             <!-- Form Footer -->
@@ -851,16 +1174,52 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     var saveAsDraftBtn = document.getElementById('saveAsDraft');
+    var submitBtn = document.getElementById('submitDiary');
     var siteEntryForm = document.getElementById('siteEntryForm');
+    
+    console.log('Form elements found:', {
+        saveAsDraftBtn: !!saveAsDraftBtn,
+        submitBtn: !!submitBtn,
+        siteEntryForm: !!siteEntryForm
+    });
     
     if (saveAsDraftBtn && siteEntryForm) {
         saveAsDraftBtn.addEventListener('click', function(e) {
             e.preventDefault();
+            console.log('Save as draft clicked');
             var input = document.createElement('input');
             input.type = 'hidden';
             input.name = 'save_as_draft';
             input.value = '1';
             siteEntryForm.appendChild(input);
+            siteEntryForm.submit();
+        });
+    }
+    
+    if (submitBtn && siteEntryForm) {
+        submitBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Submit diary clicked');
+            
+            // Comprehensive validation
+            const missingFields = [];
+            
+            const project = document.getElementById('{{ diary_form.project.id_for_label }}').value;
+            const entryDate = document.getElementById('{{ diary_form.entry_date.id_for_label }}').value;
+            const workDescription = document.getElementById('{{ diary_form.work_description.id_for_label }}').value;
+            const progressPercentage = document.getElementById('{{ diary_form.progress_percentage.id_for_label }}').value;
+            
+            if (!project) missingFields.push('Project Name');
+            if (!entryDate) missingFields.push('Entry Date');
+            if (!workDescription.trim()) missingFields.push('Work Description');
+            if (!progressPercentage) missingFields.push('Progress Percentage');
+            
+            if (missingFields.length > 0) {
+                alert('Please fill out the following required fields:\n\n• ' + missingFields.join('\n• '));
+                return;
+            }
+            
+            console.log('Form validation passed, submitting...');
             siteEntryForm.submit();
         });
     }

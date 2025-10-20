@@ -42,27 +42,93 @@
             </div>
         </div>
         
-        <!-- Admin Status Bar -->
-        <div class="admin-status-bar">
-            <div class="status-item">
-                <span class="status-label">Entry ID:</span>
-                <span class="status-value">SDR-2025-042</span>
+        <!-- Summary Stats -->
+        <div class="summary-section">
+            <div class="summary-card">
+                <i class="fas fa-clipboard-list summary-icon"></i>
+                <div class="summary-title">Total Entries</div>
+                <div class="summary-value">{{ total_entries }}</div>
             </div>
-            <div class="status-item">
-                <span class="status-label">Submitted By:</span>
-                <span class="status-value">John Smith (Architect)</span>
+            <div class="summary-card warning">
+                <i class="fas fa-exclamation-triangle summary-icon"></i>
+                <div class="summary-title">Pending Approval</div>
+                <div class="summary-value">{{ pending_entries }}</div>
             </div>
-            <div class="status-item">
-                <span class="status-label">Submission Date:</span>
-                <span class="status-value">Mar 17, 2025 - 09:45 AM</span>
+            <div class="summary-card success">
+                <i class="fas fa-check-circle summary-icon"></i>
+                <div class="summary-title">Approved</div>
+                <div class="summary-value">{{ approved_entries }}</div>
             </div>
-            <div class="status-item">
-                <span class="status-label">Current Status:</span>
-                <span class="status-value status-pending">Pending Review</span>
+            <div class="summary-card">
+                <i class="fas fa-edit summary-icon"></i>
+                <div class="summary-title">Drafts</div>
+                <div class="summary-value">{{ draft_entries }}</div>
             </div>
         </div>
         
-        <!-- Form Container -->
+        <!-- Diary Entries List -->
+        <div class="project-list-section">
+            <div class="section-header">
+                <div class="section-title">
+                    <i class="fas fa-list"></i>
+                    Recent Diary Entries
+                </div>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Project</th>
+                            <th>Created By</th>
+                            <th>Progress</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in page_obj %}
+                        <tr>
+                            <td>{{ entry.entry_date }}</td>
+                            <td>
+                                <div class="project-title">{{ entry.project.name }}</div>
+                                <div class="project-code">{{ entry.project.client_name }}</div>
+                            </td>
+                            <td>{{ entry.created_by.get_full_name|default:entry.created_by.username }}</td>
+                            <td>{{ entry.progress_percentage }}%</td>
+                            <td>
+                                <span class="status-badge {% if entry.approved %}status-approved{% elif entry.draft %}status-draft{% else %}status-pending{% endif %}">
+                                    {% if entry.approved %}Approved{% elif entry.draft %}Draft{% else %}Pending{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                {% if not entry.approved and not entry.draft %}
+                                <form method="post" style="display: inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="approve">
+                                    <input type="hidden" name="entry_id" value="{{ entry.id }}">
+                                    <button type="submit" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-check"></i> Approve
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 2rem;">
+                                <p>No diary entries found.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Show first entry details if available -->
+        {% if page_obj %}
+        {% with entry=page_obj.0 %}
         <div class="form-container readonly-container">
             <form id="siteEntryForm" method="post">{% csrf_token %}
                 <!-- Project Information Section -->
@@ -74,25 +140,25 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="projectSelect">Project Name</label>
-                            <input type="text" class="form-control readonly" value="Central Business District Tower" readonly>
+                            <input type="text" class="form-control readonly" value="{{ entry.project.name }}" readonly>
                         </div>
                         <div class="form-group">
                             <label for="projectNumber">Project Number</label>
-                            <input type="text" class="form-control readonly" value="PRJ-2025-001" readonly>
+                            <input type="text" class="form-control readonly" value="PRJ-{{ entry.project.created_at.year }}-{{ entry.project.id|stringformat:'03d' }}" readonly>
                         </div>
                         <div class="form-group">
                             <label for="projectBudget">Project Budget</label>
-                            <input type="text" class="form-control readonly" value="₱ 45,000,000.00" readonly>
+                            <input type="text" class="form-control readonly" value="₱ {{ entry.project.budget|floatformat:2|default:'0.00' }}" readonly>
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label for="location">Location</label>
-                            <input type="text" class="form-control readonly" value="Downtown, Central Business District" readonly>
+                            <input type="text" class="form-control readonly" value="{{ entry.project.location }}" readonly>
                         </div>
                         <div class="form-group">
                             <label for="entryDate">Date</label>
-                            <input type="text" class="form-control readonly" value="March 17, 2025" readonly>
+                            <input type="text" class="form-control readonly" value="{{ entry.entry_date }}" readonly>
                         </div>
                     </div>
                 </div>
@@ -143,8 +209,18 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label>Weather Notes</label>
-                        <textarea class="form-control form-control-textarea readonly" readonly>Clear sky with no clouds. Perfect conditions for concrete pouring and exterior work.</textarea>
+                        <label>Weather Condition</label>
+                        <input type="text" class="form-control readonly" value="{{ entry.get_weather_condition_display|default:'Not specified' }}" readonly>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Temperature High</label>
+                            <input type="text" class="form-control readonly" value="{{ entry.temperature_high|default:'--' }}°C" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Temperature Low</label>
+                            <input type="text" class="form-control readonly" value="{{ entry.temperature_low|default:'--' }}°C" readonly>
+                        </div>
                     </div>
                 </div>
                 
@@ -206,7 +282,7 @@
                     </div>
                     <div class="form-group">
                         <label>Description of Work Performed</label>
-                        <textarea class="form-control form-control-textarea readonly" readonly>Completed concrete pouring for the 12th floor slab. Inspected and approved formwork for columns on the 13th floor. Electrical conduit installation began on the 11th floor. Plumbing rough-in work continued on floors 9-10.</textarea>
+                        <textarea class="form-control form-control-textarea readonly" readonly>{{ entry.work_description|default:'No work description provided.' }}</textarea>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
@@ -442,7 +518,16 @@
                         <h2 class="section-title">Additional Notes</h2>
                     </div>
                     <div class="form-group">
-                        <textarea class="form-control form-control-textarea readonly" readonly>Site was inspected by the city building inspector at 2:00 PM. All work was found to be in compliance with building codes and regulations. The inspector specifically commended the quality of the concrete work and the proper implementation of safety measures on site.</textarea>
+                        <label>General Notes</label>
+                        <textarea class="form-control form-control-textarea readonly" readonly>{{ entry.general_notes|default:'No additional notes provided.' }}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Quality Issues</label>
+                        <textarea class="form-control form-control-textarea readonly" readonly>{{ entry.quality_issues|default:'No quality issues reported.' }}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Safety Incidents</label>
+                        <textarea class="form-control form-control-textarea readonly" readonly>{{ entry.safety_incidents|default:'No safety incidents reported.' }}</textarea>
                     </div>
                 </div>
                 
@@ -474,6 +559,12 @@
                 </div>
             </form>
         </div>
+        {% endwith %}
+        {% else %}
+        <div class="form-container">
+            <p style="text-align: center; padding: 2rem;">No diary entries to review.</p>
+        </div>
+        {% endif %}
     </div>
     
     <!-- Revision Request Modal -->
