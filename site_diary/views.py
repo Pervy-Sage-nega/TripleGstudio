@@ -8,6 +8,7 @@ from django.utils import timezone
 from datetime import timedelta
 import csv
 import json
+from django.core.cache import cache
 from accounts.decorators import require_site_manager_role, require_admin_role
 from .models import (
     Project, DiaryEntry, LaborEntry, MaterialEntry, 
@@ -32,7 +33,7 @@ def diary(request):
         save_as_draft = request.POST.get('save_as_draft') == '1'
         print(f"DEBUG: Save as draft: {save_as_draft}")
         
-        diary_form = DiaryEntryForm(request.POST)
+        diary_form = DiaryEntryForm(request.POST, user=request.user)
         labor_formset = LaborEntryFormSet(request.POST, prefix='labor')
         material_formset = MaterialEntryFormSet(request.POST, prefix='material')
         equipment_formset = EquipmentEntryFormSet(request.POST, prefix='equipment')
@@ -47,42 +48,152 @@ def diary(request):
         if not material_formset.is_valid():
             print(f"DEBUG: Material formset errors: {material_formset.errors}")
         
-        # Simplified validation - just check diary form for now
-        if diary_form.is_valid():
+        # Check if editing existing draft
+        edit_draft_id = request.POST.get('edit_draft_id') or request.GET.get('edit')
+        editing_draft = None
+        
+        if edit_draft_id:
+            try:
+                editing_draft = DiaryEntry.objects.get(
+                    id=edit_draft_id,
+                    created_by=request.user,
+                    draft=True
+                )
+            except DiaryEntry.DoesNotExist:
+                messages.error(request, 'Draft not found or access denied.')
+                return redirect('site_diary:sitedraft')
+        
+        # For drafts, only require project and entry_date
+        if save_as_draft:
+            # Minimal validation for drafts
+            project = diary_form.cleaned_data.get('project') if diary_form.is_valid() else None
+            entry_date = diary_form.cleaned_data.get('entry_date') if diary_form.is_valid() else None
             
+            if not project:
+                messages.error(request, 'Please select a project to save as draft.')
+            
+            if not entry_date:
+                messages.error(request, 'Please select an entry date to save as draft.')
+            
+            if not project or not entry_date:
+                # Re-render form with errors
+                user_projects = Project.objects.filter(
+                    project_manager=request.user,
+                    status__in=['planning', 'active', 'on_hold', 'completed']
+                )
+                context = {
+                    'diary_form': diary_form,
+                    'labor_formset': labor_formset,
+                    'material_formset': material_formset,
+                    'equipment_formset': equipment_formset,
+                    'delay_formset': delay_formset,
+                    'visitor_formset': visitor_formset,
+                    'photo_formset': photo_formset,
+                    'user_projects': user_projects,
+                    'project_data': [],
+                }
+                return render(request, 'site_diary/diary.html', context)
+            
+            if editing_draft:
+                # Update existing draft
+                for field in diary_form.cleaned_data:
+                    if hasattr(editing_draft, field) and diary_form.cleaned_data[field] is not None:
+                        setattr(editing_draft, field, diary_form.cleaned_data[field])
+                editing_draft.save()
+                diary_entry = editing_draft
+                print(f"DEBUG: Updated existing draft: {diary_entry.id}")
+            else:
+                # Check if draft already exists for this project and date (avoid duplicates)
+                existing_draft = DiaryEntry.objects.filter(
+                    project=project,
+                    entry_date=entry_date,
+                    created_by=request.user,
+                    draft=True
+                ).first()
+                
+                if existing_draft:
+                    # Update existing draft
+                    for field in diary_form.cleaned_data:
+                        if hasattr(existing_draft, field) and diary_form.cleaned_data[field] is not None:
+                            setattr(existing_draft, field, diary_form.cleaned_data[field])
+                    existing_draft.save()
+                    diary_entry = existing_draft
+                    print(f"DEBUG: Updated existing draft: {diary_entry.id}")
+                else:
+                    # Create new draft with minimal required fields
+                    diary_entry = DiaryEntry.objects.create(
+                        project=project,
+                        entry_date=entry_date,
+                        created_by=request.user,
+                        draft=True,
+                        work_description=diary_form.cleaned_data.get('work_description', ''),
+                        progress_percentage=diary_form.cleaned_data.get('progress_percentage', 0),
+                        weather_condition=diary_form.cleaned_data.get('weather_condition', ''),
+                        temperature_high=diary_form.cleaned_data.get('temperature_high'),
+                        temperature_low=diary_form.cleaned_data.get('temperature_low'),
+                        humidity=diary_form.cleaned_data.get('humidity'),
+                        wind_speed=diary_form.cleaned_data.get('wind_speed'),
+                        quality_issues=diary_form.cleaned_data.get('quality_issues', ''),
+                        safety_incidents=diary_form.cleaned_data.get('safety_incidents', ''),
+                        general_notes=diary_form.cleaned_data.get('general_notes', ''),
+                        photos_taken=diary_form.cleaned_data.get('photos_taken', False)
+                    )
+                    print(f"DEBUG: Created new draft: {diary_entry.id}")
+            
+            messages.success(request, 'Diary draft saved successfully!')
+            return redirect('site_diary:sitedraft')
+        
+        # Full validation for final submission
+        elif diary_form.is_valid():
             # Save diary entry
             diary_entry = diary_form.save(commit=False)
             diary_entry.created_by = request.user
-            diary_entry.draft = save_as_draft
+            diary_entry.draft = False
             diary_entry.save()
             
             # Save related entries (simplified for now)
             print(f"DEBUG: Diary entry saved successfully: {diary_entry.id}")
             
-            if save_as_draft:
-                messages.success(request, 'Diary draft saved successfully!')
-                return redirect('site_diary:sitedraft')
-            else:
-                messages.success(request, 'Diary entry created successfully!')
-                return redirect('site_diary:diary')
+            messages.success(request, 'Diary entry created successfully!')
+            return redirect('site_diary:diary')
         else:
             # Form validation failed
             print(f"DEBUG: Form validation failed")
             print(f"DEBUG: Diary form errors: {diary_form.errors}")
             messages.error(request, 'Please correct the form errors and try again.')
     else:
-            # Get user's approved projects for the form
-        if request.user.is_staff:
-            user_projects = Project.objects.filter(status__in=['planning', 'active', 'on_hold', 'completed'])
-        else:
-            user_projects = Project.objects.filter(
-                Q(project_manager=request.user) | Q(architect=request.user),
-                status__in=['planning', 'active', 'on_hold', 'completed']
-            )
+        print(f"\n=== DIARY VIEW DEBUG ===")
+        print(f"Current user: {request.user} (ID: {request.user.id})")
+        print(f"User is_staff: {request.user.is_staff}")
         
-        diary_form = DiaryEntryForm()
-        # Update the project field queryset
-        diary_form.fields['project'].queryset = user_projects
+        # Get user's assigned projects only - very strict filtering
+        user_projects = Project.objects.filter(
+            project_manager=request.user,
+            status__in=['planning', 'active', 'on_hold', 'completed']
+        )
+        
+        print(f"User projects count: {user_projects.count()}")
+        for project in user_projects:
+            print(f"Project: {project.name}, Manager: {project.project_manager}, Architect: {project.architect}")
+        print(f"=== END DEBUG ===\n")
+        
+        # Check if editing an existing draft
+        edit_draft_id = request.GET.get('edit')
+        draft_instance = None
+        
+        if edit_draft_id:
+            try:
+                draft_instance = DiaryEntry.objects.get(
+                    id=edit_draft_id,
+                    created_by=request.user,
+                    draft=True
+                )
+                print(f"DEBUG: Editing draft {draft_instance.id} for project {draft_instance.project.name}")
+            except DiaryEntry.DoesNotExist:
+                messages.error(request, 'Draft not found or access denied.')
+                return redirect('site_diary:sitedraft')
+        
+        diary_form = DiaryEntryForm(instance=draft_instance, user=request.user)
         
         labor_formset = LaborEntryFormSet(prefix='labor')
         material_formset = MaterialEntryFormSet(prefix='material')
@@ -152,21 +263,27 @@ def dashboard(request):
         # Calculate project analytics
         project_entries = DiaryEntry.objects.filter(project=project)
         labor_entries = LaborEntry.objects.filter(diary_entry__in=project_entries)
+        material_entries = MaterialEntry.objects.filter(diary_entry__in=project_entries)
+        equipment_entries = EquipmentEntry.objects.filter(diary_entry__in=project_entries)
         delay_entries = DelayEntry.objects.filter(diary_entry__in=project_entries)
         
         # Use diary entry progress or calculate based on status
         if latest_entry:
             progress = float(latest_entry.progress_percentage)
         else:
-            progress = project.get_progress_percentage()
+            progress = float(project.get_progress_percentage())
         
-        # Budget calculations with error handling
-        try:
-            total_labor_cost = sum(labor.total_cost for labor in labor_entries)
-            project_budget = float(project.budget) if project.budget else 1000000
-            budget_used_percentage = min((total_labor_cost / project_budget) * 100, 100) if total_labor_cost else (progress * 0.8)
-        except (AttributeError, TypeError, ZeroDivisionError):
-            budget_used_percentage = progress * 0.8
+        # Budget calculations with real data
+        total_labor_cost = sum(float(labor.total_cost) for labor in labor_entries)
+        total_material_cost = sum(float(material.total_cost) for material in material_entries)
+        total_equipment_cost = sum(float(equipment.total_rental_cost) for equipment in equipment_entries)
+        total_spent = total_labor_cost + total_material_cost + total_equipment_cost
+        
+        project_budget = float(project.budget) if project.budget else 0
+        if project_budget > 0:
+            budget_used_percentage = min((total_spent / project_budget) * 100, 100)
+        else:
+            budget_used_percentage = 0
         
         # Determine current phase based on progress
         if progress < 25:
@@ -177,12 +294,21 @@ def dashboard(request):
             phase_name = "Structure"
         else:
             phase_name = "Finishing"
+        
+        # Calculate schedule status based on actual delays
+        delay_count = delay_entries.count()
+        if delay_count == 0:
+            schedule_status = 'On Track'
+        elif delay_count < 3:
+            schedule_status = 'Minor Delays'
+        else:
+            schedule_status = 'At Risk'
             
         # Add calculated fields directly to project object
         project.progress = progress
         project.current_phase = f"Phase {min(int(progress/25) + 1, 4)} - {phase_name}"
         project.budget_used = budget_used_percentage
-        project.schedule_status = 'On Track' if delay_entries.count() < 3 else 'Minor Delays' if delay_entries.count() < 6 else 'At Risk'
+        project.schedule_status = schedule_status
         project_data.append(project)
     
     # Dashboard statistics
@@ -482,10 +608,13 @@ def history(request):
             status__in=['planning', 'active', 'on_hold', 'completed']
         )
     
-    # Get diary entries
+    # Get diary entries with prefetch
     entries = DiaryEntry.objects.filter(project__in=projects).select_related(
         'project', 'created_by', 'reviewed_by'
     ).prefetch_related('labor_entries', 'material_entries', 'equipment_entries')
+    
+    # Prefetch diary entries for projects
+    projects = projects.prefetch_related('diary_entries')
     
     # Apply search filters
     search_form = DiarySearchForm(request.GET)
@@ -714,85 +843,47 @@ def project_detail(request, project_id):
     equipment_entries = EquipmentEntry.objects.filter(diary_entry__in=project_entries)
     delay_entries = DelayEntry.objects.filter(diary_entry__in=project_entries)
     
-    # Calculate project metrics with mock data fallback
+    # Calculate project metrics from real data
     latest_entry = project_entries.first()
-    # Mock progress based on project ID for demonstration
-    mock_progress_map = {1: 65, 2: 40, 3: 85, 4: 25, 5: 55}
-    progress = latest_entry.progress_percentage if latest_entry else mock_progress_map.get(project.id, 50)
+    progress = float(latest_entry.progress_percentage) if latest_entry else 0
     
-    # Budget calculations with error handling
-    try:
-        total_labor_cost = sum(labor.total_cost for labor in labor_entries)
-        total_material_cost = sum(material.total_cost for material in material_entries)
-        total_equipment_cost = sum(equipment.total_rental_cost for equipment in equipment_entries)
-    except (AttributeError, TypeError):
-        total_labor_cost = total_material_cost = total_equipment_cost = 0
-    
+    # Budget calculations from real data
+    total_labor_cost = sum(labor.total_cost for labor in labor_entries)
+    total_material_cost = sum(material.total_cost for material in material_entries)
+    total_equipment_cost = sum(equipment.total_rental_cost for equipment in equipment_entries)
     total_spent = total_labor_cost + total_material_cost + total_equipment_cost
-    total_budget = getattr(project, 'budget', 2500000) or 2500000
+    total_budget = float(project.budget) if project.budget else 0
     remaining_budget = max(0, total_budget - total_spent)
     
     # Recent diary entries for summary
     recent_diary_entries = project_entries[:3]
     
-    # Resource statistics
+    # Resource statistics from real data
     total_workers = labor_entries.aggregate(total=Sum('workers_count'))['total'] or 0
     equipment_count = equipment_entries.values('equipment_type').distinct().count()
     delay_count = delay_entries.count()
     
-    # Project timeline/milestones (mock data - replace with actual model)
-    project_timeline = [
-        {
-            'title': 'Project Planning',
-            'date': project.created_at,
-            'description': 'Initial planning, permits, and design finalization.',
-            'completed': True
-        },
-        {
-            'title': 'Foundation Work',
-            'date': project.created_at + timedelta(days=30),
-            'description': 'Excavation, foundation laying, and structural groundwork.',
-            'completed': progress > 25
-        },
-        {
-            'title': 'Structural Construction',
-            'date': project.created_at + timedelta(days=120),
-            'description': 'Main structure, steel framework, and concrete work.',
-            'completed': progress > 65
-        },
-        {
-            'title': 'Finishing Work',
-            'date': project.created_at + timedelta(days=300),
-            'description': 'Interior finishing, utilities installation, and final inspections.',
-            'completed': progress > 90
-        }
-    ]
+    # Determine current phase based on progress
+    if progress < 25:
+        phase_name = "Planning"
+    elif progress < 50:
+        phase_name = "Foundation"
+    elif progress < 75:
+        phase_name = "Structure"
+    else:
+        phase_name = "Finishing"
     
-    # Enhanced project data
-    project_data = {
-        'id': project.id,
-        'name': project.name,
-        'code': f"{project.name[:2].upper()}-{project.created_at.year}-{project.id:03d}",
-        'status': project.status,
-        'client_name': project.client_name,
-        'client_email': project.client_email if hasattr(project, 'client_email') else 'contact@client.com',
-        'client_phone': project.client_phone if hasattr(project, 'client_phone') else '+1 (555) 123-4567',
-        'start_date': project.created_at.strftime('%b %d, %Y'),
-        'target_completion': (project.created_at + timedelta(days=365)).strftime('%b %d, %Y'),
-        'current_phase': latest_entry.work_description[:50] if latest_entry else f"Phase {min(int(progress/25) + 1, 4)} - {'Planning' if progress < 25 else 'Foundation' if progress < 50 else 'Structure' if progress < 75 else 'Finishing'}",
+    context = {
+        'project': project,
         'progress': progress,
-        'total_budget': f"{total_budget:,}",
-        'total_spent': f"{total_spent:,}",
-        'remaining_budget': f"{remaining_budget:,}",
+        'total_budget': total_budget,
+        'total_spent': total_spent,
+        'remaining_budget': remaining_budget,
         'labor_count': total_workers,
         'equipment_count': equipment_count,
         'delays_count': delay_count,
-    }
-    
-    context = {
-        'project': project_data,
         'recent_diary_entries': recent_diary_entries,
-        'project_timeline': project_timeline,
+        'phase_name': phase_name,
     }
     return render(request, 'site_diary/project-detail.html', context)
 
@@ -896,7 +987,7 @@ def settings(request):
                 for error in password_form.errors.values():
                     messages.error(request, error[0])
         
-        return redirect('site_diary:settings')
+        return redirect('site:settings')
     
     # Debug: Show current data being passed to template
     print(f"DEBUG: Template context - User: {request.user}")
@@ -933,7 +1024,7 @@ def site_manager_logout(request):
         return redirect('accounts:sitemanager_login')
     
     # If GET request, redirect to settings
-    return redirect('site_diary:settings')
+    return redirect('site:settings')
 
 @require_admin_role
 def adminclientproject(request):
@@ -1215,4 +1306,55 @@ def api_project_location(request, project_id):
 
 @require_site_manager_role
 def sitedraft(request):
-    return render(request, 'site_diary/sitedraft.html')
+    """Site Manager drafts view with real database data"""
+    # Handle draft deletion
+    if request.method == 'POST' and request.POST.get('action') == 'delete_draft':
+        draft_id = request.POST.get('draft_id')
+        try:
+            draft = DiaryEntry.objects.get(id=draft_id, created_by=request.user, draft=True)
+            draft.delete()
+            messages.success(request, 'Draft deleted successfully!')
+        except DiaryEntry.DoesNotExist:
+            messages.error(request, 'Draft not found or access denied.')
+        return redirect('site_diary:sitedraft')
+    
+    # Get user's draft diary entries
+    if request.user.is_staff:
+        drafts = DiaryEntry.objects.filter(draft=True)
+    else:
+        user_projects = Project.objects.filter(
+            Q(project_manager=request.user) | Q(architect=request.user),
+            status__in=['planning', 'active', 'on_hold', 'completed']
+        )
+        drafts = DiaryEntry.objects.filter(
+            project__in=user_projects,
+            draft=True
+        )
+    
+    # Order by most recent
+    drafts = drafts.select_related('project', 'created_by').order_by('-created_at')
+    
+    # Statistics
+    total_drafts = drafts.count()
+    recent_drafts = drafts.filter(created_at__gte=timezone.now() - timedelta(days=7)).count()
+    submitted_entries = DiaryEntry.objects.filter(
+        created_by=request.user,
+        draft=False
+    ).count()
+    
+    # Pagination
+    paginator = Paginator(drafts, 12)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'drafts': page_obj,
+        'page_obj': page_obj,
+        'stats': {
+            'total_drafts': total_drafts,
+            'recent_drafts': recent_drafts,
+            'submitted_entries': submitted_entries,
+        },
+        'user': request.user,
+    }
+    return render(request, 'site_diary/sitedraft.html', context)

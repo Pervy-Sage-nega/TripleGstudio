@@ -58,7 +58,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'csp.middleware.CSPMiddleware',
+] + (['csp.middleware.CSPMiddleware'] if not DEBUG else []) + [
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -235,18 +235,23 @@ SECURE_BROWSER_XSS_FILTER = True
 X_FRAME_OPTIONS = 'DENY'
 SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
-# Content Security Policy (django-csp 4.0 format)
-CONTENT_SECURITY_POLICY = {
-    'DIRECTIVES': {
-        'base-uri': ("'self'",),
-        'connect-src': ("'self'", 'https://cdn.jsdelivr.net', 'https://maps.googleapis.com', 'https://nominatim.openstreetmap.org', 'https://api.openweathermap.org'),
-        'default-src': ("'self'",),
-        'font-src': ("'self'", 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com'),
-        'form-action': ("'self'",),
-        'frame-src': ('https://www.google.com', 'https://maps.google.com'),
-        'img-src': ("'self'", 'data:', 'https:', 'http:'),
-        'object-src': ("'none'",),
-        'script-src': ("'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com', 'https://code.jquery.com', 'https://maps.googleapis.com', 'https://unpkg.com'),
-        'style-src': ("'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com', 'https://unpkg.com')
+# Content Security Policy (django-csp 4.0+ format)
+if DEBUG:
+    # Development - Disable CSP for easier weather API testing
+    CONTENT_SECURITY_POLICY = {'DIRECTIVES': {}}
+else:
+    # Production - Enable CSP with weather API allowances
+    CONTENT_SECURITY_POLICY = {
+        'DIRECTIVES': {
+            'base-uri': ["'self'"],
+            'connect-src': ["'self'", 'https://cdn.jsdelivr.net', 'https://maps.googleapis.com', 'https://nominatim.openstreetmap.org', 'https://api.openweathermap.org', 'http://api.openweathermap.org'],
+            'default-src': ["'self'"],
+            'font-src': ["'self'", 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com'],
+            'form-action': ["'self'"],
+            'frame-src': ['https://www.google.com', 'https://maps.google.com'],
+            'img-src': ["'self'", 'data:', 'https:', 'http:'],
+            'object-src': ["'none'"],
+            'script-src': ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com', 'https://code.jquery.com', 'https://maps.googleapis.com', 'https://unpkg.com'],
+            'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com', 'https://unpkg.com']
+        }
     }
-}

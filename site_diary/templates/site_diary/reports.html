@@ -13,7 +13,6 @@
 {% endblock %}
 
 {% block body %}
-    {% include "site_diary/navtemplate/layout.html" %}
     <div class="container">
         <!-- Page Header -->
         <div class="page-header">
@@ -39,14 +38,14 @@
         </div>
         
         <!-- Filter Section -->
-        <div class="filter-container">
+        <form method="get" class="filter-container">
             <div class="filter-header">
                 <div class="filter-title">
                     <i class="fas fa-filter"></i>
                     Report Filters
                 </div>
                 
-                <button class="filter-toggle" id="toggleFilter">
+                <button type="button" class="filter-toggle" id="toggleFilter">
                     <span>Hide Filters</span>
                     <i class="fas fa-chevron-up"></i>
                 </button>
@@ -58,10 +57,11 @@
                         <label for="project">Project</label>
                         <select id="project" name="project">
                             <option value="">All Projects</option>
-                            <option value="1">River View Residences</option>
-                            <option value="2">Central Business District Tower</option>
-                            <option value="3">Highway Bridge Expansion</option>
-                            <option value="4">Waterfront Development</option>
+                            {% for project in projects %}
+                                <option value="{{ project.id }}" {% if selected_project == project.id|stringformat:'s' %}selected{% endif %}>
+                                    {{ project.name }}
+                                </option>
+                            {% endfor %}
                         </select>
                     </div>
                     
@@ -102,10 +102,10 @@
                         <label>Date Range</label>
                         <div class="date-range">
                             <div class="date-input">
-                                <input type="text" id="dateFrom" placeholder="From Date" class="flatpickr">
+                                <input type="date" id="dateFrom" name="start_date" placeholder="From Date" value="{{ start_date }}">
                             </div>
                             <div class="date-input">
-                                <input type="text" id="dateTo" placeholder="To Date" class="flatpickr">
+                                <input type="date" id="dateTo" name="end_date" placeholder="To Date" value="{{ end_date }}">
                             </div>
                         </div>
                     </div>
@@ -123,57 +123,53 @@
                 </div>
                 
                 <div class="filter-buttons">
-                    <button class="btn btn-secondary">
+                    <a href="{% url 'site_diary:reports' %}" class="btn btn-secondary">
                         <i class="fas fa-undo"></i>
                         Reset Filters
-                    </button>
-                    <button class="btn btn-primary">
+                    </a>
+                    <button type="submit" class="btn btn-primary">
                         <i class="fas fa-search"></i>
                         Generate Report
                     </button>
                 </div>
             </div>
-        </div>
+        </form>
         
         <!-- Summary Section -->
         <div class="summary-section">
             <div class="summary-card">
-                <i class="fas fa-clock summary-icon"></i>
-                <div class="summary-title">Total Work Hours</div>
-                <div class="summary-value">2,547</div>
-                <div class="summary-change positive">
-                    <i class="fas fa-arrow-up"></i>
-                    <span>12% from last period</span>
+                <i class="fas fa-project-diagram summary-icon"></i>
+                <div class="summary-title">Total Projects</div>
+                <div class="summary-value">{{ overall_summary.total_projects }}</div>
+                <div class="summary-change">
+                    <span>Active projects in system</span>
                 </div>
             </div>
             
             <div class="summary-card warning">
                 <i class="fas fa-exclamation-triangle summary-icon"></i>
-                <div class="summary-title">Delays (Hours)</div>
-                <div class="summary-value">78</div>
-                <div class="summary-change negative">
-                    <i class="fas fa-arrow-up"></i>
-                    <span>8% from last period</span>
+                <div class="summary-title">Total Delays</div>
+                <div class="summary-value">{{ overall_summary.total_delays }}</div>
+                <div class="summary-change">
+                    <span>Recorded delay incidents</span>
                 </div>
             </div>
             
             <div class="summary-card success">
-                <i class="fas fa-tasks summary-icon"></i>
-                <div class="summary-title">Completed Tasks</div>
-                <div class="summary-value">142</div>
+                <i class="fas fa-check-circle summary-icon"></i>
+                <div class="summary-title">Approved Entries</div>
+                <div class="summary-value">{{ overall_summary.total_approved }}</div>
                 <div class="summary-change positive">
-                    <i class="fas fa-arrow-up"></i>
-                    <span>15% from last period</span>
+                    <span>{{ overall_summary.total_approved }} of {{ overall_summary.total_entries }} entries</span>
                 </div>
             </div>
             
             <div class="summary-card info">
-                <i class="fas fa-user-hard-hat summary-icon"></i>
-                <div class="summary-title">Total Personnel</div>
-                <div class="summary-value">68</div>
-                <div class="summary-change positive">
-                    <i class="fas fa-arrow-up"></i>
-                    <span>5% from last period</span>
+                <i class="fas fa-file-alt summary-icon"></i>
+                <div class="summary-title">Total Entries</div>
+                <div class="summary-value">{{ overall_summary.total_entries }}</div>
+                <div class="summary-change">
+                    <span>Diary entries recorded</span>
                 </div>
             </div>
         </div>
@@ -374,6 +370,111 @@
             </div>
         </div>
     </div>
-    {% include "admin-nav-footer-template/layoutfooter.html" %}
     <script src="{% static 'js/sitejs/reports.js' %}"></script>
+    
+    <script>
+    // Initialize charts with real data
+    document.addEventListener('DOMContentLoaded', function() {
+        // Labor Chart Data
+        {% if labor_stats %}
+        const laborData = {
+            labels: [{% for stat in labor_stats %}'{{ stat.labor_type|title }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+            datasets: [{
+                label: 'Total Hours',
+                data: [{% for stat in labor_stats %}{{ stat.total_hours|default:0 }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF']
+            }]
+        };
+        
+        const laborCtx = document.getElementById('laborChart').getContext('2d');
+        new Chart(laborCtx, {
+            type: 'doughnut',
+            data: laborData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+        {% endif %}
+        
+        // Progress Chart Data
+        {% if project_stats %}
+        const progressData = {
+            labels: [{% for stat in project_stats %}'{{ stat.project.name|truncatechars:20 }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+            datasets: [{
+                label: 'Progress %',
+                data: [{% for stat in project_stats %}{{ stat.avg_progress|default:0 }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                backgroundColor: '#36A2EB',
+                borderColor: '#36A2EB',
+                borderWidth: 1
+            }]
+        };
+        
+        const progressCtx = document.getElementById('progressChart').getContext('2d');
+        new Chart(progressCtx, {
+            type: 'bar',
+            data: progressData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+        {% endif %}
+        
+        // Materials Chart Data
+        {% if material_stats %}
+        const materialsData = {
+            labels: [{% for stat in material_stats %}'{{ stat.material_name|truncatechars:15 }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+            datasets: [{
+                label: 'Quantity Delivered',
+                data: [{% for stat in material_stats %}{{ stat.total_delivered|default:0 }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                backgroundColor: '#FFCE56'
+            }]
+        };
+        
+        const materialsCtx = document.getElementById('materialsChart').getContext('2d');
+        new Chart(materialsCtx, {
+            type: 'bar',
+            data: materialsData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        {% endif %}
+        
+        // Delays Chart Data
+        {% if delay_categories %}
+        const delaysData = {
+            labels: [{% for delay in delay_categories %}'{{ delay.category|title }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+            datasets: [{
+                label: 'Total Hours',
+                data: [{% for delay in delay_categories %}{{ delay.total_hours|default:0 }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                backgroundColor: ['#FF6384', '#FF9F40', '#FFCD56', '#4BC0C0', '#36A2EB']
+            }]
+        };
+        
+        const delaysCtx = document.getElementById('delaysChart').getContext('2d');
+        new Chart(delaysCtx, {
+            type: 'pie',
+            data: delaysData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+        {% endif %}
+    });
+    </script>
 {% endblock %}

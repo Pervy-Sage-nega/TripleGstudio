@@ -316,73 +316,64 @@ async function updateProjectLocation() {
 }
 
 function simplifyLocationForWeather(fullLocation) {
-    // For "Naga - Toledo Road, Sambag Village, Cabulihan II, Juan Climaco, Sr., Cebu, Central Visayas, 6038, Philippines"
-    // We want to extract "Sambag Village, Cebu, Philippines" for more accuracy
-    
     const parts = fullLocation.split(',').map(part => part.trim());
     
-    // Known Philippine cities
-    const knownCities = ['cebu', 'manila', 'quezon', 'makati', 'davao', 'iloilo', 'bacolod', 'cagayan', 'zamboanga', 'baguio', 'tagaytay', 'naga'];
+    // Known Philippine cities and districts
+    const knownCities = ['manila', 'quezon city', 'makati', 'taguig', 'pasig', 'mandaluyong', 'san juan', 'marikina', 'pasay', 'paranaque', 'las pinas', 'muntinlupa', 'pateros', 'valenzuela', 'malabon', 'navotas', 'caloocan', 'cebu', 'davao', 'iloilo', 'bacolod', 'cagayan', 'zamboanga', 'baguio', 'tagaytay', 'naga'];
     
     // Skip terms that are not useful for weather
-    const skipTerms = ['road', 'street', 'avenue', 'sr.', 'jr.', 'ii', 'iii', 'visayas', 'luzon', 'mindanao'];
+    const skipTerms = ['road', 'street', 'avenue', 'district', 'metro', 'capital', 'townhomes', 'subdivision', 'village', 'phase', 'block', 'lot', 'unit'];
     const numberPattern = /^\d+$/;
     
     let foundCity = null;
     let foundBarangay = null;
     
-    // Find city and barangay
+    // Find city first
     for (const part of parts) {
         const cleanPart = part.toLowerCase().trim();
         
-        // Check for known cities
+        // Check for known cities (exact match or contains)
         for (const city of knownCities) {
-            if (cleanPart.includes(city)) {
-                foundCity = city.charAt(0).toUpperCase() + city.slice(1);
+            if (cleanPart === city || cleanPart.includes(city)) {
+                foundCity = city.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
                 break;
             }
         }
+        if (foundCity) break;
+    }
+    
+    // Find barangay/district (look for meaningful location names)
+    for (const part of parts) {
+        const cleanPart = part.toLowerCase().trim();
         
-        // Check for barangay/village (but not roads or person names)
-        if (!foundBarangay && cleanPart.includes('village')) {
-            const villagePart = part.replace(/village/i, '').trim();
-            if (villagePart.length > 2 && !skipTerms.some(term => villagePart.toLowerCase().includes(term))) {
-                foundBarangay = villagePart;
-            }
+        // Skip if it's a number, contains skip terms, or is the found city
+        if (numberPattern.test(cleanPart) || 
+            skipTerms.some(term => cleanPart.includes(term)) ||
+            cleanPart === 'philippines' ||
+            (foundCity && cleanPart.includes(foundCity.toLowerCase()))) {
+            continue;
         }
         
-        // Also check for barangay names without "village" keyword
-        if (!foundBarangay && !numberPattern.test(cleanPart) && cleanPart.length > 3) {
-            let shouldSkip = false;
-            for (const term of skipTerms) {
-                if (cleanPart.includes(term)) {
-                    shouldSkip = true;
-                    break;
-                }
-            }
-            
-            // Skip person names and roads
-            if (!shouldSkip && !cleanPart.includes('sr.') && !cleanPart.includes('jr.') && 
-                !/[A-Z][a-z]+ [A-Z][a-z]+/.test(part) && !cleanPart.includes(' - ')) {
-                // This could be a barangay name
-                if (!foundCity || !cleanPart.includes(foundCity.toLowerCase())) {
-                    foundBarangay = part;
-                }
-            }
+        // Look for meaningful location names (barangays, areas)
+        if (cleanPart.length > 2 && !cleanPart.includes('.') && 
+            !cleanPart.includes('sr') && !cleanPart.includes('jr')) {
+            // This could be a barangay/area name
+            foundBarangay = part;
+            break;
         }
     }
     
-    // Construct the location string
+    // Construct the location string for OpenWeatherMap
     if (foundBarangay && foundCity) {
-        return `${foundBarangay}, ${foundCity}, Philippines`;
+        return `${foundBarangay}, ${foundCity}`;
     } else if (foundCity) {
-        return `${foundCity}, Philippines`;
+        return foundCity;
     } else if (foundBarangay) {
         return `${foundBarangay}, Philippines`;
     }
     
-    // Fallback: use "Cebu, Philippines"
-    return "Cebu, Philippines";
+    // Fallback: use "Manila, Philippines"
+    return "Manila, Philippines";
 }
 
 function capitalizeFirst(str) {
