@@ -137,13 +137,14 @@ USE_I18N = True
 USE_TZ = True
 
 # Email settings for Gmail
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_HOST_USER = 'triplegotp@gmail.com'  # Replace with your Gmail address
-EMAIL_HOST_PASSWORD = 'wzukyxhnuomdglir'  # Gmail App Password, no spaces
-EMAIL_USE_TLS = True
-DEFAULT_FROM_EMAIL = 'triplegotp@gmail.com'
+# Email settings - Use environment variables
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'triplegotp@gmail.com')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', 'wzukyxhnuomdglir')
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
+DEFAULT_FROM_EMAIL = os.getenv('EMAIL_HOST_USER', 'triplegotp@gmail.com')
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
