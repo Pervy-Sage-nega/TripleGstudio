@@ -218,6 +218,89 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // ===== GLOBAL HELPER FUNCTIONS =====
+    function addItemToList(value, list, formatFunction) {
+        const item = document.createElement('div');
+        item.className = 'entry-item';
+        
+        const content = formatFunction ? formatFunction(value) : value;
+        
+        item.innerHTML = `
+            <div class="entry-content">${content}</div>
+            <div class="entry-actions">
+                <button type="button" class="entry-action-btn edit">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button type="button" class="entry-action-btn delete">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+        
+        list.appendChild(item);
+        setupItemActions(item);
+    }
+    
+    function setupItemActions(item) {
+        const editBtn = item.querySelector('.edit');
+        const deleteBtn = item.querySelector('.delete');
+        const contentElem = item.querySelector('.entry-content');
+        
+        editBtn.addEventListener('click', function() {
+            const newContent = prompt('Edit entry:', contentElem.textContent);
+            if (newContent !== null) contentElem.textContent = newContent;
+        });
+        
+        deleteBtn.addEventListener('click', function() {
+            if (confirm('Remove this entry?')) item.remove();
+        });
+    }
+    
+    // Global function for subcontractor functionality (referenced in template)
+    window.addSubcontractor = function() {
+        const selectElement = document.getElementById('subcontractorSelect');
+        const customInput = document.getElementById('subcontractorCustom');
+        const workInput = document.getElementById('subcontractorWork');
+        
+        let subcontractorName = '';
+        let subcontractorType = '';
+        let contactInfo = '';
+        const workDescription = workInput.value.trim();
+        
+        // Check if dropdown is selected
+        if (selectElement.value) {
+            const selectedOption = selectElement.options[selectElement.selectedIndex];
+            subcontractorName = selectedOption.text.split(' - ')[0]; // Get company name only
+            subcontractorType = selectedOption.getAttribute('data-type');
+            const contact = selectedOption.getAttribute('data-contact');
+            const phone = selectedOption.getAttribute('data-phone');
+            if (contact || phone) {
+                contactInfo = ` (${contact || 'Contact'}${phone ? ': ' + phone : ''})`;
+            }
+        } 
+        // Check if custom input has value
+        else if (customInput.value.trim()) {
+            subcontractorName = customInput.value.trim();
+            subcontractorType = 'Custom';
+        }
+        
+        if (subcontractorName) {
+            const displayText = workDescription ? 
+                `${subcontractorName}${contactInfo} - ${workDescription}` : 
+                `${subcontractorName}${contactInfo} - ${subcontractorType} work`;
+                
+            addItemToList(
+                `<strong>${displayText}</strong>`,
+                document.getElementById('subcontractorList')
+            );
+            
+            // Clear inputs
+            selectElement.value = '';
+            customInput.value = '';
+            workInput.value = '';
+        }
+    }
+
     // ===== EXISTING FUNCTIONALITY (UPDATED FOR BUDGET INTEGRATION) =====
     function initMobileMenu() {
         const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
@@ -446,47 +529,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        function addItemToList(value, list, formatFunction) {
-            const item = document.createElement('div');
-            item.className = 'entry-item';
-            
-            const content = formatFunction ? formatFunction(value) : value;
-            
-            item.innerHTML = `
-                <div class="entry-content">${content}</div>
-                <div class="entry-actions">
-                    <button type="button" class="entry-action-btn edit">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button type="button" class="entry-action-btn delete">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            `;
-            
-            list.appendChild(item);
-            setupItemActions(item);
-        }
+        // addItemToList function moved to global scope above
         
         function setupExistingItemActions(list) {
             const items = list.querySelectorAll('.entry-item');
             items.forEach(item => setupItemActions(item));
         }
         
-        function setupItemActions(item) {
-            const editBtn = item.querySelector('.edit');
-            const deleteBtn = item.querySelector('.delete');
-            const contentElem = item.querySelector('.entry-content');
-            
-            editBtn.addEventListener('click', function() {
-                const newContent = prompt('Edit entry:', contentElem.textContent);
-                if (newContent !== null) contentElem.textContent = newContent;
-            });
-            
-            deleteBtn.addEventListener('click', function() {
-                if (confirm('Remove this entry?')) item.remove();
-            });
-        }
+        // setupItemActions function moved to global scope above
     }
 
     function setupTimeCalculation() {
