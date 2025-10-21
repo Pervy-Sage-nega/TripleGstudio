@@ -6,7 +6,21 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Add event listeners
     addEventListeners();
+    
+    // Load filters from URL
+    loadFiltersFromURL();
 });
+
+function loadFiltersFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    
+    if (params.get('architect')) document.getElementById('filter-architect').value = params.get('architect');
+    if (params.get('project')) document.getElementById('filter-project').value = params.get('project');
+    if (params.get('status')) document.getElementById('filter-status').value = params.get('status');
+    if (params.get('date_from')) document.getElementById('filter-date-from').value = params.get('date_from');
+    if (params.get('date_to')) document.getElementById('filter-date-to').value = params.get('date_to');
+    if (params.get('search')) document.getElementById('search').value = params.get('search');
+}
 
 function initUI() {
     // Initialize date pickers
@@ -30,6 +44,7 @@ function initUI() {
 
 function addEventListeners() {
     // View toggle buttons
+    const historyModeBtn = document.getElementById('historyModeBtn');
     const timelineViewBtn = document.getElementById('timelineViewBtn');
     const tableViewBtn = document.getElementById('tableViewBtn');
     const expandAllBtn = document.getElementById('expandAllBtn');
@@ -58,6 +73,12 @@ function addEventListeners() {
     if (collapseAllBtn) {
         collapseAllBtn.addEventListener('click', function() {
             collapseAllTimelineItems();
+        });
+    }
+    
+    if (historyModeBtn) {
+        historyModeBtn.addEventListener('click', function() {
+            toggleHistoryMode();
         });
     }
     
@@ -141,6 +162,30 @@ function addEventListeners() {
     document.getElementById('exportCsvBtn')?.addEventListener('click', exportCsv);
     document.getElementById('refreshBtn')?.addEventListener('click', refreshData);
     document.getElementById('printBtn')?.addEventListener('click', printData);
+    
+    // Approval form submissions
+    const approvalForms = document.querySelectorAll('form[method="post"]');
+    approvalForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const action = this.querySelector('input[name="action"]').value;
+            if (action === 'approve') {
+                if (!confirm('Are you sure you want to approve this diary entry?')) {
+                    e.preventDefault();
+                }
+            }
+        });
+    });
+    
+    // Pagination buttons
+    const paginationBtns = document.querySelectorAll('.page-btn');
+    paginationBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            if (this.classList.contains('disabled') || this.classList.contains('active')) {
+                e.preventDefault();
+                return;
+            }
+        });
+    });
 }
 
 function setActiveView(view) {
@@ -215,6 +260,50 @@ function resetFilters() {
     document.getElementById('search').value = '';
 }
 
+function exportPdf() {
+    window.print();
+}
+
+function exportCsv() {
+    // Simple CSV export of visible table data
+    const table = document.querySelector('.entries-table');
+    if (!table) return;
+    
+    let csv = [];
+    const rows = table.querySelectorAll('tr');
+    
+    rows.forEach(row => {
+        const cols = row.querySelectorAll('td, th');
+        const rowData = [];
+        cols.forEach(col => {
+            // Skip action column
+            if (!col.querySelector('.table-actions')) {
+                rowData.push('"' + col.textContent.trim().replace(/"/g, '""') + '"');
+            }
+        });
+        if (rowData.length > 0) {
+            csv.push(rowData.join(','));
+        }
+    });
+    
+    const csvContent = csv.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'diary_entries.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+
+function refreshData() {
+    window.location.reload();
+}
+
+function printData() {
+    window.print();
+}
+
 function applyFilters() {
     // Get filter values
     const architect = document.getElementById('filter-architect').value;
@@ -222,71 +311,57 @@ function applyFilters() {
     const status = document.getElementById('filter-status').value;
     const dateFrom = document.getElementById('filter-date-from').value;
     const dateTo = document.getElementById('filter-date-to').value;
-    const searchTerm = document.getElementById('search').value.toLowerCase();
+    const searchTerm = document.getElementById('search').value;
     
-    // Display the filter selections as an alert for now
-    // This would be replaced with actual filtering logic in a real implementation
-    console.log(`Filters Applied:
-        Architect: ${architect || 'All'}
-        Project: ${project || 'All'}
-        Status: ${status || 'All'}
-        Date Range: ${dateFrom || 'Any'} to ${dateTo || 'Any'}
-        Search Term: ${searchTerm || 'None'}
-    `);
+    // Build query parameters
+    const params = new URLSearchParams();
+    if (architect) params.append('architect', architect);
+    if (project) params.append('project', project);
+    if (status) params.append('status', status);
+    if (dateFrom) params.append('date_from', dateFrom);
+    if (dateTo) params.append('date_to', dateTo);
+    if (searchTerm) params.append('search', searchTerm);
     
-    // Simulate a server request with a loading indicator
-    showLoadingOverlay();
-    
-    // Simulate network delay
-    setTimeout(() => {
-        hideLoadingOverlay();
-        
-        // Show a success message
-        showNotification('Filters Applied', 'Diary entries have been filtered according to your criteria.', 'success');
-    }, 1000);
+    // Reload page with filters
+    window.location.href = window.location.pathname + '?' + params.toString();
 }
 
 function viewEntryDetails(entryId) {
-    // Navigate to the diary entry view page with the entry ID as a parameter
-    // In a real implementation, this would redirect to the detailed view
-    window.location.href = `admindiary.html?id=${entryId}`;
+    // Navigate to the diary entry detail view
+    window.location.href = `/admin-panel/diary/entry/${entryId}/`;
 }
 
-function exportPdf() {
-    showNotification('PDF Export Started', 'Your PDF file is being generated...', 'info');
+function toggleHistoryMode() {
+    const historyModeBtn = document.getElementById('historyModeBtn');
+    const approvalButtons = document.querySelectorAll('.btn-success, .action-btn.approve');
+    const isHistoryMode = historyModeBtn.classList.contains('active');
     
-    // Simulate PDF generation delay
-    setTimeout(() => {
-        showNotification('PDF Export Complete', 'Your PDF has been downloaded.', 'success');
-    }, 1500);
+    if (isHistoryMode) {
+        // Exit history mode
+        historyModeBtn.classList.remove('active');
+        approvalButtons.forEach(btn => {
+            btn.style.display = 'inline-block';
+        });
+        document.querySelector('.section-title').innerHTML = '<i class="fas fa-list"></i> Submitted Diary Entries';
+    } else {
+        // Enter history mode
+        historyModeBtn.classList.add('active');
+        approvalButtons.forEach(btn => {
+            btn.style.display = 'none';
+        });
+        document.querySelector('.section-title').innerHTML = '<i class="fas fa-history"></i> Diary Entries History (Read-Only)';
+    }
 }
 
-function exportCsv() {
-    showNotification('CSV Export Started', 'Your CSV file is being generated...', 'info');
+function navigateToPage(pageNumber) {
+    // Get current filter parameters
+    const params = new URLSearchParams(window.location.search);
     
-    // Simulate CSV generation delay
-    setTimeout(() => {
-        showNotification('CSV Export Complete', 'Your CSV has been downloaded.', 'success');
-    }, 1000);
-}
-
-function refreshData() {
-    showLoadingOverlay();
+    // Update page parameter
+    params.set('page', pageNumber);
     
-    // Simulate refresh delay
-    setTimeout(() => {
-        hideLoadingOverlay();
-        showNotification('Data Refreshed', 'The diary entries have been refreshed with the latest data.', 'success');
-    }, 1500);
-}
-
-function printData() {
-    showNotification('Preparing Print View', 'The print dialog will open shortly...', 'info');
-    
-    // Simulate print preparation delay
-    setTimeout(() => {
-        window.print();
-    }, 800);
+    // Navigate to new page with filters preserved
+    window.location.href = window.location.pathname + '?' + params.toString();
 }
 
 function showLoadingOverlay() {

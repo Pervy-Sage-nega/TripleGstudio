@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.db.models import Q, Sum, Avg, Count, Max, Min
@@ -35,6 +36,12 @@ logger = logging.getLogger(__name__)
 @csrf_protect
 def diary(request):
     """Create new diary entry with all related data, including Save as Draft support"""
+    # Get user's assigned projects only - very strict filtering
+    user_projects = Project.objects.filter(
+        project_manager=request.user,
+        status__in=['planning', 'active', 'on_hold', 'completed']
+    )
+    
     if request.method == 'POST':
         save_as_draft = request.POST.get('save_as_draft') == '1'
         
@@ -82,11 +89,7 @@ def diary(request):
                 messages.error(request, 'Please select an entry date to save as draft.')
             
             if not project or not entry_date:
-                # Re-render form with errors
-                user_projects = Project.objects.filter(
-                    project_manager=request.user,
-                    status__in=['planning', 'active', 'on_hold', 'completed']
-                )
+                # Re-render form with errors - user_projects already defined at function start
                 context = {
                     'diary_form': diary_form,
                     'labor_formset': labor_formset,
@@ -97,6 +100,8 @@ def diary(request):
                     'photo_formset': photo_formset,
                     'user_projects': user_projects,
                     'project_data': [],
+                    'subcontractor_companies': SubcontractorCompany.objects.filter(is_active=True).order_by('name'),
+                    'milestones': Milestone.objects.filter(is_active=True).order_by('order', 'name'),
                 }
                 return render(request, 'site_diary/diary.html', context)
             
@@ -168,11 +173,6 @@ def diary(request):
             logger.warning(f"Form validation failed for user {request.user.id}")
             messages.error(request, 'Please correct the form errors and try again.')
     else:
-        # Get user's assigned projects only - very strict filtering
-        user_projects = Project.objects.filter(
-            project_manager=request.user,
-            status__in=['planning', 'active', 'on_hold', 'completed']
-        )
         
         # Check if editing an existing draft with proper validation
         edit_draft_id = request.GET.get('edit')
@@ -520,10 +520,7 @@ def admindiary(request):
     """Admin diary management"""
     return render(request, 'site_diary/admin/diary.html')
 
-@require_site_manager_role
-def admindiaryreviewer(request):
-    """Admin diary reviewer"""
-    return render(request, 'site_diary/admin/diary_reviewer.html')
+
 
 @require_site_manager_role
 def adminhistory(request):
@@ -1282,13 +1279,26 @@ def admindiary(request):
 @require_admin_role
 def admindiaryreviewer(request):
     """Admin diary reviewer interface with approval functionality"""
+    print("=== ADMINDIARYREVIEWER VIEW CALLED ===")
     
-    # Handle bulk actions
+    # Handle individual and bulk actions
     if request.method == 'POST':
         action = request.POST.get('action')
+        entry_id = request.POST.get('entry_id')
         entry_ids = request.POST.getlist('entry_ids')
         
-        if action == 'approve_selected' and entry_ids:
+        if action == 'approve' and entry_id:
+            try:
+                entry = DiaryEntry.objects.get(id=entry_id)
+                entry.approved = True
+                entry.reviewed_by = request.user
+                entry.approval_date = timezone.now()
+                entry.save()
+                messages.success(request, f'Diary entry for {entry.project.name} approved successfully.')
+            except DiaryEntry.DoesNotExist:
+                messages.error(request, 'Diary entry not found.')
+        
+        elif action == 'approve_selected' and entry_ids:
             DiaryEntry.objects.filter(id__in=entry_ids).update(
                 approved=True,
                 reviewed_by=request.user,
@@ -1298,20 +1308,87 @@ def admindiaryreviewer(request):
         
         return redirect('site_diary:admindiaryreviewer')
     
-    # Get entries pending review
-    pending_entries = DiaryEntry.objects.filter(
-        approved=False, draft=False
-    ).select_related('project', 'created_by').order_by('-entry_date')
+    # Get all diary entries (not just pending) with filtering
+    all_entries = DiaryEntry.objects.filter(
+        draft=False
+    ).select_related('project', 'created_by', 'milestone').order_by('-entry_date')
+    
+    # Apply filters from GET parameters
+    architect = request.GET.get('architect')
+    project = request.GET.get('project')
+    status = request.GET.get('status')
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    search = request.GET.get('search')
+    
+    if architect:
+        all_entries = all_entries.filter(created_by__username=architect)
+    if project:
+        all_entries = all_entries.filter(project__name__icontains=project)
+    if status:
+        if status == 'pending':
+            all_entries = all_entries.filter(approved=False, needs_revision=False)
+        elif status == 'approved':
+            all_entries = all_entries.filter(approved=True)
+        elif status == 'revision':
+            all_entries = all_entries.filter(needs_revision=True)
+    if date_from:
+        all_entries = all_entries.filter(entry_date__gte=date_from)
+    if date_to:
+        all_entries = all_entries.filter(entry_date__lte=date_to)
+    if search:
+        all_entries = all_entries.filter(
+            Q(project__name__icontains=search) |
+            Q(created_by__username__icontains=search) |
+            Q(project__location__icontains=search)
+        )
+    
+    # Calculate statistics
+    total_count = DiaryEntry.objects.filter(draft=False).count()
+    pending_count = DiaryEntry.objects.filter(draft=False, approved=False).count()
+    approved_count = DiaryEntry.objects.filter(draft=False, approved=True).count()
+    revision_count = 0  # Add revision logic if needed
     
     # Pagination
-    paginator = Paginator(pending_entries, 10)
+    paginator = Paginator(all_entries, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
+    # Get unique architects and projects for filter dropdowns
+    architects = User.objects.filter(
+        diaryentry__isnull=False
+    ).distinct().order_by('first_name', 'last_name', 'username')
+    
+    projects = Project.objects.filter(
+        diary_entries__isnull=False
+    ).distinct().order_by('name')
+    
     context = {
         'page_obj': page_obj,
-        'pending_count': pending_entries.count()
+        'pending_count': pending_count,
+        'approved_count': approved_count,
+        'revision_count': revision_count,
+        'total_count': total_count,
+        'architects': architects,
+        'projects': projects,
     }
+    
+    # Debug prints
+    print(f"DEBUG: Total entries in database: {total_count}")
+    print(f"DEBUG: Total draft entries: {DiaryEntry.objects.filter(draft=True).count()}")
+    print(f"DEBUG: Total non-draft entries: {DiaryEntry.objects.filter(draft=False).count()}")
+    print(f"DEBUG: All entries count: {DiaryEntry.objects.count()}")
+    print(f"DEBUG: Entries after filtering: {all_entries.count()}")
+    print(f"DEBUG: Page object count: {len(page_obj)}")
+    if page_obj:
+        print(f"DEBUG: First entry: {page_obj[0].project.name if page_obj else 'None'}")
+    else:
+        print("DEBUG: No entries found - page_obj is empty")
+        print(f"DEBUG: Sample DiaryEntry exists: {DiaryEntry.objects.exists()}")
+        if DiaryEntry.objects.exists():
+            sample = DiaryEntry.objects.first()
+            print(f"DEBUG: Sample entry - Project: {sample.project.name}, Draft: {sample.draft}, Date: {sample.entry_date}")
+    
     return render(request, 'admin/admindiaryreviewer.html', context)
 
 @login_required

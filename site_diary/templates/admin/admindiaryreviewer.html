@@ -18,6 +18,7 @@
 
     {% endblock %}
     {% block content %}
+    <!-- DEBUG: Django template is rendering. Total entries: {{ total_count }} -->
     <!-- Main Content Container -->
     <div class="container">
         <!-- Page Header -->
@@ -41,7 +42,7 @@
             <div class="summary-card">
                 <i class="fas fa-hourglass-half summary-icon"></i>
                 <div class="summary-title">Pending Review</div>
-                <div class="summary-value" id="totalPending">15</div>
+                <div class="summary-value" id="totalPending">{{ pending_count }}</div>
                 <div class="summary-change">
                     <span>Awaiting approval</span>
                 </div>
@@ -49,7 +50,7 @@
             <div class="summary-card success">
                 <i class="fas fa-check-circle summary-icon"></i>
                 <div class="summary-title">Approved</div>
-                <div class="summary-value" id="totalApproved">42</div>
+                <div class="summary-value" id="totalApproved">{{ approved_count }}</div>
                 <div class="summary-change">
                     <span>Diary entries</span>
                 </div>
@@ -57,7 +58,7 @@
             <div class="summary-card warning">
                 <i class="fas fa-history summary-icon"></i>
                 <div class="summary-title">Needs Revision</div>
-                <div class="summary-value" id="totalRevision">8</div>
+                <div class="summary-value" id="totalRevision">{{ revision_count }}</div>
                 <div class="summary-change">
                     <span>Sent back to architects</span>
                 </div>
@@ -65,7 +66,7 @@
             <div class="summary-card info">
                 <i class="fas fa-clipboard-list summary-icon"></i>
                 <div class="summary-title">Total Entries</div>
-                <div class="summary-value" id="totalEntries">65</div>
+                <div class="summary-value" id="totalEntries">{{ total_count }}</div>
                 <div class="summary-change">
                     <span>All submitted entries</span>
                 </div>
@@ -92,10 +93,9 @@
                         <label for="filter-architect">Architect/Site Manager</label>
                         <select id="filter-architect">
                             <option value="">All Architects</option>
-                            <option value="john-smith">John Smith</option>
-                            <option value="emily-rodriguez">Emily Rodriguez</option>
-                            <option value="michael-chen">Michael Chen</option>
-                            <option value="sarah-johnson">Sarah Johnson</option>
+                            {% for user in architects %}
+                            <option value="{{ user.username }}" {% if request.GET.architect == user.username %}selected{% endif %}>{{ user.get_full_name|default:user.username }}</option>
+                            {% endfor %}
                         </select>
                     </div>
                     
@@ -103,10 +103,9 @@
                         <label for="filter-project">Project</label>
                         <select id="filter-project">
                             <option value="">All Projects</option>
-                            <option value="central-business-district">Central Business District Tower</option>
-                            <option value="riverside-residential">Riverside Residential Complex</option>
-                            <option value="tech-campus">Tech Innovation Campus</option>
-                            <option value="city-hospital">City Hospital Expansion</option>
+                            {% for project in projects %}
+                            <option value="{{ project.name }}" {% if request.GET.project == project.name %}selected{% endif %}>{{ project.name }}</option>
+                            {% endfor %}
                         </select>
                     </div>
                     
@@ -114,25 +113,25 @@
                         <label for="filter-status">Status</label>
                         <select id="filter-status">
                             <option value="">All Status</option>
-                            <option value="pending">Pending Review</option>
-                            <option value="approved">Approved</option>
-                            <option value="revision">Needs Revision</option>
+                            <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pending Review</option>
+                            <option value="approved" {% if request.GET.status == 'approved' %}selected{% endif %}>Approved</option>
+                            <option value="revision" {% if request.GET.status == 'revision' %}selected{% endif %}>Needs Revision</option>
                         </select>
                     </div>
                     
                     <div class="filter-group">
                         <label for="filter-date-from">Date From</label>
-                        <input type="date" id="filter-date-from" class="flatpickr">
+                        <input type="date" id="filter-date-from" class="flatpickr" value="{{ request.GET.date_from }}">
                     </div>
                     
                     <div class="filter-group">
                         <label for="filter-date-to">Date To</label>
-                        <input type="date" id="filter-date-to" class="flatpickr">
+                        <input type="date" id="filter-date-to" class="flatpickr" value="{{ request.GET.date_to }}">
                     </div>
                     
                     <div class="filter-group" style="grid-column: span 2;">
                         <label for="search">Search</label>
-                        <input type="text" id="search" class="search-input" placeholder="Search by project name, architect, location...">
+                        <input type="text" id="search" class="search-input" placeholder="Search by project name, architect, location..." value="{{ request.GET.search }}">
                     </div>
                 </div>
                 
@@ -157,6 +156,9 @@
                     Submitted Diary Entries
                 </div>
                 <div class="view-toggle">
+                    <button id="historyModeBtn" class="view-btn" title="History Mode">
+                        <i class="fas fa-history"></i> History Mode
+                    </button>
                     <button id="timelineViewBtn" class="view-btn active" title="Timeline View">
                         <i class="fas fa-stream" style="color: #2a5254;"></i> Timeline View
                     </button>
@@ -176,207 +178,93 @@
                 <!-- Timeline View -->
                 <div class="timeline-container" id="timelineView">
                     <div class="timeline">
+                        {% regroup page_obj by entry_date as entries_by_date %}
+                        {% for date_group in entries_by_date %}
                         <!-- Timeline Date Header -->
                         <div class="timeline-date-header">
-                            <h3><i class="fas fa-calendar-day"></i> Today - March 17, 2025</h3>
+                            <h3><i class="fas fa-calendar-day"></i> {{ date_group.grouper|date:"F d, Y" }}</h3>
                         </div>
                         
-                        <!-- Timeline Entry 1 - Pending Review -->
-                        <div class="timeline-item status-pending">
-                            <div class="timeline-header" data-id="1">
+                        {% for entry in date_group.list %}
+                        <!-- Timeline Entry -->
+                        <div class="timeline-item {% if entry.approved %}status-approved{% else %}status-pending{% endif %}">
+                            <div class="timeline-header" data-id="{{ entry.id }}">
                                 <div class="timeline-date">
-                                    <div class="timeline-time">09:45 AM</div>
+                                    <div class="timeline-time">{{ entry.created_at|date:"g:i A" }}</div>
                                     <div class="timeline-status">
+                                        {% if entry.approved %}
+                                        <span class="status-badge status-approved-badge">Approved</span>
+                                        {% else %}
                                         <span class="status-badge status-pending-badge">Pending Review</span>
+                                        {% endif %}
                                     </div>
                                 </div>
-                                <h3>Central Business District Tower</h3>
+                                <h3>{{ entry.project.name }}</h3>
                                 <div class="timeline-meta">
-                                    <span class="entry-id">SDR-2025-042</span>
+                                    <span class="entry-id">SDR-{{ entry.id|stringformat:"04d" }}</span>
                                     <div class="action-btn expand">
                                         <i class="fas fa-chevron-down"></i>
                                     </div>
                                 </div>
                             </div>
-                            <div class="timeline-content" id="content1">
+                            <div class="timeline-content" id="content{{ entry.id }}">
                                 <div class="content-grid">
                                     <div class="info-section">
                                         <div class="info-item">
-                                            <div class="info-label">Architect:</div>
-                                            <div class="info-value">John Smith</div>
+                                            <div class="info-label">Site Manager:</div>
+                                            <div class="info-value">{{ entry.created_by.get_full_name|default:entry.created_by.username }}</div>
                                         </div>
                                         <div class="info-item">
                                             <div class="info-label">Location:</div>
-                                            <div class="info-value">Downtown, Central Business District</div>
+                                            <div class="info-value">{{ entry.project.location }}</div>
                                         </div>
                                         <div class="info-item">
-                                            <div class="info-label">Tasks:</div>
-                                            <div class="info-value">Structural Framework, 12th Floor Column Installation</div>
+                                            <div class="info-label">Milestone:</div>
+                                            <div class="info-value">{{ entry.milestone.name|default:"Not specified" }}</div>
+                                        </div>
+                                        <div class="info-item">
+                                            <div class="info-label">Progress:</div>
+                                            <div class="info-value">{{ entry.progress_percentage }}%</div>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="timeline-description">
-                                    <h4>Description</h4>
-                                    <p>Completed concrete pouring for the 12th floor slab. Inspected and approved formwork for columns on the 13th floor. Electrical conduit installation began on the 11th floor.</p>
+                                    <h4>Work Description</h4>
+                                    <p>{{ entry.work_description|default:"No description provided" }}</p>
+                                    {% if entry.quality_issues %}
+                                    <h4>Quality Issues</h4>
+                                    <p>{{ entry.quality_issues }}</p>
+                                    {% endif %}
+                                    {% if entry.safety_incidents %}
+                                    <h4>Safety Incidents</h4>
+                                    <p>{{ entry.safety_incidents }}</p>
+                                    {% endif %}
                                 </div>
                                 <div class="timeline-actions">
-                                    <button class="btn btn-primary view-entry-btn" data-entry-id="SDR-2025-042">
-                                        <i class="fas fa-eye"></i> View Entry
+                                    {% if not entry.approved %}
+                                    <form method="post" style="display: inline;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="approve">
+                                        <input type="hidden" name="entry_id" value="{{ entry.id }}">
+                                        <button type="submit" class="btn btn-success">
+                                            <i class="fas fa-check"></i> Approve
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                    <button class="btn btn-primary view-entry-btn" data-entry-id="{{ entry.id }}">
+                                        <i class="fas fa-eye"></i> View Details
                                     </button>
                                 </div>
                             </div>
                         </div>
-                        
-                        <!-- Timeline Entry 2 - Approved -->
-                        <div class="timeline-item status-approved">
-                            <div class="timeline-header" data-id="2">
-                                <div class="timeline-date">
-                                    <div class="timeline-time">08:30 AM</div>
-                                    <div class="timeline-status">
-                                        <span class="status-badge status-approved-badge">Approved</span>
-                                    </div>
-                                </div>
-                                <h3>Tech Innovation Campus</h3>
-                                <div class="timeline-meta">
-                                    <span class="entry-id">SDR-2025-041</span>
-                                    <div class="action-btn expand">
-                                        <i class="fas fa-chevron-down"></i>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="timeline-content" id="content2">
-                                <div class="content-grid">
-                                    <div class="info-section">
-                                        <div class="info-item">
-                                            <div class="info-label">Architect:</div>
-                                            <div class="info-value">Emily Rodriguez</div>
-                                        </div>
-                                        <div class="info-item">
-                                            <div class="info-label">Location:</div>
-                                            <div class="info-value">North Tech District</div>
-                                        </div>
-                                        <div class="info-item">
-                                            <div class="info-label">Tasks:</div>
-                                            <div class="info-value">Exterior Facade Installation</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="timeline-description">
-                                    <h4>Description</h4>
-                                    <p>Installation of glass curtain wall sections on the west facade. Weather conditions optimal for exterior work. Team completed 35% of planned facade installation.</p>
-                                </div>
-                                <div class="timeline-actions">
-                                    <button class="btn btn-primary view-entry-btn" data-entry-id="SDR-2025-041">
-                                        <i class="fas fa-eye"></i> View Entry
-                                    </button>
-                                </div>
-                            </div>
+                        {% endfor %}
+                        {% empty %}
+                        <div class="no-entries">
+                            <p><strong>DEBUG:</strong> No diary entries found in database. Total entries: {{ total_count }}</p>
+                            <p>If you see static data above, it means the template is not being rendered by Django.</p>
                         </div>
-                        
-                        <!-- Timeline Date Header -->
-                        <div class="timeline-date-header">
-                            <h3><i class="fas fa-calendar-day"></i> March 16, 2025</h3>
-                        </div>
-                        
-                        <!-- Timeline Entry 3 - Needs Revision -->
-                        <div class="timeline-item status-revision">
-                            <div class="timeline-header" data-id="3">
-                                <div class="timeline-date">
-                                    <div class="timeline-time">04:15 PM</div>
-                                    <div class="timeline-status">
-                                        <span class="status-badge status-revision-badge">Needs Revision</span>
-                                    </div>
-                                </div>
-                                <h3>Riverside Residential Complex</h3>
-                                <div class="timeline-meta">
-                                    <span class="entry-id">SDR-2025-040</span>
-                                    <div class="action-btn expand">
-                                        <i class="fas fa-chevron-down"></i>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="timeline-content" id="content3">
-                                <div class="content-grid">
-                                    <div class="info-section">
-                                        <div class="info-item">
-                                            <div class="info-label">Architect:</div>
-                                            <div class="info-value">Michael Chen</div>
-                                        </div>
-                                        <div class="info-item">
-                                            <div class="info-label">Location:</div>
-                                            <div class="info-value">Eastbank Riverside Area</div>
-                                        </div>
-                                        <div class="info-item">
-                                            <div class="info-label">Tasks:</div>
-                                            <div class="info-value">Interior Finishing, Building A</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="timeline-description">
-                                    <h4>Description</h4>
-                                    <p>Interior drywall installation in Building A residential units. Materials delivery delayed by 2 hours. Budget discrepancies noted in material costs section.</p>
-                                </div>
-                                <div class="timeline-actions">
-                                    <button class="btn btn-primary view-entry-btn" data-entry-id="SDR-2025-040">
-                                        <i class="fas fa-eye"></i> View Entry
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Timeline Entry 4 - Approved -->
-                        <div class="timeline-item status-approved">
-                            <div class="timeline-header" data-id="4">
-                                <div class="timeline-date">
-                                    <div class="timeline-time">10:20 AM</div>
-                                    <div class="timeline-status">
-                                        <span class="status-badge status-approved-badge">Approved</span>
-                                    </div>
-                                </div>
-                                <h3>City Hospital Expansion</h3>
-                                <div class="timeline-meta">
-                                    <span class="entry-id">SDR-2025-039</span>
-                                    <div class="action-btn expand">
-                                        <i class="fas fa-chevron-down"></i>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="timeline-content" id="content4">
-                                <div class="content-grid">
-                                    <div class="info-section">
-                                        <div class="info-item">
-                                            <div class="info-label">Architect:</div>
-                                            <div class="info-value">Sarah Johnson</div>
-                                        </div>
-                                        <div class="info-item">
-                                            <div class="info-label">Location:</div>
-                                            <div class="info-value">Medical District</div>
-                                        </div>
-                                        <div class="info-item">
-                                            <div class="info-label">Tasks:</div>
-                                            <div class="info-value">Medical Equipment Installation, Wing B</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="timeline-description">
-                                    <h4>Description</h4>
-                                    <p>HVAC system testing in medical wing B. Equipment installation for operating rooms 3 and 4 completed. Specialized medical gas lines installed and pressure tested.</p>
-                                </div>
-                                <div class="timeline-actions">
-                                    <button class="btn btn-primary view-entry-btn" data-entry-id="SDR-2025-039">
-                                        <i class="fas fa-eye"></i> View Entry
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Load More Button -->
-                    <div class="load-more-container">
-                        <button class="btn btn-secondary load-more-btn">
-                            <i class="fas fa-sync"></i>
-                            Load More Entries
-                        </button>
+                        {% endfor %}
+
                     </div>
                 </div>
                 
@@ -426,137 +314,79 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <!-- Entry 1 -->
-                                <tr data-status="pending">
-                                    <td>SDR-2025-042</td>
-                                    <td>Mar 17, 2025</td>
-                                    <td>Central Business District Tower</td>
-                                    <td>John Smith</td>
-                                    <td>Structural Framework</td>
+                                {% for entry in page_obj %}
+                                <tr data-status="{% if entry.approved %}approved{% else %}pending{% endif %}">
+                                    <td>SDR-{{ entry.id|stringformat:"04d" }}</td>
+                                    <td>{{ entry.entry_date|date:"M d, Y" }}</td>
+                                    <td>{{ entry.project.name }}</td>
+                                    <td>{{ entry.created_by.get_full_name|default:entry.created_by.username }}</td>
+                                    <td>{{ entry.milestone.name|default:"Not specified" }}</td>
                                     <td>
+                                        {% if entry.approved %}
+                                        <span class="status-badge status-approved-badge">Approved</span>
+                                        {% else %}
                                         <span class="status-badge status-pending-badge">Pending</span>
+                                        {% endif %}
                                     </td>
                                     <td>
                                         <div class="table-actions">
-                                            <button class="action-btn view" title="View Entry" data-entry-id="SDR-2025-042">
+                                            {% if not entry.approved %}
+                                            <form method="post" style="display: inline;">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="action" value="approve">
+                                                <input type="hidden" name="entry_id" value="{{ entry.id }}">
+                                                <button type="submit" class="action-btn approve" title="Approve Entry">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                            </form>
+                                            {% endif %}
+                                            <button class="action-btn view" title="View Entry" data-entry-id="{{ entry.id }}">
                                                 <i class="fas fa-eye"></i>
                                             </button>
                                         </div>
                                     </td>
                                 </tr>
-                                
-                                <!-- Entry 2 -->
-                                <tr data-status="approved">
-                                    <td>SDR-2025-041</td>
-                                    <td>Mar 17, 2025</td>
-                                    <td>Tech Innovation Campus</td>
-                                    <td>Emily Rodriguez</td>
-                                    <td>Exterior Facade</td>
-                                    <td>
-                                        <span class="status-badge status-approved-badge">Approved</span>
-                                    </td>
-                                    <td>
-                                        <div class="table-actions">
-                                            <button class="action-btn view" title="View Entry" data-entry-id="SDR-2025-041">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                        </div>
-                                    </td>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center">No diary entries found.</td>
                                 </tr>
-                                
-                                <!-- Entry 3 -->
-                                <tr data-status="revision">
-                                    <td>SDR-2025-040</td>
-                                    <td>Mar 16, 2025</td>
-                                    <td>Riverside Residential Complex</td>
-                                    <td>Michael Chen</td>
-                                    <td>Interior Finishing</td>
-                                    <td>
-                                        <span class="status-badge status-revision-badge">Revision</span>
-                                    </td>
-                                    <td>
-                                        <div class="table-actions">
-                                            <button class="action-btn view" title="View Entry" data-entry-id="SDR-2025-040">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                
-                                <!-- Entry 4 -->
-                                <tr data-status="approved">
-                                    <td>SDR-2025-039</td>
-                                    <td>Mar 16, 2025</td>
-                                    <td>City Hospital Expansion</td>
-                                    <td>Sarah Johnson</td>
-                                    <td>Medical Equipment</td>
-                                    <td>
-                                        <span class="status-badge status-approved-badge">Approved</span>
-                                    </td>
-                                    <td>
-                                        <div class="table-actions">
-                                            <button class="action-btn view" title="View Entry" data-entry-id="SDR-2025-039">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                
-                                <!-- Entry 5 -->
-                                <tr data-status="pending">
-                                    <td>SDR-2025-038</td>
-                                    <td>Mar 15, 2025</td>
-                                    <td>Central Business District Tower</td>
-                                    <td>John Smith</td>
-                                    <td>Electrical Work</td>
-                                    <td>
-                                        <span class="status-badge status-pending-badge">Pending</span>
-                                    </td>
-                                    <td>
-                                        <div class="table-actions">
-                                            <button class="action-btn view" title="View Entry" data-entry-id="SDR-2025-038">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                
-                                <!-- Entry 6 -->
-                                <tr data-status="approved">
-                                    <td>SDR-2025-037</td>
-                                    <td>Mar 15, 2025</td>
-                                    <td>Riverside Residential Complex</td>
-                                    <td>Michael Chen</td>
-                                    <td>Plumbing Installation</td>
-                                    <td>
-                                        <span class="status-badge status-approved-badge">Approved</span>
-                                    </td>
-                                    <td>
-                                        <div class="table-actions">
-                                            <button class="action-btn view" title="View Entry" data-entry-id="SDR-2025-037">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
+                                {% endfor %}
                             </tbody>
                         </table>
                     </div>
                     
                     <!-- Pagination -->
+                    {% if page_obj.has_other_pages %}
                     <div class="pagination">
+                        {% if page_obj.has_previous %}
+                        <button class="page-btn" onclick="navigateToPage({{ page_obj.previous_page_number }})">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        {% else %}
                         <button class="page-btn disabled">
                             <i class="fas fa-chevron-left"></i>
                         </button>
-                        <button class="page-btn active">1</button>
-                        <button class="page-btn">2</button>
-                        <button class="page-btn">3</button>
-                        <span class="pagination-ellipsis">...</span>
-                        <button class="page-btn">10</button>
-                        <button class="page-btn">
+                        {% endif %}
+                        
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                            <button class="page-btn active">{{ num }}</button>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <button class="page-btn" onclick="navigateToPage({{ num }})">{{ num }}</button>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if page_obj.has_next %}
+                        <button class="page-btn" onclick="navigateToPage({{ page_obj.next_page_number }})">
                             <i class="fas fa-chevron-right"></i>
                         </button>
+                        {% else %}
+                        <button class="page-btn disabled">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                        {% endif %}
                     </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
