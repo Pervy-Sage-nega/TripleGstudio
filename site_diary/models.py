@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.exceptions import ValidationError
 from decimal import Decimal
 
 class Project(models.Model):
@@ -15,7 +17,7 @@ class Project(models.Model):
     ]
     
     name = models.CharField(max_length=200)
-    description = models.TextField(blank=True)
+    description = models.TextField(blank=True, max_length=2000)
     client_name = models.CharField(max_length=100)
     client = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='client_projects')
     project_manager = models.ForeignKey(User, on_delete=models.CASCADE, related_name='managed_projects')
@@ -24,7 +26,7 @@ class Project(models.Model):
     start_date = models.DateField()
     expected_end_date = models.DateField()
     actual_end_date = models.DateField(null=True, blank=True)
-    budget = models.DecimalField(max_digits=12, decimal_places=2)
+    budget = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
     status = models.CharField(max_length=20, choices=PROJECT_STATUS, default='pending_approval')
     image = models.ImageField(upload_to='project_images/', null=True, blank=True)
     
@@ -41,6 +43,17 @@ class Project(models.Model):
     
     def __str__(self):
         return f"{self.name} - {self.client_name}"
+    
+    def clean(self):
+        super().clean()
+        # Validate dates
+        if self.start_date and self.expected_end_date:
+            if self.start_date > self.expected_end_date:
+                raise ValidationError('Start date cannot be after expected end date.')
+        
+        if self.actual_end_date and self.start_date:
+            if self.actual_end_date < self.start_date:
+                raise ValidationError('Actual end date cannot be before start date.')
     
     def get_progress_percentage(self):
         """Get the latest progress percentage from diary entries"""
@@ -76,21 +89,21 @@ class DiaryEntry(models.Model):
     
     # Weather Information
     weather_condition = models.CharField(max_length=20, choices=WEATHER_CONDITIONS, blank=True)
-    temperature_high = models.IntegerField(null=True, blank=True, help_text="Temperature in Celsius")
-    temperature_low = models.IntegerField(null=True, blank=True, help_text="Temperature in Celsius")
-    humidity = models.IntegerField(null=True, blank=True, help_text="Humidity percentage")
-    wind_speed = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, help_text="Wind speed in km/h")
+    temperature_high = models.IntegerField(null=True, blank=True, help_text="Temperature in Celsius", validators=[MinValueValidator(-50), MaxValueValidator(60)])
+    temperature_low = models.IntegerField(null=True, blank=True, help_text="Temperature in Celsius", validators=[MinValueValidator(-50), MaxValueValidator(60)])
+    humidity = models.IntegerField(null=True, blank=True, help_text="Humidity percentage", validators=[MinValueValidator(0), MaxValueValidator(100)])
+    wind_speed = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, help_text="Wind speed in km/h", validators=[MinValueValidator(0), MaxValueValidator(500)])
     
     # Work Progress
-    work_description = models.TextField(help_text="Description of work performed today")
-    progress_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="Overall project progress percentage")
+    work_description = models.TextField(help_text="Description of work performed today", max_length=2000)
+    progress_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="Overall project progress percentage", validators=[MinValueValidator(0), MaxValueValidator(100)])
     
     # Quality and Safety
-    quality_issues = models.TextField(blank=True, help_text="Any quality issues encountered")
-    safety_incidents = models.TextField(blank=True, help_text="Any safety incidents or concerns")
+    quality_issues = models.TextField(blank=True, help_text="Any quality issues encountered", max_length=1000)
+    safety_incidents = models.TextField(blank=True, help_text="Any safety incidents or concerns", max_length=1000)
     
     # Notes and Observations
-    general_notes = models.TextField(blank=True)
+    general_notes = models.TextField(blank=True, max_length=1000)
     photos_taken = models.BooleanField(default=False)
     
     # Approval and Review
@@ -102,6 +115,13 @@ class DiaryEntry(models.Model):
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    def clean(self):
+        super().clean()
+        # Validate temperature consistency
+        if self.temperature_high is not None and self.temperature_low is not None:
+            if self.temperature_low > self.temperature_high:
+                raise ValidationError('Low temperature cannot be higher than high temperature.')
     
     class Meta:
         ordering = ['-entry_date', '-created_at']

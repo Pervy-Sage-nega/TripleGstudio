@@ -19,19 +19,24 @@ from .forms import (
     EquipmentEntryFormSet, DelayEntryFormSet, VisitorEntryFormSet, 
     DiaryPhotoFormSet, DiarySearchForm, DiaryEntrySearchForm, ProjectSearchForm
 )
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.http import require_http_methods
+from django.core.exceptions import ValidationError
+from django.utils.html import escape
 import requests
+import logging
 
 OPENWEATHERMAP_API_KEY = "0c461dd2b831a59146501773674950cd"
+logger = logging.getLogger(__name__)
 
 # Create your views here.
+@login_required
 @require_site_manager_role
+@csrf_protect
 def diary(request):
     """Create new diary entry with all related data, including Save as Draft support"""
     if request.method == 'POST':
-        print(f"DEBUG: POST data received: {request.POST}")
         save_as_draft = request.POST.get('save_as_draft') == '1'
-        print(f"DEBUG: Save as draft: {save_as_draft}")
         
         diary_form = DiaryEntryForm(request.POST, user=request.user)
         labor_formset = LaborEntryFormSet(request.POST, prefix='labor')
@@ -41,25 +46,26 @@ def diary(request):
         visitor_formset = VisitorEntryFormSet(request.POST, prefix='visitor')
         photo_formset = DiaryPhotoFormSet(request.POST, request.FILES, prefix='photo')
         
-        print(f"DEBUG: Diary form valid: {diary_form.is_valid()}")
+        # Validate forms
         if not diary_form.is_valid():
-            print(f"DEBUG: Diary form errors: {diary_form.errors}")
-        print(f"DEBUG: Material formset valid: {material_formset.is_valid()}")
+            logger.warning(f"Diary form validation failed for user {request.user.id}")
         if not material_formset.is_valid():
-            print(f"DEBUG: Material formset errors: {material_formset.errors}")
+            logger.warning(f"Material formset validation failed for user {request.user.id}")
         
-        # Check if editing existing draft
+        # Check if editing existing draft with proper validation
         edit_draft_id = request.POST.get('edit_draft_id') or request.GET.get('edit')
         editing_draft = None
         
         if edit_draft_id:
             try:
+                # Validate draft_id is numeric to prevent injection
+                draft_id = int(edit_draft_id)
                 editing_draft = DiaryEntry.objects.get(
-                    id=edit_draft_id,
+                    id=draft_id,
                     created_by=request.user,
                     draft=True
                 )
-            except DiaryEntry.DoesNotExist:
+            except (ValueError, TypeError, DiaryEntry.DoesNotExist):
                 messages.error(request, 'Draft not found or access denied.')
                 return redirect('site_diary:sitedraft')
         
@@ -101,7 +107,7 @@ def diary(request):
                         setattr(editing_draft, field, diary_form.cleaned_data[field])
                 editing_draft.save()
                 diary_entry = editing_draft
-                print(f"DEBUG: Updated existing draft: {diary_entry.id}")
+                logger.info(f"Updated existing draft {diary_entry.id} for user {request.user.id}")
             else:
                 # Check if draft already exists for this project and date (avoid duplicates)
                 existing_draft = DiaryEntry.objects.filter(
@@ -118,7 +124,7 @@ def diary(request):
                             setattr(existing_draft, field, diary_form.cleaned_data[field])
                     existing_draft.save()
                     diary_entry = existing_draft
-                    print(f"DEBUG: Updated existing draft: {diary_entry.id}")
+                    logger.info(f"Updated existing draft {diary_entry.id} for user {request.user.id}")
                 else:
                     # Create new draft with minimal required fields
                     diary_entry = DiaryEntry.objects.create(
@@ -138,7 +144,7 @@ def diary(request):
                         general_notes=diary_form.cleaned_data.get('general_notes', ''),
                         photos_taken=diary_form.cleaned_data.get('photos_taken', False)
                     )
-                    print(f"DEBUG: Created new draft: {diary_entry.id}")
+                    logger.info(f"Created new draft {diary_entry.id} for user {request.user.id}")
             
             messages.success(request, 'Diary draft saved successfully!')
             return redirect('site_diary:sitedraft')
@@ -152,44 +158,36 @@ def diary(request):
             diary_entry.save()
             
             # Save related entries (simplified for now)
-            print(f"DEBUG: Diary entry saved successfully: {diary_entry.id}")
+            logger.info(f"Diary entry saved successfully: {diary_entry.id} for user {request.user.id}")
             
             messages.success(request, 'Diary entry created successfully!')
             return redirect('site_diary:diary')
         else:
             # Form validation failed
-            print(f"DEBUG: Form validation failed")
-            print(f"DEBUG: Diary form errors: {diary_form.errors}")
+            logger.warning(f"Form validation failed for user {request.user.id}")
             messages.error(request, 'Please correct the form errors and try again.')
     else:
-        print(f"\n=== DIARY VIEW DEBUG ===")
-        print(f"Current user: {request.user} (ID: {request.user.id})")
-        print(f"User is_staff: {request.user.is_staff}")
-        
         # Get user's assigned projects only - very strict filtering
         user_projects = Project.objects.filter(
             project_manager=request.user,
             status__in=['planning', 'active', 'on_hold', 'completed']
         )
         
-        print(f"User projects count: {user_projects.count()}")
-        for project in user_projects:
-            print(f"Project: {project.name}, Manager: {project.project_manager}, Architect: {project.architect}")
-        print(f"=== END DEBUG ===\n")
-        
-        # Check if editing an existing draft
+        # Check if editing an existing draft with proper validation
         edit_draft_id = request.GET.get('edit')
         draft_instance = None
         
         if edit_draft_id:
             try:
+                # Validate draft_id is numeric to prevent injection
+                draft_id = int(edit_draft_id)
                 draft_instance = DiaryEntry.objects.get(
-                    id=edit_draft_id,
+                    id=draft_id,
                     created_by=request.user,
                     draft=True
                 )
-                print(f"DEBUG: Editing draft {draft_instance.id} for project {draft_instance.project.name}")
-            except DiaryEntry.DoesNotExist:
+                logger.info(f"Editing draft {draft_instance.id} for user {request.user.id}")
+            except (ValueError, TypeError, DiaryEntry.DoesNotExist):
                 messages.error(request, 'Draft not found or access denied.')
                 return redirect('site_diary:sitedraft')
         
@@ -239,6 +237,7 @@ def diary(request):
     }
     return render(request, 'site_diary/diary.html', context)
 
+@login_required
 @require_site_manager_role
 def dashboard(request):
     """Site Manager Enhanced dashboard with comprehensive project overview"""
@@ -342,63 +341,97 @@ def dashboard(request):
     return render(request, 'site_diary/dashboard.html', context)
 
 @require_site_manager_role
+@require_http_methods(["GET"])
 def weather_api(request):
     """Weather API endpoint for fetching weather data"""
-    if request.method == 'GET':
-        location = request.GET.get('location', '')
-        if location:
-            try:
-                import requests
-                from django.conf import settings
+    location = request.GET.get('location', '').strip()
+    
+    # Validate location input
+    if not location or len(location) > 100:
+        return JsonResponse({'error': 'Invalid location parameter'}, status=400)
+    
+    # Sanitize location input to prevent injection
+    location = escape(location)
+    
+    try:
+        from django.conf import settings
+        
+        # Use OpenWeatherMap API
+        api_key = getattr(settings, 'WEATHER_API_KEY', OPENWEATHERMAP_API_KEY)
+        api_url = "https://api.openweathermap.org/data/2.5/weather"
+        params = {
+            'q': location,
+            'appid': api_key,
+            'units': 'metric'
+        }
+        
+        response = requests.get(api_url, params=params, timeout=10)
                 
-                # Use OpenWeatherMap API
-                api_key = getattr(settings, 'WEATHER_API_KEY', '0c461dd2b831a59146501773674950cd')
-                api_url = f"https://api.openweathermap.org/data/2.5/weather?q={location}&appid={api_key}&units=metric"
-                
-                response = requests.get(api_url, timeout=10)
-                
-                if response.status_code == 200:
-                    data = response.json()
-                    weather_data = {
-                        'temperature': round(data['main']['temp']),
-                        'temperature_high': round(data['main']['temp_max']),
-                        'temperature_low': round(data['main']['temp_min']),
-                        'humidity': data['main']['humidity'],
-                        'wind_speed': round(data['wind']['speed'] * 3.6),  # Convert m/s to km/h
-                        'description': data['weather'][0]['description'],
-                        'condition': data['weather'][0]['main'],
-                        'icon': data['weather'][0]['icon'],
-                        'location': location
-                    }
-                    return JsonResponse(weather_data)
-                else:
-                    return JsonResponse({'error': 'Weather data not found'}, status=404)
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Validate API response structure
+            if not all(key in data for key in ['main', 'weather', 'wind']):
+                return JsonResponse({'error': 'Invalid weather data received'}, status=500)
+            
+            weather_data = {
+                'temperature': round(float(data['main']['temp'])),
+                'temperature_high': round(float(data['main']['temp_max'])),
+                'temperature_low': round(float(data['main']['temp_min'])),
+                'humidity': int(data['main']['humidity']),
+                'wind_speed': round(float(data['wind']['speed']) * 3.6),  # Convert m/s to km/h
+                'description': escape(data['weather'][0]['description']),
+                'condition': escape(data['weather'][0]['main']),
+                'icon': escape(data['weather'][0]['icon']),
+                'location': location
+            }
+            return JsonResponse(weather_data)
+        else:
+            logger.warning(f"Weather API failed for location {location}: {response.status_code}")
+            return JsonResponse({'error': 'Weather data not found'}, status=404)
                     
-            except requests.RequestException:
-                # Fallback to mock data if API fails
-                weather_data = {
-                    'temperature': 28,
-                    'temperature_high': 32,
-                    'temperature_low': 24,
-                    'humidity': 65,
-                    'wind_speed': 12,
-                    'description': 'Partly Cloudy',
-                    'condition': 'Clouds',
-                    'icon': '02d',
-                    'location': location
-                }
-                return JsonResponse(weather_data)
-            except Exception as e:
-                return JsonResponse({'error': f'Weather service error: {str(e)}'}, status=500)
-                
-        return JsonResponse({'error': 'Location parameter required'}, status=400)
-    return JsonResponse({'error': 'Method not allowed'}, status=405)
+    except requests.RequestException as e:
+        logger.error(f"Weather API request failed: {str(e)}")
+        # Fallback to mock data if API fails
+        weather_data = {
+            'temperature': 28,
+            'temperature_high': 32,
+            'temperature_low': 24,
+            'humidity': 65,
+            'wind_speed': 12,
+            'description': 'Partly Cloudy',
+            'condition': 'Clouds',
+            'icon': '02d',
+            'location': location
+        }
+        return JsonResponse(weather_data)
+    except (ValueError, KeyError, TypeError) as e:
+        logger.error(f"Weather data parsing error: {str(e)}")
+        return JsonResponse({'error': 'Weather service error'}, status=500)
+    except Exception as e:
+        logger.error(f"Unexpected weather API error: {str(e)}")
+        return JsonResponse({'error': 'Weather service error'}, status=500)
 
 @require_site_manager_role
 def print_preview(request, project_id):
     """Print preview for project"""
-    project = get_object_or_404(Project, id=project_id)
-    return render(request, 'site_diary/print_preview.html', {'project': project})
+    try:
+        project_id = int(project_id)
+        project = get_object_or_404(Project, id=project_id)
+        
+        # Verify user has access to this project
+        if not request.user.is_staff:
+            user_projects = Project.objects.filter(
+                Q(project_manager=request.user) | Q(architect=request.user)
+            )
+            if project not in user_projects:
+                messages.error(request, 'Access denied.')
+                return redirect('site_diary:dashboard')
+        
+        return render(request, 'site_diary/print_preview.html', {'project': project})
+    except (ValueError, TypeError):
+        messages.error(request, 'Invalid project ID.')
+        return redirect('site_diary:dashboard')
 
 @require_site_manager_role
 def sample_print(request):
@@ -406,36 +439,67 @@ def sample_print(request):
     return render(request, 'site_diary/sample_print.html')
 
 @require_site_manager_role
+@require_http_methods(["POST"])
+@csrf_protect
 def generate_project_report(request, project_id):
     """Generate project report API"""
-    project = get_object_or_404(Project, id=project_id)
-    # Generate report logic here
-    return JsonResponse({'status': 'success', 'report_url': f'/reports/{project_id}/'})
+    try:
+        project_id = int(project_id)
+        project = get_object_or_404(Project, id=project_id)
+        
+        # Verify user has access to this project
+        if not request.user.is_staff:
+            user_projects = Project.objects.filter(
+                Q(project_manager=request.user) | Q(architect=request.user)
+            )
+            if project not in user_projects:
+                return JsonResponse({'error': 'Access denied'}, status=403)
+        
+        # Generate report logic here
+        report_data = {
+            'status': 'success',
+            'report_url': f'/reports/{project_id}/',
+            'project_name': escape(project.name)
+        }
+        return JsonResponse(report_data)
+    except (ValueError, TypeError):
+        return JsonResponse({'error': 'Invalid project ID'}, status=400)
+    except Exception as e:
+        logger.error(f"Report generation error: {str(e)}")
+        return JsonResponse({'error': 'Report generation failed'}, status=500)
 
 @require_site_manager_role
+@require_http_methods(["GET"])
 def api_filter_projects(request):
     """API for filtering projects"""
-    if request.method == 'GET':
-        status = request.GET.get('status', '')
-        category = request.GET.get('category', '')
-        
+    status = request.GET.get('status', '').strip()
+    category = request.GET.get('category', '').strip()
+    
+    # Get user's projects only
+    if request.user.is_staff:
         projects = Project.objects.all()
-        if status:
-            projects = projects.filter(status=status)
-        if category:
-            projects = projects.filter(category=category)
-            
-        project_data = []
-        for project in projects:
-            project_data.append({
-                'id': project.id,
-                'name': project.name,
-                'status': project.status,
-                'client_name': project.client_name,
-            })
+    else:
+        projects = Project.objects.filter(
+            Q(project_manager=request.user) | Q(architect=request.user)
+        )
+    
+    # Validate and apply filters
+    if status and status in dict(Project.PROJECT_STATUS):
+        projects = projects.filter(status=status)
+    if category:
+        # Assuming category field exists, validate against allowed values
+        projects = projects.filter(category=escape(category))
         
-        return JsonResponse({'projects': project_data})
-    return JsonResponse({'error': 'Method not allowed'}, status=405)
+    project_data = []
+    for project in projects[:50]:  # Limit results to prevent DoS
+        project_data.append({
+            'id': project.id,
+            'name': escape(project.name),
+            'status': project.status,
+            'client_name': escape(project.client_name),
+        })
+    
+    return JsonResponse({'projects': project_data})
 
 @require_site_manager_role
 def adminclientproject(request):
@@ -467,42 +531,87 @@ def chatbot(request):
     return render(request, 'chatbot/chatbot.html')
 
 @require_site_manager_role
+@csrf_protect
 def newproject(request):
     """Create new project - requires admin approval"""
     if request.method == 'POST':
         try:
-            client_name = request.POST.get('client_name')
-            client_email = request.POST.get('client_email', '')
+            # Validate and sanitize inputs
+            client_name = request.POST.get('client_name', '').strip()
+            client_email = request.POST.get('client_email', '').strip()
+            project_name = request.POST.get('name', '').strip()
+            location = request.POST.get('location', '').strip()
+            description = request.POST.get('description', '').strip()
             
-            # Try to find existing client by email or name
+            # Basic validation
+            if not client_name or len(client_name) > 100:
+                messages.error(request, 'Valid client name is required.')
+                return redirect('site_diary:newproject')
+            
+            if not project_name or len(project_name) > 200:
+                messages.error(request, 'Valid project name is required.')
+                return redirect('site_diary:newproject')
+            
+            if not location or len(location) > 300:
+                messages.error(request, 'Valid location is required.')
+                return redirect('site_diary:newproject')
+            
+            # Validate budget
+            try:
+                budget = float(request.POST.get('budget', 0)) if request.POST.get('budget') else 0
+                if budget < 0:
+                    messages.error(request, 'Budget cannot be negative.')
+                    return redirect('site_diary:newproject')
+            except (ValueError, TypeError):
+                messages.error(request, 'Invalid budget amount.')
+                return redirect('site_diary:newproject')
+            
+            # Validate dates
+            start_date = request.POST.get('start_date')
+            expected_end_date = request.POST.get('expected_end_date')
+            
+            if not start_date or not expected_end_date:
+                messages.error(request, 'Start date and expected end date are required.')
+                return redirect('site_diary:newproject')
+            
+            # Try to find existing client by email
             client_user = None
             if client_email:
                 try:
                     from django.contrib.auth.models import User
+                    from django.core.validators import validate_email
+                    validate_email(client_email)
                     client_user = User.objects.get(email=client_email)
-                except User.DoesNotExist:
-                    # Try to find by name if email doesn't match
-                    try:
-                        client_user = User.objects.filter(
-                            first_name__icontains=client_name.split()[0] if client_name else '',
-                            last_name__icontains=client_name.split()[-1] if len(client_name.split()) > 1 else ''
-                        ).first()
-                    except:
-                        pass
+                except (User.DoesNotExist, ValidationError):
+                    pass
+            
+            # Validate image file if provided
+            image_file = None
+            if 'image' in request.FILES:
+                image_file = request.FILES['image']
+                # Validate file type and size
+                allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif']
+                if image_file.content_type not in allowed_types:
+                    messages.error(request, 'Invalid image type. Please upload JPEG, PNG, or GIF.')
+                    return redirect('site_diary:newproject')
+                
+                if image_file.size > 5 * 1024 * 1024:  # 5MB limit
+                    messages.error(request, 'Image file too large. Maximum size is 5MB.')
+                    return redirect('site_diary:newproject')
             
             # Create project with pending approval status
             project = Project.objects.create(
-                name=request.POST.get('name'),
+                name=project_name,
                 client_name=client_name,
                 client=client_user,
-                location=request.POST.get('location'),
-                description=request.POST.get('description', ''),
-                budget=float(request.POST.get('budget', 0)) if request.POST.get('budget') else 0,
-                start_date=request.POST.get('start_date'),
-                expected_end_date=request.POST.get('expected_end_date'),
+                location=location,
+                description=description,
+                budget=budget,
+                start_date=start_date,
+                expected_end_date=expected_end_date,
                 project_manager=request.user,
                 status='pending_approval',  # Requires admin approval
-                image=request.FILES.get('image') if 'image' in request.FILES else None
+                image=image_file
             )
             
             # Update client's profile if linked
@@ -516,12 +625,14 @@ def newproject(request):
                         profile.save()
                         messages.info(request, f'Client account linked and updated for {client_user.get_full_name() or client_user.username}')
                 except Exception as e:
-                    print(f"Error updating client profile: {e}")
+                    logger.error(f"Error updating client profile: {str(e)}")
             
             messages.success(request, f'Project "{project.name}" submitted for admin approval. You will be notified once approved.')
+            logger.info(f"Project {project.id} created by user {request.user.id}")
             return redirect('site_diary:dashboard')
         except Exception as e:
-            messages.error(request, f'Error creating project: {str(e)}')
+            logger.error(f"Error creating project for user {request.user.id}: {str(e)}")
+            messages.error(request, 'Error creating project. Please try again.')
     
     context = {
         'page_title': 'Create New Project'
@@ -596,6 +707,7 @@ def project_edit(request, project_id):
 
 
 
+@login_required
 @require_site_manager_role
 def history(request):
     """View diary entry history with search and filtering"""
@@ -641,6 +753,7 @@ def history(request):
     }
     return render(request, 'site_diary/history.html', context)
 
+@login_required
 @require_site_manager_role
 def reports(request):
     """Generate comprehensive reports and analytics with database data"""
@@ -1288,22 +1401,33 @@ def generate_project_report(request, project_id):
     
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
-@csrf_exempt
+@require_site_manager_role
+@require_http_methods(["GET"])
 def api_project_location(request, project_id):
     """API endpoint to get project location"""
-    if request.method == 'GET':
-        try:
-            project = Project.objects.get(id=project_id)
-            return JsonResponse({
-                'location': project.location or '',
-                'project_name': project.name
-            })
-        except Project.DoesNotExist:
-            return JsonResponse({'error': 'Project not found'}, status=404)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-    return JsonResponse({'error': 'Method not allowed'}, status=405)
+    try:
+        project_id = int(project_id)
+        project = get_object_or_404(Project, id=project_id)
+        
+        # Verify user has access to this project
+        if not request.user.is_staff:
+            user_projects = Project.objects.filter(
+                Q(project_manager=request.user) | Q(architect=request.user)
+            )
+            if project not in user_projects:
+                return JsonResponse({'error': 'Access denied'}, status=403)
+        
+        return JsonResponse({
+            'location': escape(project.location or ''),
+            'project_name': escape(project.name)
+        })
+    except (ValueError, TypeError):
+        return JsonResponse({'error': 'Invalid project ID'}, status=400)
+    except Exception as e:
+        logger.error(f"Project location API error: {str(e)}")
+        return JsonResponse({'error': 'Server error'}, status=500)
 
+@login_required
 @require_site_manager_role
 def sitedraft(request):
     """Site Manager drafts view with real database data"""
