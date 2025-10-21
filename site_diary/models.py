@@ -264,6 +264,41 @@ class VisitorEntry(models.Model):
     def __str__(self):
         return f"{self.visitor_name} ({self.company}) - {self.diary_entry.entry_date}"
 
+class SubcontractorCompany(models.Model):
+    COMPANY_TYPES = [
+        ('electrical', 'Electrical'),
+        ('plumbing', 'Plumbing'),
+        ('hvac', 'HVAC'),
+        ('roofing', 'Roofing'),
+        ('flooring', 'Flooring'),
+        ('painting', 'Painting'),
+        ('concrete', 'Concrete'),
+        ('steel', 'Steel Work'),
+        ('carpentry', 'Carpentry'),
+        ('masonry', 'Masonry'),
+        ('landscaping', 'Landscaping'),
+        ('security', 'Security'),
+        ('cleaning', 'Cleaning'),
+        ('other', 'Other'),
+    ]
+    
+    name = models.CharField(max_length=200)
+    company_type = models.CharField(max_length=20, choices=COMPANY_TYPES)
+    contact_person = models.CharField(max_length=100, blank=True)
+    phone = models.CharField(max_length=20, blank=True)
+    email = models.EmailField(blank=True)
+    address = models.TextField(blank=True)
+    license_number = models.CharField(max_length=50, blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['name']
+        verbose_name_plural = 'Subcontractor Companies'
+    
+    def __str__(self):
+        return f"{self.name} - {self.get_company_type_display()}"
+
 class DiaryPhoto(models.Model):
     diary_entry = models.ForeignKey(DiaryEntry, on_delete=models.CASCADE, related_name='photos')
     photo = models.ImageField(upload_to='diary_photos/%Y/%m/%d/')

@@ -12,7 +12,7 @@ from django.core.cache import cache
 from accounts.decorators import require_site_manager_role, require_admin_role
 from .models import (
     Project, DiaryEntry, LaborEntry, MaterialEntry, 
-    EquipmentEntry, DelayEntry, VisitorEntry, DiaryPhoto
+    EquipmentEntry, DelayEntry, VisitorEntry, DiaryPhoto, SubcontractorCompany
 )
 from .forms import (
     ProjectForm, DiaryEntryForm, LaborEntryFormSet, MaterialEntryFormSet,
@@ -226,6 +226,9 @@ def diary(request):
             'remaining': float(project.budget) - float(total_spent) if project.budget else -float(total_spent)
         })
     
+    # Get active subcontractor companies for dropdown
+    subcontractor_companies = SubcontractorCompany.objects.filter(is_active=True).order_by('name')
+    
     context = {
         'diary_form': diary_form,
         'labor_formset': labor_formset,
@@ -236,6 +239,7 @@ def diary(request):
         'photo_formset': photo_formset,
         'user_projects': user_projects,
         'project_data': project_data,
+        'subcontractor_companies': subcontractor_companies,
     }
     return render(request, 'site_diary/diary.html', context)
 

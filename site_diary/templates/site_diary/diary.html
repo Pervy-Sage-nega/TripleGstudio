@@ -407,28 +407,30 @@
                                     </div>
                                 </div>
                                 <div class="form-group">
-                                    <label>Subcontractor Companies</label>
+                                    <label>Subcontractor Companies (Optional)</label>
+                                    <div class="form-row">
+                                        <div class="form-group" style="flex: 2;">
+                                            <select class="form-control" id="subcontractorSelect">
+                                                <option value="">Select a subcontractor company...</option>
+                                                {% for company in subcontractor_companies %}
+                                                    <option value="{{ company.id }}" data-type="{{ company.get_company_type_display }}" data-contact="{{ company.contact_person }}" data-phone="{{ company.phone }}">
+                                                        {{ company.name }} - {{ company.get_company_type_display }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="form-group" style="flex: 1;">
+                                            <input type="text" class="form-control" id="subcontractorCustom" placeholder="Or enter custom company name">
+                                        </div>
+                                    </div>
                                     <div class="input-group">
-                                        <input type="text" class="form-control" id="subcontractorInput" placeholder="Enter subcontractor company name">
+                                        <input type="text" class="form-control" id="subcontractorWork" placeholder="Work description">
                                         <button type="button" class="add-btn" id="addSubcontractor">
                                             <i class="fas fa-plus-circle"></i>
                                         </button>
                                     </div>
                                     <div class="entry-list" id="subcontractorList">
                                         <!-- Dynamically added subcontractors will appear here -->
-                                        <div class="entry-item">
-                                            <div class="entry-content">
-                                                <strong>ABC Electrical Services</strong> - Electrical work
-                                            </div>
-                                            <div class="entry-actions">
-                                                <button type="button" class="entry-action-btn edit">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button type="button" class="entry-action-btn delete">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </div>
                                     </div>
                                 </div>
                                 <div class="form-group">
@@ -1090,12 +1092,41 @@
                                 }
                                 
                                 function addSubcontractor() {
-                                    const subcontractor = document.getElementById('subcontractorInput').value.trim();
-                                    if (subcontractor) {
+                                    const selectElement = document.getElementById('subcontractorSelect');
+                                    const customInput = document.getElementById('subcontractorCustom');
+                                    const workInput = document.getElementById('subcontractorWork');
+                                    
+                                    let subcontractorName = '';
+                                    let subcontractorType = '';
+                                    let contactInfo = '';
+                                    const workDescription = workInput.value.trim();
+                                    
+                                    // Check if dropdown is selected
+                                    if (selectElement.value) {
+                                        const selectedOption = selectElement.options[selectElement.selectedIndex];
+                                        subcontractorName = selectedOption.text.split(' - ')[0]; // Get company name only
+                                        subcontractorType = selectedOption.getAttribute('data-type');
+                                        const contact = selectedOption.getAttribute('data-contact');
+                                        const phone = selectedOption.getAttribute('data-phone');
+                                        if (contact || phone) {
+                                            contactInfo = ` (${contact || 'Contact'}${phone ? ': ' + phone : ''})`;
+                                        }
+                                    } 
+                                    // Check if custom input has value
+                                    else if (customInput.value.trim()) {
+                                        subcontractorName = customInput.value.trim();
+                                        subcontractorType = 'Custom';
+                                    }
+                                    
+                                    if (subcontractorName) {
+                                        const displayText = workDescription ? 
+                                            `${subcontractorName}${contactInfo} - ${workDescription}` : 
+                                            `${subcontractorName}${contactInfo} - ${subcontractorType} work`;
+                                            
                                         const listItem = document.createElement('div');
                                         listItem.className = 'entry-item';
                                         listItem.innerHTML = `
-                                            <div class="entry-content"><strong>${subcontractor}</strong></div>
+                                            <div class="entry-content"><strong>${displayText}</strong></div>
                                             <div class="entry-actions">
                                                 <button type="button" class="entry-action-btn delete" onclick="this.closest('.entry-item').remove()">
                                                     <i class="fas fa-trash"></i>
@@ -1103,7 +1134,11 @@
                                             </div>
                                         `;
                                         document.getElementById('subcontractorList').appendChild(listItem);
-                                        document.getElementById('subcontractorInput').value = '';
+                                        
+                                        // Clear inputs
+                                        selectElement.value = '';
+                                        customInput.value = '';
+                                        workInput.value = '';
                                     }
                                 }
                                 
@@ -1166,6 +1201,37 @@
                                     document.getElementById('addOtherCost').addEventListener('click', addOtherCost);
                                     document.getElementById('addTask').addEventListener('click', addTask);
                                     document.getElementById('addSubcontractor').addEventListener('click', addSubcontractor);
+                                    
+                                    // Clear custom input when dropdown is selected and auto-fill work description
+                                    document.getElementById('subcontractorSelect').addEventListener('change', function() {
+                                        const workInput = document.getElementById('subcontractorWork');
+                                        if (this.value) {
+                                            document.getElementById('subcontractorCustom').value = '';
+                                            // Auto-fill work description based on company type
+                                            const selectedOption = this.options[this.selectedIndex];
+                                            const companyType = selectedOption.getAttribute('data-type');
+                                            if (companyType && !workInput.value.trim()) {
+                                                workInput.value = companyType + ' work';
+                                            }
+                                        } else {
+                                            // Clear work description if no selection
+                                            if (workInput.value.endsWith(' work')) {
+                                                workInput.value = '';
+                                            }
+                                        }
+                                    });
+                                    
+                                    // Clear dropdown when custom input is used
+                                    document.getElementById('subcontractorCustom').addEventListener('input', function() {
+                                        if (this.value.trim()) {
+                                            document.getElementById('subcontractorSelect').value = '';
+                                            // Clear auto-filled work description
+                                            const workInput = document.getElementById('subcontractorWork');
+                                            if (workInput.value.endsWith(' work')) {
+                                                workInput.value = '';
+                                            }
+                                        }
+                                    });
                                     document.getElementById('addDelay').addEventListener('click', addDelay);
                                     
                                     // Update budget when project changes
