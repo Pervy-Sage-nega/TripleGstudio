@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
     Project, DiaryEntry, LaborEntry, MaterialEntry, 
-    EquipmentEntry, DelayEntry, VisitorEntry, DiaryPhoto, SubcontractorCompany
+    EquipmentEntry, DelayEntry, VisitorEntry, DiaryPhoto, SubcontractorCompany, Milestone
 )
 
 @admin.register(Project)
@@ -63,7 +63,7 @@ class DiaryEntryAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
         ('Work Progress', {
-            'fields': ('work_description', 'progress_percentage')
+            'fields': ('work_description', 'progress_percentage', 'milestone')
         }),
         ('Quality & Safety', {
             'fields': ('quality_issues', 'safety_incidents'),
@@ -117,6 +117,13 @@ class VisitorEntryAdmin(admin.ModelAdmin):
     list_filter = ['visitor_type', 'diary_entry__entry_date']
     search_fields = ['visitor_name', 'company', 'diary_entry__project__name']
     ordering = ['-diary_entry__entry_date']
+
+@admin.register(Milestone)
+class MilestoneAdmin(admin.ModelAdmin):
+    list_display = ['name', 'order', 'is_active', 'created_at']
+    list_filter = ['is_active']
+    search_fields = ['name', 'description']
+    ordering = ['order', 'name']
 
 @admin.register(SubcontractorCompany)
 class SubcontractorCompanyAdmin(admin.ModelAdmin):

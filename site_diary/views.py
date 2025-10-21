@@ -12,7 +12,7 @@ from django.core.cache import cache
 from accounts.decorators import require_site_manager_role, require_admin_role
 from .models import (
     Project, DiaryEntry, LaborEntry, MaterialEntry, 
-    EquipmentEntry, DelayEntry, VisitorEntry, DiaryPhoto, SubcontractorCompany
+    EquipmentEntry, DelayEntry, VisitorEntry, DiaryPhoto, SubcontractorCompany, Milestone
 )
 from .forms import (
     ProjectForm, DiaryEntryForm, LaborEntryFormSet, MaterialEntryFormSet,
@@ -126,6 +126,7 @@ def diary(request):
                         entry_date=entry_date,
                         created_by=request.user,
                         draft=True,
+                        milestone=diary_form.cleaned_data.get('milestone'),
                         work_description=diary_form.cleaned_data.get('work_description', ''),
                         progress_percentage=diary_form.cleaned_data.get('progress_percentage', 0),
                         weather_condition=diary_form.cleaned_data.get('weather_condition', ''),
@@ -229,6 +230,9 @@ def diary(request):
     # Get active subcontractor companies for dropdown
     subcontractor_companies = SubcontractorCompany.objects.filter(is_active=True).order_by('name')
     
+    # Get active milestones for dropdown
+    milestones = Milestone.objects.filter(is_active=True).order_by('order', 'name')
+    
     context = {
         'diary_form': diary_form,
         'labor_formset': labor_formset,
@@ -240,6 +244,7 @@ def diary(request):
         'user_projects': user_projects,
         'project_data': project_data,
         'subcontractor_companies': subcontractor_companies,
+        'milestones': milestones,
     }
     return render(request, 'site_diary/diary.html', context)
 

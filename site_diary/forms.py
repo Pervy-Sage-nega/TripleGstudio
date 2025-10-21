@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from .models import (
     Project, DiaryEntry, LaborEntry, MaterialEntry, 
-    EquipmentEntry, DelayEntry, VisitorEntry, DiaryPhoto, SubcontractorCompany
+    EquipmentEntry, DelayEntry, VisitorEntry, DiaryPhoto, SubcontractorCompany, Milestone
 )
 
 class ProjectForm(forms.ModelForm):
@@ -37,7 +37,7 @@ class DiaryEntryForm(forms.ModelForm):
     class Meta:
         model = DiaryEntry
         fields = [
-            'project', 'entry_date', 'weather_condition', 'temperature_high', 
+            'project', 'entry_date', 'milestone', 'weather_condition', 'temperature_high', 
             'temperature_low', 'humidity', 'wind_speed', 'work_description', 
             'progress_percentage', 'quality_issues', 'safety_incidents', 
             'general_notes', 'photos_taken'
@@ -56,6 +56,7 @@ class DiaryEntryForm(forms.ModelForm):
             'safety_incidents': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Any safety incidents or concerns'}),
             'general_notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Additional notes'}),
             'photos_taken': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'milestone': forms.Select(attrs={'class': 'form-control'}),
         }
     
     def __init__(self, *args, **kwargs):
@@ -89,6 +90,11 @@ class DiaryEntryForm(forms.ModelForm):
         else:
             print("FORM DEBUG: No user provided, showing no projects")
             self.fields['project'].queryset = Project.objects.none()
+        
+        # Set up milestone field with active milestones
+        self.fields['milestone'].queryset = Milestone.objects.filter(is_active=True).order_by('order', 'name')
+        self.fields['milestone'].empty_label = "Select Current Phase"
+        self.fields['milestone'].required = False
 
 class LaborEntryForm(forms.ModelForm):
     class Meta:

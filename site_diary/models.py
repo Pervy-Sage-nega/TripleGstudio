@@ -84,6 +84,7 @@ class DiaryEntry(models.Model):
     # Work Progress
     work_description = models.TextField(help_text="Description of work performed today")
     progress_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="Overall project progress percentage")
+    milestone = models.ForeignKey('Milestone', on_delete=models.SET_NULL, null=True, blank=True, help_text="Current milestone phase")
     
     # Quality and Safety
     quality_issues = models.TextField(blank=True, help_text="Any quality issues encountered")
@@ -263,6 +264,20 @@ class VisitorEntry(models.Model):
     
     def __str__(self):
         return f"{self.visitor_name} ({self.company}) - {self.diary_entry.entry_date}"
+
+class Milestone(models.Model):
+    name = models.CharField(max_length=200, help_text="Milestone name (e.g., Foundation Work, Structural Framework)")
+    description = models.TextField(blank=True, help_text="Detailed description of this milestone phase")
+    order = models.PositiveIntegerField(default=1, help_text="Order of milestone in project sequence")
+    is_active = models.BooleanField(default=True, help_text="Whether this milestone is available for selection")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['order', 'name']
+    
+    def __str__(self):
+        return self.name
 
 class SubcontractorCompany(models.Model):
     COMPANY_TYPES = [

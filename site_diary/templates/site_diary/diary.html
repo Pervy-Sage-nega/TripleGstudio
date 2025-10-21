@@ -172,19 +172,11 @@
                                 </div>
                                 <div class="form-row">
                                     <div class="form-group">
-                                        <label for="milestonePhase">Current Milestone Phase</label>
-                                        <select class="form-control" id="milestonePhase" name="milestonePhase" required>
-                                            <option value="">Select Current Phase</option>
-                                            <option value="planning-design">Planning & Design</option>
-                                            <option value="site-preparation">Site Preparation</option>
-                                            <option value="foundation-work">Foundation Work</option>
-                                            <option value="structural-framework">Structural Framework</option>
-                                            <option value="mep">Mechanical, Electrical, Plumbing (MEP)</option>
-                                            <option value="finishing">Interior & Exterior Finishing</option>
-                                            <option value="inspection">Punch List & Inspection</option>
-                                            <option value="handover">Project Completion / Handover</option>
-                                        </select>
-                                        <div class="invalid-feedback">Please select a milestone phase</div>
+                                        <label for="{{ diary_form.milestone.id_for_label }}">Current Milestone Phase</label>
+                                        {{ diary_form.milestone }}
+                                        {% if diary_form.milestone.errors %}
+                                            <div class="invalid-feedback">{{ diary_form.milestone.errors.0 }}</div>
+                                        {% endif %}
                                     </div>
                                 </div>
                                 <div class="form-row">
