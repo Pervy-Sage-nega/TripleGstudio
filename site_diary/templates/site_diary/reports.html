@@ -67,45 +67,27 @@
                     
                     <div class="filter-group">
                         <label for="location">Location</label>
-                        <select id="location" name="location">
-                            <option value="">All Locations</option>
-                            <option value="1">Riverside District</option>
-                            <option value="2">Downtown</option>
-                            <option value="3">North Highway</option>
-                            <option value="4">South District</option>
-                        </select>
+                        <input type="text" id="location" name="location" readonly placeholder="Select project first" style="background-color: #f5f5f5;">
                     </div>
                     
                     <div class="filter-group">
                         <label for="weather">Weather Condition</label>
-                        <select id="weather" name="weather">
-                            <option value="">All Weather Conditions</option>
-                            <option value="sunny">Sunny</option>
-                            <option value="cloudy">Cloudy</option>
-                            <option value="rainy">Rainy</option>
-                            <option value="windy">Windy</option>
-                        </select>
+                        <input type="text" id="weather" name="weather" readonly placeholder="Select project first" style="background-color: #f5f5f5;">
                     </div>
                     
                     <div class="filter-group">
                         <label for="contractor">Contractor</label>
-                        <select id="contractor" name="contractor">
-                            <option value="">All Contractors</option>
-                            <option value="1">BuildWell Construction</option>
-                            <option value="2">Skyline Builders</option>
-                            <option value="3">Urban Development Inc.</option>
-                            <option value="4">Metro Engineering</option>
-                        </select>
+                        <input type="text" id="contractor" name="contractor" readonly placeholder="Select project first" style="background-color: #f5f5f5;">
                     </div>
                     
                     <div class="filter-group">
                         <label>Date Range</label>
                         <div class="date-range">
                             <div class="date-input">
-                                <input type="date" id="dateFrom" name="start_date" placeholder="From Date" value="{{ start_date }}">
+                                <input type="date" id="dateFrom" name="start_date" readonly placeholder="From Date" value="{{ start_date }}" style="background-color: #f5f5f5;">
                             </div>
                             <div class="date-input">
-                                <input type="date" id="dateTo" name="end_date" placeholder="To Date" value="{{ end_date }}">
+                                <input type="date" id="dateTo" name="end_date" readonly placeholder="To Date" value="{{ end_date }}" style="background-color: #f5f5f5;">
                             </div>
                         </div>
                     </div>
@@ -269,101 +251,40 @@
                             </tr>
                         </thead>
                         <tbody>
+                            {% for stat in project_stats %}
                             <tr>
-                                <td>REP-2025-042</td>
-                                <td>River View Residences</td>
-                                <td>Mar 10 - Mar 16, 2025</td>
-                                <td>Weekly Summary</td>
-                                <td><span class="status-badge status-completed">Completed</span></td>
-                                <td>John Smith</td>
+                                <td>REP-{{ stat.project.id }}-{{ forloop.counter|stringformat:"03d" }}</td>
+                                <td>{{ stat.project.name }}</td>
+                                <td>{{ stat.project.start_date|date:"M d, Y" }}{% if stat.project.expected_end_date %} - {{ stat.project.expected_end_date|date:"M d, Y" }}{% endif %}</td>
+                                <td>{% if stat.entries_count > 20 %}Monthly Overview{% elif stat.entries_count > 5 %}Weekly Summary{% else %}Daily Progress{% endif %}</td>
+                                <td>
+                                    {% if stat.approved_entries == stat.entries_count %}
+                                        <span class="status-badge status-completed">Completed</span>
+                                    {% elif stat.total_delays > 3 %}
+                                        <span class="status-badge status-delayed">Delayed</span>
+                                    {% else %}
+                                        <span class="status-badge status-progress">In Progress</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ stat.project.project_manager.get_full_name|default:stat.project.project_manager.username }}</td>
                                 <td>
                                     <div class="table-actions">
-                                        <button class="action-btn view" title="View Report">
+                                        <a href="{% url 'site_diary:project_detail' stat.project.id %}" class="action-btn view" title="View Report">
                                             <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button class="action-btn download" title="Download PDF">
+                                        </a>
+                                        <button class="action-btn download" title="Download PDF" onclick="generateReport({{ stat.project.id }})">
                                             <i class="fas fa-file-pdf"></i>
                                         </button>
-                                        
                                     </div>
                                 </td>
                             </tr>
+                            {% empty %}
                             <tr>
-                                <td>REP-2025-041</td>
-                                <td>Central Business District Tower</td>
-                                <td>Mar 15, 2025</td>
-                                <td>Daily Progress</td>
-                                <td><span class="status-badge status-completed">Completed</span></td>
-                                <td>Sarah Johnson</td>
-                                <td>
-                                    <div class="table-actions">
-                                        <button class="action-btn view" title="View Report">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button class="action-btn download" title="Download PDF">
-                                            <i class="fas fa-file-pdf"></i>
-                                        </button>
-                                      
-                                    </div>
+                                <td colspan="7" style="text-align: center; padding: 20px; color: #757575;">
+                                    No reports available. Create diary entries to generate reports.
                                 </td>
                             </tr>
-                            <tr>
-                                <td>REP-2025-040</td>
-                                <td>Highway Bridge Expansion</td>
-                                <td>Mar 14, 2025</td>
-                                <td>Incident Report</td>
-                                <td><span class="status-badge status-delayed">Delayed</span></td>
-                                <td>Michael Brown</td>
-                                <td>
-                                    <div class="table-actions">
-                                        <button class="action-btn view" title="View Report">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button class="action-btn download" title="Download PDF">
-                                            <i class="fas fa-file-pdf"></i>
-                                        </button>
-                                        
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>REP-2025-039</td>
-                                <td>Waterfront Development</td>
-                                <td>Mar 1 - Mar 14, 2025</td>
-                                <td>Bi-Weekly Summary</td>
-                                <td><span class="status-badge status-progress">In Progress</span></td>
-                                <td>Emily Davis</td>
-                                <td>
-                                    <div class="table-actions">
-                                        <button class="action-btn view" title="View Report">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button class="action-btn download" title="Download PDF">
-                                            <i class="fas fa-file-pdf"></i>
-                                        </button>
-                                        
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>REP-2025-038</td>
-                                <td>River View Residences</td>
-                                <td>Mar 1 - Mar 10, 2025</td>
-                                <td>Safety Inspection</td>
-                                <td><span class="status-badge status-completed">Completed</span></td>
-                                <td>Robert Wilson</td>
-                                <td>
-                                    <div class="table-actions">
-                                        <button class="action-btn view" title="View Report">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button class="action-btn download" title="Download PDF">
-                                            <i class="fas fa-file-pdf"></i>
-                                        </button>
-                                        
-                                    </div>
-                                </td>
-                            </tr>
+                            {% endfor %}
                         </tbody>
                     </table>
                 </div>
@@ -373,6 +294,38 @@
     <script src="{% static 'js/sitejs/reports.js' %}"></script>
     
     <script>
+    // Project data fetching
+    document.getElementById('project').addEventListener('change', function() {
+        const projectId = this.value;
+        if (projectId) {
+            fetch(`/diary/api/project-data/${projectId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        console.error('Error:', data.error);
+                        return;
+                    }
+                    
+                    // Update fields with project data
+                    document.getElementById('location').value = data.location || '';
+                    document.getElementById('weather').value = data.weather_condition || '';
+                    document.getElementById('contractor').value = data.contractor || '';
+                    document.getElementById('dateFrom').value = data.start_date || '';
+                    document.getElementById('dateTo').value = data.end_date || '';
+                })
+                .catch(error => {
+                    console.error('Error fetching project data:', error);
+                });
+        } else {
+            // Clear fields when no project selected
+            document.getElementById('location').value = '';
+            document.getElementById('weather').value = '';
+            document.getElementById('contractor').value = '';
+            document.getElementById('dateFrom').value = '';
+            document.getElementById('dateTo').value = '';
+        }
+    });
+    
     // Initialize charts with real data
     document.addEventListener('DOMContentLoaded', function() {
         // Labor Chart Data
@@ -476,5 +429,28 @@
         });
         {% endif %}
     });
+    
+    // Generate report function
+    function generateReport(projectId) {
+        fetch(`/diary/api/generate-report/${projectId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error generating report: ' + data.error);
+            } else {
+                alert('Report generated successfully!');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error generating report');
+        });
+    }
     </script>
 {% endblock %}

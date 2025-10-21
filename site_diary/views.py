@@ -914,6 +914,16 @@ def reports(request):
         }
     }
     
+    # Ensure we have data even if no entries exist
+    if not project_stats:
+        project_stats = []
+    if not delay_categories:
+        delay_categories = []
+    if not labor_stats:
+        labor_stats = []
+    if not material_stats:
+        material_stats = []
+    
     context = {
         'project_stats': project_stats,
         'delay_categories': delay_categories,
@@ -923,10 +933,7 @@ def reports(request):
         'equipment_stats': equipment_stats,
         'monthly_progress': monthly_progress,
         'overall_summary': overall_summary,
-        'projects': Project.objects.filter(
-            Q(project_manager=request.user) | Q(architect=request.user),
-            status__in=['planning', 'active', 'on_hold', 'completed']
-        ) if not request.user.is_staff else Project.objects.filter(status__in=['planning', 'active', 'on_hold', 'completed']),
+        'projects': projects,
         'start_date': start_date,
         'end_date': end_date,
         'selected_project': selected_project,
@@ -1139,6 +1146,7 @@ def site_manager_logout(request):
     # If GET request, redirect to settings
     return redirect('site:settings')
 
+@login_required
 @require_admin_role
 def adminclientproject(request):
     """Admin view for client projects with approval functionality"""
@@ -1201,6 +1209,7 @@ def adminclientproject(request):
     }
     return render(request, 'admin/adminclientproject.html', context)
 
+@login_required
 @require_admin_role
 def admindiary(request):
     """Admin view for diary entries with approval functionality"""
@@ -1260,6 +1269,7 @@ def admindiary(request):
     }
     return render(request, 'admin/admindiary.html', context)
 
+@login_required
 @require_admin_role
 def admindiaryreviewer(request):
     """Admin diary reviewer interface with approval functionality"""
@@ -1295,6 +1305,7 @@ def admindiaryreviewer(request):
     }
     return render(request, 'admin/admindiaryreviewer.html', context)
 
+@login_required
 @require_admin_role
 def adminhistory(request):
     """Admin history view with comprehensive data"""
@@ -1333,6 +1344,7 @@ def adminhistory(request):
     }
     return render(request, 'admin/adminhistory.html', context)
 
+@login_required
 @require_admin_role
 def adminreports(request):
     """Admin reports view with comprehensive analytics"""
@@ -1427,18 +1439,72 @@ def api_project_location(request, project_id):
         logger.error(f"Project location API error: {str(e)}")
         return JsonResponse({'error': 'Server error'}, status=500)
 
+@require_site_manager_role
+@require_http_methods(["GET"])
+def api_project_data(request, project_id):
+    """API endpoint to get comprehensive project data for reports"""
+    try:
+        project_id = int(project_id)
+        project = get_object_or_404(Project, id=project_id)
+        
+        # Verify user has access to this project
+        if not request.user.is_staff:
+            user_projects = Project.objects.filter(
+                Q(project_manager=request.user) | Q(architect=request.user)
+            )
+            if project not in user_projects:
+                return JsonResponse({'error': 'Access denied'}, status=403)
+        
+        # Get project entries for date range calculation
+        project_entries = DiaryEntry.objects.filter(project=project).order_by('entry_date')
+        
+        # Calculate date range from actual entries
+        start_date = None
+        end_date = None
+        if project_entries.exists():
+            start_date = project_entries.first().entry_date.strftime('%Y-%m-%d')
+            end_date = project_entries.last().entry_date.strftime('%Y-%m-%d')
+        else:
+            # Fallback to project dates
+            start_date = project.start_date.strftime('%Y-%m-%d') if project.start_date else ''
+            end_date = project.expected_end_date.strftime('%Y-%m-%d') if project.expected_end_date else ''
+        
+        # Get latest weather condition from entries
+        latest_entry = project_entries.filter(weather_condition__isnull=False).exclude(weather_condition='').last()
+        weather_condition = latest_entry.weather_condition if latest_entry else 'sunny'
+        
+        # Get contractor info (assuming it's stored in project or can be derived)
+        contractor = project.client_name or 'Default Contractor'
+        
+        return JsonResponse({
+            'location': escape(project.location or ''),
+            'weather_condition': weather_condition,
+            'contractor': escape(contractor),
+            'start_date': start_date,
+            'end_date': end_date,
+            'project_name': escape(project.name)
+        })
+    except (ValueError, TypeError):
+        return JsonResponse({'error': 'Invalid project ID'}, status=400)
+    except Exception as e:
+        logger.error(f"Project data API error: {str(e)}")
+        return JsonResponse({'error': 'Server error'}, status=500)
+
 @login_required
 @require_site_manager_role
+@csrf_protect
 def sitedraft(request):
     """Site Manager drafts view with real database data"""
     # Handle draft deletion
     if request.method == 'POST' and request.POST.get('action') == 'delete_draft':
         draft_id = request.POST.get('draft_id')
         try:
+            draft_id = int(draft_id)
             draft = DiaryEntry.objects.get(id=draft_id, created_by=request.user, draft=True)
             draft.delete()
             messages.success(request, 'Draft deleted successfully!')
-        except DiaryEntry.DoesNotExist:
+            logger.info(f"Draft {draft_id} deleted by user {request.user.id}")
+        except (ValueError, TypeError, DiaryEntry.DoesNotExist):
             messages.error(request, 'Draft not found or access denied.')
         return redirect('site_diary:sitedraft')
     

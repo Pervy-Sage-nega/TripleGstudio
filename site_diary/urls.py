@@ -26,6 +26,7 @@ urlpatterns = [
     path('api/generate-report/<int:project_id>/', views.generate_project_report, name='generate_project_report'),
     path('api/filter-projects/', views.api_filter_projects, name='api_filter_projects'),
     path('api/project-location/<int:project_id>/', views.api_project_location, name='api_project_location'),
+    path('api/project-data/<int:project_id>/', views.api_project_data, name='api_project_data'),
     
     # Admin views
     path('admin/clientproject/', views.adminclientproject, name='adminclientproject'),
