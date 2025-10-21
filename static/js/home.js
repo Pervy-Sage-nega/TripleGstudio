@@ -113,11 +113,8 @@ document.addEventListener("DOMContentLoaded", function () {
       });
     }
   
-    // Track current active image index
-    let currentImageIndex = 0;
-    
-    // Function to change main image and background with directional animation
-    window.changeMainImage = function (imageSrc, clickedElement) {
+    // Function to change main image and background
+    window.changeMainImage = function (imageSrc) {
       // Handle both Django media URLs and static image paths
       let imagePath;
       if (imageSrc.startsWith('/media/') || imageSrc.startsWith('/static/') || imageSrc.startsWith('http')) {
@@ -131,54 +128,24 @@ document.addEventListener("DOMContentLoaded", function () {
         imagePath = "./images/" + imageSrc;
       }
 
-      // Determine slide direction based on clicked image position
-      let slideDirection = 'right'; // default
-      if (clickedElement) {
-        const clickedIndex = Array.from(images).indexOf(clickedElement);
-        if (clickedIndex !== -1) {
-          slideDirection = clickedIndex < currentImageIndex ? 'left' : 'right';
-          currentImageIndex = clickedIndex;
-        }
-      }
-
-      // Main image fades out smoothly
-      mainImage.style.transition = "opacity 0.6s cubic-bezier(0.4, 0.0, 0.2, 1)";
+      mainImage.style.transition = "opacity 0.5s ease, transform 0.5s ease";
       mainImage.style.opacity = "0";
-
-      // Background slides directionally with more visible movement
-      homeSection.style.transition = "background-position 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)";
-      const slideDistance = slideDirection === 'left' ? '150% center' : '-50% center';
-      homeSection.style.backgroundPosition = slideDistance;
+      mainImage.style.transform = "scale(1.1)"; // Slight zoom effect
 
       setTimeout(() => {
-        // Change background image and position it off-screen in the slide direction
-        homeSection.style.backgroundImage = `url('${imagePath}')`;
         mainImage.src = imagePath;
-        
-        // Position new background off-screen based on slide direction
-        const offScreenPosition = slideDirection === 'left' ? '-100% center' : '200% center';
-        homeSection.style.backgroundPosition = offScreenPosition;
-        
-        // Slide new background from off-screen to center
-        setTimeout(() => {
-          homeSection.style.transition = "background-position 1.0s cubic-bezier(0.16, 1, 0.3, 1)";
-          homeSection.style.backgroundPosition = 'center center';
-          mainImage.style.transition = "opacity 0.6s cubic-bezier(0.0, 0.0, 0.2, 1)";
-          mainImage.style.opacity = "1";
-        }, 50);
+        mainImage.style.opacity = "1";
+        mainImage.style.transform = "scale(1)"; // Reset scale
       }, 300);
+
+      homeSection.style.backgroundImage = `url('${imagePath}')`;
     };
 
-    // Clicking an image updates the main image with directional animation
-    images.forEach((img, index) => {
+    // Clicking an image updates the main image
+    images.forEach((img) => {
       img.addEventListener("click", function () {
-        changeMainImage(this.src, this);
+        changeMainImage(this.src);
       });
-      
-      // Set initial active image
-      if (index === 0) {
-        currentImageIndex = 0;
-      }
     });
 
     // Button hover effect
