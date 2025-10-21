@@ -1,0 +1,91 @@
+📌 Portfolio App Backend Plan (Django + PostgreSQL)
+
+🎯 Goal
+Convert the current front-end portfolio app (already refactored into Django templates) into a full-stack Django + PostgreSQL application. 
+Replace the dummy project data with real test data stored in PostgreSQL. 
+The system should dynamically render project lists and detail pages. 
+
+Requirements
+- Viewable by clients and public guests (no login system).  
+- No admin interface for now, but models should be future-proof.  
+- Client names/info must not be stored or displayed publicly (privacy & safety).  
+
+------------------------------------------------------------
+🗄️ Database Schema
+
+Project
+- id (PK) – AutoField
+- title – CharField(255)
+- description – TextField
+- category – ForeignKey(Category)
+- year – IntegerField
+- location – CharField(255)
+- size – CharField(50)
+- duration – CharField(50)
+- completion_date – DateField
+- lead_architect – CharField(255)
+- status – CharField(50) (Planned, Ongoing, Completed)
+- featured – BooleanField
+- hero_image – ImageField
+- video – FileField/URL
+
+NOTE: client_name field removed for privacy.
+
+Category
+- id (PK) – AutoField
+- name – CharField(100)
+- slug – SlugField
+
+ProjectImage (Gallery)
+- id (PK) – AutoField
+- project – ForeignKey(Project)
+- image – ImageField
+- alt_text – CharField(255)
+
+ProjectStat
+- id (PK) – AutoField
+- project – ForeignKey(Project)
+- label – CharField(100)
+- value – CharField(255)
+
+NOTE: Stats must not include client names.
+
+ProjectTimeline
+- id (PK) – AutoField
+- project – ForeignKey(Project)
+- title – CharField(255)
+- date – DateField
+- description – TextField
+- completed – BooleanField
+- order – IntegerField
+
+------------------------------------------------------------
+🛠️ Implementation Steps
+
+1. Models
+- Define Project, Category, ProjectImage, ProjectStat, ProjectTimeline in portfolio/models.py.
+- Ensure no client_name field.
+
+2. Database
+- Run migrations (makemigrations + migrate).
+- Seed with real test data based on dummy JS projects.
+
+3. Views
+- project_list_view: show all projects with optional filters (year, category, featured).
+- project_detail_view: show a single project with related images, stats, and timeline.
+
+4. Templates
+- Project List: loop over projects to show thumbnail, title, description, year, category.
+- Project Detail: show hero section, stats, gallery, timeline.
+- Remove any block showing client information.
+
+5. Static/Media
+- Configure MEDIA_URL and MEDIA_ROOT.
+- Store hero and gallery images.
+- Keep fallback images in static/ as backups.
+
+------------------------------------------------------------
+✅ Privacy & Security
+- No client names in database or templates.
+- Public data limited to safe project attributes only.
+- Architecture ready for expansion (admin interface can be added later).

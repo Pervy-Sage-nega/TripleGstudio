@@ -4,6 +4,9 @@
 {% block head %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Site Diary - New Entry</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -16,6 +19,24 @@
     <script src="{% static 'js/sitejs/diary.js' %}"></script>
     <script src="{% static 'js/weather-api.js' %}"></script>
     <style>
+        /* Fix dropdown direction and force refresh */
+        .form-control option {
+            direction: ltr;
+        }
+        
+        select.form-control {
+            background-position: right 0.75rem center;
+            background-repeat: no-repeat;
+            background-size: 16px 12px;
+        }
+        
+        /* Force dropdown refresh */
+        select[name="project"] {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+        
         .weather-readings {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -76,7 +97,7 @@
         <div class="page-header">
             <div class="page-title">
                 <i class="fas fa-edit"></i>
-                <h1>New Site Diary Entry</h1>
+                <h1>{% if request.GET.edit %}Edit Site Diary Draft{% else %}New Site Diary Entry{% endif %}</h1>
             </div>
             <div class="page-actions"></div>
         </div>
@@ -114,6 +135,9 @@
                 <div class="tabs-content">
                     <form id="siteEntryForm" method="post" enctype="multipart/form-data">
                         {% csrf_token %}
+                        {% if request.GET.edit %}
+                            <input type="hidden" name="edit_draft_id" value="{{ request.GET.edit }}">
+                        {% endif %}
                         <!-- Project Info Tab -->
                         <section id="tab-project" class="tab-panel active" role="tabpanel" aria-labelledby="tab-btn-project">
                             <!-- Project Information Section -->
@@ -316,18 +340,40 @@
                                 </div>
                                 
                                 <script>
-                                // Auto-populate location when project is selected
-                                document.getElementById('{{ diary_form.project.id_for_label }}').addEventListener('change', function() {
-                                    const projectId = this.value;
-                                    if (projectId) {
-                                        fetch(`/diary/api/project-location/${projectId}/`)
-                                            .then(response => response.json())
-                                            .then(data => {
-                                                document.getElementById('siteLocation').value = data.location || '';
-                                            })
-                                            .catch(error => console.error('Error fetching location:', error));
+                                // AGGRESSIVE cache busting and dropdown refresh
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    // Find project dropdown (ID might be dynamic now)
+                                    const projectSelect = document.querySelector('select[name="project"]');
+                                    if (projectSelect) {
+                                        console.log('Found project dropdown with', projectSelect.options.length, 'options');
+                                        
+                                        // Log all options for debugging
+                                        for (let i = 0; i < projectSelect.options.length; i++) {
+                                            console.log('Option', i, ':', projectSelect.options[i].text, projectSelect.options[i].value);
+                                        }
+                                        
+                                        // Force complete refresh
+                                        projectSelect.selectedIndex = 0;
+                                        
+                                        // Disable browser autocomplete
+                                        projectSelect.setAttribute('autocomplete', 'off');
+                                        projectSelect.setAttribute('data-timestamp', Date.now());
+                                        
+                                        projectSelect.addEventListener('change', function() {
+                                            const projectId = this.value;
+                                            if (projectId) {
+                                                fetch(`/diary/api/project-location/${projectId}/`)
+                                                    .then(response => response.json())
+                                                    .then(data => {
+                                                        document.getElementById('siteLocation').value = data.location || '';
+                                                    })
+                                                    .catch(error => console.error('Error fetching location:', error));
+                                            } else {
+                                                document.getElementById('siteLocation').value = '';
+                                            }
+                                        });
                                     } else {
-                                        document.getElementById('siteLocation').value = '';
+                                        console.log('Project dropdown not found!');
                                     }
                                 });
                                 </script>
@@ -1155,7 +1201,7 @@
                                 </div>
                                 <div class="action-buttons">
                                     <button type="button" class="btn btn-secondary" id="saveAsDraft">
-                                        <i class="fas fa-save"></i> Save as Draft
+                                        <i class="fas fa-save"></i> {% if request.GET.edit %}Update Draft{% else %}Save as Draft{% endif %}
                                     </button>
                                     <button type="submit" class="btn btn-primary" id="submitDiary">
                                         <i class="fas fa-check-circle"></i> Submit Entry
@@ -1173,6 +1219,13 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Force clear any cached form data
+    if (window.performance && window.performance.navigation.type === 1) {
+        // Page was refreshed, clear form cache
+        const forms = document.querySelectorAll('form');
+        forms.forEach(form => form.reset());
+    }
+    
     var saveAsDraftBtn = document.getElementById('saveAsDraft');
     var submitBtn = document.getElementById('submitDiary');
     var siteEntryForm = document.getElementById('siteEntryForm');
@@ -1187,11 +1240,33 @@ document.addEventListener('DOMContentLoaded', function() {
         saveAsDraftBtn.addEventListener('click', function(e) {
             e.preventDefault();
             console.log('Save as draft clicked');
+            
+            // Remove any existing save_as_draft input
+            var existingInput = siteEntryForm.querySelector('input[name="save_as_draft"]');
+            if (existingInput) {
+                existingInput.remove();
+            }
+            
             var input = document.createElement('input');
             input.type = 'hidden';
             input.name = 'save_as_draft';
             input.value = '1';
             siteEntryForm.appendChild(input);
+            
+            // Basic validation for draft - only require project and date
+            const project = document.getElementById('{{ diary_form.project.id_for_label }}').value;
+            const entryDate = document.getElementById('{{ diary_form.entry_date.id_for_label }}').value;
+            
+            if (!project) {
+                alert('Please select a project before saving as draft.');
+                return;
+            }
+            if (!entryDate) {
+                alert('Please select an entry date before saving as draft.');
+                return;
+            }
+            
+            console.log('Submitting draft with project:', project, 'and date:', entryDate);
             siteEntryForm.submit();
         });
     }

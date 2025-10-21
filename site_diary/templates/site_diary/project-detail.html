@@ -31,7 +31,11 @@
             <!-- Project Summary Header -->
             <div class="project-header">
                 <div class="project-image">
-                    <img src="{% static 'images/image'|add:project.id|add:'.jpg' %}" alt="{{ project.name }}" onerror="this.src='{% static 'images/image6.jpg' %}'">
+                    {% if project.image %}
+                        <img src="{{ project.image.url }}" alt="{{ project.name }}">
+                    {% else %}
+                        <img src="{% static 'images/image6.jpg' %}" alt="{{ project.name }}">
+                    {% endif %}
                 </div>
                 <div class="project-info">
                     <div class="project-title-section">
@@ -44,30 +48,30 @@
                     <div class="client-info">
                         <div class="info-item">
                             <i class="fas fa-user"></i>
-                            <span>{{ project.client_name|default:"Skyline Developments Ltd." }}</span>
+                            <span>{{ project.client_name }}</span>
                         </div>
                         <div class="info-item">
-                            <i class="fas fa-envelope"></i>
-                            <span>{{ project.client_email|default:"contact@skylinedev.com" }}</span>
+                            <i class="fas fa-hard-hat"></i>
+                            <span>Site Manager: {{ project.project_manager.get_full_name|default:project.project_manager.username }}</span>
                         </div>
                         <div class="info-item">
-                            <i class="fas fa-phone"></i>
-                            <span>{{ project.client_phone|default:"+1 (555) 123-4567" }}</span>
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>{{ project.location }}</span>
                         </div>
                     </div>
                 </div>
                 <div class="project-dates">
                     <div class="date-item">
                         <span class="date-label">Start Date</span>
-                        <span class="date-value">{{ project.start_date|default:"Jan 15, 2024" }}</span>
+                        <span class="date-value">{{ project.start_date|date:"M d, Y" }}</span>
                     </div>
                     <div class="date-item">
                         <span class="date-label">Target Completion</span>
-                        <span class="date-value">{{ project.target_completion|default:"Dec 20, 2024" }}</span>
+                        <span class="date-value">{{ project.expected_end_date|date:"M d, Y" }}</span>
                     </div>
                     <div class="date-item">
                         <span class="date-label">Current Phase</span>
-                        <span class="date-value">{{ project.current_phase|default:"Foundation" }}</span>
+                        <span class="date-value">{{ phase_name }}</span>
                     </div>
                 </div>
             </div>
@@ -79,8 +83,8 @@
                 </h3>
                 <div class="progress-content">
                     <div class="circular-progress">
-                        <div class="progress-circle" data-progress="{{ project.progress|default:65 }}">
-                            <span class="progress-text">{{ project.progress|default:65 }}%</span>
+                        <div class="progress-circle" data-progress="{{ progress }}">
+                            <span class="progress-text">{{ progress|floatformat:0 }}%</span>
                         </div>
                     </div>
                     <div class="milestone-progress">
@@ -127,15 +131,15 @@
                 <div class="budget-summary">
                     <div class="budget-item">
                         <span class="budget-label">Total Budget</span>
-                        <span class="budget-value total">${{ project.total_budget|default:"2,500,000" }}</span>
+                        <span class="budget-value total">₱{{ total_budget|floatformat:2 }}</span>
                     </div>
                     <div class="budget-item">
                         <span class="budget-label">Total Spent</span>
-                        <span class="budget-value spent">${{ project.total_spent|default:"1,550,000" }}</span>
+                        <span class="budget-value spent">₱{{ total_spent|floatformat:2 }}</span>
                     </div>
                     <div class="budget-item">
                         <span class="budget-label">Remaining</span>
-                        <span class="budget-value remaining">${{ project.remaining_budget|default:"950,000" }}</span>
+                        <span class="budget-value remaining">₱{{ remaining_budget|floatformat:2 }}</span>
                     </div>
                 </div>
                 <div class="budget-chart">
@@ -154,21 +158,17 @@
                     <i class="fas fa-book"></i> Recent Site Diary Entries
                 </h3>
                 <div class="diary-entries">
+                    {% for entry in recent_diary_entries %}
                     <div class="diary-entry">
-                        <div class="entry-date">Dec 15, 2024</div>
-                        <div class="entry-summary">Foundation concrete pour completed. Quality inspection passed.</div>
-                        <div class="entry-progress">Progress: 65%</div>
+                        <div class="entry-date">{{ entry.entry_date|date:"M d, Y" }}</div>
+                        <div class="entry-summary">{{ entry.work_description|truncatechars:80 }}</div>
+                        <div class="entry-progress">Progress: {{ entry.progress_percentage|floatformat:0 }}%</div>
                     </div>
+                    {% empty %}
                     <div class="diary-entry">
-                        <div class="entry-date">Dec 14, 2024</div>
-                        <div class="entry-summary">Steel reinforcement installation ongoing. Weather conditions favorable.</div>
-                        <div class="entry-progress">Progress: 62%</div>
+                        <div class="entry-summary">No diary entries found for this project.</div>
                     </div>
-                    <div class="diary-entry">
-                        <div class="entry-date">Dec 13, 2024</div>
-                        <div class="entry-summary">Equipment delivery delayed by 2 hours. Adjusted work schedule.</div>
-                        <div class="entry-progress">Progress: 60%</div>
-                    </div>
+                    {% endfor %}
                 </div>
                 <a href="{% url 'site_diary:diary' %}" class="btn btn-outline">
                     <i class="fas fa-external-link-alt"></i> View Full Diary Log
@@ -186,7 +186,7 @@
                             <i class="fas fa-users"></i>
                         </div>
                         <div class="stat-info">
-                            <span class="stat-number">{{ project.labor_count|default:24 }}</span>
+                            <span class="stat-number">{{ labor_count }}</span>
                             <span class="stat-label">Total Workers</span>
                         </div>
                     </div>
@@ -195,7 +195,7 @@
                             <i class="fas fa-tools"></i>
                         </div>
                         <div class="stat-info">
-                            <span class="stat-number">{{ project.equipment_count|default:8 }}</span>
+                            <span class="stat-number">{{ equipment_count }}</span>
                             <span class="stat-label">Equipment Units</span>
                         </div>
                     </div>
@@ -204,7 +204,7 @@
                             <i class="fas fa-exclamation-triangle"></i>
                         </div>
                         <div class="stat-info">
-                            <span class="stat-number">{{ project.delays_count|default:2 }}</span>
+                            <span class="stat-number">{{ delays_count }}</span>
                             <span class="stat-label">Logged Delays</span>
                         </div>
                     </div>

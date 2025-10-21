@@ -111,14 +111,15 @@
             <div class="timeline-view" id="timelineView">
                 <div class="timeline-line"></div>
                 
-                <!-- Timeline Item 1 -->
+                {% for entry in page_obj %}
+                <!-- Timeline Item {{ forloop.counter }} -->
                 <div class="timeline-item">
-                    <div class="timeline-header" data-id="1">
+                    <div class="timeline-header" data-id="{{ entry.id }}">
                         <div class="timeline-date">
                             <i class="fas fa-calendar-alt"></i>
                             <div>
-                                <h3>Central Business District Tower</h3>
-                                <span>Mar 17, 2025</span>
+                                <h3>{{ entry.project.name }}</h3>
+                                <span>{{ entry.entry_date|date:"M d, Y" }}</span>
                             </div>
                         </div>
                         <div class="timeline-actions">
@@ -134,47 +135,55 @@
                         </div>
                     </div>
                     
-                    <div class="timeline-content" id="content1">
+                    <div class="timeline-content" id="content{{ entry.id }}">
                         <div class="project-info">
                             <div class="info-group">
                                 <div class="info-label">Location</div>
-                                <div class="info-value">Downtown, Central Business District</div>
+                                <div class="info-value">{{ entry.project.location|default:"Not specified" }}</div>
                             </div>
                             <div class="info-group">
-                                <div class="info-label">Supervisor</div>
-                                <div class="info-value">John Smith</div>
+                                <div class="info-label">Created By</div>
+                                <div class="info-value">{{ entry.created_by.get_full_name|default:entry.created_by.username }}</div>
                             </div>
                             <div class="info-group">
-                                <div class="info-label">Personnel Count</div>
-                                <div class="info-value">42</div>
+                                <div class="info-label">Progress</div>
+                                <div class="info-value">{{ entry.progress_percentage }}%</div>
                             </div>
                             <div class="info-group">
-                                <div class="info-label">Equipment</div>
-                                <div class="info-value">Tower Crane, Concrete Pump, Excavator</div>
+                                <div class="info-label">Status</div>
+                                <div class="info-value">{% if entry.approved %}Approved{% else %}Pending{% endif %}</div>
                             </div>
                         </div>
                         
+                        {% if entry.weather_condition %}
                         <div class="weather-info">
-                            <i class="fas fa-sun weather-icon"></i>
+                            <i class="fas fa-{% if entry.weather_condition == 'sunny' %}sun{% elif entry.weather_condition == 'rainy' %}cloud-rain{% elif entry.weather_condition == 'cloudy' %}cloud{% else %}cloud{% endif %} weather-icon"></i>
                             <div class="weather-details">
+                                {% if entry.temperature_high %}
                                 <div class="weather-detail">
                                     <i class="fas fa-thermometer-half"></i>
-                                    <span>24°C</span>
+                                    <span>{{ entry.temperature_high }}°C</span>
                                 </div>
+                                {% endif %}
                                 <div class="weather-detail">
                                     <i class="fas fa-cloud"></i>
-                                    <span>Clear Sky</span>
+                                    <span>{{ entry.get_weather_condition_display }}</span>
                                 </div>
+                                {% if entry.wind_speed %}
                                 <div class="weather-detail">
                                     <i class="fas fa-wind"></i>
-                                    <span>8 km/h NE</span>
+                                    <span>{{ entry.wind_speed }} km/h</span>
                                 </div>
+                                {% endif %}
+                                {% if entry.humidity %}
                                 <div class="weather-detail">
                                     <i class="fas fa-tint"></i>
-                                    <span>Humidity: 55%</span>
+                                    <span>Humidity: {{ entry.humidity }}%</span>
                                 </div>
+                                {% endif %}
                             </div>
                         </div>
+                        {% endif %}
                         
                         <div class="activities-section">
                             <div class="section-title">
@@ -182,20 +191,30 @@
                                 <span>Work Performed</span>
                             </div>
                             <p class="activity-text">
-                                Completed concrete pouring for the 12th floor slab. Inspected and approved formwork for columns on the 13th floor. Electrical conduit installation began on the 11th floor. Plumbing rough-in work continued on floors 9-10.
+                                {{ entry.work_description|default:"No work description provided." }}
                             </p>
                         </div>
                         
+                        {% if entry.quality_issues or entry.safety_incidents %}
                         <div class="activities-section">
                             <div class="section-title">
                                 <i class="fas fa-exclamation-triangle"></i>
-                                <span>Delays & Issues</span>
+                                <span>Issues & Safety</span>
                             </div>
+                            {% if entry.quality_issues %}
                             <p class="activity-text">
-                                Concrete delivery was delayed by 2 hours due to traffic congestion. Minor rework required on 11th floor electrical placement due to design updates.
+                                <strong>Quality Issues:</strong> {{ entry.quality_issues }}
                             </p>
+                            {% endif %}
+                            {% if entry.safety_incidents %}
+                            <p class="activity-text">
+                                <strong>Safety Incidents:</strong> {{ entry.safety_incidents }}
+                            </p>
+                            {% endif %}
                         </div>
+                        {% endif %}
                         
+                        {% if entry.photos_taken %}
                         <div class="activities-section">
                             <div class="section-title">
                                 <i class="fas fa-camera"></i>
@@ -204,226 +223,24 @@
                             <div class="photo-gallery">
                                 <div class="gallery-item">
                                     <img src="{% static 'images/image3.jpg' %}" alt="Site Photo">
-                                </div>
-                                <div class="gallery-item">
-                                    <img src="{% static 'images/image3.jpg' %}" alt="Site Photo">
-                                    <span class="photo-count">+3</span>
-                                </div>
-                                <div class="gallery-item">
-                                    <img src="{% static 'images/image3.jpg' %}" alt="Site Photo">
+                                    <span class="photo-count">Photos Available</span>
                                 </div>
                             </div>
                         </div>
+                        {% endif %}
                     </div>
                 </div>
+                {% empty %}
+                <div class="timeline-item">
+                    <div class="no-entries">
+                        <i class="fas fa-calendar-times"></i>
+                        <h3>No Diary Entries Found</h3>
+                        <p>No diary entries match your current filters.</p>
+                    </div>
+                </div>
+                {% endfor %}
                 
-                <!-- Timeline Item 2 -->
-                <div class="timeline-item">
-                    <div class="timeline-header" data-id="2">
-                        <div class="timeline-date">
-                            <i class="fas fa-calendar-alt"></i>
-                            <div>
-                                <h3>Highway Bridge Expansion</h3>
-                                <span>Mar 16, 2025</span>
-                            </div>
-                        </div>
-                        <div class="timeline-actions">
-                            <button class="action-btn download" title="Download PDF">
-                                <i class="fas fa-file-pdf"></i>
-                            </button>
-                            <button class="action-btn revision" title="Add Revision">
-                                <i class="fas fa-history"></i>
-                            </button>
-                            <button class="action-btn expand" title="Expand/Collapse">
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="timeline-content" id="content2">
-                        <div class="project-info">
-                            <div class="info-group">
-                                <div class="info-label">Location</div>
-                                <div class="info-value">North Highway, River Crossing</div>
-                            </div>
-                            <div class="info-group">
-                                <div class="info-label">Supervisor</div>
-                                <div class="info-value">Sarah Johnson</div>
-                            </div>
-                            <div class="info-group">
-                                <div class="info-label">Personnel Count</div>
-                                <div class="info-value">28</div>
-                            </div>
-                            <div class="info-group">
-                                <div class="info-label">Equipment</div>
-                                <div class="info-value">Mobile Crane, Pile Driver, Concrete Mixers</div>
-                            </div>
-                        </div>
-                        
-                        <div class="weather-info">
-                            <i class="fas fa-cloud-rain weather-icon"></i>
-                            <div class="weather-details">
-                                <div class="weather-detail">
-                                    <i class="fas fa-thermometer-half"></i>
-                                    <span>17°C</span>
-                                </div>
-                                <div class="weather-detail">
-                                    <i class="fas fa-cloud"></i>
-                                    <span>Light Rain</span>
-                                </div>
-                                <div class="weather-detail">
-                                    <i class="fas fa-wind"></i>
-                                    <span>12 km/h SW</span>
-                                </div>
-                                <div class="weather-detail">
-                                    <i class="fas fa-tint"></i>
-                                    <span>Humidity: 78%</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="activities-section">
-                            <div class="section-title">
-                                <i class="fas fa-tasks"></i>
-                                <span>Work Performed</span>
-                            </div>
-                            <p class="activity-text">
-                                Installed rebar for the north pier foundation. Waterproofing application on completed southern section. Traffic management team redirected vehicles to single lane operation.
-                            </p>
-                        </div>
-                        
-                        <div class="activities-section">
-                            <div class="section-title">
-                                <i class="fas fa-exclamation-triangle"></i>
-                                <span>Delays & Issues</span>
-                            </div>
-                            <p class="activity-text">
-                                Work slowed due to light rain showers. Suspended external painting operations. Site drainage system working effectively in managing rainfall.
-                            </p>
-                        </div>
-                        
-                        <div class="activities-section">
-                            <div class="section-title">
-                                <i class="fas fa-camera"></i>
-                                <span>Site Photos</span>
-                            </div>
-                            <div class="photo-gallery">
-    <div class="gallery-item">
-        <img src="{% static 'images/image3.jpg' %}" alt="Site Photo">
-    </div>
-    <div class="gallery-item">
-        <img src="{% static 'images/image4.jpg' %}" alt="Site Photo">
-    </div>
-</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Timeline Item 3 -->
-                <div class="timeline-item">
-                    <div class="timeline-header" data-id="3">
-                        <div class="timeline-date">
-                            <i class="fas fa-calendar-alt"></i>
-                            <div>
-                                <h3>Residential Complex Phase 2</h3>
-                                <span>Mar 15, 2025</span>
-                            </div>
-                        </div>
-                        <div class="timeline-actions">
-                            <button class="action-btn download" title="Download PDF">
-                                <i class="fas fa-file-pdf"></i>
-                            </button>
-                            <button class="action-btn revision" title="Add Revision">
-                                <i class="fas fa-history"></i>
-                            </button>
-                            <button class="action-btn expand" title="Expand/Collapse">
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="timeline-content" id="content3">
-                        <div class="project-info">
-                            <div class="info-group">
-                                <div class="info-label">Location</div>
-                                <div class="info-value">Westside Development Zone</div>
-                            </div>
-                            <div class="info-group">
-                                <div class="info-label">Supervisor</div>
-                                <div class="info-value">Michael Brown</div>
-                            </div>
-                            <div class="info-group">
-                                <div class="info-label">Personnel Count</div>
-                                <div class="info-value">35</div>
-                            </div>
-                            <div class="info-group">
-                                <div class="info-label">Equipment</div>
-                                <div class="info-value">Backhoe, Concrete Pump, Boom Lift</div>
-                            </div>
-                        </div>
-                        
-                        <div class="weather-info">
-                            <i class="fas fa-cloud weather-icon"></i>
-                            <div class="weather-details">
-                                <div class="weather-detail">
-                                    <i class="fas fa-thermometer-half"></i>
-                                    <span>19°C</span>
-                                </div>
-                                <div class="weather-detail">
-                                    <i class="fas fa-cloud"></i>
-                                    <span>Partly Cloudy</span>
-                                </div>
-                                <div class="weather-detail">
-                                    <i class="fas fa-wind"></i>
-                                    <span>5 km/h SE</span>
-                                </div>
-                                <div class="weather-detail">
-                                    <i class="fas fa-tint"></i>
-                                    <span>Humidity: 62%</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="activities-section">
-                            <div class="section-title">
-                                <i class="fas fa-tasks"></i>
-                                <span>Work Performed</span>
-                            </div>
-                            <p class="activity-text">
-                                Framing for Building C units 15-20 completed. Roofing installation began on Building B. Window installation continued on Building A. Site landscaping work started around completed Building D.
-                            </p>
-                        </div>
-                        
-                        <div class="activities-section">
-                            <div class="section-title">
-                                <i class="fas fa-exclamation-triangle"></i>
-                                <span>Delays & Issues</span>
-                            </div>
-                            <p class="activity-text">
-                                Material delivery for kitchen cabinets delayed until tomorrow. HVAC subcontractor requested design clarification for Building C ductwork layout.
-                            </p>
-                        </div>
-                        
-                        <div class="activities-section">
-                            <div class="section-title">
-                                <i class="fas fa-camera"></i>
-                                <span>Site Photos</span>
-                            </div>
-                            <div class="photo-gallery">
-                                <div class="gallery-item">
-                                    <img src="{% static 'images/HOUSEtriGdesign.jpg' %}" alt="Site Photo">
-                                </div>
-                                <div class="gallery-item">
-                                    <img src="{% static 'images/image1.jpg' %}" alt="Site Photo">
-                                </div>
-                                <div class="gallery-item">
-                                    <img src="{% static 'images/image2.jpeg' %}" alt="Site Photo">
-                                    <span class="photo-count">+2</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+
             </div>
             
             <!-- Table View -->
@@ -436,28 +253,33 @@
                                 <th>Project</th>
                                 <th>Location</th>
                                 <th>Weather</th>
-                                <th>Personnel</th>
+                                <th>Created By</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
+                            {% for entry in page_obj %}
                             <tr>
-                                <td>Mar 17, 2025</td>
-                                <td class="table-project-name">Central Business District Tower</td>
-                                <td>Downtown, Central Business District</td>
+                                <td>{{ entry.entry_date|date:"M d, Y" }}</td>
+                                <td class="table-project-name">{{ entry.project.name }}</td>
+                                <td>{{ entry.project.location|default:"Not specified" }}</td>
                                 <td>
+                                    {% if entry.weather_condition %}
                                     <div class="table-weather">
-                                        <i class="fas fa-sun"></i>
-                                        <span>Sunny, 24°C</span>
+                                        <i class="fas fa-{% if entry.weather_condition == 'sunny' %}sun{% elif entry.weather_condition == 'rainy' %}cloud-rain{% elif entry.weather_condition == 'cloudy' %}cloud{% else %}cloud{% endif %}"></i>
+                                        <span>{{ entry.get_weather_condition_display }}{% if entry.temperature_high %}, {{ entry.temperature_high }}°C{% endif %}</span>
                                     </div>
+                                    {% else %}
+                                    <span class="text-muted">No data</span>
+                                    {% endif %}
                                 </td>
-                                <td>42</td>
+                                <td>{{ entry.created_by.get_full_name|default:entry.created_by.username }}</td>
                                 <td>
                                     <div class="table-actions">
                                         <button class="action-btn download" title="Download PDF">
                                             <i class="fas fa-file-pdf"></i>
                                         </button>
-                                        <button class="action-btn view" title="View Details">
+                                        <button class="action-btn view" title="View Details" onclick="viewEntry({{ entry.id }})">
                                             <i class="fas fa-eye"></i>
                                         </button>
                                         <button class="action-btn revision" title="Add Revision">
@@ -466,75 +288,54 @@
                                     </div>
                                 </td>
                             </tr>
+                            {% empty %}
                             <tr>
-                                <td>Mar 16, 2025</td>
-                                <td class="table-project-name">Highway Bridge Expansion</td>
-                                <td>North Highway, River Crossing</td>
-                                <td>
-                                    <div class="table-weather">
-                                        <i class="fas fa-cloud-rain"></i>
-                                        <span>Rainy, 17°C</span>
-                                    </div>
-                                </td>
-                                <td>28</td>
-                                <td>
-                                    <div class="table-actions">
-                                        <button class="action-btn download" title="Download PDF">
-                                            <i class="fas fa-file-pdf"></i>
-                                        </button>
-                                        <button class="action-btn view" title="View Details">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button class="action-btn revision" title="Add Revision">
-                                            <i class="fas fa-history"></i>
-                                        </button>
-                                    </div>
-                                </td>
+                                <td colspan="6" class="text-center">No diary entries found.</td>
                             </tr>
-                            <tr>
-                                <td>Mar 15, 2025</td>
-                                <td class="table-project-name">Residential Complex Phase 2</td>
-                                <td>Westside Development Zone</td>
-                                <td>
-                                    <div class="table-weather">
-                                        <i class="fas fa-cloud"></i>
-                                        <span>Cloudy, 19°C</span>
-                                    </div>
-                                </td>
-                                <td>35</td>
-                                <td>
-                                    <div class="table-actions">
-                                        <button class="action-btn download" title="Download PDF">
-                                            <i class="fas fa-file-pdf"></i>
-                                        </button>
-                                        <button class="action-btn view" title="View Details">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button class="action-btn revision" title="Add Revision">
-                                            <i class="fas fa-history"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
+                            {% endfor %}
                         </tbody>
                     </table>
                 </div>
             </div>
             
             <!-- Pagination Controls -->
+            {% if page_obj.has_other_pages %}
             <div class="pagination">
-                <button class="page-btn disabled">
-                    <i class="fas fa-chevron-left"></i>
-                </button>
-                <button class="page-btn active">1</button>
-                <button class="page-btn">2</button>
-                <button class="page-btn">3</button>
-                <span class="pagination-ellipsis">...</span>
-                <button class="page-btn">10</button>
-                <button class="page-btn">
-                    <i class="fas fa-chevron-right"></i>
-                </button>
+                {% if page_obj.has_previous %}
+                    <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page=1" class="page-btn">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                    <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}" class="page-btn">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                {% else %}
+                    <button class="page-btn disabled">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <button class="page-btn active">{{ num }}</button>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ num }}" class="page-btn">{{ num }}</a>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                    <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}" class="page-btn">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                    <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.paginator.num_pages }}" class="page-btn">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                {% else %}
+                    <button class="page-btn disabled">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                {% endif %}
             </div>
+            {% endif %}
             
             <!-- Modal for Viewing Entry Details -->
             <div class="modal" id="viewEntryModal" style="display: none;">
