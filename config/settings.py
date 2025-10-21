@@ -97,16 +97,28 @@ WSGI_APPLICATION = 'config.wsgi.application'
 import dj_database_url
 
 if os.getenv('DATABASE_URL'):
-    # Production - PostgreSQL on Render
+    # PostgreSQL - Using DATABASE_URL (recommended)
     DATABASES = {
         'default': dj_database_url.parse(os.getenv('DATABASE_URL'))
     }
+    # Ensure connection settings for PostgreSQL
+    DATABASES['default']['CONN_MAX_AGE'] = 600
+    DATABASES['default']['OPTIONS'] = {
+        'sslmode': 'require',
+    }
 else:
-    # Local development - SQLite
+    # PostgreSQL - Using individual environment variables (fallback)
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
+            'NAME': os.getenv('DB_NAME', 'tripleg_db'),
+            'USER': os.getenv('DB_USER', 'tripleg_user'),
+            'PASSWORD': os.getenv('DB_PASSWORD', 'd8GpSfe5Tb5uNSPvjosneUe9h8MSLXHz'),
+            'HOST': os.getenv('DB_HOST', 'dpg-d3r8hqu3jp1c7394km30-a.singapore-postgres.render.com'),
+            'PORT': os.getenv('DB_PORT', '5432'),
+            'OPTIONS': {
+                'sslmode': 'require',
+            },
         }
     }
 
@@ -125,13 +137,14 @@ USE_I18N = True
 USE_TZ = True
 
 # Email settings for Gmail
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_HOST_USER = 'triplegotp@gmail.com'  # Replace with your Gmail address
-EMAIL_HOST_PASSWORD = 'wzukyxhnuomdglir'  # Gmail App Password, no spaces
-EMAIL_USE_TLS = True
-DEFAULT_FROM_EMAIL = 'triplegotp@gmail.com'
+# Email settings - Use environment variables
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'triplegotp@gmail.com')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', 'wzukyxhnuomdglir')
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
+DEFAULT_FROM_EMAIL = os.getenv('EMAIL_HOST_USER', 'triplegotp@gmail.com')
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
@@ -179,8 +192,8 @@ LOGIN_REDIRECT_URL = '/admin-panel/'
 
 # Security settings
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -228,12 +241,12 @@ CONTENT_SECURITY_POLICY = {
         'base-uri': ("'self'",),
         'connect-src': ("'self'", 'https://cdn.jsdelivr.net', 'https://maps.googleapis.com', 'https://nominatim.openstreetmap.org', 'https://api.openweathermap.org'),
         'default-src': ("'self'",),
-        'font-src': ("'self'", 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com', 'https://cdn.lineicons.com'),
+        'font-src': ("'self'", 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com'),
         'form-action': ("'self'",),
         'frame-src': ('https://www.google.com', 'https://maps.google.com'),
         'img-src': ("'self'", 'data:', 'https:', 'http:'),
         'object-src': ("'none'",),
         'script-src': ("'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com', 'https://code.jquery.com', 'https://maps.googleapis.com', 'https://unpkg.com'),
-        'style-src': ("'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com', 'https://unpkg.com', 'https://cdn.lineicons.com')
+        'style-src': ("'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com', 'https://unpkg.com')
     }
 }
