@@ -22,15 +22,15 @@
             </div>
             
             <div class="export-options">
-                <button class="btn btn-primary">
+                <button class="btn btn-primary" onclick="exportToPDF()">
                     <i class="fas fa-file-pdf"></i>
                     Export PDF
                 </button>
-                <button class="btn btn-primary">
+                <button class="btn btn-primary" onclick="exportToCSV()">
                     <i class="fas fa-file-csv"></i>
                     Export CSV
                 </button>
-                <button class="btn btn-secondary">
+                <button class="btn btn-secondary" onclick="printReport()">
                     <i class="fas fa-print"></i>
                     Print
                 </button>
@@ -330,103 +330,123 @@
     document.addEventListener('DOMContentLoaded', function() {
         // Labor Chart Data
         {% if labor_stats %}
-        const laborData = {
-            labels: [{% for stat in labor_stats %}'{{ stat.labor_type|title }}'{% if not forloop.last %},{% endif %}{% endfor %}],
-            datasets: [{
-                label: 'Total Hours',
-                data: [{% for stat in labor_stats %}{{ stat.total_hours|default:0 }}{% if not forloop.last %},{% endif %}{% endfor %}],
-                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF']
-            }]
-        };
+        const laborCtx = document.getElementById('laborChart');
+        const existingLaborChart = Chart.getChart(laborCtx);
+        if (existingLaborChart) {
+            existingLaborChart.destroy();
+        }
         
-        const laborCtx = document.getElementById('laborChart').getContext('2d');
-        new Chart(laborCtx, {
-            type: 'doughnut',
-            data: laborData,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false
-            }
-        });
+        if (laborCtx) {
+            new Chart(laborCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: [{% for stat in labor_stats %}'{{ stat.labor_type|title }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+                    datasets: [{
+                        label: 'Total Hours',
+                        data: [{% for stat in labor_stats %}{{ stat.total_hours|default:0 }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
         {% endif %}
         
         // Progress Chart Data
         {% if project_stats %}
-        const progressData = {
-            labels: [{% for stat in project_stats %}'{{ stat.project.name|truncatechars:20 }}'{% if not forloop.last %},{% endif %}{% endfor %}],
-            datasets: [{
-                label: 'Progress %',
-                data: [{% for stat in project_stats %}{{ stat.avg_progress|default:0 }}{% if not forloop.last %},{% endif %}{% endfor %}],
-                backgroundColor: '#36A2EB',
-                borderColor: '#36A2EB',
-                borderWidth: 1
-            }]
-        };
+        const progressCtx = document.getElementById('progressChart');
+        const existingProgressChart = Chart.getChart(progressCtx);
+        if (existingProgressChart) {
+            existingProgressChart.destroy();
+        }
         
-        const progressCtx = document.getElementById('progressChart').getContext('2d');
-        new Chart(progressCtx, {
-            type: 'bar',
-            data: progressData,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 100
+        if (progressCtx) {
+            new Chart(progressCtx, {
+                type: 'bar',
+                data: {
+                    labels: [{% for stat in project_stats %}'{{ stat.project.name|truncatechars:20 }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+                    datasets: [{
+                        label: 'Progress %',
+                        data: [{% for stat in project_stats %}{{ stat.avg_progress|default:0 }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                        backgroundColor: '#36A2EB',
+                        borderColor: '#36A2EB',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
         {% endif %}
         
         // Materials Chart Data
         {% if material_stats %}
-        const materialsData = {
-            labels: [{% for stat in material_stats %}'{{ stat.material_name|truncatechars:15 }}'{% if not forloop.last %},{% endif %}{% endfor %}],
-            datasets: [{
-                label: 'Quantity Delivered',
-                data: [{% for stat in material_stats %}{{ stat.total_delivered|default:0 }}{% if not forloop.last %},{% endif %}{% endfor %}],
-                backgroundColor: '#FFCE56'
-            }]
-        };
+        const materialsCtx = document.getElementById('materialsChart');
+        const existingMaterialsChart = Chart.getChart(materialsCtx);
+        if (existingMaterialsChart) {
+            existingMaterialsChart.destroy();
+        }
         
-        const materialsCtx = document.getElementById('materialsChart').getContext('2d');
-        new Chart(materialsCtx, {
-            type: 'bar',
-            data: materialsData,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true
+        if (materialsCtx) {
+            new Chart(materialsCtx, {
+                type: 'bar',
+                data: {
+                    labels: [{% for stat in material_stats %}'{{ stat.material_name|truncatechars:15 }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+                    datasets: [{
+                        label: 'Quantity Delivered',
+                        data: [{% for stat in material_stats %}{{ stat.total_delivered|default:0 }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                        backgroundColor: '#FFCE56'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
         {% endif %}
         
         // Delays Chart Data
         {% if delay_categories %}
-        const delaysData = {
-            labels: [{% for delay in delay_categories %}'{{ delay.category|title }}'{% if not forloop.last %},{% endif %}{% endfor %}],
-            datasets: [{
-                label: 'Total Hours',
-                data: [{% for delay in delay_categories %}{{ delay.total_hours|default:0 }}{% if not forloop.last %},{% endif %}{% endfor %}],
-                backgroundColor: ['#FF6384', '#FF9F40', '#FFCD56', '#4BC0C0', '#36A2EB']
-            }]
-        };
+        const delaysCtx = document.getElementById('delaysChart');
+        const existingDelaysChart = Chart.getChart(delaysCtx);
+        if (existingDelaysChart) {
+            existingDelaysChart.destroy();
+        }
         
-        const delaysCtx = document.getElementById('delaysChart').getContext('2d');
-        new Chart(delaysCtx, {
-            type: 'pie',
-            data: delaysData,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false
-            }
-        });
+        if (delaysCtx) {
+            new Chart(delaysCtx, {
+                type: 'pie',
+                data: {
+                    labels: [{% for delay in delay_categories %}'{{ delay.category|title }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+                    datasets: [{
+                        label: 'Total Hours',
+                        data: [{% for delay in delay_categories %}{{ delay.total_hours|default:0 }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                        backgroundColor: ['#FF6384', '#FF9F40', '#FFCD56', '#4BC0C0', '#36A2EB']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
         {% endif %}
     });
     
@@ -451,6 +471,75 @@
             console.error('Error:', error);
             alert('Error generating report');
         });
+    }
+    
+    // Export to PDF function
+    function exportToPDF() {
+        window.print();
+    }
+    
+    // Export to CSV function
+    function exportToCSV() {
+        const table = document.querySelector('table');
+        if (!table) {
+            alert('No data to export');
+            return;
+        }
+        
+        let csv = [];
+        const rows = table.querySelectorAll('tr');
+        
+        for (let i = 0; i < rows.length; i++) {
+            const row = [];
+            const cols = rows[i].querySelectorAll('td, th');
+            
+            for (let j = 0; j < cols.length - 1; j++) { // Skip last column (Actions)
+                let data = cols[j].innerText.replace(/,/g, ';');
+                row.push('"' + data + '"');
+            }
+            csv.push(row.join(','));
+        }
+        
+        const csvFile = new Blob([csv.join('\n')], { type: 'text/csv' });
+        const downloadLink = document.createElement('a');
+        downloadLink.download = 'site_diary_reports.csv';
+        downloadLink.href = window.URL.createObjectURL(csvFile);
+        downloadLink.style.display = 'none';
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+    }
+    
+    // Print report function
+    function printReport() {
+        const printContent = document.querySelector('.container').innerHTML;
+        const originalContent = document.body.innerHTML;
+        
+        document.body.innerHTML = `
+            <html>
+                <head>
+                    <title>Site Diary Reports</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f5f5f5; }
+                        .summary-section { display: flex; gap: 20px; margin: 20px 0; }
+                        .summary-card { border: 1px solid #ddd; padding: 15px; flex: 1; }
+                        .charts-section { display: none; }
+                        .export-options { display: none; }
+                        .filter-container { display: none; }
+                    </style>
+                </head>
+                <body>
+                    ${printContent}
+                </body>
+            </html>
+        `;
+        
+        window.print();
+        document.body.innerHTML = originalContent;
+        location.reload();
     }
     </script>
 {% endblock %}
