@@ -59,11 +59,28 @@
     // Add variables to track chat state
     let currentMode = 'normal';
     let lastResponseType = '';
+    let conversationId = null;
+    let sessionId = null;
     // Global element references (assigned in init)
     let chatWindow;
     let chatButton;
     let chatMessages;
     let chatInput;
+    
+    // API Configuration
+    const apiEndpoints = {
+        sendMessage: '/chat/api/send-message/',
+        conversationHistory: '/chat/api/conversation-history/',
+        projectStatus: '/chat/api/project-status/',
+        submitFeedback: '/chat/api/submit-feedback/',
+        createContact: '/chat/api/create-contact/'
+    };
+    
+    // Get CSRF token
+    function getCsrfToken() {
+        return document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+               document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1];
+    }
 
     // Create and append styles
     function createStyles() {
@@ -443,7 +460,24 @@
         
         // Check for project status queries
         if (triggerKeywords.projectStatus.some(keyword => message.includes(keyword))) {
-            addMessage("You're currently in the Structural Phase. Estimated completion: August 12, 2025.", 'bot');
+            // Try to get real project status from API
+            fetch(apiEndpoints.projectStatus, {
+                headers: {
+                    'X-CSRFToken': getCsrfToken()
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.projects.length > 0) {
+                    const project = data.projects[0];
+                    addMessage(`Your project "${project.name}" is currently ${project.status}. Progress: ${project.progress}%`, 'bot');
+                } else {
+                    addMessage("You're currently in the Structural Phase. Estimated completion: August 12, 2025.", 'bot');
+                }
+            })
+            .catch(() => {
+                addMessage("You're currently in the Structural Phase. Estimated completion: August 12, 2025.", 'bot');
+            });
             return true;
         }
         
@@ -486,7 +520,7 @@
         return false; // No specific trigger found
     }
 
-    // Send message function - Enhanced version
+    // Send message function - Enhanced version with API integration
     function sendMessage() {
         const messageText = chatInput.value.trim();
         if (messageText === '') return;
@@ -501,6 +535,45 @@
             return;
         }
         
+        // Try API first, fallback to local processing
+        sendMessageToAPI(messageText)
+            .then(response => {
+                if (response.success) {
+                    conversationId = response.conversation_id;
+                    sessionId = response.session_id;
+                    addMessage(response.response, 'bot');
+                    refreshMainOptions();
+                } else {
+                    // Fallback to local processing
+                    handleMessageLocally(messageText);
+                }
+            })
+            .catch(error => {
+                console.error('API error:', error);
+                // Fallback to local processing
+                handleMessageLocally(messageText);
+            });
+    }
+    
+    // Send message to API
+    function sendMessageToAPI(messageText) {
+        return fetch(apiEndpoints.sendMessage, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({
+                message: messageText,
+                conversation_id: conversationId,
+                session_id: sessionId
+            })
+        })
+        .then(response => response.json());
+    }
+    
+    // Handle message locally (fallback)
+    function handleMessageLocally(messageText) {
         // Try to process with our enhanced query handler
         const wasProcessed = processUserQuery(messageText);
         
@@ -725,6 +798,51 @@
         }
     }
 
+    // Load conversation history on init
+    function loadConversationHistory() {
+        const params = new URLSearchParams();
+        if (conversationId) params.append('conversation_id', conversationId);
+        if (sessionId) params.append('session_id', sessionId);
+        
+        if (params.toString()) {
+            fetch(`${apiEndpoints.conversationHistory}?${params.toString()}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.messages.length > 0) {
+                        // Clear existing messages
+                        chatMessages.innerHTML = '';
+                        window.__TG_CHATBOT_GREETED__ = true;
+                        
+                        // Add messages from history
+                        data.messages.forEach(msg => {
+                            addMessage(msg.message_text, msg.sender_type, { instant: true });
+                        });
+                        
+                        conversationId = data.conversation_id;
+                        scrollToBottom();
+                    }
+                })
+                .catch(error => console.error('Error loading history:', error));
+        }
+    }
+    
+    // Submit feedback to API
+    function submitFeedback(messageId, rating, feedbackText = '') {
+        fetch(apiEndpoints.submitFeedback, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({
+                message_id: messageId,
+                rating: rating,
+                feedback_text: feedbackText
+            })
+        })
+        .catch(error => console.error('Error submitting feedback:', error));
+    }
+    
     // Open contact form
     function openContactForm() {
         // Create overlay
@@ -774,9 +892,41 @@
         const form = document.createElement('form');
         form.onsubmit = (e) => {
             e.preventDefault();
-            document.body.removeChild(overlay);
-            addMessage("Thanks for your message! Our team will get back to you soon.", 'bot');
-            simulateAdminNotification();
+            
+            const formData = new FormData(form);
+            const contactData = {
+                name: formData.get('name'),
+                email: formData.get('email'),
+                phone: formData.get('phone'),
+                subject: 'Chat Contact Form',
+                message: formData.get('message')
+            };
+            
+            // Submit to API
+            fetch(apiEndpoints.createContact, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: JSON.stringify(contactData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.body.removeChild(overlay);
+                if (data.success) {
+                    addMessage("Thanks for your message! Our team will get back to you soon.", 'bot');
+                } else {
+                    addMessage("Sorry, there was an error sending your message. Please try again.", 'bot');
+                }
+                simulateAdminNotification();
+            })
+            .catch(error => {
+                console.error('Error submitting contact form:', error);
+                document.body.removeChild(overlay);
+                addMessage("Thanks for your message! Our team will get back to you soon.", 'bot');
+                simulateAdminNotification();
+            });
         };
         
         // Create form fields
@@ -1598,7 +1748,11 @@
     document.addEventListener('DOMContentLoaded', () => {
         // Initialize chatbot
         init();
-        // Load previous chat if available
+        // Load conversation history from API
+        setTimeout(() => {
+            loadConversationHistory();
+        }, 500);
+        // Load previous chat if available (fallback)
         loadChat();
         // Check previous session state
         checkPreviousSession();

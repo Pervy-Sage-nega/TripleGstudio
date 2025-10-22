@@ -674,9 +674,220 @@ document.addEventListener('DOMContentLoaded', function() {
             // Get the tab value
             const tabValue = this.getAttribute('data-tab');
             
-            // Filter items
-            filterMessagesByStatus(tabValue);
+            if (tabValue === 'chatbot') {
+                showChatbotConversations();
+            } else {
+                hideChatbotConversations();
+                filterMessagesByStatus(tabValue);
+            }
         });
+    });
+    
+    // Chatbot Conversations Functions
+    function showChatbotConversations() {
+        document.getElementById('timelineView').style.display = 'none';
+        document.getElementById('tableView').style.display = 'none';
+        document.getElementById('chatbotConversations').style.display = 'block';
+        loadChatbotConversations();
+    }
+    
+    function hideChatbotConversations() {
+        document.getElementById('chatbotConversations').style.display = 'none';
+        const activeViewBtn = document.querySelector('.view-btn.active');
+        if (activeViewBtn && activeViewBtn.id === 'timelineViewBtn') {
+            document.getElementById('timelineView').style.display = 'block';
+        } else {
+            document.getElementById('tableView').style.display = 'block';
+        }
+    }
+    
+    function loadChatbotConversations() {
+        fetch('/chat/api/admin/conversations/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    renderConversations(data.conversations);
+                }
+            })
+            .catch(error => console.error('Error loading conversations:', error));
+    }
+    
+    function renderConversations(conversations) {
+        const conversationsList = document.getElementById('conversationsList');
+        conversationsList.innerHTML = '';
+        
+        conversations.forEach(conversation => {
+            const conversationDiv = document.createElement('div');
+            conversationDiv.className = 'timeline-item';
+            conversationDiv.innerHTML = `
+                <div class="timeline-header">
+                    <div class="timeline-date">
+                        <i class="fas fa-robot"></i>
+                        <div>
+                            <h3>${conversation.user || 'Anonymous'}</h3>
+                            <span>${new Date(conversation.started_at).toLocaleString()}</span>
+                            <span class="log-status status-${conversation.status}">${conversation.status}</span>
+                        </div>
+                    </div>
+                    <div class="timeline-actions">
+                        <button class="action-btn view-messages" data-conversation-id="${conversation.id}" title="View Messages">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        ${conversation.status === 'active' ? `
+                            <button class="action-btn close-conversation" data-conversation-id="${conversation.id}" title="Close Conversation">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        ` : ''}
+                        <button class="action-btn archive-conversation" data-conversation-id="${conversation.id}" title="Archive">
+                            <i class="fas fa-archive"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="timeline-content">
+                    <div class="info-group">
+                        <div class="info-label">Messages</div>
+                        <div class="info-value">${conversation.message_count}</div>
+                    </div>
+                    <div class="info-group">
+                        <div class="info-label">Session ID</div>
+                        <div class="info-value">${conversation.session_id}</div>
+                    </div>
+                </div>
+            `;
+            
+            conversationsList.appendChild(conversationDiv);
+        });
+        
+        // Add event listeners
+        document.querySelectorAll('.view-messages').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                viewConversationMessages(btn.dataset.conversationId);
+            });
+        });
+        
+        document.querySelectorAll('.close-conversation').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                closeConversation(btn.dataset.conversationId);
+            });
+        });
+        
+        document.querySelectorAll('.archive-conversation').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                archiveConversation(btn.dataset.conversationId);
+            });
+        });
+    }
+    
+    function viewConversationMessages(conversationId) {
+        fetch(`/chat/api/admin/conversation/${conversationId}/messages/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showConversationModal(data.messages, conversationId);
+                }
+            })
+            .catch(error => console.error('Error loading messages:', error));
+    }
+    
+    function showConversationModal(messages, conversationId) {
+        const modal = document.getElementById('conversationModal');
+        const content = document.getElementById('conversationModalContent');
+        
+        content.innerHTML = '';
+        messages.forEach(message => {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${message.sender_type}`;
+            messageDiv.innerHTML = `
+                <div class="message-header">
+                    <strong>${message.sender_type === 'user' ? 'User' : 'Bot'}</strong>
+                    <span>${new Date(message.created_at).toLocaleString()}</span>
+                </div>
+                <div class="message-text">${message.message_text}</div>
+                ${message.intent ? `<div class="message-intent">Intent: ${message.intent}</div>` : ''}
+            `;
+            content.appendChild(messageDiv);
+        });
+        
+        // Set conversation ID for action buttons
+        document.getElementById('closeConversationActionBtn').dataset.conversationId = conversationId;
+        document.getElementById('archiveConversationBtn').dataset.conversationId = conversationId;
+        
+        modal.classList.add('active');
+    }
+    
+    function closeConversation(conversationId) {
+        fetch(`/chat/api/admin/conversation/${conversationId}/close/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCsrfToken(),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadChatbotConversations();
+            }
+        })
+        .catch(error => console.error('Error closing conversation:', error));
+    }
+    
+    function archiveConversation(conversationId) {
+        fetch(`/chat/api/admin/conversation/${conversationId}/archive/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCsrfToken(),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadChatbotConversations();
+            }
+        })
+        .catch(error => console.error('Error archiving conversation:', error));
+    }
+    
+    function getCsrfToken() {
+        return document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+               document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1];
+    }
+    
+    // Close conversation modal
+    const closeConversationModal = document.getElementById('closeConversationModal');
+    const closeConversationBtn = document.getElementById('closeConversationBtn');
+    
+    if (closeConversationModal) {
+        closeConversationModal.addEventListener('click', () => {
+            document.getElementById('conversationModal').classList.remove('active');
+        });
+    }
+    
+    if (closeConversationBtn) {
+        closeConversationBtn.addEventListener('click', () => {
+            document.getElementById('conversationModal').classList.remove('active');
+        });
+    }
+    
+    // Conversation action buttons in modal
+    document.getElementById('closeConversationActionBtn')?.addEventListener('click', function() {
+        const conversationId = this.dataset.conversationId;
+        if (conversationId) {
+            closeConversation(conversationId);
+            document.getElementById('conversationModal').classList.remove('active');
+        }
+    });
+    
+    document.getElementById('archiveConversationBtn')?.addEventListener('click', function() {
+        const conversationId = this.dataset.conversationId;
+        if (conversationId) {
+            archiveConversation(conversationId);
+            document.getElementById('conversationModal').classList.remove('active');
+        }
     });
     
     function filterMessagesByStatus(status) {
