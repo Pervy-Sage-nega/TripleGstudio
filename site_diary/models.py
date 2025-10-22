@@ -83,6 +83,11 @@ class DiaryEntry(models.Model):
         ('snowy', 'Snowy'),
     ]
     
+    ENTRY_STATUS = [
+        ('complete', 'Complete'),
+        ('needs_revision', 'Needs Revision'),
+    ]
+    
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='diary_entries')
     entry_date = models.DateField(default=timezone.now)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -107,10 +112,11 @@ class DiaryEntry(models.Model):
     general_notes = models.TextField(blank=True, max_length=1000)
     photos_taken = models.BooleanField(default=False)
     
-    # Approval and Review
+    # Review and Status
     reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_entries')
-    approved = models.BooleanField(default=False)
-    approval_date = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=ENTRY_STATUS, default='complete')
+    reviewed_date = models.DateTimeField(null=True, blank=True)
+    needs_revision = models.BooleanField(default=False)
     
     draft = models.BooleanField(default=False, help_text="Save as draft without finalizing entry")
     

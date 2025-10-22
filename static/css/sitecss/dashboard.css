@@ -441,6 +441,45 @@ body {
     color: var(--danger-color);
 }
 
+/* Revision Impact Styles */
+.revision-impact .analytics-value {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.revision-impact small {
+    font-size: 0.75rem;
+    opacity: 0.8;
+    margin-top: 2px;
+}
+
+.budget-variance .analytics-value {
+    font-weight: 600;
+}
+
+
+
+/* Enhanced Analytics Item */
+.analytics-item {
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.analytics-item:last-child {
+    border-bottom: none;
+}
+
+.analytics-label {
+    font-size: 0.85rem;
+    color: var(--mid-gray);
+}
+
+.analytics-value {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
 /* Media Queries */
 @media (max-width: 1024px) {
     .stats-container {

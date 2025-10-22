@@ -20,8 +20,7 @@
         <li class="dropdown">
             <a href="#" class="dropdown-toggle" data-section="site">Site Diary Management <i class="fas fa-caret-down"></i></a>
             <ul class="dropdown-menu">
-                 <li><a href="{% url 'site_diary:admindiaryreviewer' %}" {% if request.resolver_match.url_name == 'admindiaryreviewer' %}class="active"{% endif %}>Diary Review</a></li>
-                 <li><a href="{% url 'site_diary:adminhistory' %}" {% if request.resolver_match.url_name == 'adminhistory' %}class="active"{% endif %}>Diary History</a></li>
+                 <li><a href="{% url 'site_diary:admindiaryreviewer' %}" {% if request.resolver_match.url_name == 'admindiaryreviewer' %}class="active"{% endif %}>Project History</a></li>
                  <li><a href="{% url 'site_diary:adminreports' %}" {% if request.resolver_match.url_name == 'adminreports' %}class="active"{% endif %}>Reports & Analytics</a></li>
                  <li><a href="{% url 'site_diary:adminclientproject' %}" {% if request.resolver_match.url_name == 'adminclientproject' %}class="active"{% endif %}>Client Projects</a></li>
             </ul>

@@ -1,0 +1,500 @@
+{% extends "site_diary/layout_format.html" %}
+{% load static %}
+
+{% block head %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site Diary - Revision Request</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+    <link rel="stylesheet" href="{% static 'css/sitecss/diary.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/createblog.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/global-footer.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admincss/nav.css' %}">
+    <script>
+        // Simple tab functionality for revision diary
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabPanels = document.querySelectorAll('.tab-panel');
+            
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const targetId = this.getAttribute('aria-controls');
+                    
+                    // Remove active class from all buttons and panels
+                    tabButtons.forEach(btn => {
+                        btn.classList.remove('active');
+                        btn.setAttribute('aria-selected', 'false');
+                    });
+                    tabPanels.forEach(panel => {
+                        panel.classList.remove('active');
+                    });
+                    
+                    // Add active class to clicked button and target panel
+                    this.classList.add('active');
+                    this.setAttribute('aria-selected', 'true');
+                    document.getElementById(targetId).classList.add('active');
+                });
+            });
+        });
+    </script>
+{% endblock %}
+
+{% block body %}
+    <!-- Main Content Container -->
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-title">
+                <i class="fas fa-history"></i>
+                <h1>{{ project_name }} - {{ entry_date }}</h1>
+            </div>
+            <div class="page-actions"></div>
+        </div>
+        
+        <!-- Form Container with Tabs -->
+        <div class="form-container">
+            <div class="tabs-container">
+                <nav class="tabs-sidebar" role="tablist" aria-orientation="vertical">
+                    <button class="tab-button active" role="tab" aria-selected="true" aria-controls="tab-project" id="tab-btn-project">
+                        <i class="fas fa-clipboard-list"></i>
+                        <span>Current Entry</span>
+                    </button>
+                    <button class="tab-button" role="tab" aria-selected="false" aria-controls="tab-labor" id="tab-btn-labor">
+                        <i class="fas fa-hard-hat"></i>
+                        <span>Labor & Work</span>
+                    </button>
+                    <button class="tab-button" role="tab" aria-selected="false" aria-controls="tab-materials" id="tab-btn-materials">
+                        <i class="fas fa-truck-loading"></i>
+                        <span>Materials & Equipment</span>
+                    </button>
+                    <button class="tab-button" role="tab" aria-selected="false" aria-controls="tab-delays" id="tab-btn-delays">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>Delays & Documentation</span>
+                    </button>
+                    <button class="tab-button" role="tab" aria-selected="false" aria-controls="tab-revision" id="tab-btn-revision">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Revision Info</span>
+                    </button>
+                    <button class="tab-button" role="tab" aria-selected="false" aria-controls="tab-signatures" id="tab-btn-signatures">
+                        <i class="fas fa-signature"></i>
+                        <span>Signatures</span>
+                    </button>
+                    <button class="tab-button" role="tab" aria-selected="false" aria-controls="tab-review" id="tab-btn-review">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Review & Submit</span>
+                    </button>
+                </nav>
+
+                <div class="tabs-content">
+                    <form id="revisionForm" method="post" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+                        <input type="hidden" name="entry_id" value="{{ entry_id }}">
+                        
+                        <!-- Current Entry Tab -->
+                        <section id="tab-project" class="tab-panel active" role="tabpanel" aria-labelledby="tab-btn-project">
+                            <!-- Project Information Section -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-project-diagram"></i>
+                                    <h2 class="section-title">Current Entry Information</h2>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Project Name</label>
+                                        <input type="text" class="form-control" value="{{ entry.project.name }}" readonly>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Entry Date</label>
+                                        <input type="text" class="form-control" value="{{ entry.entry_date }}" readonly>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="workDescription">Work Description</label>
+                                        <textarea class="form-control" id="workDescription" name="work_description" rows="3">{{ entry.work_description }}</textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="progressPercentage">Progress Percentage (%)</label>
+                                        <input type="number" class="form-control" id="progressPercentage" name="progress_percentage" value="{{ entry.progress_percentage }}" min="0" max="100">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Weather Conditions Section -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-cloud-sun"></i>
+                                    <h2 class="section-title">Weather Conditions</h2>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Weather Condition</label>
+                                        <input type="text" class="form-control" value="{{ entry.weather_condition|capfirst }}" readonly>
+                                        <small class="form-text text-muted">Weather data from API - cannot be modified</small>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Temperature High (°C)</label>
+                                        <input type="text" class="form-control" value="{{ entry.temperature_high }}°C" readonly>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Temperature Low (°C)</label>
+                                        <input type="text" class="form-control" value="{{ entry.temperature_low }}°C" readonly>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Quality and Safety Section -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-shield-alt"></i>
+                                    <h2 class="section-title">Quality and Safety</h2>
+                                </div>
+                                <div class="form-group">
+                                    <label for="qualityIssues">Quality Issues</label>
+                                    <textarea class="form-control" id="qualityIssues" name="quality_issues" rows="2">{{ entry.quality_issues }}</textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="safetyIncidents">Safety Incidents</label>
+                                    <textarea class="form-control" id="safetyIncidents" name="safety_incidents" rows="2">{{ entry.safety_incidents }}</textarea>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Labor & Work Tab -->
+                        <section id="tab-labor" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-labor">
+                            <!-- Labor and Personnel Section -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-hard-hat"></i>
+                                    <h2 class="section-title">Current Labor and Personnel</h2>
+                                </div>
+                                {% if labor_entries %}
+                                    {% for labor in labor_entries %}
+                                    <div class="entry-item">
+                                        <div class="entry-content">
+                                            <strong>{{ labor.labor_type }}</strong> - {{ labor.workers_count }} workers - {{ labor.hours_worked }} hours
+                                            {% if labor.hourly_rate %}<br>Rate: ₱{{ labor.hourly_rate }}/hour - Total: ₱{{ labor.total_cost }}{% endif %}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="text-muted">No labor entries recorded for this diary entry.</p>
+                                {% endif %}
+                            </div>
+
+                            <!-- Work Performed Section -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-tasks"></i>
+                                    <h2 class="section-title">Work Performed Details</h2>
+                                </div>
+                                <div class="form-group">
+                                    <label for="revisedWorkDescription">Revised Work Description</label>
+                                    <textarea class="form-control" id="revisedWorkDescription" name="revised_work_description" rows="4">{{ entry.work_description }}</textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="revisedProgress">Revised Progress (%)</label>
+                                    <input type="number" class="form-control" id="revisedProgress" name="revised_progress_percentage" value="{{ entry.progress_percentage }}" min="0" max="100">
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Materials & Equipment Tab -->
+                        <section id="tab-materials" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-materials">
+                            <!-- Materials Delivered Section -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-truck-loading"></i>
+                                    <h2 class="section-title">Current Materials Delivered</h2>
+                                </div>
+                                {% if material_entries %}
+                                    {% for material in material_entries %}
+                                    <div class="entry-item">
+                                        <div class="entry-content">
+                                            <strong>{{ material.material_name }}</strong> - {{ material.quantity_delivered }} {{ material.unit }}
+                                            {% if material.unit_cost %}<br>Unit Cost: ₱{{ material.unit_cost }} - Total: ₱{{ material.total_cost }}{% endif %}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="text-muted">No materials recorded for this diary entry.</p>
+                                {% endif %}
+                            </div>
+
+                            <!-- Equipment Used Section -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-tools"></i>
+                                    <h2 class="section-title">Current Equipment Used</h2>
+                                </div>
+                                {% if equipment_entries %}
+                                    {% for equipment in equipment_entries %}
+                                    <div class="entry-item">
+                                        <div class="entry-content">
+                                            <strong>{{ equipment.equipment_type }}</strong> - {{ equipment.hours_operated }} hours
+                                            {% if equipment.rental_cost_per_hour %}<br>Rate: ₱{{ equipment.rental_cost_per_hour }}/hour - Total: ₱{{ equipment.total_rental_cost }}{% endif %}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="text-muted">No equipment recorded for this diary entry.</p>
+                                {% endif %}
+                            </div>
+                        </section>
+
+                        <!-- Delays & Documentation Tab -->
+                        <section id="tab-delays" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-delays">
+                            <!-- Quality and Safety Section -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-shield-alt"></i>
+                                    <h2 class="section-title">Current Quality and Safety</h2>
+                                </div>
+                                <div class="form-group">
+                                    <label for="revisedQualityIssues">Revised Quality Issues</label>
+                                    <textarea class="form-control" id="revisedQualityIssues" name="revised_quality_issues" rows="3">{{ entry.quality_issues }}</textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="revisedSafetyIncidents">Revised Safety Incidents</label>
+                                    <textarea class="form-control" id="revisedSafetyIncidents" name="revised_safety_incidents" rows="3">{{ entry.safety_incidents }}</textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="revisedGeneralNotes">Revised General Notes</label>
+                                    <textarea class="form-control" id="revisedGeneralNotes" name="revised_general_notes" rows="3">{{ entry.general_notes }}</textarea>
+                                </div>
+                            </div>
+                            
+                            <!-- Delays and Issues Section -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <h2 class="section-title">Current Delays and Issues</h2>
+                                </div>
+                                {% if delay_entries %}
+                                    {% for delay in delay_entries %}
+                                    <div class="entry-item">
+                                        <div class="entry-content">
+                                            <strong>{{ delay.category }} - {{ delay.impact_level }}</strong>
+                                            <br>{{ delay.description }}
+                                            {% if delay.duration_hours %}<br>Duration: {{ delay.duration_hours }} hours{% endif %}
+                                            {% if delay.cost_impact %}<br>Cost Impact: ₱{{ delay.cost_impact }}{% endif %}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="text-muted">No delays or issues recorded for this diary entry.</p>
+                                {% endif %}
+                            </div>
+                        </section>
+                        
+                        <!-- Revision Information Tab -->
+                        <section id="tab-revision" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-revision">
+                            <!-- Revision Information Section -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-info-circle"></i>
+                                    <h2 class="section-title">Revision Information</h2>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="revisionDate">Revision Date *</label>
+                                        <input type="date" class="form-control" id="revisionDate" name="revisionDate" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="revisionType">Revision Type *</label>
+                                        <select class="form-control" id="revisionType" name="revisionType" required>
+                                            <option value="">Select revision type</option>
+                                            <option value="weather_correction">Weather Data Correction</option>
+                                            <option value="personnel_update">Personnel Update</option>
+                                            <option value="materials_adjustment">Materials/Equipment Adjustment</option>
+                                            <option value="cost_correction">Cost/Budget Correction</option>
+                                            <option value="work_progress_update">Work Progress Update</option>
+                                            <option value="quality_safety_update">Quality/Safety Update</option>
+                                            <option value="milestone_update">Milestone Update</option>
+                                            <option value="documentation_correction">Documentation Correction</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="revisionReason">Reason for Revision *</label>
+                                    <select class="form-control" id="revisionReason" name="revisionReason" required>
+                                        <option value="">Select reason</option>
+                                        <option value="data_error">Data Entry Error</option>
+                                        <option value="cost_error">Incorrect Cost/Budget Entry</option>
+                                        <option value="missing_information">Missing Information</option>
+                                        <option value="client_request">Client Request</option>
+                                        <option value="regulatory_requirement">Regulatory Requirement</option>
+                                        <option value="quality_improvement">Quality Improvement</option>
+                                        <option value="safety_compliance">Safety Compliance</option>
+                                        <option value="progress_update">Progress Update</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="revisionDescription">Detailed Description of Changes *</label>
+                                    <textarea class="form-control form-control-textarea" id="revisionDescription" name="revisionDescription" rows="5" 
+                                              placeholder="Provide a detailed description of what changes are being made and why. Include specific data corrections, additions, or modifications..." required></textarea>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="revisionImpact">Impact Assessment</label>
+                                        <select class="form-control" id="revisionImpact" name="revisionImpact">
+                                            <option value="">Select impact level</option>
+                                            <option value="no_impact">No Impact - Minor correction</option>
+                                            <option value="low_impact">Low Impact - Small adjustments</option>
+                                            <option value="medium_impact">Medium Impact - Moderate changes</option>
+                                            <option value="high_impact">High Impact - Significant changes</option>
+                                            <option value="critical_impact">Critical Impact - Major revisions</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="actualCostImpact">Actual Cost Impact (₱) *</label>
+                                        <input type="number" class="form-control" id="actualCostImpact" name="actualCostImpact" 
+                                               placeholder="0" step="1000" required>
+                                        <small class="form-text">Enter the actual cost impact (positive for additional costs, negative for cost corrections/reductions)</small>
+                                    </div>
+                                </div>
+
+                                <!-- Supporting Documentation -->
+                                <div class="form-group">
+                                    <label for="supportingDocs">Upload Supporting Documents</label>
+                                    <input type="file" class="form-control" id="supportingDocs" name="supportingDocs" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                                    <small class="form-text">Upload any documents that support this revision (photos, reports, approvals, etc. - max 10 files, 5MB each)</small>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="revisionNotes">Additional Notes</label>
+                                    <textarea class="form-control form-control-textarea" id="revisionNotes" name="revisionNotes" rows="3" 
+                                              placeholder="Any additional notes or comments regarding this revision..."></textarea>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Signatures Tab -->
+                        <section id="tab-signatures" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-signatures">
+                            <!-- Project Team Approval Section -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-users"></i>
+                                    <h2 class="section-title">Project Team Approval</h2>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="projectManager">Project Manager Name *</label>
+                                        <input type="text" class="form-control" id="projectManager" name="projectManager" 
+                                               placeholder="Enter project manager name" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="siteEngineer">Site Engineer Name</label>
+                                        <input type="text" class="form-control" id="siteEngineer" name="siteEngineer" 
+                                               placeholder="Enter site engineer name">
+                                    </div>
+                                </div>
+                                
+                                <div class="signature-container">
+                                    <label>Project Manager Signature *</label>
+                                    
+                                    <!-- Signature Method Selection -->
+                                    <div class="signature-method-selection">
+                                        <div class="method-option">
+                                            <input type="radio" id="uploadMethodManager" name="managerSignatureMethod" value="upload" checked>
+                                            <label for="uploadMethodManager">
+                                                <i class="fas fa-upload"></i> Upload Image
+                                            </label>
+                                        </div>
+                                        <div class="method-option">
+                                            <input type="radio" id="drawMethodManager" name="managerSignatureMethod" value="draw">
+                                            <label for="drawMethodManager">
+                                                <i class="fas fa-pen"></i> Draw Signature
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Upload Method -->
+                                    <div class="signature-upload-container" id="managerUploadContainer">
+                                        <input type="file" id="managerSignatureUpload" accept="image/*" style="display: none;">
+                                        <div class="signature-preview-container" id="managerSignaturePreview">
+                                            <div class="upload-icon">
+                                                <i class="fas fa-cloud-upload-alt"></i>
+                                            </div>
+                                            <div class="upload-text">Click to upload signature image</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Draw Method -->
+                                    <div class="signature-canvas-container" id="managerCanvasContainer" style="display: none;">
+                                        <canvas id="managerSignatureCanvas" width="400" height="200"></canvas>
+                                        <div class="canvas-instructions">
+                                            <small>Draw your signature above using mouse or touch</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Signature Actions -->
+                                    <div class="signature-actions">
+                                        <button type="button" class="signature-btn clear" id="clearManagerSignature">
+                                            <i class="fas fa-eraser"></i> Clear
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="invalid-feedback">Project Manager signature is required</div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Review & Submit Tab -->
+                        <section id="tab-review" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-review">
+                            <!-- Review Summary Section -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-check-circle"></i>
+                                    <h2 class="section-title">Review Summary</h2>
+                                </div>
+                                
+                                <div class="review-summary">
+                                    <div class="summary-item">
+                                        <strong>Project:</strong> <span id="reviewProject">{{ project_name }}</span>
+                                    </div>
+                                    <div class="summary-item">
+                                        <strong>Entry Date:</strong> <span id="reviewEntryDate">{{ entry_date }}</span>
+                                    </div>
+                                    <div class="summary-item">
+                                        <strong>Revision Type:</strong> <span id="reviewRevisionType">-</span>
+                                    </div>
+                                    <div class="summary-item">
+                                        <strong>Cost Impact:</strong> <span id="reviewCostImpact">₱0</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Form Footer -->
+                            <div class="form-footer">
+                                <div class="save-status">
+                                    <i class="fas fa-check"></i>
+                                    <span>Ready to submit</span>
+                                </div>
+                                <div class="action-buttons">
+                                    <button type="button" class="btn btn-secondary" onclick="window.history.back()">
+                                        <i class="fas fa-times"></i> Cancel
+                                    </button>
+                                    <button type="submit" class="btn btn-primary" id="submitRevision">
+                                        <i class="fas fa-save"></i> Submit Revision
+                                    </button>
+                                </div>
+                            </div>
+                        </section>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include "site_diary/navtemplate/layoutfooter.html" %}
+{% endblock %}

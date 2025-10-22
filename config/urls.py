@@ -50,7 +50,7 @@ urlpatterns = [
     path('adminside/clientproject/', site_diary_views.adminclientproject, name='direct_adminclientproject'),
     path('adminside/diary/', site_diary_views.admindiary, name='direct_admindiary'),
     path('adminside/diaryreviewer/', site_diary_views.admindiaryreviewer, name='direct_admindiaryreviewer'),
-    path('adminside/history/', site_diary_views.adminhistory, name='direct_adminhistory'),
+
     path('adminside/reports/', site_diary_views.adminreports, name='direct_adminreports'),
     
     # Sitemap URLs

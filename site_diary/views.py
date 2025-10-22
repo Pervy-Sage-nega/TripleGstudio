@@ -55,9 +55,15 @@ def diary(request):
         
         # Validate forms
         if not diary_form.is_valid():
-            logger.warning(f"Diary form validation failed for user {request.user.id}")
+            logger.warning(f"Diary form validation failed for user {request.user.id}: {diary_form.errors}")
+        if not labor_formset.is_valid():
+            logger.warning(f"Labor formset validation failed for user {request.user.id}: {labor_formset.errors}")
         if not material_formset.is_valid():
-            logger.warning(f"Material formset validation failed for user {request.user.id}")
+            logger.warning(f"Material formset validation failed for user {request.user.id}: {material_formset.errors}")
+        if not equipment_formset.is_valid():
+            logger.warning(f"Equipment formset validation failed for user {request.user.id}: {equipment_formset.errors}")
+        if not delay_formset.is_valid():
+            logger.warning(f"Delay formset validation failed for user {request.user.id}: {delay_formset.errors}")
         
         # Check if editing existing draft with proper validation
         edit_draft_id = request.POST.get('edit_draft_id') or request.GET.get('edit')
@@ -156,17 +162,62 @@ def diary(request):
             return redirect('site_diary:sitedraft')
         
         # Full validation for final submission
-        elif diary_form.is_valid():
+        elif diary_form.is_valid() and material_formset.is_valid() and equipment_formset.is_valid() and labor_formset.is_valid():
+            # Debug: Log all POST data
+            logger.info(f"POST data keys: {list(request.POST.keys())}")
+            for key, value in request.POST.items():
+                if 'material' in key or 'equipment' in key or 'labor' in key:
+                    logger.info(f"Form data: {key} = {value}")
+            
             # Save diary entry
             diary_entry = diary_form.save(commit=False)
             diary_entry.created_by = request.user
             diary_entry.draft = False
             diary_entry.save()
+            logger.info(f"Diary entry saved with ID: {diary_entry.id}")
             
-            # Save related entries (simplified for now)
-            logger.info(f"Diary entry saved successfully: {diary_entry.id} for user {request.user.id}")
+            # Process formsets
+            material_formset.instance = diary_entry
+            equipment_formset.instance = diary_entry
+            labor_formset.instance = diary_entry
             
-            messages.success(request, 'Diary entry created successfully!')
+            material_count = 0
+            equipment_count = 0
+            labor_count = 0
+            
+            if material_formset.is_valid():
+                for form in material_formset:
+                    if form.cleaned_data and not form.cleaned_data.get('DELETE', False):
+                        material = form.save(commit=False)
+                        material.diary_entry = diary_entry
+                        material.total_cost = material.quantity_delivered * material.unit_cost
+                        material.save()
+                        material_count += 1
+            
+            if equipment_formset.is_valid():
+                for form in equipment_formset:
+                    if form.cleaned_data and not form.cleaned_data.get('DELETE', False):
+                        equipment = form.save(commit=False)
+                        equipment.diary_entry = diary_entry
+                        equipment.total_rental_cost = equipment.hours_operated * equipment.rental_cost_per_hour
+                        equipment.save()
+                        equipment_count += 1
+            
+            if labor_formset.is_valid():
+                for form in labor_formset:
+                    if form.cleaned_data and not form.cleaned_data.get('DELETE', False):
+                        labor = form.save(commit=False)
+                        labor.diary_entry = diary_entry
+                        labor.total_cost = labor.workers_count * labor.hours_worked * labor.hourly_rate
+                        labor.save()
+                        labor_count += 1
+            
+            logger.info(f"Saved {material_count} materials, {equipment_count} equipment, {labor_count} labor entries for diary {diary_entry.id}")
+            
+            if material_count > 0 or equipment_count > 0 or labor_count > 0:
+                messages.success(request, f'Diary entry created successfully! Saved {material_count} materials, {equipment_count} equipment, {labor_count} labor entries.')
+            else:
+                messages.success(request, 'Diary entry created successfully!')
             return redirect('site_diary:diary')
         else:
             # Form validation failed
@@ -281,17 +332,50 @@ def dashboard(request):
         else:
             progress = float(project.get_progress_percentage())
         
-        # Budget calculations with real data
+        # Budget calculations with revision impact analysis
         total_labor_cost = sum(float(labor.total_cost) for labor in labor_entries)
         total_material_cost = sum(float(material.total_cost) for material in material_entries)
         total_equipment_cost = sum(float(equipment.total_rental_cost) for equipment in equipment_entries)
         total_spent = total_labor_cost + total_material_cost + total_equipment_cost
         
-        project_budget = float(project.budget) if project.budget else 0
-        if project_budget > 0:
-            budget_used_percentage = min((total_spent / project_budget) * 100, 100)
+        # Calculate revision impacts
+        revision_entries = project_entries.filter(status='needs_revision')
+        revision_count = revision_entries.count()
+        
+        # Estimate revision cost impact based on project complexity and revision count (PHP)
+        base_revision_cost = 100000  # Base cost per revision ₱100,000
+        complexity_multiplier = 1.0
+        if total_spent > 5000000:  # Large project ₱5M+
+            complexity_multiplier = 1.5
+        elif total_spent > 2500000:  # Medium project ₱2.5M+
+            complexity_multiplier = 1.2
+        
+        estimated_revision_cost = revision_count * base_revision_cost * complexity_multiplier
+        
+        # Calculate adjusted budget including revision impacts
+        original_budget = float(project.budget) if project.budget else 0
+        adjusted_budget = original_budget + estimated_revision_cost
+        remaining_budget = adjusted_budget - total_spent
+        
+        # Budget health assessment
+        if remaining_budget < 0:
+            budget_health = 'danger'
+        elif remaining_budget < (adjusted_budget * 0.1):  # Less than 10% remaining
+            budget_health = 'warning'
+        else:
+            budget_health = 'good'
+        
+        # Calculate budget usage percentage based on adjusted budget
+        if adjusted_budget > 0:
+            budget_used_percentage = min((total_spent / adjusted_budget) * 100, 100)
         else:
             budget_used_percentage = 0
+        
+        # Budget variance from original
+        if original_budget > 0:
+            budget_variance = ((adjusted_budget - original_budget) / original_budget) * 100
+        else:
+            budget_variance = 0
         
         # Determine current phase based on progress
         if progress < 25:
@@ -317,6 +401,17 @@ def dashboard(request):
         project.current_phase = f"Phase {min(int(progress/25) + 1, 4)} - {phase_name}"
         project.budget_used = budget_used_percentage
         project.schedule_status = schedule_status
+        
+        # Add revision impact data
+        project.original_budget = original_budget
+        project.adjusted_budget = adjusted_budget
+        project.remaining_budget = remaining_budget
+        project.budget_health = budget_health
+        project.budget_variance = budget_variance
+        project.revision_count = revision_count
+        project.revision_cost_impact = estimated_revision_cost
+        project.total_spent = total_spent
+        
         project_data.append(project)
     
     # Dashboard statistics
@@ -715,6 +810,45 @@ def project_edit(request, project_id):
 
 @login_required
 @require_site_manager_role
+def revision_diary(request, entry_id):
+    """Revision diary page for specific entry"""
+    entry = get_object_or_404(DiaryEntry, id=entry_id)
+    
+    # Verify user has access to this entry's project
+    if not request.user.is_staff:
+        user_projects = Project.objects.filter(
+            Q(project_manager=request.user) | Q(architect=request.user)
+        )
+        if entry.project not in user_projects:
+            messages.error(request, 'Access denied.')
+            return redirect('site_diary:history')
+    
+    if request.method == 'POST':
+        # Handle revision form submission
+        # Add your revision processing logic here
+        messages.success(request, 'Revision request submitted successfully!')
+        return redirect('site_diary:history')
+    
+    # Get related data for the entry
+    labor_entries = LaborEntry.objects.filter(diary_entry=entry)
+    material_entries = MaterialEntry.objects.filter(diary_entry=entry)
+    equipment_entries = EquipmentEntry.objects.filter(diary_entry=entry)
+    delay_entries = DelayEntry.objects.filter(diary_entry=entry)
+    
+    context = {
+        'entry_id': entry.id,
+        'entry': entry,
+        'project_name': entry.project.name,
+        'entry_date': entry.entry_date.strftime('%B %d, %Y'),
+        'labor_entries': labor_entries,
+        'material_entries': material_entries,
+        'equipment_entries': equipment_entries,
+        'delay_entries': delay_entries,
+    }
+    return render(request, 'site_diary/revision_diary.html', context)
+
+@login_required
+@require_site_manager_role
 def history(request):
     """View diary entry history with search and filtering"""
     # Get user's approved projects
@@ -730,6 +864,54 @@ def history(request):
     entries = DiaryEntry.objects.filter(project__in=projects).select_related(
         'project', 'created_by', 'reviewed_by'
     ).prefetch_related('labor_entries', 'material_entries', 'equipment_entries')
+    
+    # Add budget impact data to projects
+    for project in projects:
+        # Calculate revision impacts
+        project_entries = DiaryEntry.objects.filter(project=project)
+        revision_count = project_entries.filter(status='needs_revision').count()
+        
+        # Calculate budget impact
+        base_revision_cost = 100000  # ₱100,000 per revision
+        complexity_multiplier = 1.0
+        
+        # Get total spent for complexity calculation  
+        from .models import LaborEntry, MaterialEntry, EquipmentEntry
+        labor_entries = LaborEntry.objects.filter(diary_entry__in=project_entries)
+        material_entries = MaterialEntry.objects.filter(diary_entry__in=project_entries)
+        equipment_entries = EquipmentEntry.objects.filter(diary_entry__in=project_entries)
+        
+        total_spent = (
+            sum(labor.total_cost for labor in labor_entries) +
+            sum(material.total_cost for material in material_entries) +
+            sum(equipment.total_rental_cost for equipment in equipment_entries)
+        )
+        
+        if total_spent > 5000000:  # Large project ₱5M+
+            complexity_multiplier = 1.5
+        elif total_spent > 2500000:  # Medium project ₱2.5M+
+            complexity_multiplier = 1.2
+        
+        estimated_revision_cost = revision_count * base_revision_cost * complexity_multiplier
+        
+        # Calculate budget health
+        original_budget = float(project.budget) if project.budget else 0
+        adjusted_budget = original_budget + estimated_revision_cost
+        remaining_budget = adjusted_budget - float(total_spent)
+        
+        if remaining_budget < 0:
+            budget_health = 'danger'
+        elif remaining_budget < (adjusted_budget * 0.1):
+            budget_health = 'warning'
+        else:
+            budget_health = 'good'
+        
+        # Add calculated fields to project
+        project.revision_count = revision_count
+        project.revision_cost_impact = estimated_revision_cost
+        project.adjusted_budget = adjusted_budget
+        project.budget_health = budget_health
+        project.total_spent = total_spent
     
     # Prefetch diary entries for projects
     projects = projects.prefetch_related('diary_entries')
@@ -1113,7 +1295,7 @@ def settings(request):
                 for error in password_form.errors.values():
                     messages.error(request, error[0])
         
-        return redirect('site:settings')
+        return redirect('site_diary:settings')
     
     # Debug: Show current data being passed to template
     print(f"DEBUG: Template context - User: {request.user}")
@@ -1150,7 +1332,7 @@ def site_manager_logout(request):
         return redirect('accounts:sitemanager_login')
     
     # If GET request, redirect to settings
-    return redirect('site:settings')
+    return redirect('site_diary:settings')
 
 @login_required
 @require_admin_role
@@ -1278,35 +1460,8 @@ def admindiary(request):
 @login_required
 @require_admin_role
 def admindiaryreviewer(request):
-    """Admin diary reviewer interface with approval functionality"""
-    print("=== ADMINDIARYREVIEWER VIEW CALLED ===")
-    
-    # Handle individual and bulk actions
-    if request.method == 'POST':
-        action = request.POST.get('action')
-        entry_id = request.POST.get('entry_id')
-        entry_ids = request.POST.getlist('entry_ids')
-        
-        if action == 'approve' and entry_id:
-            try:
-                entry = DiaryEntry.objects.get(id=entry_id)
-                entry.approved = True
-                entry.reviewed_by = request.user
-                entry.approval_date = timezone.now()
-                entry.save()
-                messages.success(request, f'Diary entry for {entry.project.name} approved successfully.')
-            except DiaryEntry.DoesNotExist:
-                messages.error(request, 'Diary entry not found.')
-        
-        elif action == 'approve_selected' and entry_ids:
-            DiaryEntry.objects.filter(id__in=entry_ids).update(
-                approved=True,
-                reviewed_by=request.user,
-                approval_date=timezone.now()
-            )
-            messages.success(request, f'{len(entry_ids)} diary entries approved successfully.')
-        
-        return redirect('site_diary:admindiaryreviewer')
+    """Project History - Track all project activities and diary entries"""
+    print("=== PROJECT HISTORY VIEW CALLED ===")
     
     # Get all diary entries (not just pending) with filtering
     all_entries = DiaryEntry.objects.filter(
@@ -1326,12 +1481,10 @@ def admindiaryreviewer(request):
     if project:
         all_entries = all_entries.filter(project__name__icontains=project)
     if status:
-        if status == 'pending':
-            all_entries = all_entries.filter(approved=False, needs_revision=False)
-        elif status == 'approved':
-            all_entries = all_entries.filter(approved=True)
-        elif status == 'revision':
-            all_entries = all_entries.filter(needs_revision=True)
+        if status == 'complete':
+            all_entries = all_entries.filter(status='complete')
+        elif status == 'needs_revision':
+            all_entries = all_entries.filter(status='needs_revision')
     if date_from:
         all_entries = all_entries.filter(entry_date__gte=date_from)
     if date_to:
@@ -1343,11 +1496,11 @@ def admindiaryreviewer(request):
             Q(project__location__icontains=search)
         )
     
-    # Calculate statistics
+    # Calculate statistics for project history
     total_count = DiaryEntry.objects.filter(draft=False).count()
-    pending_count = DiaryEntry.objects.filter(draft=False, approved=False).count()
-    approved_count = DiaryEntry.objects.filter(draft=False, approved=True).count()
-    revision_count = 0  # Add revision logic if needed
+    recent_count = DiaryEntry.objects.filter(draft=False, created_at__gte=timezone.now() - timedelta(days=30)).count()
+    total_entries_count = DiaryEntry.objects.filter(draft=False).count()
+    active_projects_count = Project.objects.filter(status__in=['active', 'ongoing']).count()
     
     # Pagination
     paginator = Paginator(all_entries, 10)
@@ -1365,10 +1518,10 @@ def admindiaryreviewer(request):
     
     context = {
         'page_obj': page_obj,
-        'pending_count': pending_count,
-        'approved_count': approved_count,
-        'revision_count': revision_count,
-        'total_count': total_count,
+        'pending_count': recent_count,
+        'approved_count': total_entries_count,
+        'revision_count': active_projects_count,
+        'total_count': Project.objects.count(),
         'architects': architects,
         'projects': projects,
     }
@@ -1393,42 +1546,147 @@ def admindiaryreviewer(request):
 
 @login_required
 @require_admin_role
-def adminhistory(request):
-    """Admin history view with comprehensive data"""
+def diary_entry_detail(request, entry_id):
+    """Get diary entry details for modal view"""
+    try:
+        entry = DiaryEntry.objects.select_related(
+            'project', 'created_by', 'milestone', 'reviewed_by'
+        ).prefetch_related(
+            'labor_entries', 'material_entries', 'equipment_entries', 
+            'delay_entries', 'visitor_entries', 'photos'
+        ).get(id=entry_id, draft=False)
+        
+        # Calculate budget information
+        project_entries = DiaryEntry.objects.filter(project=entry.project)
+        labor_entries = LaborEntry.objects.filter(diary_entry__in=project_entries)
+        material_entries = MaterialEntry.objects.filter(diary_entry__in=project_entries)
+        equipment_entries = EquipmentEntry.objects.filter(diary_entry__in=project_entries)
+        
+        total_spent = (
+            sum(labor.total_cost for labor in labor_entries) +
+            sum(material.total_cost for material in material_entries) +
+            sum(equipment.total_rental_cost for equipment in equipment_entries)
+        )
+        
+        data = {
+            'id': entry.id,
+            'project_name': entry.project.name,
+            'entry_date': entry.entry_date.strftime('%Y-%m-%d'),
+            'created_by': entry.created_by.get_full_name() or entry.created_by.username,
+            'work_description': entry.work_description,
+            'progress_percentage': float(entry.progress_percentage),
+            'milestone': entry.milestone.name if entry.milestone else 'N/A',
+            'weather_condition': entry.get_weather_condition_display(),
+            'temperature_high': entry.temperature_high,
+            'temperature_low': entry.temperature_low,
+            'humidity': entry.humidity,
+            'wind_speed': float(entry.wind_speed) if entry.wind_speed else None,
+            'quality_issues': entry.quality_issues,
+            'safety_incidents': entry.safety_incidents,
+            'general_notes': entry.general_notes,
+            'status': entry.get_status_display(),
+            'reviewed_by': entry.reviewed_by.get_full_name() if entry.reviewed_by else 'N/A',
+            'reviewed_date': entry.reviewed_date.strftime('%Y-%m-%d %H:%M') if entry.reviewed_date else 'N/A',
+            'labor_count': entry.labor_entries.count(),
+            'material_count': entry.material_entries.count(),
+            'equipment_count': entry.equipment_entries.count(),
+            'delay_count': entry.delay_entries.count(),
+            'visitor_count': entry.visitor_entries.count(),
+            'photo_count': entry.photos.count(),
+            'project_budget': float(entry.project.budget) if entry.project.budget else 0,
+            'total_spent': float(total_spent),
+            'remaining_budget': float(entry.project.budget) - float(total_spent) if entry.project.budget else -float(total_spent),
+        }
+        
+        return JsonResponse(data)
+        
+    except DiaryEntry.DoesNotExist:
+        return JsonResponse({'error': 'Entry not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@login_required
+@require_admin_role
+def update_entry_status(request, entry_id):
+    """Update diary entry status"""
+    if request.method == 'POST':
+        try:
+            entry = DiaryEntry.objects.get(id=entry_id, draft=False)
+            action = request.POST.get('action')
+            
+            if action == 'reviewed':
+                entry.status = 'complete'
+                entry.reviewed_by = request.user
+                entry.reviewed_date = timezone.now()
+                entry.save()
+                return JsonResponse({'success': True, 'message': 'Entry marked as reviewed'})
+            elif action == 'needs_revision':
+                entry.status = 'needs_revision'
+                entry.reviewed_by = request.user
+                entry.reviewed_date = timezone.now()
+                entry.save()
+                return JsonResponse({'success': True, 'message': 'Entry marked as needs revision'})
+            else:
+                return JsonResponse({'error': 'Invalid action'}, status=400)
+                
+        except DiaryEntry.DoesNotExist:
+            return JsonResponse({'error': 'Entry not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
     
-    # Get all diary entries with related data
-    entries = DiaryEntry.objects.select_related(
-        'project', 'created_by', 'reviewed_by'
-    ).order_by('-entry_date')
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+@login_required
+@require_admin_role
+def update_entry_status(request, entry_id):
+    """Update diary entry status"""
+    if request.method == 'POST':
+        try:
+            entry = DiaryEntry.objects.get(id=entry_id, draft=False)
+            action = request.POST.get('action')
+            
+            if action == 'complete':
+                entry.status = 'complete'
+                entry.reviewed_by = request.user
+                entry.reviewed_date = timezone.now()
+                entry.save()
+                return JsonResponse({'success': True, 'message': 'Entry marked as complete'})
+            elif action == 'needs_revision':
+                entry.status = 'needs_revision'
+                entry.reviewed_by = request.user
+                entry.reviewed_date = timezone.now()
+                entry.save()
+                return JsonResponse({'success': True, 'message': 'Entry marked as needs revision', 'project_name': entry.project.name})
+            else:
+                return JsonResponse({'error': 'Invalid action'}, status=400)
+                
+        except DiaryEntry.DoesNotExist:
+            return JsonResponse({'error': 'Entry not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
     
-    # Filter by date range if provided
-    start_date = request.GET.get('start_date')
-    end_date = request.GET.get('end_date')
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+@login_required
+@require_admin_role
+def send_revision(request):
+    """Send entry to site manager for revision"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            entry_id = data.get('entry_id')
+            project_name = data.get('project_name')
+            
+            # Here you would implement notification logic
+            # For now, just return success
+            return JsonResponse({'success': True, 'message': f'Revision sent to site manager for {project_name}'})
+            
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
     
-    if start_date:
-        entries = entries.filter(entry_date__gte=start_date)
-    if end_date:
-        entries = entries.filter(entry_date__lte=end_date)
-    
-    # Statistics
-    total_entries = entries.count()
-    approved_entries = entries.filter(approved=True).count()
-    pending_entries = entries.filter(approved=False, draft=False).count()
-    
-    # Pagination
-    paginator = Paginator(entries, 20)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    context = {
-        'page_obj': page_obj,
-        'total_entries': total_entries,
-        'approved_entries': approved_entries,
-        'pending_entries': pending_entries,
-        'start_date': start_date,
-        'end_date': end_date,
-    }
-    return render(request, 'admin/adminhistory.html', context)
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+
 
 @login_required
 @require_admin_role
@@ -1443,8 +1701,8 @@ def adminreports(request):
     
     # Diary entry statistics
     total_entries = DiaryEntry.objects.count()
-    approved_entries = DiaryEntry.objects.filter(approved=True).count()
-    pending_entries = DiaryEntry.objects.filter(approved=False, draft=False).count()
+    approved_entries = DiaryEntry.objects.filter(status='complete').count()
+    pending_entries = DiaryEntry.objects.filter(status='needs_revision', draft=False).count()
     draft_entries = DiaryEntry.objects.filter(draft=True).count()
     
     # Recent activity
@@ -1575,6 +1833,39 @@ def api_project_data(request, project_id):
     except Exception as e:
         logger.error(f"Project data API error: {str(e)}")
         return JsonResponse({'error': 'Server error'}, status=500)
+
+@login_required
+@require_site_manager_role
+def debug_entries(request):
+    """Debug view to check diary entries and related data"""
+    entries = DiaryEntry.objects.filter(created_by=request.user).order_by('-created_at')[:5]
+    debug_info = []
+    
+    for entry in entries:
+        materials = MaterialEntry.objects.filter(diary_entry=entry)
+        equipment = EquipmentEntry.objects.filter(diary_entry=entry)
+        labor = LaborEntry.objects.filter(diary_entry=entry)
+        
+        debug_info.append({
+            'entry': entry,
+            'materials': materials,
+            'equipment': equipment,
+            'labor': labor,
+        })
+    
+    return JsonResponse({
+        'entries': [{
+            'id': info['entry'].id,
+            'project': info['entry'].project.name,
+            'date': info['entry'].entry_date.strftime('%Y-%m-%d'),
+            'materials_count': info['materials'].count(),
+            'equipment_count': info['equipment'].count(),
+            'labor_count': info['labor'].count(),
+            'materials': [{'name': m.material_name, 'quantity': str(m.quantity_delivered), 'cost': str(m.total_cost)} for m in info['materials']],
+            'equipment': [{'name': e.equipment_type, 'hours': str(e.hours_operated), 'cost': str(e.total_rental_cost)} for e in info['equipment']],
+            'labor': [{'type': l.labor_type, 'workers': l.workers_count, 'hours': str(l.hours_worked), 'cost': str(l.total_cost)} for l in info['labor']],
+        } for info in debug_info]
+    })
 
 @login_required
 @require_site_manager_role

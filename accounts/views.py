@@ -137,45 +137,7 @@ def sitemanager_reset_password(request):
     
     return render(request, 'sitemanager/reset_password.html', {'email': email})
 
-@csrf_protect
-@never_cache
-@transaction.atomic
-def client_register_view(request):
-    if request.method == "POST":
-        form = ClientRegisterForm(request.POST)
-        if form.is_valid():
-            try:
-                with transaction.atomic():
-                    user = form.save()
-                    
-                    # Generate OTP
-                    code = OneTimePassword.generate_code()
-                    OneTimePassword.objects.update_or_create(
-                        user=user, 
-                        defaults={"code": code}
-                    )
-                    
-                    # Send OTP via email
-                    print(f"[DEBUG] Sending OTP to: {user.email} from: {settings.DEFAULT_FROM_EMAIL} code: {code}")
-                    result = send_mail(
-                        "Verify your Triple G account",
-                        f"Your OTP code is {code}. It will expire in 10 minutes.",
-                        settings.DEFAULT_FROM_EMAIL,
-                        [user.email],
-                        fail_silently=False,
-                    )
-                    print(f"[DEBUG] send_mail result: {result}")
-                    
-                    messages.info(request, "Account created! Please verify with the OTP sent to your email.")
-                    request.session['pending_user_id'] = user.id
-                    return redirect("accounts:client_verify_otp")
-                    
-            except Exception as e:
-                messages.error(request, "Error creating account or sending email. Please try again.")
-                # Transaction will automatically rollback on exception
-    else:
-        form = ClientRegisterForm()
-    return render(request, 'client/register.html', {"form": form})
+
 
 # Client OTP Verification
 @csrf_protect
@@ -185,50 +147,74 @@ def client_verify_otp(request):
     user_id = request.session.get('pending_user_id')
     if not user_id:
         messages.error(request, "No pending verification found.")
-        return redirect("accounts:client_register")
+        return redirect("accounts:client_login")
     
     try:
         user = User.objects.select_for_update().get(id=user_id)
     except User.DoesNotExist:
         messages.error(request, "Invalid verification session.")
-        return redirect("accounts:client_register")
+        return redirect("accounts:client_login")
     
     otp_obj = OneTimePassword.objects.filter(user=user).first()
     
     if request.method == "POST":
-        form = OTPForm(request.POST)
-        if form.is_valid():
-            code = form.cleaned_data['otp']
-            
-            if otp_obj and otp_obj.code == code and not otp_obj.is_expired():
-                with transaction.atomic():
-                    user.is_active = True
-                    user.save()
-                    otp_obj.delete()
-                    del request.session['pending_user_id']
-                    
-                # Don't set Django message here - JavaScript will handle the success modal
-                return redirect("accounts:client_login")
+        code = request.POST.get('otp', '').strip()
+        print(f"[DEBUG] OTP verification - User entered code: '{code}'")
+        print(f"[DEBUG] OTP verification - Expected code: '{otp_obj.code if otp_obj else 'None'}'")
+        if otp_obj:
+            print(f"[DEBUG] OTP verification - OTP created at: {otp_obj.created_at}")
+            print(f"[DEBUG] OTP verification - Current time: {timezone.now()}")
+            print(f"[DEBUG] OTP verification - Time difference: {timezone.now() - otp_obj.created_at}")
+            print(f"[DEBUG] OTP verification - OTP expired: {otp_obj.is_expired()}")
+        else:
+            print(f"[DEBUG] OTP verification - No OTP object found")
+        
+        if not code:
+            print("[DEBUG] OTP verification - No code entered")
+            messages.error(request, "Please enter the OTP code.")
+        elif otp_obj and otp_obj.code == code and not otp_obj.is_expired():
+            print("[DEBUG] OTP verification - Code matches and not expired, activating user")
+            with transaction.atomic():
+                user.is_active = True
+                user.save()
+                otp_obj.delete()
+                del request.session['pending_user_id']
+                
+            # Set session flag for success modal
+            request.session['show_success_modal'] = True
+            print("[DEBUG] OTP verification - Redirecting to login with success flag")
+            return redirect("accounts:client_login")
+        else:
+            print("[DEBUG] OTP verification - Code mismatch or expired")
+            if otp_obj and otp_obj.is_expired():
+                messages.error(request, "OTP has expired. Please request a new code.")
             else:
-                messages.error(request, "Invalid or expired OTP.")
-    else:
-        form = OTPForm()
+                messages.error(request, "Invalid OTP code. Please try again.")
+    
+    form = OTPForm()
     
     return render(request, "client/verify_otp.html", {"form": form, "email": user.email})
 
 # Client Resend OTP
 def client_resend_otp(request):
     user_id = request.session.get('pending_user_id')
+    print(f"[DEBUG] Resend OTP - User ID from session: {user_id}")
     if not user_id:
-        return redirect("accounts:client_register")
+        print("[DEBUG] Resend OTP - No user ID in session, redirecting to login")
+        return redirect("accounts:client_login")
     
     try:
         user = User.objects.get(id=user_id)
+        print(f"[DEBUG] Resend OTP - Found user: {user.email}")
     except User.DoesNotExist:
-        return redirect("accounts:client_register")
+        print("[DEBUG] Resend OTP - User not found, redirecting to login")
+        return redirect("accounts:client_login")
     
     code = OneTimePassword.generate_code()
-    OneTimePassword.objects.update_or_create(user=user, defaults={"code": code})
+    # Delete any existing OTP and create a new one to ensure fresh timestamp
+    OneTimePassword.objects.filter(user=user).delete()
+    OneTimePassword.objects.create(user=user, code=code)
+    print(f"[DEBUG] Resend OTP - Generated new code: {code}")
     
     try:
         send_mail(
@@ -238,10 +224,13 @@ def client_resend_otp(request):
             [user.email],
             fail_silently=False,
         )
+        print(f"[DEBUG] Resend OTP - Email sent successfully to {user.email}")
         messages.success(request, "A new OTP has been sent to your email.")
     except Exception as e:
+        print(f"[DEBUG] Resend OTP - Email sending failed: {e}")
         messages.error(request, "Error sending email. Please try again.")
     
+    print("[DEBUG] Resend OTP - Redirecting back to verify OTP page")
     return redirect("accounts:client_verify_otp")
 
 # Client Login
@@ -251,6 +240,10 @@ def client_login_view(request):
     # Redirect already authenticated clients
     if request.user.is_authenticated and hasattr(request.user, 'profile'):
         return redirect(get_user_dashboard_url(request.user))
+    
+    # Clear success modal flag if present
+    if 'show_success_modal' in request.session:
+        del request.session['show_success_modal']
     
     reg_messages = []
     if request.method == "POST":
@@ -315,7 +308,9 @@ def client_login_view(request):
                             print(f"[DEBUG] Profile created successfully: {profile.id}")
                         
                         code = OneTimePassword.generate_code()
-                        OneTimePassword.objects.update_or_create(user=user, defaults={"code": code})
+                        # Delete any existing OTP and create a new one to ensure fresh timestamp
+                        OneTimePassword.objects.filter(user=user).delete()
+                        OneTimePassword.objects.create(user=user, code=code)
                         print(f"[DEBUG] OTP generated: {code}")
                         
                         send_mail(

@@ -107,14 +107,12 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Check if we should show the success modal after OTP verification
-    if (sessionStorage.getItem('show_success_modal') === 'true') {
-        sessionStorage.removeItem('show_success_modal');
-        
-        // Wait a bit for the page to load, then show the success modal
-        setTimeout(() => {
-            showCustomModal('success', 'Success', 'Account verified! You can now log in.');
-        }, 500);
-    }
+    {% if request.session.show_success_modal %}
+        showCustomModal('success', 'Success', 'Account verified! You can now log in.');
+        {% if request.session.show_success_modal %}
+            {# Clear the session flag #}
+        {% endif %}
+    {% endif %}
     
     // Check for Django error messages and show modal
     {% if messages %}

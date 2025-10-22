@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="{% static 'css/admincss/nav.css' %}">
     <link rel="stylesheet" href="{% static 'css/admincss/header.css' %}">
     <link rel="stylesheet" href="{% static 'css/admincss/admindiaryreviewer.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admincss/modal.css' %}">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
     {% endblock %}
@@ -25,7 +26,7 @@
         <div class="page-header">
             <div class="page-title">
                 <i class="fas fa-clipboard-check"></i>
-                <h1>Site Diary Review</h1>
+                <h1>Project History</h1>
             </div>
             
             <div class="export-options">
@@ -41,34 +42,34 @@
         <div class="summary-section">
             <div class="summary-card">
                 <i class="fas fa-hourglass-half summary-icon"></i>
-                <div class="summary-title">Pending Review</div>
+                <div class="summary-title">Recent Entries</div>
                 <div class="summary-value" id="totalPending">{{ pending_count }}</div>
                 <div class="summary-change">
-                    <span>Awaiting approval</span>
+                    <span>Last 30 days</span>
                 </div>
             </div>
             <div class="summary-card success">
                 <i class="fas fa-check-circle summary-icon"></i>
-                <div class="summary-title">Approved</div>
+                <div class="summary-title">Total Entries</div>
                 <div class="summary-value" id="totalApproved">{{ approved_count }}</div>
                 <div class="summary-change">
-                    <span>Diary entries</span>
+                    <span>All diary entries</span>
                 </div>
             </div>
             <div class="summary-card warning">
                 <i class="fas fa-history summary-icon"></i>
-                <div class="summary-title">Needs Revision</div>
+                <div class="summary-title">Active Projects</div>
                 <div class="summary-value" id="totalRevision">{{ revision_count }}</div>
                 <div class="summary-change">
-                    <span>Sent back to architects</span>
+                    <span>Currently ongoing</span>
                 </div>
             </div>
             <div class="summary-card info">
                 <i class="fas fa-clipboard-list summary-icon"></i>
-                <div class="summary-title">Total Entries</div>
+                <div class="summary-title">Total Projects</div>
                 <div class="summary-value" id="totalEntries">{{ total_count }}</div>
                 <div class="summary-change">
-                    <span>All submitted entries</span>
+                    <span>All projects tracked</span>
                 </div>
             </div>
         </div>
@@ -134,17 +135,19 @@
                         <input type="text" id="search" class="search-input" placeholder="Search by project name, architect, location..." value="{{ request.GET.search }}">
                     </div>
                 </div>
-                
+                 </div>
                 <div class="filter-buttons">
-                    <button class="btn btn-secondary" id="resetFilters">
-                        <i class="fas fa-undo"></i>
-                        Reset Filters
-                    </button>
-                    <button class="btn btn-primary" id="applyFilters">
-                        <i class="fas fa-search"></i>
-                        Apply Filters
-                    </button>
-                </div>
+                    <div class="button-group">
+                        <button class="btn btn-secondary" id="resetFilters">
+                            <i class="fas fa-undo"></i>
+                            Reset Filters
+                        </button>
+                        <button class="btn btn-primary" id="applyFilters">
+                            <i class="fas fa-search"></i>
+                            Apply Filters
+                        </button>
+                    </div>
+               
             </div>
         </div>
         
@@ -153,7 +156,7 @@
             <div class="section-header">
                 <div class="section-title">
                     <i class="fas fa-list"></i>
-                    Submitted Diary Entries
+                    Project Activity Timeline
                 </div>
                 <div class="view-toggle">
                     <button id="historyModeBtn" class="view-btn" title="History Mode">
@@ -241,18 +244,11 @@
                                     {% endif %}
                                 </div>
                                 <div class="timeline-actions">
-                                    {% if not entry.approved %}
-                                    <form method="post" style="display: inline;">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="action" value="approve">
-                                        <input type="hidden" name="entry_id" value="{{ entry.id }}">
-                                        <button type="submit" class="btn btn-success">
-                                            <i class="fas fa-check"></i> Approve
-                                        </button>
-                                    </form>
-                                    {% endif %}
                                     <button class="btn btn-primary view-entry-btn" data-entry-id="{{ entry.id }}">
                                         <i class="fas fa-eye"></i> View Details
+                                    </button>
+                                    <button class="btn btn-secondary">
+                                        <i class="fas fa-download"></i> Export
                                     </button>
                                 </div>
                             </div>
@@ -330,19 +326,13 @@
                                     </td>
                                     <td>
                                         <div class="table-actions">
-                                            {% if not entry.approved %}
-                                            <form method="post" style="display: inline;">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="action" value="approve">
-                                                <input type="hidden" name="entry_id" value="{{ entry.id }}">
-                                                <button type="submit" class="action-btn approve" title="Approve Entry">
-                                                    <i class="fas fa-check"></i>
-                                                </button>
-                                            </form>
-                                            {% endif %}
-                                            <button class="action-btn view" title="View Entry" data-entry-id="{{ entry.id }}">
+                                            <button class="action-btn view view-entry-btn" title="View Entry" data-entry-id="{{ entry.id }}">
                                                 <i class="fas fa-eye"></i>
                                             </button>
+                                            <button class="action-btn export" title="Export Entry">
+                                                <i class="fas fa-download"></i>
+                                            </button>
+
                                         </div>
                                     </td>
                                 </tr>
@@ -394,6 +384,24 @@
     
     
 
+    <!-- Entry Details Modal -->
+    <div id="entryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Entry Details</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <div class="loading">Loading...</div>
+            </div>
+            <div class="modal-footer" id="modalFooter" style="display: none;">
+                <!-- Footer buttons will be added here by JavaScript -->
+            </div>
+        </div>
+    </div>
+    
+    {% csrf_token %}
+    
     {% endblock %}
     {% block extra_scripts %}
     <script src="{% static 'js/adminjs/mobile-btn.js' %}"></script>

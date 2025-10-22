@@ -26,14 +26,11 @@
         <form method="POST" class="auth-form">
             {% csrf_token %}
             <div class="form-group">
-                <label for="{{ form.otp.id_for_label }}">Verification Code</label>
+                <label for="otp">Verification Code</label>
                 <div class="input-with-icon">
                     <i class="fas fa-key"></i>
-                    {{ form.otp }}
+                    <input type="text" id="otp" name="otp" class="form-control" placeholder="Enter 6-digit code" maxlength="6" required>
                 </div>
-                {% if form.otp.errors %}
-                    <div class="error">{{ form.otp.errors.0 }}</div>
-                {% endif %}
             </div>
             <button type="submit" class="btn btn-primary login-btn">Verify Account</button>
         </form>
@@ -42,7 +39,7 @@
             <p>Didn't receive the code? 
                <a href="{% url 'accounts:client_resend_otp' %}">Resend OTP</a>
             </p>
-            <p><a href="{% url 'accounts:client_register' %}">Back to Registration</a></p>
+            <p><a href="{% url 'accounts:client_login' %}">Back to Login</a></p>
         </div>
     </div>
 {% endblock %}

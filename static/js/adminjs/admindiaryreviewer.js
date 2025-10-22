@@ -327,8 +327,237 @@ function applyFilters() {
 }
 
 function viewEntryDetails(entryId) {
-    // Navigate to the diary entry detail view
-    window.location.href = `/admin-panel/diary/entry/${entryId}/`;
+    const modal = document.getElementById('entryModal');
+    const modalBody = document.getElementById('modalBody');
+    const modalTitle = document.getElementById('modalTitle');
+    
+    // Show modal and loading state
+    modal.style.display = 'block';
+    modalTitle.innerHTML = '<i class="fas fa-book-open"></i> Entry Details';
+    modalBody.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+    document.getElementById('modalFooter').style.display = 'none';
+    
+    // Fetch entry details
+    fetch(`/diary/admin/diary-entry/${entryId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                modalBody.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+                return;
+            }
+            
+            modalTitle.innerHTML = `<i class="fas fa-book-open"></i> ${data.project_name} - ${data.entry_date}`;
+            modalBody.innerHTML = `
+                <div class="entry-details">
+                    <div class="detail-item">
+                        <label><i class="fas fa-building"></i> Project:</label>
+                        <span>${data.project_name}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label><i class="fas fa-calendar"></i> Date:</label>
+                        <span>${data.entry_date}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label><i class="fas fa-user"></i> Created By:</label>
+                        <span>${data.created_by}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label><i class="fas fa-flag"></i> Status:</label>
+                        <span class="status-badge">${data.status}</span>
+                    </div>
+                    
+                    <hr class="section-divider">
+                    
+                    <div class="detail-item">
+                        <label><i class="fas fa-percentage"></i> Progress:</label>
+                        <span>${data.progress_percentage}%</span>
+                    </div>
+                    <div class="detail-item">
+                        <label><i class="fas fa-milestone"></i> Milestone:</label>
+                        <span>${data.milestone}</span>
+                    </div>
+                    <div class="detail-item full-width">
+                        <label><i class="fas fa-tasks"></i> Work Description:</label>
+                        <p>${data.work_description || 'No description provided'}</p>
+                    </div>
+                    
+                    <hr class="section-divider">
+                    
+                    <div class="detail-item">
+                        <label><i class="fas fa-cloud-sun"></i> Weather:</label>
+                        <span>${data.weather_condition || 'N/A'}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label><i class="fas fa-thermometer-half"></i> Temperature:</label>
+                        <span>${data.temperature_high ? data.temperature_high + '°C' : 'N/A'} / ${data.temperature_low ? data.temperature_low + '°C' : 'N/A'}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label><i class="fas fa-tint"></i> Humidity:</label>
+                        <span>${data.humidity ? data.humidity + '%' : 'N/A'}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label><i class="fas fa-wind"></i> Wind Speed:</label>
+                        <span>${data.wind_speed ? data.wind_speed + ' km/h' : 'N/A'}</span>
+                    </div>
+                    
+                    ${data.quality_issues || data.safety_incidents || data.general_notes ? '<hr class="section-divider">' : ''}
+                    
+                    ${data.quality_issues ? `
+                    <div class="detail-item full-width">
+                        <label><i class="fas fa-exclamation-triangle"></i> Quality Issues:</label>
+                        <p>${data.quality_issues}</p>
+                    </div>
+                    ` : ''}
+                    ${data.safety_incidents ? `
+                    <div class="detail-item full-width">
+                        <label><i class="fas fa-shield-alt"></i> Safety Incidents:</label>
+                        <p>${data.safety_incidents}</p>
+                    </div>
+                    ` : ''}
+                    ${data.general_notes ? `
+                    <div class="detail-item full-width">
+                        <label><i class="fas fa-sticky-note"></i> General Notes:</label>
+                        <p>${data.general_notes}</p>
+                    </div>
+                    ` : ''}
+                    
+                    <hr class="section-divider">
+                    
+                    <div class="detail-item">
+                        <label><i class="fas fa-dollar-sign"></i> Project Budget:</label>
+                        <span>₱${data.project_budget.toLocaleString()}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label><i class="fas fa-credit-card"></i> Total Spent:</label>
+                        <span>₱${data.total_spent.toLocaleString()}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label><i class="fas fa-piggy-bank"></i> Remaining:</label>
+                        <span style="color: ${data.remaining_budget >= 0 ? '#28a745' : '#dc3545'}">₱${data.remaining_budget.toLocaleString()}</span>
+                    </div>
+                    
+                    <hr class="section-divider">
+                    
+                    <div class="detail-item">
+                        <label><i class="fas fa-chart-bar"></i> Entry Statistics:</label>
+                        <div class="stats-inline">
+                            <span><i class="fas fa-users"></i> ${data.labor_count} Labor</span>
+                            <span><i class="fas fa-boxes"></i> ${data.material_count} Materials</span>
+                            <span><i class="fas fa-tools"></i> ${data.equipment_count} Equipment</span>
+                            <span><i class="fas fa-clock"></i> ${data.delay_count} Delays</span>
+                            <span><i class="fas fa-user-friends"></i> ${data.visitor_count} Visitors</span>
+                            <span><i class="fas fa-camera"></i> ${data.photo_count} Photos</span>
+                        </div>
+                    </div>
+                    
+                    <hr class="section-divider">
+                    
+                    <div class="detail-item">
+                        <label><i class="fas fa-user-check"></i> Reviewed By:</label>
+                        <span>${data.reviewed_by}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label><i class="fas fa-clock"></i> Review Date:</label>
+                        <span>${data.reviewed_date}</span>
+                    </div>
+                </div>
+            `;
+            
+            // Add footer buttons
+            const modalFooter = document.getElementById('modalFooter');
+            modalFooter.innerHTML = `
+                <button class="btn btn-success" onclick="updateEntryStatus(${data.id}, 'reviewed')">
+                    <i class="fas fa-check"></i> Mark as Reviewed
+                </button>
+                <button class="btn btn-warning" onclick="updateEntryStatus(${data.id}, 'needs_revision')">
+                    <i class="fas fa-edit"></i> Send for Revision
+                </button>
+            `;
+            modalFooter.style.display = 'flex';
+        })
+        .catch(error => {
+            modalBody.innerHTML = `<div class="error">Error loading entry details: ${error.message}</div>`;
+        });
+    
+    // Close modal functionality
+    const closeBtn = modal.querySelector('.close');
+    closeBtn.onclick = function() {
+        modal.style.display = 'none';
+    };
+    
+    window.onclick = function(event) {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    };
+}
+
+function updateEntryStatus(entryId, action) {
+    const formData = new FormData();
+    formData.append('action', action);
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (csrfToken) {
+        formData.append('csrfmiddlewaretoken', csrfToken.value);
+    }
+    
+    fetch(`/diary/admin/update-entry-status/${entryId}/`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (action === 'needs_revision') {
+                // Send to site manager and update timeline
+                sendToSiteManager(entryId, data.project_name);
+                updateTimelineHeader(entryId, 'revision');
+            }
+            document.getElementById('entryModal').style.display = 'none';
+            window.location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        alert('Error updating entry status: ' + error.message);
+    });
+}
+
+function sendToSiteManager(entryId, projectName) {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    const headers = {
+        'Content-Type': 'application/json'
+    };
+    if (csrfToken) {
+        headers['X-CSRFToken'] = csrfToken.value;
+    }
+    
+    fetch('/diary/admin/send-revision/', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({
+            entry_id: entryId,
+            project_name: projectName
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Revision Sent', `Entry sent to site manager for revision`, 'warning');
+        }
+    });
+}
+
+function updateTimelineHeader(entryId, status) {
+    const timelineItem = document.querySelector(`.timeline-header[data-id="${entryId}"]`);
+    if (timelineItem) {
+        const statusBadge = timelineItem.querySelector('.status-badge');
+        if (statusBadge) {
+            statusBadge.className = 'status-badge status-revision-badge';
+            statusBadge.textContent = 'Needs Revision';
+        }
+        timelineItem.closest('.timeline-item').className = 'timeline-item status-revision';
+    }
 }
 
 function toggleHistoryMode() {

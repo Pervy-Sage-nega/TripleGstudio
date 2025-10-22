@@ -1426,6 +1426,24 @@ body {
     text-decoration: none;
     transition: all 0.3s ease;
 }
+.tag-list a{
+    margin-top: 5px;
+    color: orange;
+    display: inline-flex
+;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 10px;
+    border-radius: 30px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s 
+ease;
+background: rgba(255, 113, 32, 0.1);
+    color: #FF7120;
+    border: 1px solid rgba(255, 113, 32, 0.3);
+}
 
 .tag:hover {
     background: #FF7120;

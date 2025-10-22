@@ -38,8 +38,8 @@ class DiaryPhotoInline(admin.TabularInline):
 
 @admin.register(DiaryEntry)
 class DiaryEntryAdmin(admin.ModelAdmin):
-    list_display = ['project', 'entry_date', 'created_by', 'weather_condition', 'approved', 'reviewed_by']
-    list_filter = ['approved', 'weather_condition', 'entry_date', 'project__status']
+    list_display = ['project', 'entry_date', 'created_by', 'weather_condition', 'status', 'reviewed_by']
+    list_filter = ['status', 'weather_condition', 'entry_date', 'project__status']
     search_fields = ['project__name', 'work_description', 'created_by__username']
     date_hierarchy = 'entry_date'
     ordering = ['-entry_date']
@@ -73,8 +73,8 @@ class DiaryEntryAdmin(admin.ModelAdmin):
             'fields': ('general_notes', 'photos_taken'),
             'classes': ('collapse',)
         }),
-        ('Approval', {
-            'fields': ('approved', 'reviewed_by', 'approval_date'),
+        ('Review', {
+            'fields': ('status', 'reviewed_by', 'reviewed_date'),
             'classes': ('collapse',)
         }),
         ('Timestamps', {

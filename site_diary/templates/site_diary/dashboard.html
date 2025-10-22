@@ -147,12 +147,29 @@
                     <h4 class="analytics-title">Performance Analytics</h4>
                     <div class="analytics-item">
                         <span class="analytics-label">Budget Usage:</span>
-                        <span class="analytics-value {% if project.budget_used < 70 %}good{% elif project.budget_used < 85 %}warning{% else %}danger{% endif %}">{{ project.budget_used|floatformat:0 }}% Used</span>
+                        <span class="analytics-value {{ project.budget_health }}">{{ project.budget_used|floatformat:0 }}% Used</span>
                     </div>
                     <div class="analytics-item">
                         <span class="analytics-label">Schedule Adherence:</span>
                         <span class="analytics-value {% if project.schedule_status == 'On Track' %}good{% elif project.schedule_status == 'Minor Delays' %}warning{% else %}danger{% endif %}">{{ project.schedule_status }}</span>
                     </div>
+                    {% if project.revision_count > 0 %}
+                    <div class="analytics-item revision-impact">
+                        <span class="analytics-label">Revisions Impact:</span>
+                        <span class="analytics-value warning">
+                            {{ project.revision_count }} revision{{ project.revision_count|pluralize }}
+                            <small>(+₱{{ project.revision_cost_impact|floatformat:0 }})</small>
+                        </span>
+                    </div>
+                    {% endif %}
+                    {% if project.budget_variance > 5 %}
+                    <div class="analytics-item budget-variance">
+                        <span class="analytics-label">Budget Variance:</span>
+                        <span class="analytics-value {% if project.budget_variance > 15 %}danger{% elif project.budget_variance > 10 %}warning{% else %}good{% endif %}">
+                            +{{ project.budget_variance|floatformat:1 }}%
+                        </span>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
             {% empty %}

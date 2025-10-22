@@ -195,8 +195,31 @@
     justify-content: flex-end;
     gap: 10px;
     margin-top: 15px;
+    flex-wrap: nowrap;
 }
 
+.filter-buttons .btn {
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 8px 16px;
+    display: inline-block;
+}
+.filter-buttons {
+    display: flex;
+    justify-content: flex-end; /* right align container */
+    margin-top: 15px;
+}
+
+.button-group {
+    display: inline-flex; /* prevents stretching */
+    gap: 10px; /* space between buttons */
+}
+
+.filter-buttons .btn {
+    flex-shrink: 0;
+    white-space: nowrap;
+        padding: 12px 64px;
+}
 /* Reports Section */
 .reports-section {
     background-color: white;
@@ -367,6 +390,7 @@
     margin-bottom: 15px;
 }
 
+
 .info-section {
     display: flex;
     flex-direction: column;
@@ -523,6 +547,10 @@
 .status-revision-badge {
     background-color: #fff3e0;
     color: #ff9800;
+}
+
+.timeline-item.status-revision {
+    border-left-color: #ff9800;
 }
 
 /* Load More Button */

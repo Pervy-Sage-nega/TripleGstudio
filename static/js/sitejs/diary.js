@@ -337,10 +337,41 @@ document.addEventListener('DOMContentLoaded', function() {
     function initSignaturePads() {
         const supervisorUpload = document.getElementById('supervisorSignatureUpload');
         const supervisorPreview = document.getElementById('supervisorSignaturePreview');
-        const clientUpload = document.getElementById('clientSignatureUpload');
-        const clientPreview = document.getElementById('clientSignaturePreview');
+        const uploadContainer = document.getElementById('uploadContainer');
+        const canvasContainer = document.getElementById('canvasContainer');
+        const signatureCanvas = document.getElementById('signatureCanvas');
+        const uploadMethod = document.getElementById('uploadMethod');
+        const drawMethod = document.getElementById('drawMethod');
         
-        function setupSignatureUpload(uploadInput, previewContainer, clearBtnId) {
+        let signaturePad = null;
+        
+        // Initialize signature pad
+        if (signatureCanvas && typeof SignaturePad !== 'undefined') {
+            signaturePad = new SignaturePad(signatureCanvas, {
+                backgroundColor: 'rgb(255, 255, 255)',
+                penColor: 'rgb(0, 0, 0)'
+            });
+            // Make it globally accessible for validation
+            window.signaturePad = signaturePad;
+        }
+        
+        // Handle method switching
+        function switchSignatureMethod() {
+            if (uploadMethod.checked) {
+                uploadContainer.style.display = 'block';
+                canvasContainer.style.display = 'none';
+            } else {
+                uploadContainer.style.display = 'none';
+                canvasContainer.style.display = 'block';
+            }
+        }
+        
+        if (uploadMethod && drawMethod) {
+            uploadMethod.addEventListener('change', switchSignatureMethod);
+            drawMethod.addEventListener('change', switchSignatureMethod);
+        }
+        
+        function setupSignatureUpload(uploadInput, previewContainer) {
             previewContainer.addEventListener('click', function() {
                 uploadInput.click();
             });
@@ -356,24 +387,49 @@ document.addEventListener('DOMContentLoaded', function() {
                     reader.readAsDataURL(this.files[0]);
                 }
             });
-            
-            document.getElementById(clearBtnId).addEventListener('click', function() {
-                uploadInput.value = '';
-                previewContainer.innerHTML = `
+        }
+        
+        function clearSignature() {
+            if (uploadMethod.checked) {
+                supervisorUpload.value = '';
+                supervisorPreview.innerHTML = `
                     <div class="upload-icon">
                         <i class="fas fa-cloud-upload-alt"></i>
                     </div>
                     <div class="upload-text">Click to upload signature image</div>
                 `;
-            });
+            } else if (signaturePad) {
+                signaturePad.clear();
+            }
         }
         
         if (supervisorUpload && supervisorPreview) {
-            setupSignatureUpload(supervisorUpload, supervisorPreview, 'clearSupervisorSignature');
+            setupSignatureUpload(supervisorUpload, supervisorPreview);
         }
         
-        if (clientUpload && clientPreview) {
-            setupSignatureUpload(clientUpload, clientPreview, 'clearClientSignature');
+        document.getElementById('clearSupervisorSignature').addEventListener('click', clearSignature);
+        
+        // Handle form submission for canvas signatures
+        const form = document.getElementById('siteEntryForm');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                const drawMethod = document.getElementById('drawMethod');
+                if (drawMethod && drawMethod.checked && signaturePad && !signaturePad.isEmpty()) {
+                    // Convert canvas to blob and create hidden input
+                    const canvas = document.getElementById('signatureCanvas');
+                    canvas.toBlob(function(blob) {
+                        const formData = new FormData(form);
+                        formData.append('signature_canvas', blob, 'signature.png');
+                        
+                        // Create hidden input for signature data
+                        const hiddenInput = document.createElement('input');
+                        hiddenInput.type = 'hidden';
+                        hiddenInput.name = 'signature_data';
+                        hiddenInput.value = canvas.toDataURL();
+                        form.appendChild(hiddenInput);
+                    });
+                }
+            });
         }
     }
 
@@ -485,12 +541,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 form.classList.add('was-validated');
                 
                 // Check supervisor signature
+                const uploadMethod = document.getElementById('uploadMethod');
                 const supervisorUpload = document.getElementById('supervisorSignatureUpload');
-                if (supervisorUpload && !supervisorUpload.files.length) {
+                const signatureCanvas = document.getElementById('signatureCanvas');
+                let hasSignature = false;
+                
+                if (uploadMethod && uploadMethod.checked) {
+                    hasSignature = supervisorUpload && supervisorUpload.files.length > 0;
+                } else {
+                    // Check if canvas has signature
+                    if (signatureCanvas && window.signaturePad) {
+                        hasSignature = !window.signaturePad.isEmpty();
+                    }
+                }
+                
+                if (!hasSignature) {
                     event.preventDefault();
                     const sigFeedback = document.querySelector('.signature-container .invalid-feedback');
                     if (sigFeedback) sigFeedback.style.display = 'block';
-                    if (window.__focusTabForElement) window.__focusTabForElement(supervisorUpload);
+                    if (window.__focusTabForElement) window.__focusTabForElement(supervisorUpload || signatureCanvas);
                 } else {
                     const sigFeedback = document.querySelector('.signature-container .invalid-feedback');
                     if (sigFeedback) sigFeedback.style.display = 'none';

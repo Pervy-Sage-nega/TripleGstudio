@@ -355,18 +355,30 @@ document.addEventListener("DOMContentLoaded", initSmoothScroll);
     });
     
     // Close Modal
+    const closeEntryModal = document.getElementById('closeEntryModal');
+    const entryModal = document.getElementById('entryModal');
+    
+    if(closeEntryModal) {
+        closeEntryModal.addEventListener('click', function() {
+            entryModal.style.display = 'none';
+        });
+    }
+    
     if(closeViewModal) {
         closeViewModal.addEventListener('click', function() {
             viewEntryModal.style.display = 'none';
         });
-        
-        // Close modal when clicking outside the content
-        window.addEventListener('click', function(event) {
-            if (event.target === viewEntryModal) {
-                viewEntryModal.style.display = 'none';
-            }
-        });
     }
+        
+    // Close modal when clicking outside the content
+    window.addEventListener('click', function(event) {
+        if (event.target === viewEntryModal) {
+            viewEntryModal.style.display = 'none';
+        }
+        if (event.target === entryModal) {
+            entryModal.style.display = 'none';
+        }
+    });
     
     // Revision Modal Functionality
     const revisionModal = document.getElementById('revisionModal');
@@ -391,10 +403,33 @@ document.addEventListener("DOMContentLoaded", initSmoothScroll);
             // Show the modal
             revisionModal.style.display = 'flex';
             
-            // Reset form fields
+            // Reset form fields and previews
             revisionForm.reset();
-            clientSignaturePreview.innerHTML = '<i class="fas fa-signature"></i><span>No image selected</span>';
-            teamPhotoPreview.innerHTML = '<i class="fas fa-users"></i><span>No image selected</span>';
+            
+            // Reset all signature previews
+            const previews = [
+                { element: document.getElementById('clientSignaturePreview'), icon: 'fas fa-signature', text: 'No signature uploaded' },
+                { element: document.getElementById('managerSignaturePreview'), icon: 'fas fa-signature', text: 'No signature uploaded' },
+                { element: document.getElementById('engineerSignaturePreview'), icon: 'fas fa-signature', text: 'No signature uploaded' }
+            ];
+            
+            previews.forEach(({ element, icon, text }) => {
+                if (element) {
+                    element.innerHTML = `<i class="${icon}"></i><span>${text}</span>`;
+                }
+            });
+            
+            // Set current date as default revision date
+            const revisionDateInput = document.getElementById('revisionDate');
+            if (revisionDateInput) {
+                revisionDateInput.value = new Date().toISOString().split('T')[0];
+            }
+            
+            // Set current date as default approval date
+            const clientApprovalDateInput = document.getElementById('clientApprovalDate');
+            if (clientApprovalDateInput) {
+                clientApprovalDateInput.value = new Date().toISOString().split('T')[0];
+            }
         });
     });
 
@@ -419,19 +454,22 @@ document.addEventListener("DOMContentLoaded", initSmoothScroll);
         }
     });
 
-    // Handle client signature file preview
-    if(clientSignature) {
-        clientSignature.addEventListener('change', function() {
-            handleFilePreview(this, clientSignaturePreview);
-        });
-    }
+    // Handle signature file previews
+    const signatureInputs = [
+        { input: document.getElementById('clientSignature'), preview: document.getElementById('clientSignaturePreview') },
+        { input: document.getElementById('managerSignature'), preview: document.getElementById('managerSignaturePreview') },
+        { input: document.getElementById('engineerSignature'), preview: document.getElementById('engineerSignaturePreview') }
+    ];
+    
+    signatureInputs.forEach(({ input, preview }) => {
+        if (input && preview) {
+            input.addEventListener('change', function() {
+                handleFilePreview(this, preview);
+            });
+        }
+    });
+    
 
-    // Handle team photo file preview
-    if(teamPhoto) {
-        teamPhoto.addEventListener('change', function() {
-            handleFilePreview(this, teamPhotoPreview);
-        });
-    }
 
     // File preview helper function
     function handleFilePreview(input, previewElement) {
@@ -451,13 +489,86 @@ document.addEventListener("DOMContentLoaded", initSmoothScroll);
         revisionForm.addEventListener('submit', function(e) {
             e.preventDefault();
             
+            // Validate required fields
+            const requiredFields = [
+                { id: 'revisionDate', name: 'Revision Date' },
+                { id: 'revisionType', name: 'Revision Type' },
+                { id: 'revisionReason', name: 'Reason for Revision' },
+                { id: 'revisionDescription', name: 'Description of Changes' },
+                { id: 'actualCostImpact', name: 'Actual Cost Impact' },
+                { id: 'projectManager', name: 'Project Manager Name' },
+                { id: 'managerSignature', name: 'Project Manager Signature' }
+            ];
+            
+            let isValid = true;
+            let missingFields = [];
+            
+            requiredFields.forEach(field => {
+                const element = document.getElementById(field.id);
+                if (element && (!element.value || (element.type === 'file' && element.files.length === 0))) {
+                    isValid = false;
+                    missingFields.push(field.name);
+                    element.style.borderColor = '#dc3545';
+                } else if (element) {
+                    element.style.borderColor = '';
+                }
+            });
+            
+            // Validate cost impact (allow negative for cost corrections)
+            const revisionType = document.getElementById('revisionType').value;
+            if (revisionType !== 'cost_correction' && actualCost < 0) {
+                isValid = false;
+                missingFields.push('Cost impact must be a positive number (except for cost corrections)');
+                actualCostInput.style.borderColor = '#dc3545';
+            }
+            
+            // Check if at least one section is selected
+            const sectionCheckboxes = document.querySelectorAll('input[name="sections"]:checked');
+            if (sectionCheckboxes.length === 0) {
+                isValid = false;
+                missingFields.push('At least one section to revise');
+            }
+            
+            if (!isValid) {
+                alert(`Please fill in the following required fields:\n\n${missingFields.join('\n')}`);
+                return;
+            }
+            
+            // Get actual cost impact from input
+            const actualCostInput = document.getElementById('actualCostImpact');
+            const actualCost = parseFloat(actualCostInput.value) || 0;
+            
             // Get form data
-            const revisionDescription = document.getElementById('revisionDescription').value;
-            const clientName = document.getElementById('clientName').value;
+            const formData = {
+                revisionDate: document.getElementById('revisionDate').value,
+                revisionType: document.getElementById('revisionType').value,
+                revisionReason: document.getElementById('revisionReason').value,
+                revisionDescription: document.getElementById('revisionDescription').value,
+                revisionImpact: document.getElementById('revisionImpact').value,
+                actualCost: actualCost,
+                projectManager: document.getElementById('projectManager').value,
+                siteEngineer: document.getElementById('siteEngineer').value,
+                sectionsRevised: Array.from(sectionCheckboxes).map(cb => cb.value),
+                supportingDocsCount: document.getElementById('supportingDocs').files.length
+            };
             
             // In a real application, you would submit this data to your server
-            // For demo purposes, show a success message
-            alert(`Revision for ${currentProjectName} submitted successfully!\n\nRevision details submitted:\n- Description: ${revisionDescription}\n- Client: ${clientName}\n- Signature and team photo would be uploaded to server`);
+            // For demo purposes, show a comprehensive success message with budget impact
+            const sectionsText = formData.sectionsRevised.join(', ');
+            const successMessage = `Revision for ${currentProjectName} submitted successfully!\n\n` +
+                `Revision Details:\n` +
+                `- Type: ${formData.revisionType}\n` +
+                `- Reason: ${formData.revisionReason}\n` +
+                `- Sections Revised: ${sectionsText}\n` +
+                `- Impact Level: ${formData.revisionImpact || 'Not specified'}\n` +
+                `- Actual Cost Impact: ₱${formData.actualCost.toLocaleString()}\n` +
+                `- Project Manager: ${formData.projectManager}\n` +
+                `- Supporting Documents: ${formData.supportingDocsCount} files\n\n` +
+                `⚠️ BUDGET ALERT: This revision will increase project costs by ₱${formData.actualCost.toLocaleString()}.\n` +
+                `The project budget will be updated upon approval.\n\n` +
+                `All signatures and documents would be uploaded to the server in a real application.`;
+            
+            alert(successMessage);
             
             // Close the modal
             revisionModal.style.display = 'none';
@@ -591,6 +702,33 @@ document.addEventListener("DOMContentLoaded", initSmoothScroll);
     
     // Call initialization function
     init();
+    
+    // Cost Display Function
+    window.updateCostDisplay = function() {
+        const costInput = document.getElementById('actualCostImpact');
+        const revisionType = document.getElementById('revisionType').value;
+        const cost = parseFloat(costInput.value) || 0;
+        
+        // Special handling for cost corrections (can be negative)
+        if (revisionType === 'cost_correction') {
+            if (cost < 0) {
+                costInput.style.borderColor = '#4caf50'; // Green for cost reduction
+            } else if (cost > 100000) {
+                costInput.style.borderColor = '#ff9800'; // Orange for cost increase
+            } else {
+                costInput.style.borderColor = '#2196f3'; // Blue for minor correction
+            }
+        } else {
+            // Regular revision cost handling
+            if (cost > 500000) {
+                costInput.style.borderColor = '#f44336';
+            } else if (cost > 100000) {
+                costInput.style.borderColor = '#ff9800';
+            } else {
+                costInput.style.borderColor = '#4caf50';
+            }
+        }
+    };
     
     // Responsive height adjustment for timeline entries
     window.addEventListener('resize', function() {

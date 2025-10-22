@@ -12,10 +12,12 @@ urlpatterns = [
     path('project/<int:project_id>/', views.project_detail, name='project_detail'),
     path('project/<int:project_id>/edit/', views.project_edit, name='project_edit'),
     path('history/', views.history, name='history'),
+    path('revision/<int:entry_id>/', views.revision_diary, name='revision_diary'),
     path('reports/', views.reports, name='reports'),
     path('settings/', views.settings, name='settings'),
     path('logout/', views.site_manager_logout, name='site_manager_logout'),
     path('sitedraft/', views.sitedraft, name='sitedraft'),
+    path('debug-entries/', views.debug_entries, name='debug_entries'),
     
     # Project management
     path('api/weather/', views.weather_api, name='weather_api'),
@@ -32,7 +34,10 @@ urlpatterns = [
     path('admin/clientproject/', views.adminclientproject, name='adminclientproject'),
     path('admin/diary/', views.admindiary, name='admindiary'),
     path('admin/diary-reviewer/', views.admindiaryreviewer, name='admindiaryreviewer'),
-    path('admin/history/', views.adminhistory, name='adminhistory'),
+    path('admin/diary-entry/<int:entry_id>/', views.diary_entry_detail, name='diary_entry_detail'),
+    path('admin/update-entry-status/<int:entry_id>/', views.update_entry_status, name='update_entry_status'),
+    path('admin/send-revision/', views.send_revision, name='send_revision'),
+
     path('admin/reports/', views.adminreports, name='adminreports'),
     
     # External app views (keeping for compatibility)

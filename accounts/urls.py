@@ -24,7 +24,6 @@ urlpatterns = [
     
     # Client authentication URLs (public users)
     path('client/login/', views.client_login_view, name='client_login'),
-    path('client/register/', views.client_register_view, name='client_register'),
     path('client/verify-otp/', views.client_verify_otp, name='client_verify_otp'),
     path('client/resend-otp/', views.client_resend_otp, name='client_resend_otp'),
     path('client/logout/', views.client_logout_view, name='client_logout'),
