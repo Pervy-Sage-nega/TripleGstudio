@@ -41,6 +41,7 @@ urlpatterns = [
     path('admin/diary-entry/<int:entry_id>/', views.diary_entry_detail, name='diary_entry_detail'),
     path('admin/update-entry-status/<int:entry_id>/', views.update_entry_status, name='update_entry_status'),
     path('admin/send-revision/', views.send_revision, name='send_revision'),
+    path('admin/print-layout/', views.admin_print_layout, name='admin_print_layout'),
 
     path('admin/reports/', views.adminreports, name='adminreports'),
     

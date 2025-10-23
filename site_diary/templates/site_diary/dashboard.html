@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="{% static 'css/sitecss/global-footer.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/dashboard.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/createblog.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/milestone-scroll.css' %}">
     
     
 {% endblock %}
@@ -100,7 +101,7 @@
         <!-- Project Grid -->
         <div class="project-grid">
             {% for project in projects %}
-            <div class="project-card" data-category="commercial" data-status="{{ project.status }}">
+            <div class="project-card" data-category="{{ project.category|default:'commercial' }}" data-status="{{ project.status }}">
                 {% if project.image %}
                     <img src="{{ project.image.url }}" alt="{{ project.name }}" class="project-image">
                 {% else %}
@@ -108,29 +109,24 @@
                 {% endif %}
                 <div class="project-content">
                     <h3 class="project-title">{{ project.name }}</h3>
-                    <p class="project-description">{{ project.current_phase|default:'Project in progress with multiple phases and milestones.' }}</p>
+                    <p class="project-description">{{ project.description|default:'Project in progress with multiple phases and milestones.'|truncatechars:80 }}</p>
                     <div class="progress-container">
                         <div class="progress-label">PROGRESS:</div>
                         <div class="progress-track">
-                            <div class="progress-bar" style="width: {{ project.progress }}%;"></div>
+                            <div class="progress-bar" style="width: {% if project.current_milestone_id %}{{ project.get_progress_percentage }}{% else %}0{% endif %}%;"></div>
                         </div>
-                        <div class="milestone-markers">
-                            <div class="milestone {% if project.progress > 25 %}completed{% endif %}">
+                        <div class="milestone-markers" style="overflow-x: auto; white-space: nowrap; display: flex; gap: 10px; padding-bottom: 5px; scrollbar-width: none; -ms-overflow-style: none;">
+                            {% for milestone in project.milestones %}
+                            <div class="milestone {% if project.current_milestone_id == milestone.id or project.get_progress_percentage > milestone.threshold %}completed{% endif %}">
                                 <div class="milestone-dot"></div>
-                                <div class="milestone-label">Planning</div>
+                                <div class="milestone-label">{{ milestone.name }}</div>
                             </div>
-                            <div class="milestone {% if project.progress > 50 %}completed{% endif %}">
+                            {% empty %}
+                            <div class="milestone {% if project.get_progress_percentage > 0 %}completed{% endif %}">
                                 <div class="milestone-dot"></div>
-                                <div class="milestone-label">Foundation</div>
+                                <div class="milestone-label">In Progress</div>
                             </div>
-                            <div class="milestone {% if project.progress > 75 %}completed{% endif %}">
-                                <div class="milestone-dot"></div>
-                                <div class="milestone-label">Structure</div>
-                            </div>
-                            <div class="milestone {% if project.progress > 90 %}completed{% endif %}">
-                                <div class="milestone-dot"></div>
-                                <div class="milestone-label">Finishing</div>
-                            </div>
+                            {% endfor %}
                         </div>
                     </div>
                     <div class="card-actions">

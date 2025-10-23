@@ -338,14 +338,21 @@
 }
 
 .budget-chart {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 20px;
+    width: 100%;
+    height: 200px;
+        margin-bottom: 80px;
+    position: relative;
 }
 
 .chart-container {
-    width: 150px;
-    height: 150px;
+    width: 100%;
+    height: 200px;
+    position: relative;
+}
+
+.chart-container canvas {
+    max-width: 100% !important;
+    height: auto !important;
 }
 
 .budget-card .btn {

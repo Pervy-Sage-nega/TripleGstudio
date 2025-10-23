@@ -228,8 +228,8 @@
                                     <i class="fas fa-ban"></i>
                                 </button>
                             {% elif user_data.status == 'suspended' %}
-                                <button class="action-btn activate" title="Reactivate" data-user-id="{{ user_data.user_id }}">
-                                    <i class="fas fa-check-circle"></i>
+                                <button class="action-btn activate" title="Unsuspend" data-user-id="{{ user_data.user_id }}">
+                                    <i class="fas fa-user-check"></i>
                                 </button>
                             {% endif %}
                         </div>

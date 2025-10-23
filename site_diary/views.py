@@ -590,6 +590,7 @@ def dashboard(request):
     """Site Manager Enhanced dashboard with comprehensive project overview"""
     # Check for success modal flag
     success_modal_data = request.session.pop('show_success_modal', None)
+    approval_modal_data = success_modal_data  # For template compatibility
     # Get user's approved projects only
     if request.user.is_staff:
         projects = Project.objects.filter(status__in=['planning', 'active', 'on_hold', 'completed'])
@@ -601,22 +602,20 @@ def dashboard(request):
     
     # Enhanced project data with progress and analytics
     project_data = []
-    # Mock progress values for demonstration
-    mock_progress = [65, 40, 85, 25, 55, 75, 30, 90, 45, 60]
     
-    for i, project in enumerate(projects):
+    for project in projects:
         # Get latest diary entry for progress
-        latest_entry = DiaryEntry.objects.filter(project=project).order_by('-entry_date').first()
+        latest_entry = DiaryEntry.objects.filter(project=project, draft=False).order_by('-entry_date').first()
         
         # Calculate project analytics
-        project_entries = DiaryEntry.objects.filter(project=project)
+        project_entries = DiaryEntry.objects.filter(project=project, draft=False)
         labor_entries = LaborEntry.objects.filter(diary_entry__in=project_entries)
         material_entries = MaterialEntry.objects.filter(diary_entry__in=project_entries)
         equipment_entries = EquipmentEntry.objects.filter(diary_entry__in=project_entries)
         delay_entries = DelayEntry.objects.filter(diary_entry__in=project_entries)
         
         # Use diary entry progress or calculate based on status
-        if latest_entry:
+        if latest_entry and latest_entry.progress_percentage is not None:
             progress = float(latest_entry.progress_percentage)
         else:
             progress = float(project.get_progress_percentage())
@@ -685,20 +684,32 @@ def dashboard(request):
         else:
             schedule_status = 'At Risk'
             
+        # Get project milestones
+        milestones = Milestone.objects.filter(is_active=True).order_by('order')[:4]
+        project_milestones = []
+        for i, milestone in enumerate(milestones):
+            milestone.threshold = (i + 1) * 25  # 25%, 50%, 75%, 100%
+            project_milestones.append(milestone)
+        
+        # Get current milestone from latest diary entry
+        current_milestone_id = latest_entry.milestone.id if latest_entry and latest_entry.milestone else None
+        
         # Add calculated fields directly to project object
         project.progress = progress
         project.current_phase = f"Phase {min(int(progress/25) + 1, 4)} - {phase_name}"
         project.budget_used = budget_used_percentage
         project.schedule_status = schedule_status
+        project.milestones = project_milestones
+        project.current_milestone_id = current_milestone_id
         
-        # Add revision impact data
+        # Add revision impact data - only if there are actual revisions
         project.original_budget = original_budget
         project.adjusted_budget = adjusted_budget
         project.remaining_budget = remaining_budget
         project.budget_health = budget_health
         project.budget_variance = budget_variance
-        project.revision_count = revision_count
-        project.revision_cost_impact = estimated_revision_cost
+        project.revision_count = revision_count if revision_count > 0 else 0
+        project.revision_cost_impact = estimated_revision_cost if revision_count > 0 else 0
         project.total_spent = total_spent
         
         project_data.append(project)
@@ -730,7 +741,8 @@ def dashboard(request):
             'at_risk': at_risk_projects,
             'draft_entries': draft_entries,
         },
-        'success_modal_data': success_modal_data
+        'success_modal_data': success_modal_data,
+        'approval_modal_data': approval_modal_data
     }
     return render(request, 'site_diary/dashboard.html', context)
 
@@ -1382,10 +1394,13 @@ def history(request):
             status__in=['planning', 'active', 'on_hold', 'completed']
         )
     
-    # Get diary entries with prefetch
+    # Get diary entries with comprehensive prefetch for all related data
     entries = DiaryEntry.objects.filter(project__in=projects).select_related(
-        'project', 'created_by', 'reviewed_by'
-    ).prefetch_related('labor_entries', 'material_entries', 'equipment_entries')
+        'project', 'created_by', 'reviewed_by', 'milestone'
+    ).prefetch_related(
+        'labor_entries', 'material_entries', 'equipment_entries', 
+        'delay_entries', 'visitor_entries', 'subcontractor_entries', 'photos'
+    )
     
     # Add budget impact data to projects
     for project in projects:
@@ -1634,6 +1649,55 @@ def reports(request):
     if not material_stats:
         material_stats = []
     
+    # Convert data to JSON-serializable format
+    import json
+    from decimal import Decimal
+    from django.core.serializers.json import DjangoJSONEncoder
+    
+    def serialize_data(data):
+        """Convert data to JSON-serializable format"""
+        if isinstance(data, list):
+            return [serialize_data(item) for item in data]
+        elif hasattr(data, '__dict__'):
+            result = {}
+            for key, value in data.__dict__.items():
+                if not key.startswith('_'):
+                    result[key] = serialize_data(value)
+            return result
+        elif isinstance(data, Decimal):
+            return float(data)
+        elif hasattr(data, 'isoformat'):  # datetime objects
+            return data.isoformat()
+        else:
+            return data
+    
+    # Serialize project stats
+    serialized_project_stats = []
+    for stat in project_stats:
+        serialized_stat = {
+            'project': {
+                'id': stat['project'].id,
+                'name': stat['project'].name,
+                'budget': float(stat['project'].budget) if stat['project'].budget else 0
+            },
+            'entries_count': stat['entries_count'],
+            'total_delays': stat['total_delays'],
+            'total_labor_cost': float(stat['total_labor_cost']),
+            'total_material_cost': float(stat['total_material_cost']),
+            'total_equipment_cost': float(stat['total_equipment_cost']),
+            'avg_progress': float(stat['avg_progress']) if stat['avg_progress'] else 0,
+            'safety_incidents': stat['safety_incidents'],
+            'quality_issues': stat['quality_issues'],
+            'approved_entries': stat['approved_entries']
+        }
+        serialized_project_stats.append(serialized_stat)
+    
+    # Serialize other data
+    serialized_labor_stats = list(labor_stats)
+    serialized_delay_categories = list(delay_categories)
+    serialized_weather_stats = list(weather_stats)
+    serialized_equipment_stats = list(equipment_stats)
+    
     context = {
         'project_stats': project_stats,
         'delay_categories': delay_categories,
@@ -1648,6 +1712,13 @@ def reports(request):
         'end_date': end_date,
         'selected_project': selected_project,
         'report_type': report_type,
+        # JSON serialized data for JavaScript
+        'project_stats_json': json.dumps(serialized_project_stats, cls=DjangoJSONEncoder),
+        'labor_stats_json': json.dumps(serialized_labor_stats, cls=DjangoJSONEncoder),
+        'delay_categories_json': json.dumps(serialized_delay_categories, cls=DjangoJSONEncoder),
+        'weather_stats_json': json.dumps(serialized_weather_stats, cls=DjangoJSONEncoder),
+        'equipment_stats_json': json.dumps(serialized_equipment_stats, cls=DjangoJSONEncoder),
+        'overall_summary_json': json.dumps(overall_summary, cls=DjangoJSONEncoder),
     }
     return render(request, 'site_diary/reports.html', context)
 
@@ -1666,6 +1737,18 @@ def project_detail(request, project_id):
             messages.error(request, 'You do not have access to this project.')
             return redirect('site_diary:dashboard')
     
+    # Get user's company name and profile image from SiteManagerProfile
+    user_company = "Triple G Design Studio"  # Default company name
+    user_profile_image = None
+    try:
+        if hasattr(request.user, 'sitemanagerprofile'):
+            profile = request.user.sitemanagerprofile
+            if profile.company_department:
+                user_company = profile.company_department
+            user_profile_image = profile.get_profile_image_url()
+    except:
+        pass
+    
     # Get project entries and related data
     project_entries = DiaryEntry.objects.filter(project=project).order_by('-entry_date')
     labor_entries = LaborEntry.objects.filter(diary_entry__in=project_entries)
@@ -1683,7 +1766,7 @@ def project_detail(request, project_id):
     total_equipment_cost = sum(equipment.total_rental_cost for equipment in equipment_entries)
     total_spent = total_labor_cost + total_material_cost + total_equipment_cost
     total_budget = float(project.budget) if project.budget else 0
-    remaining_budget = max(0, total_budget - total_spent)
+    remaining_budget = max(0, float(total_budget) - float(total_spent))
     
     # Recent diary entries for summary
     recent_diary_entries = project_entries[:3]
@@ -1703,6 +1786,15 @@ def project_detail(request, project_id):
     else:
         phase_name = "Finishing"
     
+    # Get project milestones
+    milestones = Milestone.objects.filter(is_active=True).order_by('order')[:4]
+    project_milestones = []
+    for i, milestone in enumerate(milestones):
+        milestone.threshold = (i + 1) * 25  # 25%, 50%, 75%, 100%
+        project_milestones.append(milestone)
+    
+    project.milestones = project_milestones
+    
     context = {
         'project': project,
         'progress': progress,
@@ -1714,6 +1806,8 @@ def project_detail(request, project_id):
         'delays_count': delay_count,
         'recent_diary_entries': recent_diary_entries,
         'phase_name': phase_name,
+        'user_company': user_company,
+        'user_profile_image': user_profile_image,
     }
     return render(request, 'site_diary/project-detail.html', context)
 
@@ -2090,6 +2184,9 @@ def diary_entry_detail(request, entry_id):
             sum(equipment.total_rental_cost for equipment in equipment_entries)
         )
         
+        # Get subcontractor entries
+        subcontractor_entries = SubcontractorEntry.objects.filter(diary_entry=entry)
+        
         data = {
             'id': entry.id,
             'project_name': entry.project.name,
@@ -2107,6 +2204,8 @@ def diary_entry_detail(request, entry_id):
             'safety_incidents': entry.safety_incidents,
             'general_notes': entry.general_notes,
             'status': entry.get_status_display(),
+            'draft': entry.draft,
+            'photos_taken': entry.photos_taken,
             'reviewed_by': entry.reviewed_by.get_full_name() if entry.reviewed_by else 'N/A',
             'reviewed_date': entry.reviewed_date.strftime('%Y-%m-%d %H:%M') if entry.reviewed_date else 'N/A',
             'labor_count': entry.labor_entries.count(),
@@ -2114,10 +2213,61 @@ def diary_entry_detail(request, entry_id):
             'equipment_count': entry.equipment_entries.count(),
             'delay_count': entry.delay_entries.count(),
             'visitor_count': entry.visitor_entries.count(),
+            'subcontractor_count': subcontractor_entries.count(),
             'photo_count': entry.photos.count(),
             'project_budget': float(entry.project.budget) if entry.project.budget else 0,
             'total_spent': float(total_spent),
             'remaining_budget': float(entry.project.budget) - float(total_spent) if entry.project.budget else -float(total_spent),
+            
+            # Detailed entry data
+            'labor_entries': [{
+                'trade_description': labor.trade_description,
+                'labor_type': labor.get_labor_type_display() if hasattr(labor, 'get_labor_type_display') else labor.labor_type,
+                'workers_count': labor.workers_count,
+                'hours_worked': float(labor.hours_worked),
+                'overtime_hours': float(labor.overtime_hours),
+                'hourly_rate': float(labor.hourly_rate) if labor.hourly_rate else 0,
+            } for labor in entry.labor_entries.all()],
+            
+            'material_entries': [{
+                'material_name': material.material_name,
+                'quantity_delivered': float(material.quantity_delivered),
+                'quantity_used': float(material.quantity_used),
+                'unit': material.get_unit_display() if hasattr(material, 'get_unit_display') else material.unit,
+                'unit_cost': float(material.unit_cost) if material.unit_cost else 0,
+                'supplier': material.supplier,
+            } for material in entry.material_entries.all()],
+            
+            'equipment_entries': [{
+                'equipment_name': equipment.equipment_name,
+                'equipment_type': equipment.equipment_type,
+                'operator_name': equipment.operator_name,
+                'hours_operated': float(equipment.hours_operated),
+                'status': equipment.get_status_display() if hasattr(equipment, 'get_status_display') else equipment.status,
+                'rental_cost_per_hour': float(equipment.rental_cost_per_hour) if equipment.rental_cost_per_hour else 0,
+            } for equipment in entry.equipment_entries.all()],
+            
+            'delay_entries': [{
+                'category': delay.get_category_display() if hasattr(delay, 'get_category_display') else delay.category,
+                'description': delay.description,
+                'duration_hours': float(delay.duration_hours),
+                'impact_level': delay.get_impact_level_display() if hasattr(delay, 'get_impact_level_display') else delay.impact_level,
+                'mitigation_actions': delay.mitigation_actions,
+            } for delay in entry.delay_entries.all()],
+            
+            'visitor_entries': [{
+                'visitor_name': visitor.visitor_name,
+                'company': visitor.company,
+                'visitor_type': visitor.get_visitor_type_display() if hasattr(visitor, 'get_visitor_type_display') else visitor.visitor_type,
+                'purpose_of_visit': visitor.purpose_of_visit,
+                'arrival_time': visitor.arrival_time.strftime('%H:%M') if visitor.arrival_time else 'N/A',
+            } for visitor in entry.visitor_entries.all()],
+            
+            'subcontractor_entries': [{
+                'company_name': sub.company_name,
+                'work_description': sub.work_description,
+                'daily_cost': float(sub.daily_cost),
+            } for sub in subcontractor_entries],
         }
         
         return JsonResponse(data)
@@ -2142,37 +2292,6 @@ def update_entry_status(request, entry_id):
                 entry.reviewed_date = timezone.now()
                 entry.save()
                 return JsonResponse({'success': True, 'message': 'Entry marked as reviewed'})
-            elif action == 'needs_revision':
-                entry.status = 'needs_revision'
-                entry.reviewed_by = request.user
-                entry.reviewed_date = timezone.now()
-                entry.save()
-                return JsonResponse({'success': True, 'message': 'Entry marked as needs revision'})
-            else:
-                return JsonResponse({'error': 'Invalid action'}, status=400)
-                
-        except DiaryEntry.DoesNotExist:
-            return JsonResponse({'error': 'Entry not found'}, status=404)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-    
-    return JsonResponse({'error': 'Method not allowed'}, status=405)
-
-@login_required
-@require_admin_role
-def update_entry_status(request, entry_id):
-    """Update diary entry status"""
-    if request.method == 'POST':
-        try:
-            entry = DiaryEntry.objects.get(id=entry_id, draft=False)
-            action = request.POST.get('action')
-            
-            if action == 'complete':
-                entry.status = 'complete'
-                entry.reviewed_by = request.user
-                entry.reviewed_date = timezone.now()
-                entry.save()
-                return JsonResponse({'success': True, 'message': 'Entry marked as complete'})
             elif action == 'needs_revision':
                 entry.status = 'needs_revision'
                 entry.reviewed_by = request.user
@@ -2207,6 +2326,32 @@ def send_revision(request):
             return JsonResponse({'error': str(e)}, status=500)
     
     return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+@login_required
+@require_admin_role
+def admin_print_layout(request):
+    """Admin print layout view"""
+    entry_id = request.GET.get('entry_id')
+    
+    if entry_id:
+        # Single entry print
+        try:
+            entry = DiaryEntry.objects.get(id=entry_id, draft=False)
+            project = entry.project
+            context = {
+                'project': project,
+                'diary_entry': entry,
+            }
+        except DiaryEntry.DoesNotExist:
+            context = {'error': 'Entry not found'}
+    else:
+        # Multiple entries or filtered print - use sample data for now
+        context = {
+            'project': {'name': 'Sample Project', 'client_name': 'Sample Client', 'location': 'Sample Location'},
+            'diary_entry': None,
+        }
+    
+    return render(request, 'admin/printlayout.html', context)
 
 
 

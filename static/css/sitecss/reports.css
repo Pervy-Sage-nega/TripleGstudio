@@ -18,13 +18,13 @@
 body {
     margin-top: 0;
     padding-top: 0;
-    background-color: #e6e6e6;
+    background-color: #f5f5f5;
 }
 
 /* Main Container */
 .container {
     max-width: 1200px;
-    margin: 10px auto 20px auto;
+    margin: 20px auto;
     padding: 0 20px;
 }
 

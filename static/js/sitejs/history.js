@@ -239,8 +239,8 @@ document.addEventListener("DOMContentLoaded", initSmoothScroll);
             const contentId = header.getAttribute('data-id');
             const content = document.getElementById(`content${contentId}`);
             
-            // Toggle the active class on the content
-            content.classList.toggle('active');
+            // Toggle the expanded class on the content
+            content.classList.toggle('expanded');
             
             // Toggle the icon
             this.querySelector('i').classList.toggle('fa-chevron-down');
@@ -332,25 +332,25 @@ document.addEventListener("DOMContentLoaded", initSmoothScroll);
     // View Details in Modal (from Table View)
     document.querySelectorAll('.table-actions .view').forEach(btn => {
         btn.addEventListener('click', function() {
-            const row = this.closest('tr');
-            const projectName = row.querySelector('.table-project-name').textContent;
+            const entryId = this.getAttribute('data-entry-id');
             
             // Find the matching timeline item to display in modal
-            const timelineItems = document.querySelectorAll('.timeline-item');
-            timelineItems.forEach(item => {
-                const itemProjectName = item.querySelector('h3').textContent;
-                if (itemProjectName === projectName) {
-                    // Clone the content for the modal
-                    const contentClone = item.querySelector('.timeline-content').cloneNode(true);
-                    contentClone.classList.add('active'); // Ensure it's visible in the modal
-                    contentClone.style.maxHeight = 'none'; // Remove max-height restriction
-                    
-                    // Insert into modal
-                    modalContent.innerHTML = '';
-                    modalContent.appendChild(contentClone);
-                    viewEntryModal.style.display = 'flex';
-                }
-            });
+            const timelineItem = document.querySelector(`[data-id="${entryId}"]`).closest('.timeline-item');
+            if (timelineItem) {
+                const contentClone = timelineItem.querySelector('.timeline-content').cloneNode(true);
+                contentClone.style.maxHeight = 'none';
+                contentClone.style.overflow = 'visible';
+                contentClone.style.padding = '20px';
+                
+                // Insert into modal
+                const modalBody = document.getElementById('modalBody');
+                modalBody.innerHTML = '';
+                modalBody.appendChild(contentClone);
+                
+                // Show modal
+                const entryModal = document.getElementById('entryModal');
+                entryModal.style.display = 'flex';
+            }
         });
     });
     
