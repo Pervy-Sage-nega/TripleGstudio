@@ -1,6 +1,8 @@
 // Admin Diary Reviewer JS
 
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('AdminDiaryReviewer JS loaded');
+    
     // Initialize UI
     initUI();
     
@@ -43,6 +45,47 @@ function initUI() {
 }
 
 function addEventListeners() {
+    // Export buttons - attach immediately
+    const exportPdfBtn = document.getElementById('exportPdfBtn');
+    const exportCsvBtn = document.getElementById('exportCsvBtn');
+    const printBtn = document.getElementById('printBtn');
+    const refreshBtn = document.getElementById('refreshBtn');
+    
+    console.log('Export buttons found:', {
+        exportPdfBtn: !!exportPdfBtn,
+        exportCsvBtn: !!exportCsvBtn,
+        printBtn: !!printBtn,
+        refreshBtn: !!refreshBtn
+    });
+    
+    if (exportPdfBtn) {
+        exportPdfBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('PDF export clicked');
+            exportPdf();
+        });
+    }
+    
+    if (exportCsvBtn) {
+        exportCsvBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('CSV export clicked');
+            exportCsv();
+        });
+    }
+    
+    if (printBtn) {
+        printBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Print clicked');
+            printData();
+        });
+    }
+    
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', refreshData);
+    }
+    
     // View toggle buttons
     const historyModeBtn = document.getElementById('historyModeBtn');
     const timelineViewBtn = document.getElementById('timelineViewBtn');
@@ -124,11 +167,30 @@ function addEventListeners() {
     // Entry view buttons
     const viewEntryBtns = document.querySelectorAll('.view-entry-btn, .action-btn.view');
     viewEntryBtns.forEach(button => {
-        button.addEventListener('click', function() {
-            const entryId = this.getAttribute('data-entry-id');
-            viewEntryDetails(entryId);
+        // Remove any existing listeners to prevent duplicates
+        button.removeEventListener('click', handleViewEntry);
+        button.addEventListener('click', handleViewEntry);
+    });
+    
+    // Individual export buttons
+    const exportBtns = document.querySelectorAll('.action-btn.export');
+    exportBtns.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const entryId = this.closest('tr')?.querySelector('.view-entry-btn')?.getAttribute('data-entry-id') ||
+                           this.closest('.timeline-item')?.querySelector('.view-entry-btn')?.getAttribute('data-entry-id');
+            if (entryId) {
+                exportSingleEntry(entryId);
+            }
         });
     });
+}
+
+function handleViewEntry() {
+    const entryId = this.getAttribute('data-entry-id');
+    viewEntryDetails(entryId);
+}
+
     
     // Timeline item expand/collapse
     const timelineHeaders = document.querySelectorAll('.timeline-header');
@@ -158,10 +220,22 @@ function addEventListeners() {
     });
     
     // Export buttons
-    document.getElementById('exportPdfBtn')?.addEventListener('click', exportPdf);
-    document.getElementById('exportCsvBtn')?.addEventListener('click', exportCsv);
+        document.getElementById('exportPdfBtn')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        console.log('PDF export clicked');
+        exportPdf();
+    });
+    document.getElementById('exportCsvBtn')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        console.log('CSV export clicked');
+        exportCsv();
+    });
     document.getElementById('refreshBtn')?.addEventListener('click', refreshData);
-    document.getElementById('printBtn')?.addEventListener('click', printData);
+    document.getElementById('printBtn')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        console.log('Print clicked');
+        printData();
+    });
     
     // Approval form submissions
     const approvalForms = document.querySelectorAll('form[method="post"]');
@@ -186,7 +260,7 @@ function addEventListeners() {
             }
         });
     });
-}
+
 
 function setActiveView(view) {
     const timelineView = document.getElementById('timelineView');
@@ -261,7 +335,12 @@ function resetFilters() {
 }
 
 function exportPdf() {
-    window.print();
+    console.log('exportPdf function called');
+    // Get current filters to pass to print layout
+    const params = new URLSearchParams(window.location.search);
+    const printUrl = '/diary/admin/print-layout/?' + params.toString();
+    console.log('Opening URL:', printUrl);
+    window.open(printUrl, '_blank');
 }
 
 function exportCsv() {
@@ -301,7 +380,10 @@ function refreshData() {
 }
 
 function printData() {
-    window.print();
+    // Get current filters to pass to print layout
+    const params = new URLSearchParams(window.location.search);
+    const printUrl = '/diary/admin/print-layout/?' + params.toString();
+    window.open(printUrl, '_blank');
 }
 
 function applyFilters() {
@@ -326,29 +408,51 @@ function applyFilters() {
     window.location.href = window.location.pathname + '?' + params.toString();
 }
 
+let isLoadingModal = false;
+
 function viewEntryDetails(entryId) {
+    // Prevent multiple simultaneous calls
+    if (isLoadingModal) return;
+    isLoadingModal = true;
+    
     const modal = document.getElementById('entryModal');
     const modalBody = document.getElementById('modalBody');
     const modalTitle = document.getElementById('modalTitle');
     
-    // Show modal and loading state
+    // Show modal with loading state
     modal.style.display = 'block';
     modalTitle.innerHTML = '<i class="fas fa-book-open"></i> Entry Details';
-    modalBody.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+    modalBody.innerHTML = '<div class="admin-diary-loading"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
     document.getElementById('modalFooter').style.display = 'none';
     
     // Fetch entry details
     fetch(`/diary/admin/diary-entry/${entryId}/`)
         .then(response => response.json())
         .then(data => {
+            isLoadingModal = false;
             if (data.error) {
                 modalBody.innerHTML = `<div class="error">Error: ${data.error}</div>`;
                 return;
             }
             
+            // Add fallback values for missing data
+            data.draft = data.draft || false;
+            data.photos_taken = data.photos_taken || false;
+            data.subcontractor_count = data.subcontractor_count || 0;
+            data.labor_entries = data.labor_entries || [];
+            data.material_entries = data.material_entries || [];
+            data.equipment_entries = data.equipment_entries || [];
+            data.delay_entries = data.delay_entries || [];
+            data.visitor_entries = data.visitor_entries || [];
+            data.subcontractor_entries = data.subcontractor_entries || [];
+            
             modalTitle.innerHTML = `<i class="fas fa-book-open"></i> ${data.project_name} - ${data.entry_date}`;
             modalBody.innerHTML = `
                 <div class="entry-details">
+                    <div class="section-header">
+                        <i class="fas fa-info-circle"></i>
+                        Basic Information
+                    </div>
                     <div class="detail-item">
                         <label><i class="fas fa-building"></i> Project:</label>
                         <span>${data.project_name}</span>
@@ -365,9 +469,19 @@ function viewEntryDetails(entryId) {
                         <label><i class="fas fa-flag"></i> Status:</label>
                         <span class="status-badge">${data.status}</span>
                     </div>
+                    <div class="detail-item">
+                        <label><i class="fas fa-save"></i> Draft:</label>
+                        <span>${data.draft ? 'Yes' : 'No'}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label><i class="fas fa-camera"></i> Photos Taken:</label>
+                        <span>${data.photos_taken ? 'Yes' : 'No'}</span>
+                    </div>
                     
-                    <hr class="section-divider">
-                    
+                    <div class="section-header">
+                        <i class="fas fa-tasks"></i>
+                        Progress & Work Details
+                    </div>
                     <div class="detail-item">
                         <label><i class="fas fa-percentage"></i> Progress:</label>
                         <span>${data.progress_percentage}%</span>
@@ -381,8 +495,10 @@ function viewEntryDetails(entryId) {
                         <p>${data.work_description || 'No description provided'}</p>
                     </div>
                     
-                    <hr class="section-divider">
-                    
+                    <div class="section-header">
+                        <i class="fas fa-cloud-sun"></i>
+                        Weather Conditions
+                    </div>
                     <div class="detail-item">
                         <label><i class="fas fa-cloud-sun"></i> Weather:</label>
                         <span>${data.weather_condition || 'N/A'}</span>
@@ -421,8 +537,10 @@ function viewEntryDetails(entryId) {
                     </div>
                     ` : ''}
                     
-                    <hr class="section-divider">
-                    
+                    <div class="section-header">
+                        <i class="fas fa-dollar-sign"></i>
+                        Budget Information
+                    </div>
                     <div class="detail-item">
                         <label><i class="fas fa-dollar-sign"></i> Project Budget:</label>
                         <span>₱${data.project_budget.toLocaleString()}</span>
@@ -436,22 +554,99 @@ function viewEntryDetails(entryId) {
                         <span style="color: ${data.remaining_budget >= 0 ? '#28a745' : '#dc3545'}">₱${data.remaining_budget.toLocaleString()}</span>
                     </div>
                     
-                    <hr class="section-divider">
-                    
-                    <div class="detail-item">
-                        <label><i class="fas fa-chart-bar"></i> Entry Statistics:</label>
-                        <div class="stats-inline">
-                            <span><i class="fas fa-users"></i> ${data.labor_count} Labor</span>
-                            <span><i class="fas fa-boxes"></i> ${data.material_count} Materials</span>
-                            <span><i class="fas fa-tools"></i> ${data.equipment_count} Equipment</span>
-                            <span><i class="fas fa-clock"></i> ${data.delay_count} Delays</span>
-                            <span><i class="fas fa-user-friends"></i> ${data.visitor_count} Visitors</span>
-                            <span><i class="fas fa-camera"></i> ${data.photo_count} Photos</span>
+                    <div class="section-header">
+                        <i class="fas fa-list-alt"></i>
+                        Detailed Entry Information
+                    </div>
+                    ${data.labor_entries && data.labor_entries.length > 0 ? `
+                    <div class="detail-item full-width">
+                        <label><i class="fas fa-users"></i> Labor Entries (${data.labor_entries.length}):</label>
+                        <div class="entry-list">
+                            ${data.labor_entries.map(labor => `
+                                <div class="entry-item">
+                                    <strong>${labor.trade_description}</strong> - ${labor.workers_count} workers, ${labor.hours_worked}h
+                                    <br><small>Type: ${labor.labor_type} | Rate: ₱${labor.hourly_rate || 'N/A'}/hr</small>
+                                </div>
+                            `).join('')}
                         </div>
                     </div>
+                    ` : ''}
                     
+                    ${data.material_entries && data.material_entries.length > 0 ? `
+                    <div class="detail-item full-width">
+                        <label><i class="fas fa-boxes"></i> Material Entries (${data.material_entries.length}):</label>
+                        <div class="entry-list">
+                            ${data.material_entries.map(material => `
+                                <div class="entry-item">
+                                    <strong>${material.material_name}</strong> - ${material.quantity_delivered} ${material.unit}
+                                    <br><small>Used: ${material.quantity_used} ${material.unit} | Supplier: ${material.supplier || 'N/A'}</small>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
+                    
+                    ${data.equipment_entries && data.equipment_entries.length > 0 ? `
+                    <div class="detail-item full-width">
+                        <label><i class="fas fa-tools"></i> Equipment Entries (${data.equipment_entries.length}):</label>
+                        <div class="entry-list">
+                            ${data.equipment_entries.map(equipment => `
+                                <div class="entry-item">
+                                    <strong>${equipment.equipment_name}</strong> (${equipment.equipment_type})
+                                    <br><small>Operator: ${equipment.operator_name || 'N/A'} | Hours: ${equipment.hours_operated}h | Status: ${equipment.status}</small>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
+                    
+                    ${data.delay_entries && data.delay_entries.length > 0 ? `
+                    <div class="detail-item full-width">
+                        <label><i class="fas fa-clock"></i> Delay Entries (${data.delay_entries.length}):</label>
+                        <div class="entry-list">
+                            ${data.delay_entries.map(delay => `
+                                <div class="entry-item">
+                                    <strong>${delay.category}</strong> - ${delay.duration_hours}h delay
+                                    <br><small>Impact: ${delay.impact_level} | ${delay.description}</small>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
+                    
+                    ${data.visitor_entries && data.visitor_entries.length > 0 ? `
+                    <div class="detail-item full-width">
+                        <label><i class="fas fa-user-friends"></i> Visitor Entries (${data.visitor_entries.length}):</label>
+                        <div class="entry-list">
+                            ${data.visitor_entries.map(visitor => `
+                                <div class="entry-item">
+                                    <strong>${visitor.visitor_name}</strong> (${visitor.company || 'N/A'})
+                                    <br><small>Type: ${visitor.visitor_type} | Purpose: ${visitor.purpose_of_visit}</small>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
+                    
+                    ${data.subcontractor_entries && data.subcontractor_entries.length > 0 ? `
                     <hr class="section-divider">
+                    <div class="detail-item full-width">
+                        <label><i class="fas fa-building"></i> Subcontractor Work:</label>
+                        <div class="subcontractor-list">
+                            ${data.subcontractor_entries.map(sub => `
+                                <div class="subcontractor-item">
+                                    <strong>${sub.company_name}</strong> - ₱${sub.daily_cost.toLocaleString()}
+                                    <br><small>${sub.work_description}</small>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
                     
+                    <div class="section-header">
+                        <i class="fas fa-user-check"></i>
+                        Review Information
+                    </div>
                     <div class="detail-item">
                         <label><i class="fas fa-user-check"></i> Reviewed By:</label>
                         <span>${data.reviewed_by}</span>
@@ -476,6 +671,7 @@ function viewEntryDetails(entryId) {
             modalFooter.style.display = 'flex';
         })
         .catch(error => {
+            isLoadingModal = false;
             modalBody.innerHTML = `<div class="error">Error loading entry details: ${error.message}</div>`;
         });
     
@@ -483,11 +679,13 @@ function viewEntryDetails(entryId) {
     const closeBtn = modal.querySelector('.close');
     closeBtn.onclick = function() {
         modal.style.display = 'none';
+        isLoadingModal = false;
     };
     
     window.onclick = function(event) {
         if (event.target === modal) {
             modal.style.display = 'none';
+            isLoadingModal = false;
         }
     };
 }
@@ -643,6 +841,11 @@ function hideLoadingOverlay() {
     if (overlay) {
         overlay.style.display = 'none';
     }
+}
+
+function exportSingleEntry(entryId) {
+    const printUrl = `/diary/admin/print-layout/?entry_id=${entryId}`;
+    window.open(printUrl, '_blank');
 }
 
 function showNotification(title, message, type = 'info') {

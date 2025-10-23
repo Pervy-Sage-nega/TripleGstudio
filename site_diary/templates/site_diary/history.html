@@ -4,6 +4,129 @@
 {% block head %}
     <title>Site Diary - History</title>
     <link rel="stylesheet" href="{% static 'css/sitecss/history.css' %}">
+    <style>
+    /* Enhanced Timeline Content Styles */
+    .labor-summary, .materials-summary, .equipment-summary, 
+    .subcontractor-summary, .delays-summary, .visitors-summary {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 10px;
+    }
+
+    .labor-item, .material-item, .equipment-item, 
+    .subcontractor-item, .delay-item, .visitor-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 12px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        font-size: 0.9em;
+        flex-wrap: wrap;
+    }
+
+    .labor-type, .material-name, .equipment-name, 
+    .subcontractor-name, .delay-category, .visitor-name {
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .labor-count, .material-quantity, .equipment-hours,
+    .subcontractor-cost, .delay-duration, .visitor-time {
+        background: #e3f2fd;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.85em;
+        color: #1976d2;
+    }
+
+    .labor-overtime {
+        background: #fff3e0;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.85em;
+        color: #f57c00;
+    }
+
+    .equipment-status {
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.85em;
+        font-weight: 500;
+    }
+
+    .status-operational { background: #e8f5e8; color: #2e7d32; }
+    .status-maintenance { background: #fff3e0; color: #f57c00; }
+    .status-breakdown { background: #ffebee; color: #d32f2f; }
+    .status-idle { background: #f5f5f5; color: #757575; }
+
+    .delay-impact {
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.85em;
+        font-weight: 500;
+    }
+
+    .impact-low { background: #e8f5e8; color: #2e7d32; }
+    .impact-medium { background: #fff3e0; color: #f57c00; }
+    .impact-high { background: #ffebee; color: #d32f2f; }
+    .impact-critical { background: #fce4ec; color: #c2185b; }
+
+    .visitor-type, .visitor-company, .material-supplier, 
+    .equipment-operator, .subcontractor-work {
+        color: #666;
+        font-size: 0.85em;
+    }
+
+    .issue-item {
+        margin-bottom: 12px;
+        padding: 12px;
+        border-left: 4px solid #ff9800;
+        background: #fff8e1;
+        border-radius: 0 6px 6px 0;
+    }
+
+    .quality-issue {
+        border-left-color: #2196f3;
+        background: #e3f2fd;
+    }
+
+    .safety-incident {
+        border-left-color: #f44336;
+        background: #ffebee;
+    }
+
+    .status-complete {
+        background: #e8f5e8;
+        color: #2e7d32;
+    }
+
+    .status-revision {
+        background: #fff3e0;
+        color: #f57c00;
+    }
+    
+
+    
+    .timeline-content::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    .timeline-content::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+    
+    .timeline-content::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 4px;
+    }
+    
+    .timeline-content::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+    </style>
     <link rel="stylesheet" href="{% static 'css/sitecss/createblog.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/global-footer.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/dashboard.css' %}">
@@ -161,9 +284,32 @@
                                 <div class="info-label">Progress</div>
                                 <div class="info-value">{{ entry.progress_percentage }}%</div>
                             </div>
+                            {% if entry.milestone %}
+                            <div class="info-group">
+                                <div class="info-label">Milestone</div>
+                                <div class="info-value">{{ entry.milestone.name }}</div>
+                            </div>
+                            {% endif %}
                             <div class="info-group">
                                 <div class="info-label">Status</div>
-                                <div class="info-value">{% if entry.approved %}Approved{% else %}Pending{% endif %}</div>
+                                <div class="info-value">
+                                    {% if entry.reviewed_by %}
+                                        Reviewed by {{ entry.reviewed_by.get_full_name|default:entry.reviewed_by.username }}
+                                        {% if entry.reviewed_date %}
+                                            on {{ entry.reviewed_date|date:"M d, Y" }}
+                                        {% endif %}
+                                    {% else %}
+                                        Pending Review
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="info-group">
+                                <div class="info-label">Entry Status</div>
+                                <div class="info-value">
+                                    <span class="status-badge {% if entry.status == 'complete' %}status-complete{% else %}status-revision{% endif %}">
+                                        {{ entry.get_status_display }}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                         
@@ -204,28 +350,34 @@
                         
                         {% if entry.weather_condition %}
                         <div class="weather-info">
-                            <i class="fas fa-{% if entry.weather_condition == 'sunny' %}sun{% elif entry.weather_condition == 'rainy' %}cloud-rain{% elif entry.weather_condition == 'cloudy' %}cloud{% else %}cloud{% endif %} weather-icon"></i>
+                            <i class="fas fa-{% if entry.weather_condition == 'sunny' %}sun{% elif entry.weather_condition == 'rainy' %}cloud-rain{% elif entry.weather_condition == 'cloudy' %}cloud{% elif entry.weather_condition == 'stormy' %}bolt{% elif entry.weather_condition == 'foggy' %}smog{% elif entry.weather_condition == 'windy' %}wind{% elif entry.weather_condition == 'snowy' %}snowflake{% else %}cloud{% endif %} weather-icon"></i>
                             <div class="weather-details">
+                                <div class="weather-detail">
+                                   
+                                    <span>{{ entry.get_weather_condition_display }}</span>
+                                </div>
                                 {% if entry.temperature_high %}
                                 <div class="weather-detail">
                                     <i class="fas fa-thermometer-half"></i>
-                                    <span>{{ entry.temperature_high }}°C</span>
+                                    <span>High: {{ entry.temperature_high }}°C</span>
                                 </div>
                                 {% endif %}
+                                {% if entry.temperature_low %}
                                 <div class="weather-detail">
-                                    <i class="fas fa-cloud"></i>
-                                    <span>{{ entry.get_weather_condition_display }}</span>
-                                </div>
-                                {% if entry.wind_speed %}
-                                <div class="weather-detail">
-                                    <i class="fas fa-wind"></i>
-                                    <span>{{ entry.wind_speed }} km/h</span>
+                                    <i class="fas fa-thermometer-quarter"></i>
+                                    <span>Low: {{ entry.temperature_low }}°C</span>
                                 </div>
                                 {% endif %}
                                 {% if entry.humidity %}
                                 <div class="weather-detail">
                                     <i class="fas fa-tint"></i>
                                     <span>Humidity: {{ entry.humidity }}%</span>
+                                </div>
+                                {% endif %}
+                                {% if entry.wind_speed %}
+                                <div class="weather-detail">
+                                    <i class="fas fa-wind"></i>
+                                    <span>Wind: {{ entry.wind_speed }} km/h</span>
                                 </div>
                                 {% endif %}
                             </div>
@@ -242,6 +394,132 @@
                             </p>
                         </div>
                         
+                        <!-- Labor Summary -->
+                        {% if entry.labor_entries.exists %}
+                        <div class="activities-section">
+                            <div class="section-title">
+                                <i class="fas fa-users"></i>
+                                <span>Labor Summary ({{ entry.labor_entries.count }} entries)</span>
+                            </div>
+                            <div class="labor-summary">
+                                {% for labor in entry.labor_entries.all %}
+                                <div class="labor-item">
+                                    <span class="labor-type">{{ labor.trade_description }}</span>
+                                    <span class="labor-count">{{ labor.workers_count }} workers</span>
+                                    <span class="labor-hours">{{ labor.hours_worked }}h</span>
+                                    {% if labor.overtime_hours %}
+                                    <span class="labor-overtime">+{{ labor.overtime_hours }}h OT</span>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Materials Summary -->
+                        {% if entry.material_entries.exists %}
+                        <div class="activities-section">
+                            <div class="section-title">
+                                <i class="fas fa-boxes"></i>
+                                <span>Materials ({{ entry.material_entries.count }} items)</span>
+                            </div>
+                            <div class="materials-summary">
+                                {% for material in entry.material_entries.all %}
+                                <div class="material-item">
+                                    <span class="material-name">{{ material.material_name }}</span>
+                                    <span class="material-quantity">{{ material.quantity_delivered }} {{ material.get_unit_display }}</span>
+                                    {% if material.supplier %}
+                                    <span class="material-supplier">from {{ material.supplier }}</span>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Equipment Summary -->
+                        {% if entry.equipment_entries.exists %}
+                        <div class="activities-section">
+                            <div class="section-title">
+                                <i class="fas fa-tools"></i>
+                                <span>Equipment ({{ entry.equipment_entries.count }} items)</span>
+                            </div>
+                            <div class="equipment-summary">
+                                {% for equipment in entry.equipment_entries.all %}
+                                <div class="equipment-item">
+                                    <span class="equipment-name">{{ equipment.equipment_name }}</span>
+                                    <span class="equipment-hours">{{ equipment.hours_operated }}h</span>
+                                    <span class="equipment-status status-{{ equipment.status }}">{{ equipment.get_status_display }}</span>
+                                    {% if equipment.operator_name %}
+                                    <span class="equipment-operator">Op: {{ equipment.operator_name }}</span>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Subcontractors Summary -->
+                        {% if entry.subcontractor_entries.exists %}
+                        <div class="activities-section">
+                            <div class="section-title">
+                                <i class="fas fa-handshake"></i>
+                                <span>Subcontractors ({{ entry.subcontractor_entries.count }} companies)</span>
+                            </div>
+                            <div class="subcontractor-summary">
+                                {% for sub in entry.subcontractor_entries.all %}
+                                <div class="subcontractor-item">
+                                    <span class="subcontractor-name">{{ sub.company_name }}</span>
+                                    <span class="subcontractor-work">{{ sub.work_description }}</span>
+                                    <span class="subcontractor-cost">₱{{ sub.daily_cost|floatformat:0 }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Delays Summary -->
+                        {% if entry.delay_entries.exists %}
+                        <div class="activities-section">
+                            <div class="section-title">
+                                <i class="fas fa-clock"></i>
+                                <span>Delays ({{ entry.delay_entries.count }} incidents)</span>
+                            </div>
+                            <div class="delays-summary">
+                                {% for delay in entry.delay_entries.all %}
+                                <div class="delay-item">
+                                    <span class="delay-category">{{ delay.get_category_display }}</span>
+                                    <span class="delay-duration">{{ delay.duration_hours }}h</span>
+                                    <span class="delay-impact impact-{{ delay.impact_level }}">{{ delay.get_impact_level_display }}</span>
+                                    <span class="delay-description">{{ delay.description|truncatechars:50 }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Visitors Summary -->
+                        {% if entry.visitor_entries.exists %}
+                        <div class="activities-section">
+                            <div class="section-title">
+                                <i class="fas fa-user-friends"></i>
+                                <span>Visitors ({{ entry.visitor_entries.count }} people)</span>
+                            </div>
+                            <div class="visitors-summary">
+                                {% for visitor in entry.visitor_entries.all %}
+                                <div class="visitor-item">
+                                    <span class="visitor-name">{{ visitor.visitor_name }}</span>
+                                    {% if visitor.company %}
+                                    <span class="visitor-company">{{ visitor.company }}</span>
+                                    {% endif %}
+                                    <span class="visitor-type">{{ visitor.get_visitor_type_display }}</span>
+                                    <span class="visitor-time">{{ visitor.arrival_time|time:"H:i" }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
                         {% if entry.quality_issues or entry.safety_incidents %}
                         <div class="activities-section">
                             <div class="section-title">
@@ -249,29 +527,55 @@
                                 <span>Issues & Safety</span>
                             </div>
                             {% if entry.quality_issues %}
-                            <p class="activity-text">
-                                <strong>Quality Issues:</strong> {{ entry.quality_issues }}
-                            </p>
+                            <div class="issue-item quality-issue">
+                                <strong><i class="fas fa-tools"></i> Quality Issues:</strong>
+                                <p>{{ entry.quality_issues }}</p>
+                            </div>
                             {% endif %}
                             {% if entry.safety_incidents %}
-                            <p class="activity-text">
-                                <strong>Safety Incidents:</strong> {{ entry.safety_incidents }}
-                            </p>
+                            <div class="issue-item safety-incident">
+                                <strong><i class="fas fa-hard-hat"></i> Safety Incidents:</strong>
+                                <p>{{ entry.safety_incidents }}</p>
+                            </div>
                             {% endif %}
                         </div>
                         {% endif %}
                         
-                        {% if entry.photos_taken %}
+                        {% if entry.general_notes %}
+                        <div class="activities-section">
+                            <div class="section-title">
+                                <i class="fas fa-sticky-note"></i>
+                                <span>General Notes</span>
+                            </div>
+                            <p class="activity-text">{{ entry.general_notes }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if entry.photos_taken or entry.photos.exists %}
                         <div class="activities-section">
                             <div class="section-title">
                                 <i class="fas fa-camera"></i>
                                 <span>Site Photos</span>
                             </div>
                             <div class="photo-gallery">
+                                {% if entry.photos.exists %}
+                                    {% for photo in entry.photos.all %}
+                                    <div class="gallery-item">
+                                        <img src="{{ photo.photo.url }}" alt="{{ photo.caption|default:'Site Photo' }}">
+                                        {% if photo.caption %}
+                                        <span class="photo-caption">{{ photo.caption }}</span>
+                                        {% endif %}
+                                        {% if photo.location %}
+                                        <span class="photo-location">{{ photo.location }}</span>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
                                 <div class="gallery-item">
                                     <img src="{% static 'images/image3.jpg' %}" alt="Site Photo">
                                     <span class="photo-count">Photos Available</span>
                                 </div>
+                                {% endif %}
                             </div>
                         </div>
                         {% endif %}
@@ -326,7 +630,7 @@
                                         <a href="{% url 'site_diary:diary_entry_pdf' entry.id %}" class="action-btn download" title="Download PDF" target="_blank">
                                             <i class="fas fa-file-pdf"></i>
                                         </a>
-                                        <button class="action-btn view" title="View Details" onclick="viewEntry({{ entry.id }})">
+                                        <button class="action-btn view" title="View Details" onclick="viewEntry({{ entry.id }})" data-entry-id="{{ entry.id }}">
                                             <i class="fas fa-eye"></i>
                                         </button>
                                         <a href="{% url 'site_diary:revision_diary' entry.id %}" class="action-btn revision" title="Add Revision">

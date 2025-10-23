@@ -122,7 +122,7 @@ function generateReport(projectId) {
     showNotification(`Generating report for project ${projectId}...`, 'info');
     
     // Call the Django API endpoint
-    fetch(`/site/api/generate-report/${projectId}/`, {
+    fetch(`/diary/api/generate-report/${projectId}/`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

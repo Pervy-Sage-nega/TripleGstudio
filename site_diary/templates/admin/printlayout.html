@@ -1,0 +1,747 @@
+
+{% comment %} open this via http://localhost:8000/test-print/ {% endcomment %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Construction Report - {{ project.name }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        @page {
+            size: A4;
+            margin: 1cm;
+        }
+        
+        .size-controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .size-btn {
+            padding: 8px 12px;
+            background: #00273C;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .size-btn:hover {
+            background: #FF7120;
+        }
+        
+        .size-btn.active {
+            background: #FF7120;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Calibri', 'Times New Roman', serif;
+            font-size: 12pt;
+            line-height: 1.15;
+            color: #000;
+            background: white;
+        }
+        
+        .line {
+            background: #00273C;
+            color: white;
+            padding: 2px 20px;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            position: relative;
+        }
+        
+        .line-content {
+           
+            padding: 0 20px 0 40px ;
+        }
+        
+        .header {
+            background: #00273C;
+            color: white;
+            padding: 15px  38px;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            margin-bottom: 30px;
+            position: relative;
+               clip-path: polygon(5% 0, 32% 0, 29% 100%, 2% 100%);
+            overflow: visible;
+        }
+        
+        .header-title {
+            position: absolute;
+            left: 250px;
+            top: 18px;
+            right: 20px;
+            font-size: 28pt;
+            font-weight: bold;
+            color: #00273C;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            overflow: visible;
+        }
+        
+        .header-line {
+            position: absolute;
+            left: 250px;
+            top: 71px;
+            right: 20px;
+            height: 2px;
+            background: #FF7120;
+        }
+        
+        .logo-section {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo {
+            width: 40px;
+            height: 40px;
+            margin-right: 12px;
+        }
+        
+        .logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        .company-info {
+            text-align: left;
+        }
+        
+        .company-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+        
+        .tagline {
+            font-size: 10px;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 0 80px 20px;
+            margin-bottom: 60px;
+        }
+        
+        .report-title {
+            text-align: center;
+            font-size: 16pt;
+            font-weight: bold;
+            color: #00273C;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            border-bottom: 2px solid #FF7120;
+            padding-bottom: 10px;
+        }
+        
+        .section {
+            margin-bottom: 20px;
+            page-break-inside: avoid;
+        }
+        
+        .material-section {
+            page-break-inside: avoid;
+        }
+        
+        .material-item {
+            page-break-inside: avoid;
+        }
+        
+        .description-section {
+            page-break-inside: avoid;
+        }
+        
+        .signature-section {
+            page-break-inside: avoid;
+            margin-top: 30px;
+        }
+        
+        .section-title {
+            font-size: 14pt;
+            font-weight: bold;
+            color: #00273C;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+        }
+        
+        .field-row {
+            display: flex;
+            margin-bottom: 8px;
+            align-items: baseline;
+        }
+        
+        .field-label {
+            font-weight: bold;
+            width: 140px;
+            color: #000;
+            flex-shrink: 0;
+            font-size: 11pt;
+        }
+        
+        .field-value {
+            flex: 1;
+            padding-left: 10px;
+            border-bottom: 1px dotted #ccc;
+            min-height: 18px;
+            font-size: 11pt;
+        }
+        
+        .description-section {
+            margin: 15px 0;
+        }
+        
+        .description-box {
+            border: 1px solid #ccc;
+            padding: 10px;
+            min-height: 80px;
+            font-size: 11pt;
+            line-height: 1.4;
+        }
+        
+        .material-section {
+            margin: 15px 0;
+        }
+        
+        .material-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px dotted #ddd;
+        }
+        
+        .material-name {
+            font-weight: normal;
+        }
+        
+        .material-quantity {
+            font-size: 10pt;
+            color: #666;
+        }
+        
+        .signature-section {
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .signature-box {
+            width: 200px;
+            text-align: center;
+        }
+        
+        .signature-line {
+            border-bottom: 1px solid #000;
+            height: 40px;
+            margin-bottom: 5px;
+        }
+        
+        .signature-title {
+            font-weight: bold;
+            font-size: 11pt;
+            margin-bottom: 3px;
+        }
+        
+        .signature-name {
+            font-size: 9pt;
+            color: #666;
+        }
+        
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #00273C;
+            color: white;
+            text-align: center;
+            padding: 8px;
+            font-size: 9pt;
+        }
+        
+        @media print {
+            @page {
+                margin: 0;
+            }
+            
+            * {
+                margin: 0;
+                padding: 0;
+            }
+            
+            html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                background: white;
+            }
+            
+            .print-container {
+                width: 100%;
+                max-width: none;
+                margin: 0;
+                padding: 0;
+                box-shadow: none;
+                background: white;
+            }
+            
+            .content {
+                width: 100%;
+                padding: 0 40px 40px;
+                margin: 0;
+            }
+            
+            .header {
+                width: 100%;
+                margin: 0 0 15px 0;
+                padding: 15px 38px;
+                clip-path: polygon(5% 0, 32% 0, 29% 100%, 2% 100%);
+            }
+            
+            .header-line {
+                width: 400px;
+                left: 60%;
+                transform: translateX(-50%);
+            }
+            
+            .line-content {
+                padding: 0 20px 0 40px;
+            }
+            
+            .footer {
+                width: 100%;
+                margin: 10px 0 0 0;
+                padding: 8px 0;
+                position: relative;
+            }
+            
+            .section {
+                page-break-inside: avoid;
+                break-inside: avoid;
+                width: 100%;
+                margin-bottom: 15px;
+            }
+            
+            .material-section {
+                page-break-inside: avoid;
+            }
+            
+            .description-section {
+                page-break-inside: avoid;
+            }
+            
+            .signature-section {
+                page-break-inside: avoid;
+                margin-top: 20px;
+            }
+            
+            .size-controls {
+                display: none;
+            }
+        }
+        
+        /* Size variations */
+        .size-small {
+            font-size: 10pt;
+        }
+        
+        .size-small .field-label,
+        .size-small .field-value {
+            font-size: 9pt;
+        }
+        
+        .size-small .section-title {
+            font-size: 12pt;
+        }
+        
+        .size-medium {
+            font-size: 12pt;
+        }
+        
+        .size-large {
+            font-size: 14pt;
+        }
+        
+        .size-large .field-label,
+        .size-large .field-value {
+            font-size: 13pt;
+        }
+        
+        .size-large .section-title {
+            font-size: 16pt;
+        }
+        
+        @media screen {
+            body {
+                background: #f5f5f5;
+                padding: 20px;
+            }
+            
+            .print-container {
+                max-width: 210mm;
+                margin: 0 auto;
+                background: white;
+                box-shadow: 0 0 10px rgba(0,0,0,0.1);
+                overflow: hidden;
+                position: relative;
+            }
+        }
+        
+        @media screen and (max-width: 768px) {
+            .header {
+                clip-path: polygon(0 0, 40% 0, 35% 100%, 0 100%);
+            }
+            
+            .header-title {
+                left: 45%;
+                right: 5%;
+                font-size: 16pt;
+                top: 15px;
+                letter-spacing: 0.5px;
+            }
+            
+            .header-line {
+                left: 45%;
+                right: 5%;
+                top: 50px;
+            }
+            
+            .content {
+                padding: 0 20px 20px;
+            }
+        }
+        
+        @media screen and (max-width: 480px) {
+            .header {
+                clip-path: polygon(0 0, 50% 0, 45% 100%, 0 100%);
+                height: 70px;
+            }
+            
+            .header-title {
+                left: 52%;
+                right: 2%;
+                font-size: 12pt;
+                top: 10px;
+                letter-spacing: 0px;
+                line-height: 1.1;
+            }
+            
+            .header-line {
+                left: 52%;
+                right: 2%;
+                top: 45px;
+            }
+            
+            .content {
+                padding: 0 15px 20px;
+            }
+            
+            .field-label {
+                width: 100px;
+                font-size: 10pt;
+            }
+            
+            .field-value {
+                font-size: 10pt;
+            }
+        }
+        
+        @media screen and (min-width: 1200px) {
+            .header-title {
+                left: 260px;
+                right: 30px;
+                font-size: 28pt;
+            }
+            
+            .header-line {
+                left: 350px;
+                right: 30px;
+                width: 300px;
+            }
+        }
+    </style>
+</head>
+<body class="size-medium">
+    
+    <div class="size-controls">
+        <button class="size-btn" onclick="setSize('small')">Small</button>
+        <button class="size-btn active" onclick="setSize('medium')">Medium</button>
+        <button class="size-btn" onclick="setSize('large')">Large</button>
+        <button class="size-btn" onclick="window.print()">Print</button>
+    </div>
+    
+    <div class="print-container">
+         <div class="line-content">
+            <div class="line"> </div>
+         </div>
+        <div class="header">
+            <div class="logo-section">
+                <div class="logo">
+                    <img src="/static/images/logostick.png" alt="Triple G BuildHub Logo">
+                </div>
+            </div>
+            <div class="company-info">
+                <div class="company-name">Triple G </div>
+                <div class="tagline">Design Studio + Construction </div>
+            </div>
+        </div>
+        <div class="header-title">Construction Site Report</div>
+        <div class="header-line"></div>
+
+        <div class="content">
+            
+            <div class="section">
+                <div class="section-title">Project Information</div>
+                <div class="field-row">
+                    <div class="field-label">Project Name:</div>
+                    <div class="field-value">{{ project.name|default:"Not specified" }}</div>
+                </div>
+                <div class="field-row">
+                    <div class="field-label">Client:</div>
+                    <div class="field-value">{{ project.client_name|default:"Not specified" }}</div>
+                </div>
+                <div class="field-row">
+                    <div class="field-label">Location:</div>
+                    <div class="field-value">{{ project.location|default:"Not specified" }}</div>
+                </div>
+                <div class="field-row">
+                    <div class="field-label">Report Date:</div>
+                    <div class="field-value">{{ diary_entry.entry_date|default:"Not specified" }}</div>
+                </div>
+                <div class="field-row">
+                    <div class="field-label">Weather:</div>
+                    <div class="field-value">{{ diary_entry.weather_condition|capfirst|default:"Not recorded" }}</div>
+                </div>
+                <div class="field-row">
+                    <div class="field-label">Temperature:</div>
+                    <div class="field-value">
+                        {% if diary_entry.temperature_high and diary_entry.temperature_low %}
+                            High: {{ diary_entry.temperature_high }}°C | Low: {{ diary_entry.temperature_low }}°C
+                        {% else %}
+                            Not recorded
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-label">Project Status:</div>
+                    <div class="field-value">{{ project.get_status_display|default:"Not specified" }}</div>
+                </div>
+                <div class="field-row">
+                    <div class="field-label">Progress:</div>
+                    <div class="field-value">{{ diary_entry.progress_percentage|default:"0" }}%</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Work Performed Today</div>
+                <div class="description-section">
+                    <div class="description-box">
+                        {{ diary_entry.work_description|default:"No work description provided for this report period." }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Materials</div>
+                <div class="material-section">
+                    {% if diary_entry.material_entries.all %}
+                        {% for material in diary_entry.material_entries.all %}
+                        <div class="material-item">
+                            <div class="material-name">{{ material.material_name }}</div>
+                            <div class="material-quantity">{{ material.quantity_delivered }} {{ material.unit }} delivered</div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="material-item">
+                            <div class="material-name">No materials recorded</div>
+                            <div class="material-quantity">—</div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Equipment</div>
+                <div class="material-section">
+                    {% if diary_entry.equipment_entries.all %}
+                        {% for equipment in diary_entry.equipment_entries.all %}
+                        <div class="material-item">
+                            <div class="material-name">{{ equipment.equipment_name }}</div>
+                            <div class="material-quantity">{{ equipment.hours_operated }} hours operated</div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="material-item">
+                            <div class="material-name">No equipment recorded</div>
+                            <div class="material-quantity">—</div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Labor & Personnel</div>
+                <div class="material-section">
+                    {% if diary_entry.labor_entries.all %}
+                        {% for labor in diary_entry.labor_entries.all %}
+                        <div class="material-item">
+                            <div class="material-name">{{ labor.trade_description }}</div>
+                            <div class="material-quantity">{{ labor.workers_count }} workers, {{ labor.hours_worked }} hours</div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="material-item">
+                            <div class="material-name">No labor recorded</div>
+                            <div class="material-quantity">—</div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Subcontractors</div>
+                <div class="material-section">
+                    {% if diary_entry.subcontractor_entries.all %}
+                        {% for subcontractor in diary_entry.subcontractor_entries.all %}
+                        <div class="material-item">
+                            <div class="material-name">{{ subcontractor.company_name }}</div>
+                            <div class="material-quantity">{{ subcontractor.work_description }} - ₱{{ subcontractor.daily_cost }}</div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="material-item">
+                            <div class="material-name">No subcontractors recorded</div>
+                            <div class="material-quantity">—</div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if diary_entry.delay_entries.all %}
+            <div class="section">
+                <div class="section-title">Delays & Issues</div>
+                <div class="material-section">
+                    {% for delay in diary_entry.delay_entries.all %}
+                    <div class="material-item">
+                        <div class="material-name">{{ delay.get_category_display }}</div>
+                        <div class="material-quantity">{{ delay.description }} ({{ delay.duration_hours }} hours)</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="section">
+                <div class="section-title">Quality & Safety</div>
+                <div class="field-row">
+                    <div class="field-label">Quality Issues:</div>
+                    <div class="field-value">{{ diary_entry.quality_issues|default:"No quality issues reported" }}</div>
+                </div>
+                <div class="field-row">
+                    <div class="field-label">Safety Incidents:</div>
+                    <div class="field-value">{{ diary_entry.safety_incidents|default:"No safety incidents reported" }}</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Additional Notes</div>
+                <div class="description-section">
+                    <div class="description-box">
+                        {{ diary_entry.general_notes|default:"No additional notes for this report period." }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="signature-section">
+                <div class="signature-box">
+                    <div class="signature-line"></div>
+                    <div class="signature-title">Site Supervisor</div>
+                    <div class="signature-name">
+                        {% if diary_entry.created_by %}
+                            {{ diary_entry.created_by.get_full_name|default:diary_entry.created_by.username }}
+                        {% else %}
+                            Not assigned
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="signature-box">
+                    <div class="signature-line"></div>
+                    <div class="signature-title">Project Manager</div>
+                    <div class="signature-name">
+                        {% if project.project_manager %}
+                            {{ project.project_manager.get_full_name|default:project.project_manager.username }}
+                        {% else %}
+                            Not assigned
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            Triple G BuildHub — Confidential Report | Page 1 of 1
+        </div>
+    </div>
+    
+    <script>
+        function setSize(size) {
+            const body = document.body;
+            const buttons = document.querySelectorAll('.size-btn');
+            
+            // Remove all size classes
+            body.classList.remove('size-small', 'size-medium', 'size-large');
+            
+            // Add new size class
+            body.classList.add('size-' + size);
+            
+            // Update active button
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+        
+        // Force full width on load and before print
+        window.addEventListener('beforeprint', function() {
+            document.body.style.margin = '0';
+            document.body.style.padding = '0';
+            document.documentElement.style.margin = '0';
+            document.documentElement.style.padding = '0';
+        });
+        
+        window.addEventListener('load', function() {
+            // Override any browser default margins
+            const style = document.createElement('style');
+            style.textContent = `
+                @media print {
+                    @page { margin: 0 !important; }
+                    html, body { margin: 0 !important; padding: 0 !important; }
+                    .header, .footer { width: 100% !important; margin-left: 0 !important; margin-right: 0 !important; }
+                }
+            `;
+            document.head.appendChild(style);
+        });
+    </script>
+</body>
+</html>

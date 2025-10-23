@@ -194,7 +194,7 @@ document.addEventListener('DOMContentLoaded', function() {
             'approve': { title: 'Approve Site Manager', message: 'Are you sure you want to approve this site manager?' },
             'deny': { title: 'Deny Application', message: 'Are you sure you want to deny this site manager application?' },
             'suspend': { title: 'Suspend User', message: 'Are you sure you want to suspend this user?' },
-            'reactivate': { title: 'Reactivate User', message: 'Are you sure you want to reactivate this user?' }
+            'reactivate': { title: 'Unsuspend User', message: 'Are you sure you want to unsuspend this user?' }
         };
 
         const actionData = actions[action];
@@ -209,7 +209,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Update user status
-    function updateUserStatus(userId, action) {
+    window.updateUserStatus = function(userId, action) {
         fetch(`/admin-panel/users/${userId}/update-status/`, {
             method: 'POST',
             headers: {

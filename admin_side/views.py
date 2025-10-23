@@ -169,8 +169,8 @@ def admin_user_list(request):
             'email': user.email,
             'role': 'client',
             'role_display': 'Client',
-            'status': 'active' if user.is_active else 'inactive',
-            'status_display': 'Active' if user.is_active else 'Inactive',
+            'status': 'active' if user.is_active else 'suspended',
+            'status_display': 'Active' if user.is_active else 'Suspended',
             'date_joined': user.date_joined,
             'profile_pic': user.profile.get_profile_image_url() if hasattr(user, 'profile') else None,
             'is_online': is_user_online(user)

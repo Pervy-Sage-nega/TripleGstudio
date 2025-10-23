@@ -20,10 +20,14 @@
             </div>
             <div class="user-info">
                 <div class="user-greeting">
-                    <div class="user-name">{{ user.get_full_name|default:user.email }}</div>
+                    <div class="user-name">{{ user_company|default:"Triple G Design Studio" }}</div>
                     <div class="user-role">{% if user.is_staff %}Site Manager{% else %}Project Member{% endif %}</div>
                 </div>
-                <div class="user-avatar">{{ user.first_name.0|default:user.email.0|upper }}{{ user.last_name.0|default:'' }}</div>
+                {% if user_profile_image %}
+                    <img src="{{ user_profile_image }}" alt="Profile" class="user-avatar-img">
+                {% else %}
+                    <div class="user-avatar">{{ user.first_name.0|default:user.email.0|upper }}{{ user.last_name.0|default:'' }}</div>
+                {% endif %}
             </div>
         </div>
    
@@ -89,30 +93,21 @@
                         </div>
                     </div>
                     <div class="milestone-progress">
-                        <div class="milestone-item completed">
-                            <span class="milestone-name">Planning</span>
+                        {% for milestone in project.milestones %}
+                        <div class="milestone-item {% if progress > milestone.threshold %}completed{% elif progress >= milestone.threshold|add:'-25' %}active{% endif %}">
+                            <span class="milestone-name">{{ milestone.name }}</span>
                             <div class="milestone-bar">
-                                <div class="milestone-fill" style="width: 100%"></div>
+                                <div class="milestone-fill" style="width: {% if progress > milestone.threshold %}100{% elif progress >= milestone.threshold|add:'-25' %}{{ progress|floatformat:0 }}{% else %}0{% endif %}%"></div>
                             </div>
                         </div>
-                        <div class="milestone-item completed">
-                            <span class="milestone-name">Foundation</span>
-                            <div class="milestone-bar">
-                                <div class="milestone-fill" style="width: 100%"></div>
-                            </div>
-                        </div>
+                        {% empty %}
                         <div class="milestone-item active">
-                            <span class="milestone-name">Structure</span>
+                            <span class="milestone-name">In Progress</span>
                             <div class="milestone-bar">
-                                <div class="milestone-fill" style="width: 70%"></div>
+                                <div class="milestone-fill" style="width: {{ progress|floatformat:0 }}%"></div>
                             </div>
                         </div>
-                        <div class="milestone-item">
-                            <span class="milestone-name">Finishing</span>
-                            <div class="milestone-bar">
-                                <div class="milestone-fill" style="width: 0%"></div>
-                            </div>
-                        </div>
+                        {% endfor %}
                     </div>
                 </div>
                 <button class="btn btn-outline" onclick="openTimelineModal()">
@@ -121,64 +116,11 @@
             </div>
         </div>
 
-        <!-- Main Content Grid -->
-        <div class="detail-grid">
-
-            <!-- Budget Tracking -->
-            <div class="detail-card budget-card">
-                <h3 class="card-title">
-                    <i class="fas fa-dollar-sign"></i> Budget Tracking
-                </h3>
-                <div class="budget-summary">
-                    <div class="budget-item">
-                        <span class="budget-label">Total Budget</span>
-                        <span class="budget-value total">₱{{ total_budget|floatformat:2 }}</span>
-                    </div>
-                    <div class="budget-item">
-                        <span class="budget-label">Total Spent</span>
-                        <span class="budget-value spent">₱{{ total_spent|floatformat:2 }}</span>
-                    </div>
-                    <div class="budget-item">
-                        <span class="budget-label">Remaining</span>
-                        <span class="budget-value remaining">₱{{ remaining_budget|floatformat:2 }}</span>
-                    </div>
-                </div>
-                <div class="budget-chart">
-                    <div class="chart-container">
-                        <canvas id="budgetChart" width="200" height="200"></canvas>
-                    </div>
-                </div>
-                <button class="btn btn-primary" onclick="generateFinancialReport()">
-                    <i class="fas fa-file-invoice-dollar"></i> Generate Report
-                </button>
-            </div>
-
-            <!-- Site Diary Summary -->
-            <div class="detail-card diary-card">
-                <h3 class="card-title">
-                    <i class="fas fa-book"></i> Recent Site Diary Entries
-                </h3>
-                <div class="diary-entries">
-                    {% for entry in recent_diary_entries %}
-                    <div class="diary-entry">
-                        <div class="entry-date">{{ entry.entry_date|date:"M d, Y" }}</div>
-                        <div class="entry-summary">{{ entry.work_description|truncatechars:80 }}</div>
-                        <div class="entry-progress">Progress: {{ entry.progress_percentage|floatformat:0 }}%</div>
-                    </div>
-                    {% empty %}
-                    <div class="diary-entry">
-                        <div class="entry-summary">No diary entries found for this project.</div>
-                    </div>
-                    {% endfor %}
-                </div>
-                <a href="{% url 'site_diary:diary' %}" class="btn btn-outline">
-                    <i class="fas fa-external-link-alt"></i> View Full Diary Log
-                </a>
-            </div>
-
-            <!-- Labor & Equipment -->
-            <div class="detail-card resources-card">
-                <h3 class="card-title">
+        <!-- Budget and Labor Section -->
+        <div class="budget-labor-container">
+            <!-- Labor & Equipment Section -->
+            <div class="labor-equipment-section">
+                <h3 class="section-title">
                     <i class="fas fa-hard-hat"></i> Labor & Equipment
                 </h3>
                 <div class="resource-stats">
@@ -210,10 +152,70 @@
                         </div>
                     </div>
                 </div>
-                <button class="btn btn-secondary" onclick="addResourceEntry()" disabled>
-                    <i class="fas fa-plus"></i> Add Entry
-                </button>
             </div>
+
+            <!-- Budget Tracking Section -->
+            <div class="budget-tracking-section">
+                <h3 class="section-title">
+                    <i class="fas fa-dollar-sign"></i> Budget Tracking
+                </h3>
+                <div class="budget-content">
+                    <div class="budget-chart">
+                        <div class="chart-container">
+                            <canvas id="budgetChart" width="300" height="300"></canvas>
+                        </div>
+                    </div>
+                    <div class="budget-info">
+                        <h4 class="budget-summary-title">Budget Summary</h4>
+                        <div class="budget-summary">
+                            <div class="budget-item">
+                                <span class="budget-label">Total Budget</span>
+                                <span class="budget-value total">₱{{ total_budget|floatformat:2 }}</span>
+                            </div>
+                            <div class="budget-item">
+                                <span class="budget-label">Total Spent</span>
+                                <span class="budget-value spent">₱{{ total_spent|floatformat:2 }}</span>
+                            </div>
+                            <div class="budget-item">
+                                <span class="budget-label">Remaining</span>
+                                <span class="budget-value remaining">₱{{ remaining_budget|floatformat:2 }}</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="generateFinancialReport()">
+                            <i class="fas fa-file-invoice-dollar"></i> Generate Report
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="detail-grid">
+
+            <!-- Site Diary Summary -->
+            <div class="detail-card diary-card">
+                <h3 class="card-title">
+                    <i class="fas fa-book"></i> Recent Site Diary Entries
+                </h3>
+                <div class="diary-entries">
+                    {% for entry in recent_diary_entries %}
+                    <div class="diary-entry">
+                        <div class="entry-date">{{ entry.entry_date|date:"M d, Y" }}</div>
+                        <div class="entry-summary">{{ entry.work_description|truncatechars:80 }}</div>
+                        <div class="entry-progress">Progress: {{ entry.progress_percentage|floatformat:0 }}%</div>
+                    </div>
+                    {% empty %}
+                    <div class="diary-entry">
+                        <div class="entry-summary">No diary entries found for this project.</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <a href="{% url 'site_diary:diary' %}" class="btn btn-outline">
+                    <i class="fas fa-external-link-alt"></i> View Full Diary Log
+                </a>
+            </div>
+
+
 
             <!-- Reports & Files -->
             <div class="detail-card files-card">
@@ -221,57 +223,33 @@
                     <i class="fas fa-folder-open"></i> Reports & Documents
                 </h3>
                 <div class="files-list">
-                    <div class="file-item">
-                        <div class="file-info">
-                            <i class="fas fa-file-pdf"></i>
-                            <span class="file-name">Weekly Progress Report - Week 48</span>
-                        </div>
-                        <div class="file-meta">
-                            <span class="file-date">Dec 12, 2024</span>
-                            <div class="file-actions">
-                                <button class="btn-icon" title="Download">
-                                    <i class="fas fa-download"></i>
-                                </button>
-                                <button class="btn-icon" title="Preview">
-                                    <i class="fas fa-eye"></i>
-                                </button>
+                    {% for entry in recent_diary_entries %}
+                        {% for photo in entry.photos.all %}
+                        <div class="file-item">
+                            <div class="file-info">
+                                <i class="fas fa-file-image"></i>
+                                <span class="file-name">{{ photo.caption|default:'Site Photo' }} - {{ entry.entry_date|date:'M d' }}</span>
+                            </div>
+                            <div class="file-meta">
+                                <span class="file-date">{{ photo.uploaded_at|date:'M d, Y' }}</span>
+                                <div class="file-actions">
+                                    <button class="btn-icon" title="Download" onclick="window.open('{{ photo.photo.url }}', '_blank')">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                    <button class="btn-icon" title="Preview" onclick="window.open('{{ photo.photo.url }}', '_blank')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                        {% endfor %}
+                    {% empty %}
                     <div class="file-item">
                         <div class="file-info">
-                            <i class="fas fa-file-excel"></i>
-                            <span class="file-name">Budget Analysis Q4 2024</span>
-                        </div>
-                        <div class="file-meta">
-                            <span class="file-date">Dec 10, 2024</span>
-                            <div class="file-actions">
-                                <button class="btn-icon" title="Download">
-                                    <i class="fas fa-download"></i>
-                                </button>
-                                <button class="btn-icon" title="Preview">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                            </div>
+                            <span class="file-name">No documents available</span>
                         </div>
                     </div>
-                    <div class="file-item">
-                        <div class="file-info">
-                            <i class="fas fa-file-image"></i>
-                            <span class="file-name">Site Photos - Foundation Complete</span>
-                        </div>
-                        <div class="file-meta">
-                            <span class="file-date">Dec 8, 2024</span>
-                            <div class="file-actions">
-                                <button class="btn-icon" title="Download">
-                                    <i class="fas fa-download"></i>
-                                </button>
-                                <button class="btn-icon" title="Preview">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    {% endfor %}
                 </div>
                 <button class="btn btn-outline">
                     <i class="fas fa-upload"></i> Upload Document
@@ -327,5 +305,66 @@
     </div>
 
     <script src="{% static 'js/sitejs/project-detail.js' %}"></script>
+    
+    <style>
+    .budget-labor-container {
+        display: flex;
+        gap: 24px;
+        margin-bottom: 24px;
+    }
+    .labor-equipment-section, .budget-tracking-section {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .labor-equipment-section {
+        flex: 1;
+    }
+    .budget-tracking-section {
+        flex: 2;
+    }
+    .budget-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 32px;
+        align-items: center;
+    }
+    .budget-chart {
+        display: flex;
+        justify-content: center;
+     
+        height: 100%;
+    }
+    .budget-info {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+    .section-title {
+        margin: 0 0 20px 0;
+        font-size: 1.5rem;
+        color: #333;
+    }
+    .resource-stats {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+    .user-avatar-img {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    .budget-summary-title {
+        text-align: center;
+        margin: -85px 0 16px 0;
+        font-size: 1.3rem;
+        color: #333;
+        font-weight: 600;
+    }
+    </style>
+    
     {% include "site_diary/navtemplate/layoutfooter.html" %}
 {% endblock %}
