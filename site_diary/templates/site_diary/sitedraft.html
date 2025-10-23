@@ -5,12 +5,14 @@
     <title>Site Diary Drafts - Triple G BuildHub</title>
     <link rel="stylesheet" href="{% static 'css/sitecss/drafts.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/createblog.css' %}">
-    <link rel="stylesheet" href="{% static 'css/sitecss/global-footer.css' %}">
+
     <link rel="stylesheet" href="{% static 'css/admincss/nav.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/header-container.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 {% endblock %}
 
 {% block body %}
+    {% csrf_token %}
     <div class="container">
         <!-- Page Header -->
         <div class="page-header">
@@ -102,7 +104,7 @@
         <div class="drafts-container card-view" id="drafts-card-view">
             {% if page_obj and page_obj|length > 0 %}
                 {% for draft in page_obj %}
-                <div class="draft-card">
+                <div class="draft-card" data-draft-id="{{ draft.id }}">
                     <div class="draft-header">
                         <div class="draft-category">Draft</div>
                         <div class="draft-date">
@@ -120,7 +122,11 @@
                         <a href="{% url 'site_diary:diary' %}?edit={{ draft.id }}" class="action-btn revision-btn" title="Edit Draft">
                             <i class="fas fa-edit"></i>
                         </a>
-                        <form method="post" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this draft?');">
+                        <button type="button" class="action-btn delete-btn" title="Delete Draft" onclick="deleteDraft({{ draft.id }})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        <!-- Fallback form for non-JS users -->
+                        <form method="post" style="display: none;" onsubmit="return confirm('Are you sure you want to delete this draft?');">
                             {% csrf_token %}
                             <input type="hidden" name="action" value="delete_draft">
                             <input type="hidden" name="draft_id" value="{{ draft.id }}">
@@ -156,7 +162,8 @@
                     </thead>
                     <tbody id="drafts-table-body">
                         {% for draft in page_obj %}
-                        <tr>
+
+                        <tr data-draft-id="{{ draft.id }}">
                             <td>{{ draft.project.name }}</td>
                             <td>{{ draft.entry_date|date:"M d, Y" }}</td>
                             <td>{{ draft.work_description|truncatechars:80|default:"No description" }}</td>
@@ -165,14 +172,9 @@
                                 <a href="{% url 'site_diary:diary' %}?edit={{ draft.id }}" class="action-btn revision-btn" title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <form method="post" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this draft?');">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="action" value="delete_draft">
-                                    <input type="hidden" name="draft_id" value="{{ draft.id }}">
-                                    <button type="submit" class="action-btn delete-btn" title="Delete">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
+                                <button type="button" class="action-btn delete-btn" title="Delete" onclick="deleteDraft({{ draft.id }})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
                             </td>
                         </tr>
                         {% empty %}
@@ -263,7 +265,7 @@
         // Delete draft function
         function deleteDraft(draftId) {
             if (confirm('Are you sure you want to delete this draft?')) {
-                fetch(`/site-diary/delete-draft/${draftId}/`, {
+                fetch(`{% url 'site_diary:delete_draft' 0 %}`.replace('0', draftId), {
                     method: 'POST',
                     headers: {
                         'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
@@ -273,16 +275,64 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        location.reload();
+                        // Remove the draft card/row from DOM instead of full reload
+                        const cardElement = document.querySelector(`[data-draft-id="${draftId}"]`);
+                        if (cardElement) {
+                            cardElement.remove();
+                        }
+                        // Update stats
+                        updateDraftStats();
+                        // Show success message
+                        showNotification('Draft deleted successfully', 'success');
                     } else {
-                        alert('Error deleting draft');
+                        showNotification(data.message || 'Error deleting draft', 'error');
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Error deleting draft');
+                    showNotification('Error deleting draft', 'error');
                 });
             }
+        }
+        
+        // Update draft statistics
+        function updateDraftStats() {
+            const remainingCards = document.querySelectorAll('.draft-card').length;
+            document.getElementById('drafts-count').textContent = remainingCards;
+            
+            if (remainingCards === 0) {
+                document.getElementById('drafts-card-view').innerHTML = `
+                    <div class="no-drafts" id="no-drafts-message">
+                        <i class="fas fa-file-alt"></i>
+                        <h3>No Diary Drafts Found</h3>
+                        <p>You haven't saved any diary entry drafts yet. Start creating a new diary entry to get started.</p>
+                        <a href="{% url 'site_diary:diary' %}" class="btn btn-primary">Create New Diary Entry</a>
+                    </div>
+                `;
+            }
+        }
+        
+        // Show notification
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+                ${message}
+            `;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                background: ${type === 'success' ? '#28a745' : '#dc3545'};
+                color: white;
+                border-radius: 5px;
+                z-index: 1000;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            `;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
         }
     </script>
 {% endblock %}

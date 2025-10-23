@@ -211,14 +211,17 @@
 }
 
 .button-group {
-    display: inline-flex; /* prevents stretching */
+    display: flex; /* prevents stretching */
     gap: 10px; /* space between buttons */
+    
+    justify-content: center;
 }
 
 .filter-buttons .btn {
     flex-shrink: 0;
     white-space: nowrap;
-        padding: 12px 64px;
+    padding: 8px 16px;
+   margin: auto !important;
 }
 /* Reports Section */
 .reports-section {

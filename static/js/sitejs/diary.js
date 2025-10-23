@@ -3,12 +3,13 @@ document.addEventListener('DOMContentLoaded', function() {
     initTabs();
 
     // ===== BUDGET TRACKING VARIABLES =====
-    let dailyCost = 0;
-    let runningCost = 0;
-    let projectBudget = 0;
-    let materialCosts = [];
-    let equipmentCosts = [];
-    let otherCosts = [];
+    let dailyMaterials = [];
+    let dailyEquipment = [];
+    let dailyOtherCosts = [];
+    let dailyDelays = [];
+    let dailyOvertime = [];
+    let dailySubcontractors = [];
+    window.projectData = window.projectData || [];
 
     // ===== INITIALIZATION =====
     initBudgetTracking();
@@ -105,72 +106,14 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        // Calculate costs when items are added
-        document.getElementById('addMaterial')?.addEventListener('click', addMaterialCost);
-        document.getElementById('addEquipment')?.addEventListener('click', addEquipmentCost);
-        document.getElementById('addOtherCost')?.addEventListener('click', addOtherCost);
+        // Calculate costs when items are added - functions defined in template
+        // Removed duplicate event listeners to avoid conflicts
     }
 
-    function addMaterialCost() {
-        const name = document.getElementById('materialName').value.trim();
-        const quantity = parseFloat(document.getElementById('materialQuantity').value) || 0;
-        const unit = document.getElementById('materialUnit').value;
-        const cost = parseFloat(document.getElementById('materialCost').value) || 0;
-        
-        if (name && quantity && unit && cost > 0) {
-            const material = { name, quantity, unit, cost };
-            materialCosts.push(material);
-            dailyCost += cost;
-            
-            addItemToList(
-                `<strong>${name}</strong> - ${quantity} ${unit} - ${formatCurrency(cost)}`,
-                document.getElementById('materialsList')
-            );
-            
-            clearInputs(['materialName', 'materialQuantity', 'materialUnit', 'materialCost']);
-            updateBudgetSummary();
-        }
-    }
+    // Material and equipment functions moved to template to avoid conflicts
+    // These are now handled by inline JavaScript in the HTML template
 
-    function addEquipmentCost() {
-        const name = document.getElementById('equipmentName').value.trim();
-        const quantity = parseFloat(document.getElementById('equipmentQuantity').value) || 1;
-        const hours = parseFloat(document.getElementById('equipmentHours').value) || 0;
-        const cost = parseFloat(document.getElementById('equipmentCost').value) || 0;
-        
-        if (name && cost > 0) {
-            const equipment = { name, quantity, hours, cost };
-            equipmentCosts.push(equipment);
-            dailyCost += cost;
-            
-            addItemToList(
-                `<strong>${name}</strong> - ${quantity} unit${quantity > 1 ? 's' : ''}${hours ? ` - ${hours} hrs` : ''} - ${formatCurrency(cost)}`,
-                document.getElementById('equipmentList')
-            );
-            
-            clearInputs(['equipmentName', 'equipmentQuantity', 'equipmentHours', 'equipmentCost']);
-            updateBudgetSummary();
-        }
-    }
-
-    function addOtherCost() {
-        const name = document.getElementById('otherCostName').value.trim();
-        const amount = parseFloat(document.getElementById('otherCostAmount').value) || 0;
-        
-        if (name && amount > 0) {
-            const cost = { name, amount };
-            otherCosts.push(cost);
-            dailyCost += amount;
-            
-            addItemToList(
-                `<strong>${name}</strong> - ${formatCurrency(amount)}`,
-                document.getElementById('otherCostsList')
-            );
-            
-            clearInputs(['otherCostName', 'otherCostAmount']);
-            updateBudgetSummary();
-        }
-    }
+    // Other cost function moved to template to avoid conflicts
 
     function updateBudgetSummary() {
         const dailyCostElement = document.getElementById('dailyCost');
@@ -256,49 +199,352 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Global function for subcontractor functionality (referenced in template)
+    // ===== BUDGET AND FORM FUNCTIONS =====
+    function updateBudgetSummary() {
+        let dailyTotal = 0;
+        
+        // Calculate labor costs from worker type inputs
+        document.querySelectorAll('.count-input').forEach(countInput => {
+            const count = parseInt(countInput.value) || 0;
+            const rateInputId = countInput.id.replace('Count', 'Rate');
+            const rateInput = document.getElementById(rateInputId);
+            const rate = parseFloat(rateInput?.value) || 0;
+            dailyTotal += count * rate;
+        });
+        
+        // Calculate overtime costs
+        dailyTotal += dailyOvertime.reduce((sum, item) => sum + (item.personnel * item.hours * item.rate), 0);
+        
+        // Calculate subcontractor costs
+        dailyTotal += dailySubcontractors.reduce((sum, item) => sum + item.cost, 0);
+        
+        // Calculate from stored arrays
+        dailyTotal += dailyMaterials.reduce((sum, item) => sum + item.cost, 0);
+        dailyTotal += dailyEquipment.reduce((sum, item) => sum + item.cost, 0);
+        dailyTotal += dailyOtherCosts.reduce((sum, item) => sum + item.cost, 0);
+        
+        const dailyCostElement = document.getElementById('dailyCost');
+        if (dailyCostElement) {
+            dailyCostElement.value = dailyTotal.toLocaleString('en-PH', {minimumFractionDigits: 2});
+        }
+        
+        // Get project budget and calculate remaining
+        const projectSelect = document.querySelector('select[name="project"]');
+        if (projectSelect?.value && window.projectData) {
+            const selectedProject = window.projectData.find(p => p.id == projectSelect.value);
+            if (selectedProject) {
+                const runningCost = selectedProject.spent + dailyTotal;
+                const remainingBudget = selectedProject.budget - runningCost;
+                
+                const runningCostElement = document.getElementById('runningCost');
+                const remainingBudgetElement = document.getElementById('remainingBudget');
+                
+                if (runningCostElement) {
+                    runningCostElement.value = runningCost.toLocaleString('en-PH', {minimumFractionDigits: 2});
+                }
+                if (remainingBudgetElement) {
+                    remainingBudgetElement.value = remainingBudget.toLocaleString('en-PH', {minimumFractionDigits: 2});
+                }
+            }
+        }
+    }
+    
+    // Material functions
+    window.addMaterial = function() {
+        const name = document.getElementById('materialName').value;
+        const quantity = parseFloat(document.getElementById('materialQuantity').value) || 0;
+        const unit = document.getElementById('materialUnit').value;
+        const cost = parseFloat(document.getElementById('materialCost').value) || 0;
+        const supplier = document.getElementById('materialSupplier').value;
+        const delivery_time = document.getElementById('materialDeliveryTime').value;
+        
+        if (name && quantity && unit && cost) {
+            const material = { name, quantity, unit, cost, supplier, delivery_time };
+            dailyMaterials.push(material);
+            
+            const listItem = document.createElement('div');
+            listItem.className = 'entry-item';
+            listItem.innerHTML = `
+                <div class="entry-content">
+                    <strong>${name}</strong> - ${quantity} ${unit} - ₱${cost.toLocaleString('en-PH', {minimumFractionDigits: 2})}<br>
+                    ${supplier ? `Supplier: ${supplier}` : ''}${delivery_time ? ` | Delivery: ${delivery_time}` : ''}
+                </div>
+                <div class="entry-actions">
+                    <button type="button" class="entry-action-btn delete" onclick="removeMaterial(this, ${dailyMaterials.length - 1})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            document.getElementById('materialsList').appendChild(listItem);
+            
+            // Clear inputs
+            ['materialName', 'materialQuantity', 'materialUnit', 'materialCost', 'materialSupplier', 'materialDeliveryTime'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+            
+            updateBudgetSummary();
+        }
+    }
+    
+    // Equipment functions
+    window.addEquipment = function() {
+        const name = document.getElementById('equipmentName').value;
+        const operator = document.getElementById('equipmentOperator').value;
+        const hours = parseFloat(document.getElementById('equipmentHours').value) || 0;
+        const fuel = parseFloat(document.getElementById('equipmentFuel').value) || 0;
+        const cost = parseFloat(document.getElementById('equipmentCost').value) || 0;
+        
+        if (name && hours && cost) {
+            const equipment = { name, operator, hours, fuel, cost };
+            dailyEquipment.push(equipment);
+            
+            const listItem = document.createElement('div');
+            listItem.className = 'entry-item';
+            listItem.innerHTML = `
+                <div class="entry-content">
+                    <strong>${name}</strong>${operator ? ` (${operator})` : ''} - ${hours} hours${fuel ? ` - ${fuel}L fuel` : ''} - ₱${cost.toLocaleString('en-PH', {minimumFractionDigits: 2})}
+                </div>
+                <div class="entry-actions">
+                    <button type="button" class="entry-action-btn delete" onclick="removeEquipment(this, ${dailyEquipment.length - 1})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            document.getElementById('equipmentList').appendChild(listItem);
+            
+            // Clear inputs
+            ['equipmentName', 'equipmentOperator', 'equipmentHours', 'equipmentFuel', 'equipmentCost'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+            
+            updateBudgetSummary();
+        }
+    }
+    
+    // Other cost functions
+    window.addOtherCost = function() {
+        const name = document.getElementById('otherCostName').value;
+        const cost = parseFloat(document.getElementById('otherCostAmount').value) || 0;
+        
+        if (name && cost) {
+            const otherCost = { name, cost };
+            dailyOtherCosts.push(otherCost);
+            
+            const listItem = document.createElement('div');
+            listItem.className = 'entry-item';
+            listItem.innerHTML = `
+                <div class="entry-content">
+                    <strong>${name}</strong> - ₱${cost.toLocaleString('en-PH', {minimumFractionDigits: 2})}
+                </div>
+                <div class="entry-actions">
+                    <button type="button" class="entry-action-btn delete" onclick="removeOtherCost(this, ${dailyOtherCosts.length - 1})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            document.getElementById('otherCostsList').appendChild(listItem);
+            
+            // Clear inputs
+            ['otherCostName', 'otherCostAmount'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+            
+            updateBudgetSummary();
+        }
+    }
+    
+    // Overtime functions
+    window.addOvertime = function() {
+        const personnel = parseInt(document.getElementById('overtimePersonnel').value) || 0;
+        const role = document.getElementById('overtimeRole').value;
+        const hours = parseInt(document.getElementById('overtimeHours').value) || 0;
+        const rate = parseFloat(document.getElementById('overtimeRate').value) || 0;
+        
+        if (personnel && role && hours && rate) {
+            const overtime = { personnel, role, hours, rate };
+            dailyOvertime.push(overtime);
+            
+            const listItem = document.createElement('div');
+            listItem.className = 'entry-item';
+            listItem.innerHTML = `
+                <div class="entry-content">
+                    <strong>${personnel} ${role} personnel</strong> - ${hours} hours @ ₱${rate}/hr = ₱${(personnel * hours * rate).toLocaleString('en-PH', {minimumFractionDigits: 2})}
+                </div>
+                <div class="entry-actions">
+                    <button type="button" class="entry-action-btn delete" onclick="removeOvertime(this, ${dailyOvertime.length - 1})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            document.getElementById('overtimeList').appendChild(listItem);
+            
+            // Clear inputs
+            ['overtimePersonnel', 'overtimeRole', 'overtimeHours', 'overtimeRate'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+            
+            updateBudgetSummary();
+        }
+    }
+    
+    // Subcontractor functions
     window.addSubcontractor = function() {
+        console.log('DEBUG: addSubcontractor called');
         const selectElement = document.getElementById('subcontractorSelect');
         const customInput = document.getElementById('subcontractorCustom');
         const workInput = document.getElementById('subcontractorWork');
+        const costInput = document.getElementById('subcontractorCost');
+        
+        console.log('DEBUG: Input values:', {
+            select: selectElement?.value,
+            custom: customInput?.value,
+            work: workInput?.value,
+            cost: costInput?.value
+        });
         
         let subcontractorName = '';
         let subcontractorType = '';
         let contactInfo = '';
         const workDescription = workInput.value.trim();
+        const cost = parseFloat(costInput.value) || 0;
         
         // Check if dropdown is selected
         if (selectElement.value) {
             const selectedOption = selectElement.options[selectElement.selectedIndex];
-            subcontractorName = selectedOption.text.split(' - ')[0]; // Get company name only
+            subcontractorName = selectedOption.text.split(' - ')[0];
             subcontractorType = selectedOption.getAttribute('data-type');
             const contact = selectedOption.getAttribute('data-contact');
             const phone = selectedOption.getAttribute('data-phone');
             if (contact || phone) {
                 contactInfo = ` (${contact || 'Contact'}${phone ? ': ' + phone : ''})`;
             }
-        } 
-        // Check if custom input has value
-        else if (customInput.value.trim()) {
+        } else if (customInput.value.trim()) {
             subcontractorName = customInput.value.trim();
             subcontractorType = 'Custom';
         }
         
-        if (subcontractorName) {
+        console.log('DEBUG: Processed values:', {
+            name: subcontractorName,
+            type: subcontractorType,
+            work: workDescription,
+            cost: cost
+        });
+        
+        if (subcontractorName && (workDescription || cost > 0)) {
+            const subcontractor = {
+                name: subcontractorName,
+                company: subcontractorType,
+                work: workDescription || `${subcontractorType} work`,
+                cost: cost
+            };
+            dailySubcontractors.push(subcontractor);
+            console.log('DEBUG: Added subcontractor to array:', subcontractor);
+            console.log('DEBUG: dailySubcontractors now contains:', dailySubcontractors);
+            
             const displayText = workDescription ? 
                 `${subcontractorName}${contactInfo} - ${workDescription}` : 
                 `${subcontractorName}${contactInfo} - ${subcontractorType} work`;
+            
+            const costText = cost > 0 ? `<br>Daily Cost: ₱${cost.toLocaleString('en-PH', {minimumFractionDigits: 2})}` : '';
                 
-            addItemToList(
-                `<strong>${displayText}</strong>`,
-                document.getElementById('subcontractorList')
-            );
+            const listItem = document.createElement('div');
+            listItem.className = 'entry-item';
+            listItem.innerHTML = `
+                <div class="entry-content"><strong>${displayText}</strong>${costText}</div>
+                <div class="entry-actions">
+                    <button type="button" class="entry-action-btn delete" onclick="removeSubcontractor(this, ${dailySubcontractors.length - 1})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            document.getElementById('subcontractorList').appendChild(listItem);
             
             // Clear inputs
             selectElement.value = '';
             customInput.value = '';
             workInput.value = '';
+            costInput.value = '';
+            
+            updateBudgetSummary();
+        } else {
+            console.log('DEBUG: Validation failed - missing name or work/cost');
+            alert('Please provide either a work description or daily cost for the subcontractor.');
         }
+    }
+    
+    // Delay functions
+    window.addDelay = function() {
+        const type = document.getElementById('delayType').value;
+        const impact = document.getElementById('delayImpact').value;
+        const description = document.getElementById('delayDescription').value.trim();
+        const start_time = document.getElementById('delayStartTime').value;
+        const end_time = document.getElementById('delayEndTime').value;
+        const duration = parseFloat(document.getElementById('delayDuration').value) || 0;
+        const solution = document.getElementById('delaySolution').value.trim();
+        
+        if (type && impact && description) {
+            const delay = { type, impact, description, start_time, end_time, duration, solution };
+            dailyDelays.push(delay);
+            
+            const listItem = document.createElement('div');
+            listItem.className = 'entry-item';
+            listItem.innerHTML = `
+                <div class="entry-content">
+                    <strong>${type} - ${impact}</strong><br>
+                    ${description}<br>
+                    ${start_time && end_time ? `Time: ${start_time} - ${end_time} (${duration}h)` : ''}
+                </div>
+                <div class="entry-actions">
+                    <button type="button" class="entry-action-btn delete" onclick="removeDelay(this, ${dailyDelays.length - 1})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            document.getElementById('delayList').appendChild(listItem);
+            
+            // Clear inputs
+            ['delayType', 'delayImpact', 'delayDescription', 'delayStartTime', 'delayEndTime', 'delayDuration', 'delaySolution'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+        }
+    }
+    
+    // Remove functions
+    window.removeMaterial = function(button, index) {
+        dailyMaterials.splice(index, 1);
+        button.closest('.entry-item').remove();
+        updateBudgetSummary();
+    }
+    
+    window.removeEquipment = function(button, index) {
+        dailyEquipment.splice(index, 1);
+        button.closest('.entry-item').remove();
+        updateBudgetSummary();
+    }
+    
+    window.removeOtherCost = function(button, index) {
+        dailyOtherCosts.splice(index, 1);
+        button.closest('.entry-item').remove();
+        updateBudgetSummary();
+    }
+    
+    window.removeOvertime = function(button, index) {
+        dailyOvertime.splice(index, 1);
+        button.closest('.entry-item').remove();
+        updateBudgetSummary();
+    }
+    
+    window.removeSubcontractor = function(button, index) {
+        console.log('DEBUG: Removing subcontractor at index:', index);
+        dailySubcontractors.splice(index, 1);
+        console.log('DEBUG: dailySubcontractors after removal:', dailySubcontractors);
+        button.closest('.entry-item').remove();
+        updateBudgetSummary();
+    }
+    
+    window.removeDelay = function(button, index) {
+        dailyDelays.splice(index, 1);
+        button.closest('.entry-item').remove();
     }
 
     // ===== EXISTING FUNCTIONALITY (UPDATED FOR BUDGET INTEGRATION) =====
@@ -570,7 +816,60 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function initDynamicLists() {
         setupDynamicList('addTask', 'taskInput', 'taskList');
-        setupDynamicList('addSubcontractor', 'subcontractorInput', 'subcontractorList');
+        
+        // Setup all button event listeners
+        setTimeout(() => {
+            const buttonMappings = [
+                { id: 'addMaterial', func: window.addMaterial },
+                { id: 'addEquipment', func: window.addEquipment },
+                { id: 'addOtherCost', func: window.addOtherCost },
+                { id: 'addOvertime', func: window.addOvertime },
+                { id: 'addSubcontractor', func: window.addSubcontractor },
+                { id: 'addDelay', func: window.addDelay }
+            ];
+            
+            buttonMappings.forEach(mapping => {
+                const btn = document.getElementById(mapping.id);
+                if (btn && mapping.func) {
+                    btn.addEventListener('click', mapping.func);
+                }
+            });
+            
+            // Auto-calculate delay duration
+            ['delayStartTime', 'delayEndTime'].forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener('change', function() {
+                        const start = document.getElementById('delayStartTime').value;
+                        const end = document.getElementById('delayEndTime').value;
+                        if (start && end) {
+                            const startTime = new Date('1970-01-01T' + start + ':00');
+                            const endTime = new Date('1970-01-01T' + end + ':00');
+                            const diff = (endTime - startTime) / (1000 * 60 * 60);
+                            const durationElement = document.getElementById('delayDuration');
+                            if (durationElement) {
+                                durationElement.value = diff > 0 ? diff.toFixed(1) : '';
+                            }
+                        }
+                    });
+                }
+            });
+            
+            // Update budget when labor inputs change
+            document.querySelectorAll('.count-input').forEach(input => {
+                input.addEventListener('input', updateBudgetSummary);
+            });
+            
+            document.querySelectorAll('input[id$="Rate"]').forEach(input => {
+                input.addEventListener('input', updateBudgetSummary);
+            });
+            
+            // Update budget when project changes
+            const projectSelect = document.querySelector('select[name="project"]');
+            if (projectSelect) {
+                projectSelect.addEventListener('change', updateBudgetSummary);
+            }
+        }, 100);
         
         function setupDynamicList(addBtnId, inputId, listId, formatFunction) {
             const addBtn = document.getElementById(addBtnId);
@@ -598,14 +897,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // addItemToList function moved to global scope above
-        
         function setupExistingItemActions(list) {
             const items = list.querySelectorAll('.entry-item');
             items.forEach(item => setupItemActions(item));
         }
-        
-        // setupItemActions function moved to global scope above
     }
 
     function setupTimeCalculation() {
@@ -639,14 +934,45 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // ===== DRAFT SAVING =====
-    document.getElementById('saveAsDraft')?.addEventListener('click', function() {
-        alert('Draft saved successfully. You can come back and complete this entry later.');
-        const saveStatus = document.querySelector('.save-status span');
-        if (saveStatus) {
-            const now = new Date();
-            const timeString = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            saveStatus.textContent = `Last saved: Today at ${timeString}`;
-        }
-    });
+    // ===== FORM SUBMISSION HANDLING =====
+    const form = document.getElementById('siteEntryForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            console.log('DEBUG: Form submission - dailySubcontractors:', dailySubcontractors);
+            console.log('DEBUG: Form submission - dailyMaterials:', dailyMaterials);
+            console.log('DEBUG: Form submission - dailyEquipment:', dailyEquipment);
+            
+            // Add JSON data for all dynamic content
+            const jsonData = [
+                { name: 'materials_json', data: dailyMaterials },
+                { name: 'equipment_json', data: dailyEquipment },
+                { name: 'delays_json', data: dailyDelays },
+                { name: 'overtime_json', data: dailyOvertime },
+                { name: 'subcontractor_json', data: dailySubcontractors },
+                { name: 'other_costs_json', data: dailyOtherCosts }
+            ];
+            
+            jsonData.forEach(item => {
+                if (item.data.length > 0) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = item.name;
+                    input.value = JSON.stringify(item.data);
+                    console.log(`DEBUG: Adding ${item.name} with data:`, item.data);
+                    this.appendChild(input);
+                } else {
+                    console.log(`DEBUG: Skipping ${item.name} - no data (length: ${item.data.length})`);
+                }
+            });
+        });
+    }
+    
+    // Make functions globally accessible
+    window.updateBudgetSummary = updateBudgetSummary;
+    window.dailyMaterials = dailyMaterials;
+    window.dailyEquipment = dailyEquipment;
+    window.dailyOtherCosts = dailyOtherCosts;
+    window.dailyDelays = dailyDelays;
+    window.dailyOvertime = dailyOvertime;
+    window.dailySubcontractors = dailySubcontractors;
 });

@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
     Project, DiaryEntry, LaborEntry, MaterialEntry, 
-    EquipmentEntry, DelayEntry, VisitorEntry, DiaryPhoto, SubcontractorCompany, Milestone
+    EquipmentEntry, DelayEntry, VisitorEntry, DiaryPhoto, SubcontractorCompany, Milestone, WorkerType
 )
 
 @admin.register(Project)
@@ -131,6 +131,13 @@ class SubcontractorCompanyAdmin(admin.ModelAdmin):
     list_filter = ['company_type', 'is_active']
     search_fields = ['name', 'contact_person', 'phone']
     ordering = ['name']
+
+@admin.register(WorkerType)
+class WorkerTypeAdmin(admin.ModelAdmin):
+    list_display = ['name', 'description', 'default_daily_rate', 'is_active', 'order']
+    list_filter = ['is_active']
+    search_fields = ['name', 'description']
+    ordering = ['order', 'name']
 
 @admin.register(DiaryPhoto)
 class DiaryPhotoAdmin(admin.ModelAdmin):

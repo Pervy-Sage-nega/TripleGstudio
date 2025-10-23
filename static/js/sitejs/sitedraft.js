@@ -9,6 +9,11 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Check if template has overridden this JS file
+    if (window.sitedraftJsLoaded) {
+        return; // Exit early to prevent conflicts
+    }
+    
     // Initialize components
     initMobileMenu();
     initViewToggle();

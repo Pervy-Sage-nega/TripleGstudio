@@ -13,6 +13,35 @@
     <link rel="stylesheet" href="{% static 'css/sitecss/createblog.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/global-footer.css' %}">
     <link rel="stylesheet" href="{% static 'css/admincss/nav.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/header-container.css' %}">
+    <style>
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .photo-item {
+            text-align: center;
+        }
+        .photo-thumbnail {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .photo-thumbnail:hover {
+            transform: scale(1.05);
+        }
+        .photo-description {
+            margin-top: 8px;
+            font-size: 0.9em;
+            color: #666;
+        }
+    </style>
     <script>
         // Simple tab functionality for revision diary
         document.addEventListener('DOMContentLoaded', function() {
@@ -38,6 +67,361 @@
                     document.getElementById(targetId).classList.add('active');
                 });
             });
+            
+            // Overtime functionality
+            const addOvertimeBtn = document.getElementById('addOvertime');
+            const overtimeList = document.getElementById('overtimeList');
+            
+            if (addOvertimeBtn) {
+                addOvertimeBtn.addEventListener('click', function() {
+                    const personnel = document.getElementById('overtimePersonnel').value;
+                    const role = document.getElementById('overtimeRole').value;
+                    const hours = document.getElementById('overtimeHours').value;
+                    const rate = document.getElementById('overtimeRate').value;
+                    
+                    if (personnel && role && hours && rate) {
+                        const roleText = document.getElementById('overtimeRole').selectedOptions[0].text;
+                        const entryDiv = document.createElement('div');
+                        entryDiv.className = 'entry-item';
+                        entryDiv.innerHTML = `
+                            <div class="entry-content">
+                                <strong>${personnel} ${roleText} personnel</strong> - ${hours} hours
+                                <br>Rate: ₱${rate}/hour
+                                <br>Total Cost: ₱${(personnel * hours * rate).toLocaleString()}
+                            </div>
+                            <button type="button" class="btn btn-sm btn-danger remove-entry">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        `;
+                        
+                        overtimeList.appendChild(entryDiv);
+                        
+                        // Clear inputs
+                        document.getElementById('overtimePersonnel').value = '';
+                        document.getElementById('overtimeRole').value = '';
+                        document.getElementById('overtimeHours').value = '';
+                        document.getElementById('overtimeRate').value = '';
+                        
+                        // Add remove functionality
+                        entryDiv.querySelector('.remove-entry').addEventListener('click', function() {
+                            entryDiv.remove();
+                        });
+                    }
+                });
+            }
+            
+            // Material functionality
+            const addMaterialBtn = document.getElementById('addMaterial');
+            const materialList = document.getElementById('materialList');
+            
+            if (addMaterialBtn) {
+                addMaterialBtn.addEventListener('click', function() {
+                    const name = document.getElementById('materialName').value;
+                    const quantity = document.getElementById('materialQuantity').value;
+                    const unit = document.getElementById('materialUnit').value;
+                    const cost = document.getElementById('materialCost').value;
+                    
+                    if (name && quantity && unit && cost) {
+                        const unitText = document.getElementById('materialUnit').selectedOptions[0].text;
+                        const entryDiv = document.createElement('div');
+                        entryDiv.className = 'entry-item';
+                        entryDiv.innerHTML = `
+                            <div class="entry-content">
+                                <strong>${name}</strong> - ${quantity} ${unitText}
+                                <br>Total Cost: ₱${parseFloat(cost).toLocaleString()}
+                                <br>Unit Cost: ₱${(cost/quantity).toFixed(2)}
+                            </div>
+                            <button type="button" class="btn btn-sm btn-danger remove-entry">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        `;
+                        
+                        materialList.appendChild(entryDiv);
+                        
+                        // Clear inputs
+                        document.getElementById('materialName').value = '';
+                        document.getElementById('materialQuantity').value = '';
+                        document.getElementById('materialUnit').value = '';
+                        document.getElementById('materialCost').value = '';
+                        
+                        // Add remove functionality
+                        entryDiv.querySelector('.remove-entry').addEventListener('click', function() {
+                            entryDiv.remove();
+                        });
+                    }
+                });
+            }
+            
+            // Equipment functionality
+            const addEquipmentBtn = document.getElementById('addEquipment');
+            const equipmentList = document.getElementById('equipmentList');
+            
+            if (addEquipmentBtn) {
+                addEquipmentBtn.addEventListener('click', function() {
+                    const name = document.getElementById('equipmentName').value;
+                    const hours = document.getElementById('equipmentHours').value;
+                    const cost = document.getElementById('equipmentCost').value;
+                    
+                    if (name && hours && cost) {
+                        const entryDiv = document.createElement('div');
+                        entryDiv.className = 'entry-item';
+                        entryDiv.innerHTML = `
+                            <div class="entry-content">
+                                <strong>${name}</strong> - ${hours} hours
+                                <br>Total Cost: ₱${parseFloat(cost).toLocaleString()}
+                                <br>Rate: ₱${(cost/hours).toFixed(2)}/hour
+                            </div>
+                            <button type="button" class="btn btn-sm btn-danger remove-entry">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        `;
+                        
+                        equipmentList.appendChild(entryDiv);
+                        
+                        // Clear inputs
+                        document.getElementById('equipmentName').value = '';
+                        document.getElementById('equipmentHours').value = '';
+                        document.getElementById('equipmentCost').value = '';
+                        
+                        // Add remove functionality
+                        entryDiv.querySelector('.remove-entry').addEventListener('click', function() {
+                            entryDiv.remove();
+                        });
+                    }
+                });
+            }
+            
+            // Delay functionality
+            const addDelayBtn = document.getElementById('addDelay');
+            const delayList = document.getElementById('delayList');
+            
+            if (addDelayBtn) {
+                addDelayBtn.addEventListener('click', function() {
+                    const type = document.getElementById('delayType').value;
+                    const description = document.getElementById('delayDescription').value;
+                    const hours = document.getElementById('delayHours').value;
+                    
+                    if (type && description && hours) {
+                        const typeText = document.getElementById('delayType').selectedOptions[0].text;
+                        const entryDiv = document.createElement('div');
+                        entryDiv.className = 'entry-item';
+                        entryDiv.innerHTML = `
+                            <div class="entry-content">
+                                <strong>${typeText} - Medium Impact</strong>
+                                <br>${description}
+                                <br>Duration: ${hours} hours
+                            </div>
+                            <button type="button" class="btn btn-sm btn-danger remove-entry">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        `;
+                        
+                        delayList.appendChild(entryDiv);
+                        
+                        // Clear inputs
+                        document.getElementById('delayType').value = '';
+                        document.getElementById('delayDescription').value = '';
+                        document.getElementById('delayHours').value = '';
+                        
+                        // Add remove functionality
+                        entryDiv.querySelector('.remove-entry').addEventListener('click', function() {
+                            entryDiv.remove();
+                        });
+                    }
+                });
+            }
+            
+            // Subcontractor functionality
+            const addSubcontractorBtn = document.getElementById('addSubcontractor');
+            const subcontractorList = document.getElementById('subcontractorList');
+            
+            if (addSubcontractorBtn) {
+                addSubcontractorBtn.addEventListener('click', function() {
+                    const select = document.getElementById('subcontractorSelect');
+                    const custom = document.getElementById('customSubcontractor').value;
+                    const work = document.getElementById('subcontractorWork').value;
+                    const cost = document.getElementById('subcontractorCost').value;
+                    
+                    let companyName = custom;
+                    let companyType = '';
+                    
+                    if (select.value && !custom) {
+                        companyName = select.selectedOptions[0].text;
+                        companyType = select.selectedOptions[0].getAttribute('data-type');
+                    }
+                    
+                    if (companyName && work && cost) {
+                        const entryDiv = document.createElement('div');
+                        entryDiv.className = 'entry-item';
+                        entryDiv.innerHTML = `
+                            <div class="entry-content">
+                                <strong>${companyName}</strong>
+                                ${companyType ? `<br>Type: ${companyType}` : ''}
+                                <br>Work: ${work}
+                                <br>Daily Cost: ₱${parseFloat(cost).toLocaleString()}
+                            </div>
+                            <button type="button" class="btn btn-sm btn-danger remove-entry">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        `;
+                        
+                        subcontractorList.appendChild(entryDiv);
+                        
+                        // Clear inputs
+                        document.getElementById('subcontractorSelect').value = '';
+                        document.getElementById('customSubcontractor').value = '';
+                        document.getElementById('subcontractorWork').value = '';
+                        document.getElementById('subcontractorCost').value = '';
+                        
+                        // Add remove functionality
+                        entryDiv.querySelector('.remove-entry').addEventListener('click', function() {
+                            entryDiv.remove();
+                        });
+                    }
+                });
+            }
+            
+            // Add remove functionality to existing entries
+            document.querySelectorAll('.remove-entry').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    this.closest('.entry-item').remove();
+                });
+            });
+            
+            // Handle form submission to collect dynamic data
+            const revisionForm = document.getElementById('revisionForm');
+            if (revisionForm) {
+                revisionForm.addEventListener('submit', function(e) {
+                    // Collect materials data
+                    const materialEntries = [];
+                    document.querySelectorAll('#materialList .entry-item').forEach(item => {
+                        const content = item.querySelector('.entry-content');
+                        const text = content.textContent;
+                        const match = text.match(/^([^-]+) - ([\d.]+) ([^\n]+)/);
+                        if (match) {
+                            const costMatch = text.match(/Total Cost: ₱([\d,]+)/);
+                            materialEntries.push({
+                                name: match[1].trim(),
+                                quantity: parseFloat(match[2]),
+                                unit: match[3].trim(),
+                                cost: costMatch ? parseFloat(costMatch[1].replace(/,/g, '')) : 0
+                            });
+                        }
+                    });
+                    
+                    // Collect equipment data
+                    const equipmentEntries = [];
+                    document.querySelectorAll('#equipmentList .entry-item').forEach(item => {
+                        const content = item.querySelector('.entry-content');
+                        const text = content.textContent;
+                        const match = text.match(/^([^-]+) - ([\d.]+) hours/);
+                        if (match) {
+                            const costMatch = text.match(/Total Cost: ₱([\d,]+)/);
+                            equipmentEntries.push({
+                                name: match[1].trim(),
+                                hours: parseFloat(match[2]),
+                                cost: costMatch ? parseFloat(costMatch[1].replace(/,/g, '')) : 0
+                            });
+                        }
+                    });
+                    
+                    // Collect overtime data
+                    const overtimeEntries = [];
+                    document.querySelectorAll('#overtimeList .entry-item').forEach(item => {
+                        const content = item.querySelector('.entry-content');
+                        const text = content.textContent;
+                        const match = text.match(/(\d+) ([^\s]+) personnel - (\d+) hours/);
+                        if (match) {
+                            const rateMatch = text.match(/Rate: ₱([\d,]+)\/hour/);
+                            overtimeEntries.push({
+                                personnel: parseInt(match[1]),
+                                role: match[2],
+                                hours: parseInt(match[3]),
+                                rate: rateMatch ? parseFloat(rateMatch[1].replace(/,/g, '')) : 0
+                            });
+                        }
+                    });
+                    
+                    // Collect delays data
+                    const delayEntries = [];
+                    document.querySelectorAll('#delayList .entry-item').forEach(item => {
+                        const content = item.querySelector('.entry-content');
+                        const text = content.textContent;
+                        const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+                        if (lines.length > 0) {
+                            const typeMatch = lines[0].match(/^([^-]+) - (.+)$/);
+                            const durationMatch = text.match(/Duration: ([\d.]+) hours/);
+                            if (typeMatch) {
+                                delayEntries.push({
+                                    type: typeMatch[1].toLowerCase().replace(/\s+/g, '_'),
+                                    description: lines[1] || 'Delay description',
+                                    duration: durationMatch ? parseFloat(durationMatch[1]) : 0,
+                                    impact: 'medium'
+                                });
+                            }
+                        }
+                    });
+                    
+                    // Collect subcontractor data
+                    const subcontractorEntries = [];
+                    document.querySelectorAll('#subcontractorList .entry-item').forEach(item => {
+                        const content = item.querySelector('.entry-content');
+                        const text = content.textContent;
+                        const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+                        if (lines.length > 0) {
+                            const name = lines[0].replace(/^\s*/, '');
+                            const workMatch = text.match(/Work: ([^\n]+)/);
+                            const costMatch = text.match(/Daily Cost: ₱([\d,]+)/);
+                            subcontractorEntries.push({
+                                name: name,
+                                work: workMatch ? workMatch[1] : 'General work',
+                                cost: costMatch ? parseFloat(costMatch[1].replace(/,/g, '')) : 0
+                            });
+                        }
+                    });
+                    
+                    // Add hidden inputs for all data
+                    if (materialEntries.length > 0) {
+                        const materialInput = document.createElement('input');
+                        materialInput.type = 'hidden';
+                        materialInput.name = 'materials_json';
+                        materialInput.value = JSON.stringify(materialEntries);
+                        revisionForm.appendChild(materialInput);
+                    }
+                    
+                    if (equipmentEntries.length > 0) {
+                        const equipmentInput = document.createElement('input');
+                        equipmentInput.type = 'hidden';
+                        equipmentInput.name = 'equipment_json';
+                        equipmentInput.value = JSON.stringify(equipmentEntries);
+                        revisionForm.appendChild(equipmentInput);
+                    }
+                    
+                    if (overtimeEntries.length > 0) {
+                        const overtimeInput = document.createElement('input');
+                        overtimeInput.type = 'hidden';
+                        overtimeInput.name = 'overtime_json';
+                        overtimeInput.value = JSON.stringify(overtimeEntries);
+                        revisionForm.appendChild(overtimeInput);
+                    }
+                    
+                    if (delayEntries.length > 0) {
+                        const delayInput = document.createElement('input');
+                        delayInput.type = 'hidden';
+                        delayInput.name = 'delays_json';
+                        delayInput.value = JSON.stringify(delayEntries);
+                        revisionForm.appendChild(delayInput);
+                    }
+                    
+                    if (subcontractorEntries.length > 0) {
+                        const subcontractorInput = document.createElement('input');
+                        subcontractorInput.type = 'hidden';
+                        subcontractorInput.name = 'subcontractor_json';
+                        subcontractorInput.value = JSON.stringify(subcontractorEntries);
+                        revisionForm.appendChild(subcontractorInput);
+                    }
+                });
+            }
         });
     </script>
 {% endblock %}
@@ -113,13 +497,22 @@
                                 </div>
                                 <div class="form-row">
                                     <div class="form-group">
-                                        <label for="workDescription">Work Description</label>
-                                        <textarea class="form-control" id="workDescription" name="work_description" rows="3">{{ entry.work_description }}</textarea>
+                                        <label for="milestone">Current Phase/Milestone</label>
+                                        <select class="form-control" id="milestone" name="milestone">
+                                            <option value="">Select Current Phase</option>
+                                            {% for milestone in milestones %}
+                                            <option value="{{ milestone.id }}" {% if entry.milestone.id == milestone.id %}selected{% endif %}>{{ milestone.name }}</option>
+                                            {% endfor %}
+                                        </select>
                                     </div>
                                     <div class="form-group">
                                         <label for="progressPercentage">Progress Percentage (%)</label>
                                         <input type="number" class="form-control" id="progressPercentage" name="progress_percentage" value="{{ entry.progress_percentage }}" min="0" max="100">
                                     </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="workDescription">Work Description</label>
+                                    <textarea class="form-control" id="workDescription" name="work_description" rows="3">{{ entry.work_description }}</textarea>
                                 </div>
                             </div>
 
@@ -144,6 +537,16 @@
                                         <input type="text" class="form-control" value="{{ entry.temperature_low }}°C" readonly>
                                     </div>
                                 </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Humidity (%)</label>
+                                        <input type="text" class="form-control" value="{{ entry.humidity }}%" readonly>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Wind Speed (km/h)</label>
+                                        <input type="text" class="form-control" value="{{ entry.wind_speed }} km/h" readonly>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- Quality and Safety Section -->
@@ -160,6 +563,16 @@
                                     <label for="safetyIncidents">Safety Incidents</label>
                                     <textarea class="form-control" id="safetyIncidents" name="safety_incidents" rows="2">{{ entry.safety_incidents }}</textarea>
                                 </div>
+                                <div class="form-group">
+                                    <label for="generalNotes">General Notes</label>
+                                    <textarea class="form-control" id="generalNotes" name="general_notes" rows="2">{{ entry.general_notes }}</textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox" name="photos_taken" {% if entry.photos_taken %}checked{% endif %}>
+                                        Photos were taken today
+                                    </label>
+                                </div>
                             </div>
                         </section>
 
@@ -171,17 +584,131 @@
                                     <i class="fas fa-hard-hat"></i>
                                     <h2 class="section-title">Current Labor and Personnel</h2>
                                 </div>
-                                {% if labor_entries %}
-                                    {% for labor in labor_entries %}
-                                    <div class="entry-item">
-                                        <div class="entry-content">
-                                            <strong>{{ labor.labor_type }}</strong> - {{ labor.workers_count }} workers - {{ labor.hours_worked }} hours
-                                            {% if labor.hourly_rate %}<br>Rate: ₱{{ labor.hourly_rate }}/hour - Total: ₱{{ labor.total_cost }}{% endif %}
+                                
+                                <!-- Dynamic Worker Type Fields -->
+                                {% for worker_type in worker_types %}
+                                    {% if worker_type.name|lower != 'subcontractor' %}
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="{{ worker_type.name|slugify }}Count">{{ worker_type.name }} Count</label>
+                                                <input type="number" class="form-control count-input" id="{{ worker_type.name|slugify }}Count" name="{{ worker_type.name|slugify }}Count" min="0" value="{{ worker_type.current_count }}">
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="{{ worker_type.name|slugify }}Rate">{{ worker_type.name }} Rate (₱/day)</label>
+                                                <input type="number" class="form-control" id="{{ worker_type.name|slugify }}Rate" name="{{ worker_type.name|slugify }}Rate" min="0" step="1" placeholder="{{ worker_type.name }} daily rate" value="{{ worker_type.current_rate }}">
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                <!-- Overtime Personnel Section -->
+                                <div class="form-group">
+                                    <label>Overtime Personnel</label>
+                                    <div class="form-row">
+                                        <div class="form-group" style="flex: 2;">
+                                            <input type="number" class="form-control" id="overtimePersonnel" min="1" placeholder="Number of personnel">
+                                        </div>
+                                        <div class="form-group" style="flex: 1;">
+                                            <select class="form-control" id="overtimeRole">
+                                                <option value="">Select role...</option>
+                                                {% for worker_type in worker_types %}
+                                                    <option value="{{ worker_type.name|slugify }}">{{ worker_type.name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="form-group" style="flex: 1;">
+                                            <input type="number" class="form-control" id="overtimeHours" min="0" step="1" placeholder="Hours">
+                                        </div>
+                                        <div class="form-group" style="flex: 1;">
+                                            <input type="number" class="form-control" id="overtimeRate" min="0" step="1" placeholder="Rate (₱/hr)">
+                                        </div>
+                                        <button type="button" class="btn btn-primary" id="addOvertime" style="margin-top: 0; height: 38px;">
+                                            <i class="fas fa-plus"></i> Add Overtime
+                                        </button>
+                                    </div>
+                                    <div class="entry-list" id="overtimeList">
+                                        <!-- Current overtime entries -->
+                                        {% for labor in labor_entries %}
+                                            {% if labor.labor_type == 'overtime' %}
+                                            <div class="entry-item">
+                                                <div class="entry-content">
+                                                    <strong>{{ labor.trade_description }}</strong> - {{ labor.hours_worked }} hours
+                                                    {% if labor.hourly_rate %}<br>Rate: ₱{{ labor.hourly_rate }}/hour{% endif %}
+                                                    {% if labor.total_cost %}<br>Total Cost: ₱{{ labor.total_cost }}{% endif %}
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Subcontractor Companies Section -->
+                                <div class="form-group">
+                                    <label>Subcontractor Companies (Optional)</label>
+                                    <div class="form-row">
+                                        <div class="form-group" style="flex: 2;">
+                                            <select class="form-control" id="subcontractorSelect">
+                                                <option value="">Select a subcontractor company...</option>
+                                                {% for company in subcontractor_companies %}
+                                                    <option value="{{ company.id }}" data-type="{{ company.get_company_type_display }}" data-contact="{{ company.contact_person }}" data-phone="{{ company.phone }}">
+                                                        {{ company.name }} - {{ company.get_company_type_display }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="form-group" style="flex: 2;">
+                                            <input type="text" class="form-control" id="customSubcontractor" placeholder="Or enter custom company name">
                                         </div>
                                     </div>
-                                    {% endfor %}
-                                {% else %}
-                                    <p class="text-muted">No labor entries recorded for this diary entry.</p>
+                                    <div class="form-row">
+                                        <div class="form-group" style="flex: 2;">
+                                            <input type="text" class="form-control" id="subcontractorWork" placeholder="Work description">
+                                        </div>
+                                        <div class="form-group" style="flex: 1;">
+                                            <input type="number" class="form-control" id="subcontractorCost" min="0" step="1" placeholder="Daily cost (₱)">
+                                        </div>
+                                        <button type="button" class="btn btn-primary" id="addSubcontractor" style="margin-top: 0; height: 38px;">
+                                            <i class="fas fa-plus"></i> Add Subcontractor
+                                        </button>
+                                    </div>
+                                    <div class="entry-list" id="subcontractorList">
+
+                                        <!-- Current subcontractor entries -->
+                                        {% for subcontractor in subcontractor_entries %}
+                                        <div class="entry-item">
+                                            <div class="entry-content">
+                                                <strong>{{ subcontractor.company_name }}</strong>
+                                                <br>Work: {{ subcontractor.work_description }}
+                                                <br>Daily Cost: ₱{{ subcontractor.daily_cost }}
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-danger remove-entry">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                        {% endfor %}
+                                        {% if not subcontractor_entries %}
+                                        <p class="text-muted">No subcontractors recorded for this diary entry.</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Regular Labor Entries Display -->
+                                {% if labor_entries %}
+                                    <div class="form-group">
+                                        <label>Current Regular Labor Entries</label>
+                                        {% for labor in labor_entries %}
+                                            {% if labor.labor_type != 'overtime' %}
+                                            <div class="entry-item">
+                                                <div class="entry-content">
+                                                    <strong>{{ labor.trade_description|title }}</strong> - {{ labor.workers_count }} workers - {{ labor.hours_worked }} hours
+                                                    {% if labor.hourly_rate %}<br>Rate: ₱{{ labor.hourly_rate }}/hour{% endif %}
+                                                    {% if labor.total_cost %}<br>Total Cost: ₱{{ labor.total_cost }}{% endif %}
+                                                    {% if labor.work_area %}<br>Work Area: {{ labor.work_area }}{% endif %}
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
                                 {% endif %}
                             </div>
 
@@ -208,50 +735,161 @@
                             <div class="form-section">
                                 <div class="section-header">
                                     <i class="fas fa-truck-loading"></i>
-                                    <h2 class="section-title">Current Materials Delivered</h2>
+                                    <h2 class="section-title">Materials Delivered</h2>
                                 </div>
-                                {% if material_entries %}
-                                    {% for material in material_entries %}
-                                    <div class="entry-item">
-                                        <div class="entry-content">
-                                            <strong>{{ material.material_name }}</strong> - {{ material.quantity_delivered }} {{ material.unit }}
-                                            {% if material.unit_cost %}<br>Unit Cost: ₱{{ material.unit_cost }} - Total: ₱{{ material.total_cost }}{% endif %}
+                                <div class="form-group">
+                                    <label>Add Materials</label>
+                                    <div class="form-row">
+                                        <div class="form-group" style="flex: 2;">
+                                            <input type="text" class="form-control" id="materialName" placeholder="Material name">
                                         </div>
+                                        <div class="form-group" style="flex: 1;">
+                                            <input type="number" class="form-control" id="materialQuantity" min="0" step="0.01" placeholder="Quantity">
+                                        </div>
+                                        <div class="form-group" style="flex: 1;">
+                                            <select class="form-control" id="materialUnit">
+                                                <option value="">Unit</option>
+                                                <option value="kg">Kilograms</option>
+                                                <option value="tons">Tons</option>
+                                                <option value="m3">Cubic Meters</option>
+                                                <option value="m2">Square Meters</option>
+                                                <option value="m">Meters</option>
+                                                <option value="pcs">Pieces</option>
+                                                <option value="bags">Bags</option>
+                                                <option value="liters">Liters</option>
+                                                <option value="rolls">Rolls</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group" style="flex: 1;">
+                                            <input type="number" class="form-control" id="materialCost" min="0" step="1" placeholder="Total cost (₱)">
+                                        </div>
+                                        <button type="button" class="btn btn-primary" id="addMaterial" style="margin-top: 0; height: 38px;">
+                                            <i class="fas fa-plus"></i> Add Material
+                                        </button>
                                     </div>
-                                    {% endfor %}
-                                {% else %}
-                                    <p class="text-muted">No materials recorded for this diary entry.</p>
-                                {% endif %}
+                                    <div class="entry-list" id="materialList">
+                                        <!-- Current material entries -->
+                                        {% for material in material_entries %}
+                                        <div class="entry-item">
+                                            <div class="entry-content">
+                                                <strong>{{ material.material_name }}</strong> - {{ material.quantity_delivered }} {{ material.unit }}
+                                                {% if material.unit_cost %}<br>Unit Cost: ₱{{ material.unit_cost }}{% endif %}
+                                                {% if material.total_cost %}<br>Total Cost: ₱{{ material.total_cost }}{% endif %}
+                                                {% if material.supplier %}<br>Supplier: {{ material.supplier }}{% endif %}
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-danger remove-entry">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                        {% endfor %}
+                                        {% if not material_entries %}
+                                        <p class="text-muted">No materials recorded for this diary entry.</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- Equipment Used Section -->
                             <div class="form-section">
                                 <div class="section-header">
                                     <i class="fas fa-tools"></i>
-                                    <h2 class="section-title">Current Equipment Used</h2>
+                                    <h2 class="section-title">Equipment Used</h2>
                                 </div>
-                                {% if equipment_entries %}
-                                    {% for equipment in equipment_entries %}
-                                    <div class="entry-item">
-                                        <div class="entry-content">
-                                            <strong>{{ equipment.equipment_type }}</strong> - {{ equipment.hours_operated }} hours
-                                            {% if equipment.rental_cost_per_hour %}<br>Rate: ₱{{ equipment.rental_cost_per_hour }}/hour - Total: ₱{{ equipment.total_rental_cost }}{% endif %}
+                                <div class="form-group">
+                                    <label>Add Equipment</label>
+                                    <div class="form-row">
+                                        <div class="form-group" style="flex: 2;">
+                                            <input type="text" class="form-control" id="equipmentName" placeholder="Equipment name">
                                         </div>
+                                        <div class="form-group" style="flex: 1;">
+                                            <input type="number" class="form-control" id="equipmentHours" min="0" step="0.5" placeholder="Hours">
+                                        </div>
+                                        <div class="form-group" style="flex: 1;">
+                                            <input type="number" class="form-control" id="equipmentCost" min="0" step="1" placeholder="Total cost (₱)">
+                                        </div>
+                                        <button type="button" class="btn btn-primary" id="addEquipment" style="margin-top: 0; height: 38px;">
+                                            <i class="fas fa-plus"></i> Add Equipment
+                                        </button>
                                     </div>
-                                    {% endfor %}
-                                {% else %}
-                                    <p class="text-muted">No equipment recorded for this diary entry.</p>
-                                {% endif %}
+                                    <div class="entry-list" id="equipmentList">
+                                        <!-- Current equipment entries -->
+                                        {% for equipment in equipment_entries %}
+                                        <div class="entry-item">
+                                            <div class="entry-content">
+                                                <strong>{{ equipment.equipment_name|default:equipment.equipment_type }}</strong> - {{ equipment.hours_operated }} hours
+                                                {% if equipment.operator_name %}<br>Operator: {{ equipment.operator_name }}{% endif %}
+                                                {% if equipment.rental_cost_per_hour %}<br>Rate: ₱{{ equipment.rental_cost_per_hour }}/hour{% endif %}
+                                                {% if equipment.total_rental_cost %}<br>Total Cost: ₱{{ equipment.total_rental_cost }}{% endif %}
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-danger remove-entry">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                        {% endfor %}
+                                        {% if not equipment_entries %}
+                                        <p class="text-muted">No equipment recorded for this diary entry.</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
                             </div>
                         </section>
 
                         <!-- Delays & Documentation Tab -->
                         <section id="tab-delays" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-delays">
+                            <!-- Delays and Issues Section -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <h2 class="section-title">Delays and Issues</h2>
+                                </div>
+                                <div class="form-group">
+                                    <label>Add Delays</label>
+                                    <div class="form-row">
+                                        <div class="form-group" style="flex: 1;">
+                                            <select class="form-control" id="delayType">
+                                                <option value="">Select delay type...</option>
+                                                <option value="weather">Weather Related</option>
+                                                <option value="material">Material Shortage</option>
+                                                <option value="equipment">Equipment Issues</option>
+                                                <option value="labor">Labor Issues</option>
+                                                <option value="permit">Permit/Approval Delays</option>
+                                                <option value="design">Design Changes</option>
+                                                <option value="client">Client Related</option>
+                                                <option value="safety">Safety Concerns</option>
+                                                <option value="other">Other</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group" style="flex: 2;">
+                                            <input type="text" class="form-control" id="delayDescription" placeholder="Delay description">
+                                        </div>
+                                        <div class="form-group" style="flex: 1;">
+                                            <input type="number" class="form-control" id="delayHours" min="0" step="0.5" placeholder="Hours">
+                                        </div>
+                                        <button type="button" class="btn btn-primary" id="addDelay" style="margin-top: 0; height: 38px;">
+                                            <i class="fas fa-plus"></i> Add Delay
+                                        </button>
+                                    </div>
+                                    <div class="entry-list" id="delayList">
+                                        <!-- Current delay entries -->
+                                        {% for delay in delay_entries %}
+                                        <div class="entry-item">
+                                            <div class="entry-content">
+                                                <strong>{{ delay.get_category_display }} - {{ delay.get_impact_level_display }}</strong>
+                                                <br>{{ delay.description }}
+                                                {% if delay.duration_hours %}<br>Duration: {{ delay.duration_hours }} hours{% endif %}
+                                                {% if delay.cost_impact %}<br>Cost Impact: ₱{{ delay.cost_impact }}{% endif %}
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <!-- Quality and Safety Section -->
                             <div class="form-section">
                                 <div class="section-header">
                                     <i class="fas fa-shield-alt"></i>
-                                    <h2 class="section-title">Current Quality and Safety</h2>
+                                    <h2 class="section-title">Quality and Safety</h2>
                                 </div>
                                 <div class="form-group">
                                     <label for="revisedQualityIssues">Revised Quality Issues</label>
@@ -277,15 +915,60 @@
                                     {% for delay in delay_entries %}
                                     <div class="entry-item">
                                         <div class="entry-content">
-                                            <strong>{{ delay.category }} - {{ delay.impact_level }}</strong>
+                                            <strong>{{ delay.get_category_display }} - {{ delay.get_impact_level_display }}</strong>
                                             <br>{{ delay.description }}
+                                            {% if delay.start_time and delay.end_time %}<br>Time: {{ delay.start_time }} - {{ delay.end_time }}{% endif %}
                                             {% if delay.duration_hours %}<br>Duration: {{ delay.duration_hours }} hours{% endif %}
                                             {% if delay.cost_impact %}<br>Cost Impact: ₱{{ delay.cost_impact }}{% endif %}
+                                            {% if delay.mitigation_actions %}<br>Solution: {{ delay.mitigation_actions }}{% endif %}
+                                            {% if delay.affected_activities %}<br>Affected Activities: {{ delay.affected_activities }}{% endif %}
                                         </div>
                                     </div>
                                     {% endfor %}
                                 {% else %}
                                     <p class="text-muted">No delays or issues recorded for this diary entry.</p>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Visitors Section -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-users"></i>
+                                    <h2 class="section-title">Site Visitors</h2>
+                                </div>
+                                {% if visitor_entries %}
+                                    {% for visitor in visitor_entries %}
+                                    <div class="entry-item">
+                                        <div class="entry-content">
+                                            <strong>{{ visitor.visitor_name }}</strong> - {{ visitor.company }}
+                                            {% if visitor.purpose %}<br>Purpose: {{ visitor.purpose }}{% endif %}
+                                            {% if visitor.arrival_time and visitor.departure_time %}<br>Time: {{ visitor.arrival_time }} - {{ visitor.departure_time }}{% endif %}
+                                            {% if visitor.contact_number %}<br>Contact: {{ visitor.contact_number }}{% endif %}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="text-muted">No visitors recorded for this diary entry.</p>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Photos Section -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-camera"></i>
+                                    <h2 class="section-title">Photos and Documentation</h2>
+                                </div>
+                                {% if photo_entries %}
+                                    <div class="photo-grid">
+                                        {% for photo in photo_entries %}
+                                        <div class="photo-item">
+                                            <img src="{{ photo.photo.url }}" alt="{{ photo.description }}" class="photo-thumbnail">
+                                            {% if photo.description %}<p class="photo-description">{{ photo.description }}</p>{% endif %}
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <p class="text-muted">No photos recorded for this diary entry.</p>
                                 {% endif %}
                             </div>
                         </section>
@@ -323,18 +1006,9 @@
                                 
                                 <div class="form-group">
                                     <label for="revisionReason">Reason for Revision *</label>
-                                    <select class="form-control" id="revisionReason" name="revisionReason" required>
-                                        <option value="">Select reason</option>
-                                        <option value="data_error">Data Entry Error</option>
-                                        <option value="cost_error">Incorrect Cost/Budget Entry</option>
-                                        <option value="missing_information">Missing Information</option>
-                                        <option value="client_request">Client Request</option>
-                                        <option value="regulatory_requirement">Regulatory Requirement</option>
-                                        <option value="quality_improvement">Quality Improvement</option>
-                                        <option value="safety_compliance">Safety Compliance</option>
-                                        <option value="progress_update">Progress Update</option>
-                                        <option value="other">Other</option>
-                                    </select>
+                                    <input type="text" class="form-control" id="revisionReason" name="revisionReason" 
+                                           placeholder="Enter reason for revision" maxlength="50" required>
+                                    <small class="form-text">Brief reason (max 50 characters)</small>
                                 </div>
                                 
                                 <div class="form-group">

@@ -13,7 +13,7 @@ from django.core.cache import cache
 from accounts.decorators import require_site_manager_role, require_admin_role
 from .models import (
     Project, DiaryEntry, LaborEntry, MaterialEntry, 
-    EquipmentEntry, DelayEntry, VisitorEntry, DiaryPhoto, SubcontractorCompany, Milestone
+    EquipmentEntry, DelayEntry, VisitorEntry, DiaryPhoto, SubcontractorCompany, Milestone, SubcontractorEntry
 )
 from .forms import (
     ProjectForm, DiaryEntryForm, LaborEntryFormSet, MaterialEntryFormSet,
@@ -44,6 +44,8 @@ def diary(request):
     
     if request.method == 'POST':
         save_as_draft = request.POST.get('save_as_draft') == '1'
+        logger.info(f"POST request received - save_as_draft: {save_as_draft}")
+        logger.info(f"POST data keys: {list(request.POST.keys())}")
         
         diary_form = DiaryEntryForm(request.POST, user=request.user)
         labor_formset = LaborEntryFormSet(request.POST, prefix='labor')
@@ -84,79 +86,222 @@ def diary(request):
         
         # For drafts, only require project and entry_date
         if save_as_draft:
-            # Minimal validation for drafts
-            project = diary_form.cleaned_data.get('project') if diary_form.is_valid() else None
-            entry_date = diary_form.cleaned_data.get('entry_date') if diary_form.is_valid() else None
+            logger.info(f"Processing draft save request")
             
-            if not project:
-                messages.error(request, 'Please select a project to save as draft.')
+            # Get project and entry_date directly from POST data for drafts
+            try:
+                project_id = request.POST.get('project')
+                entry_date = request.POST.get('entry_date')
+                
+                logger.info(f"Draft data - Project ID: {project_id}, Entry Date: {entry_date}")
+                
+                if not project_id or not entry_date:
+                    error_msg = 'Please select a project and entry date to save as draft.'
+                    logger.warning(f"Draft save failed - missing data: project_id={project_id}, entry_date={entry_date}")
+                    
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return JsonResponse({'success': False, 'message': error_msg}, status=400)
+                    
+                    messages.error(request, error_msg)
+                    return render(request, 'site_diary/diary.html', {
+                        'diary_form': diary_form,
+                        'labor_formset': labor_formset,
+                        'material_formset': material_formset,
+                        'equipment_formset': equipment_formset,
+                        'delay_formset': delay_formset,
+                        'visitor_formset': visitor_formset,
+                        'photo_formset': photo_formset,
+                        'user_projects': user_projects,
+                        'project_data': [],
+                        'subcontractor_companies': SubcontractorCompany.objects.filter(is_active=True).order_by('name'),
+                        'milestones': Milestone.objects.filter(is_active=True).order_by('order', 'name'),
+                    })
+                
+                # Get project object
+                project = Project.objects.get(id=project_id, project_manager=request.user)
+                
+            except (Project.DoesNotExist, ValueError):
+                error_msg = 'Invalid project selected.'
+                logger.warning(f"Draft save failed - invalid project: {project_id}")
+                
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'message': error_msg}, status=400)
+                
+                messages.error(request, error_msg)
+                return redirect('site_diary:diary')
             
-            if not entry_date:
-                messages.error(request, 'Please select an entry date to save as draft.')
+            # Check if draft already exists for this project and date (avoid duplicates)
+            existing_draft = DiaryEntry.objects.filter(
+                project=project,
+                entry_date=entry_date,
+                created_by=request.user,
+                draft=True
+            ).first()
             
-            if not project or not entry_date:
-                # Re-render form with errors - user_projects already defined at function start
-                context = {
-                    'diary_form': diary_form,
-                    'labor_formset': labor_formset,
-                    'material_formset': material_formset,
-                    'equipment_formset': equipment_formset,
-                    'delay_formset': delay_formset,
-                    'visitor_formset': visitor_formset,
-                    'photo_formset': photo_formset,
-                    'user_projects': user_projects,
-                    'project_data': [],
-                    'subcontractor_companies': SubcontractorCompany.objects.filter(is_active=True).order_by('name'),
-                    'milestones': Milestone.objects.filter(is_active=True).order_by('order', 'name'),
-                }
-                return render(request, 'site_diary/diary.html', context)
+            # Get milestone if provided
+            milestone_id = request.POST.get('milestone')
+            milestone = None
+            if milestone_id:
+                try:
+                    milestone = Milestone.objects.get(id=milestone_id)
+                except Milestone.DoesNotExist:
+                    pass
             
-            if editing_draft:
-                # Update existing draft
-                for field in diary_form.cleaned_data:
-                    if hasattr(editing_draft, field) and diary_form.cleaned_data[field] is not None:
-                        setattr(editing_draft, field, diary_form.cleaned_data[field])
-                editing_draft.save()
-                diary_entry = editing_draft
+            if existing_draft:
+                # Update existing draft with all POST data
+                existing_draft.milestone = milestone
+                existing_draft.work_description = request.POST.get('work_description', '')
+                existing_draft.progress_percentage = request.POST.get('progress_percentage', 0) or 0
+                existing_draft.weather_condition = request.POST.get('weather_condition', '')
+                existing_draft.temperature_high = request.POST.get('temperature_high') or None
+                existing_draft.temperature_low = request.POST.get('temperature_low') or None
+                existing_draft.humidity = request.POST.get('humidity') or None
+                existing_draft.wind_speed = request.POST.get('wind_speed') or None
+                existing_draft.quality_issues = request.POST.get('quality_issues', '')
+                existing_draft.safety_incidents = request.POST.get('safety_incidents', '')
+                existing_draft.general_notes = request.POST.get('general_notes', '')
+                existing_draft.photos_taken = request.POST.get('photos_taken') == 'on'
+                existing_draft.save()
+                diary_entry = existing_draft
                 logger.info(f"Updated existing draft {diary_entry.id} for user {request.user.id}")
             else:
-                # Check if draft already exists for this project and date (avoid duplicates)
-                existing_draft = DiaryEntry.objects.filter(
+                # Create new draft with all POST data
+                diary_entry = DiaryEntry.objects.create(
                     project=project,
                     entry_date=entry_date,
                     created_by=request.user,
-                    draft=True
-                ).first()
+                    draft=True,
+                    milestone=milestone,
+                    work_description=request.POST.get('work_description', ''),
+                    progress_percentage=request.POST.get('progress_percentage', 0) or 0,
+                    weather_condition=request.POST.get('weather_condition', ''),
+                    temperature_high=request.POST.get('temperature_high') or None,
+                    temperature_low=request.POST.get('temperature_low') or None,
+                    humidity=request.POST.get('humidity') or None,
+                    wind_speed=request.POST.get('wind_speed') or None,
+                    quality_issues=request.POST.get('quality_issues', ''),
+                    safety_incidents=request.POST.get('safety_incidents', ''),
+                    general_notes=request.POST.get('general_notes', ''),
+                    photos_taken=request.POST.get('photos_taken') == 'on'
+                )
+                logger.info(f"Created new draft {diary_entry.id} for user {request.user.id}")
+            
+            # Save labor, materials, equipment, and delays data for drafts
+            # Handle dynamic worker types
+            from .models import WorkerType
+            worker_types = WorkerType.objects.filter(is_active=True)
+            
+            # Clear existing labor entries for this draft (except overtime)
+            LaborEntry.objects.filter(diary_entry=diary_entry).exclude(labor_type='overtime').delete()
+            
+            # Process each worker type dynamically
+            for worker_type in worker_types:
+                worker_slug = worker_type.name.lower().replace(' ', '-')
+                count_field = f"{worker_slug}Count"
+                rate_field = f"{worker_slug}Rate"
                 
-                if existing_draft:
-                    # Update existing draft
-                    for field in diary_form.cleaned_data:
-                        if hasattr(existing_draft, field) and diary_form.cleaned_data[field] is not None:
-                            setattr(existing_draft, field, diary_form.cleaned_data[field])
-                    existing_draft.save()
-                    diary_entry = existing_draft
-                    logger.info(f"Updated existing draft {diary_entry.id} for user {request.user.id}")
-                else:
-                    # Create new draft with minimal required fields
-                    diary_entry = DiaryEntry.objects.create(
-                        project=project,
-                        entry_date=entry_date,
-                        created_by=request.user,
-                        draft=True,
-                        milestone=diary_form.cleaned_data.get('milestone'),
-                        work_description=diary_form.cleaned_data.get('work_description', ''),
-                        progress_percentage=diary_form.cleaned_data.get('progress_percentage', 0),
-                        weather_condition=diary_form.cleaned_data.get('weather_condition', ''),
-                        temperature_high=diary_form.cleaned_data.get('temperature_high'),
-                        temperature_low=diary_form.cleaned_data.get('temperature_low'),
-                        humidity=diary_form.cleaned_data.get('humidity'),
-                        wind_speed=diary_form.cleaned_data.get('wind_speed'),
-                        quality_issues=diary_form.cleaned_data.get('quality_issues', ''),
-                        safety_incidents=diary_form.cleaned_data.get('safety_incidents', ''),
-                        general_notes=diary_form.cleaned_data.get('general_notes', ''),
-                        photos_taken=diary_form.cleaned_data.get('photos_taken', False)
+                worker_count = request.POST.get(count_field, 0)
+                worker_rate = request.POST.get(rate_field, 0)
+                
+                if int(worker_count or 0) > 0:
+                    LaborEntry.objects.create(
+                        diary_entry=diary_entry,
+                        labor_type=worker_slug,
+                        trade_description=worker_type.name,
+                        workers_count=worker_count,
+                        hours_worked=8,
+                        overtime_hours=0,
+                        hourly_rate=worker_rate or worker_type.default_daily_rate or 0
                     )
-                    logger.info(f"Created new draft {diary_entry.id} for user {request.user.id}")
+            
+            # Handle JSON data from frontend
+            materials_json = request.POST.get('materials_json')
+            if materials_json:
+                MaterialEntry.objects.filter(diary_entry=diary_entry).delete()
+                materials_data = json.loads(materials_json)
+                for material_data in materials_data:
+                    MaterialEntry.objects.create(
+                        diary_entry=diary_entry,
+                        material_name=material_data['name'],
+                        quantity_delivered=material_data['quantity'],
+                        unit=material_data['unit'],
+                        unit_cost=material_data['cost'] / material_data['quantity'] if material_data['quantity'] > 0 else 0,
+                        supplier=material_data.get('supplier', ''),
+                        delivery_time=material_data.get('delivery_time')
+                    )
+            
+            equipment_json = request.POST.get('equipment_json')
+            if equipment_json:
+                EquipmentEntry.objects.filter(diary_entry=diary_entry).delete()
+                equipment_data = json.loads(equipment_json)
+                for equip_data in equipment_data:
+                    EquipmentEntry.objects.create(
+                        diary_entry=diary_entry,
+                        equipment_name=equip_data['name'],
+                        equipment_type=equip_data['name'],
+                        hours_operated=equip_data['hours'],
+                        rental_cost_per_hour=equip_data['cost'] / equip_data['hours'] if equip_data['hours'] > 0 else 0,
+                        operator_name=equip_data.get('operator', ''),
+                        fuel_consumption=equip_data.get('fuel', 0)
+                    )
+            
+            delays_json = request.POST.get('delays_json')
+            if delays_json:
+                DelayEntry.objects.filter(diary_entry=diary_entry).delete()
+                delays_data = json.loads(delays_json)
+                for delay_data in delays_data:
+                    DelayEntry.objects.create(
+                        diary_entry=diary_entry,
+                        category=delay_data['type'],
+                        description=delay_data['description'],
+                        start_time=delay_data.get('start_time') if delay_data.get('start_time') else None,
+                        end_time=delay_data.get('end_time') if delay_data.get('end_time') else None,
+                        duration_hours=delay_data.get('duration', 0),
+                        impact_level=delay_data['impact'],
+                        mitigation_actions=delay_data.get('solution', ''),
+                        affected_activities='General work activities'
+                    )
+            
+            # Handle overtime JSON data
+            overtime_json = request.POST.get('overtime_json')
+            if overtime_json:
+                # Clear existing overtime entries for this draft
+                LaborEntry.objects.filter(diary_entry=diary_entry, labor_type='overtime').delete()
+                overtime_data = json.loads(overtime_json)
+                for overtime_entry in overtime_data:
+                    LaborEntry.objects.create(
+                        diary_entry=diary_entry,
+                        labor_type='overtime',
+                        trade_description=f"{overtime_entry['personnel']} {overtime_entry['role']} personnel",
+                        workers_count=overtime_entry['personnel'],
+                        hours_worked=overtime_entry['hours'],
+                        overtime_hours=overtime_entry['hours'],
+                        hourly_rate=overtime_entry['rate']
+                    )
+            
+            # Handle subcontractor JSON data
+            subcontractor_json = request.POST.get('subcontractor_json')
+            print(f"DEBUG: Draft save - subcontractor_json: {subcontractor_json}")
+            if subcontractor_json:
+                SubcontractorEntry.objects.filter(diary_entry=diary_entry).delete()
+                subcontractor_data = json.loads(subcontractor_json)
+                print(f"DEBUG: Draft save - parsed subcontractor_data: {subcontractor_data}")
+                for sub_data in subcontractor_data:
+                    created_sub = SubcontractorEntry.objects.create(
+                        diary_entry=diary_entry,
+                        company_name=sub_data['name'],
+                        work_description=sub_data['work'],
+                        daily_cost=sub_data.get('cost', 0)
+                    )
+                    print(f"DEBUG: Draft save - created subcontractor: {created_sub.company_name} - {created_sub.work_description} (₱{created_sub.daily_cost})")
+            else:
+                print(f"DEBUG: Draft save - no subcontractor_json found in POST data")
+            
+            logger.info(f"Draft saved successfully with ID: {diary_entry.id}")
+            
+            # Handle AJAX requests
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': True, 'message': 'Draft saved successfully!', 'draft_id': diary_entry.id})
             
             messages.success(request, 'Diary draft saved successfully!')
             return redirect('site_diary:sitedraft')
@@ -164,17 +309,122 @@ def diary(request):
         # Full validation for final submission
         elif diary_form.is_valid() and material_formset.is_valid() and equipment_formset.is_valid() and labor_formset.is_valid():
             # Debug: Log all POST data
-            logger.info(f"POST data keys: {list(request.POST.keys())}")
+            print(f"DEBUG: Final submission - POST data keys: {list(request.POST.keys())}")
+            print(f"DEBUG: Final submission - subcontractor_json: {request.POST.get('subcontractor_json')}")
             for key, value in request.POST.items():
-                if 'material' in key or 'equipment' in key or 'labor' in key:
-                    logger.info(f"Form data: {key} = {value}")
+                if 'subcontractor' in key.lower():
+                    print(f"DEBUG: Final submission - {key} = {value}")
             
             # Save diary entry
             diary_entry = diary_form.save(commit=False)
             diary_entry.created_by = request.user
             diary_entry.draft = False
             diary_entry.save()
-            logger.info(f"Diary entry saved with ID: {diary_entry.id}")
+            print(f"DEBUG: Final submission - Diary entry saved with ID: {diary_entry.id}")
+            
+            # Handle JSON data from frontend
+            materials_json = request.POST.get('materials_json')
+            if materials_json:
+                import json
+                materials_data = json.loads(materials_json)
+                for material_data in materials_data:
+                    MaterialEntry.objects.create(
+                        diary_entry=diary_entry,
+                        material_name=material_data['name'],
+                        quantity_delivered=material_data['quantity'],
+                        unit=material_data['unit'],
+                        unit_cost=material_data['cost'] / material_data['quantity'] if material_data['quantity'] > 0 else 0,
+                        supplier=material_data.get('supplier', ''),
+                        delivery_time=material_data.get('delivery_time')
+                    )
+            
+            equipment_json = request.POST.get('equipment_json')
+            if equipment_json:
+                equipment_data = json.loads(equipment_json)
+                for equip_data in equipment_data:
+                    EquipmentEntry.objects.create(
+                        diary_entry=diary_entry,
+                        equipment_name=equip_data['name'],
+                        equipment_type=equip_data['name'],
+                        hours_operated=equip_data['hours'],
+                        rental_cost_per_hour=equip_data['cost'] / equip_data['hours'] if equip_data['hours'] > 0 else 0,
+                        operator_name=equip_data.get('operator', ''),
+                        fuel_consumption=equip_data.get('fuel', 0)
+                    )
+            
+            # Handle delays data
+            delays_json = request.POST.get('delays_json')
+            if delays_json:
+                delays_data = json.loads(delays_json)
+                for delay_data in delays_data:
+                    DelayEntry.objects.create(
+                        diary_entry=diary_entry,
+                        category=delay_data['type'],
+                        description=delay_data['description'],
+                        start_time=delay_data.get('start_time') if delay_data.get('start_time') else None,
+                        end_time=delay_data.get('end_time') if delay_data.get('end_time') else None,
+                        duration_hours=delay_data.get('duration', 0),
+                        impact_level=delay_data['impact'],
+                        mitigation_actions=delay_data.get('solution', ''),
+                        affected_activities='General work activities'
+                    )
+            
+            # Handle overtime JSON data
+            overtime_json = request.POST.get('overtime_json')
+            if overtime_json:
+                overtime_data = json.loads(overtime_json)
+                for overtime_entry in overtime_data:
+                    LaborEntry.objects.create(
+                        diary_entry=diary_entry,
+                        labor_type='overtime',
+                        trade_description=f"{overtime_entry['personnel']} {overtime_entry['role']} personnel",
+                        workers_count=overtime_entry['personnel'],
+                        hours_worked=overtime_entry['hours'],
+                        overtime_hours=overtime_entry['hours'],
+                        hourly_rate=overtime_entry['rate']
+                    )
+            
+            # Handle subcontractor JSON data
+            subcontractor_json = request.POST.get('subcontractor_json')
+            print(f"DEBUG: Main diary - subcontractor_json: {subcontractor_json}")
+            if subcontractor_json:
+                subcontractor_data = json.loads(subcontractor_json)
+                print(f"DEBUG: Main diary - parsed subcontractor_data: {subcontractor_data}")
+                for sub_data in subcontractor_data:
+                    created_sub = SubcontractorEntry.objects.create(
+                        diary_entry=diary_entry,
+                        company_name=sub_data['name'],
+                        work_description=sub_data['work'],
+                        daily_cost=sub_data.get('cost', 0)
+                    )
+                    print(f"DEBUG: Main diary - created subcontractor: {created_sub.company_name} - {created_sub.work_description} (₱{created_sub.daily_cost})")
+            else:
+                print(f"DEBUG: Main diary - no subcontractor_json found in POST data")
+                print(f"DEBUG: Main diary - POST keys: {list(request.POST.keys())}")
+            
+            # Handle dynamic worker types
+            from .models import WorkerType
+            worker_types = WorkerType.objects.filter(is_active=True)
+            
+            # Process each worker type dynamically
+            for worker_type in worker_types:
+                worker_slug = worker_type.name.lower().replace(' ', '-')
+                count_field = f"{worker_slug}Count"
+                rate_field = f"{worker_slug}Rate"
+                
+                worker_count = request.POST.get(count_field, 0)
+                worker_rate = request.POST.get(rate_field, 0)
+                
+                if int(worker_count or 0) > 0:
+                    LaborEntry.objects.create(
+                        diary_entry=diary_entry,
+                        labor_type=worker_slug,
+                        trade_description=worker_type.name,
+                        workers_count=worker_count,
+                        hours_worked=8,
+                        overtime_hours=0,
+                        hourly_rate=worker_rate or worker_type.default_daily_rate or 0
+                    )
             
             # Process formsets
             material_formset.instance = diary_entry
@@ -218,11 +468,43 @@ def diary(request):
                 messages.success(request, f'Diary entry created successfully! Saved {material_count} materials, {equipment_count} equipment, {labor_count} labor entries.')
             else:
                 messages.success(request, 'Diary entry created successfully!')
-            return redirect('site_diary:diary')
+            return redirect('site_diary:history')
         else:
             # Form validation failed
             logger.warning(f"Form validation failed for user {request.user.id}")
-            messages.error(request, 'Please correct the form errors and try again.')
+            
+            # Collect specific error messages
+            error_messages = []
+            if diary_form.errors:
+                for field, errors in diary_form.errors.items():
+                    if field == '__all__':
+                        error_messages.append(f"Form errors: {', '.join(errors)}")
+                    else:
+                        field_name = diary_form.fields[field].label or field.replace('_', ' ').title()
+                        error_messages.append(f"{field_name}: {', '.join(errors)}")
+            
+            if material_formset.errors:
+                error_messages.append("Materials section has errors")
+            
+            if equipment_formset.errors:
+                error_messages.append("Equipment section has errors")
+                
+            if labor_formset.errors:
+                error_messages.append("Labor section has errors")
+            
+            if delay_formset.errors:
+                error_messages.append("Delays section has errors")
+            
+            if visitor_formset.errors:
+                error_messages.append("Visitors section has errors")
+            
+            if photo_formset.errors:
+                error_messages.append("Photos section has errors")
+            
+            if error_messages:
+                messages.error(request, 'Please fix the following errors: ' + '; '.join(error_messages))
+            else:
+                messages.error(request, 'Please correct the form errors and try again.')
     else:
         
         # Check if editing an existing draft with proper validation
@@ -282,6 +564,10 @@ def diary(request):
     # Get active milestones for dropdown
     milestones = Milestone.objects.filter(is_active=True).order_by('order', 'name')
     
+    # Get active worker types for dynamic form generation
+    from .models import WorkerType
+    worker_types = WorkerType.objects.filter(is_active=True).order_by('order', 'name')
+    
     context = {
         'diary_form': diary_form,
         'labor_formset': labor_formset,
@@ -294,6 +580,7 @@ def diary(request):
         'project_data': project_data,
         'subcontractor_companies': subcontractor_companies,
         'milestones': milestones,
+        'worker_types': worker_types,
     }
     return render(request, 'site_diary/diary.html', context)
 
@@ -301,6 +588,8 @@ def diary(request):
 @require_site_manager_role
 def dashboard(request):
     """Site Manager Enhanced dashboard with comprehensive project overview"""
+    # Check for success modal flag
+    success_modal_data = request.session.pop('show_success_modal', None)
     # Get user's approved projects only
     if request.user.is_staff:
         projects = Project.objects.filter(status__in=['planning', 'active', 'on_hold', 'completed'])
@@ -440,7 +729,8 @@ def dashboard(request):
             'active_projects': active_projects,
             'at_risk': at_risk_projects,
             'draft_entries': draft_entries,
-        }
+        },
+        'success_modal_data': success_modal_data
     }
     return render(request, 'site_diary/dashboard.html', context)
 
@@ -536,6 +826,41 @@ def print_preview(request, project_id):
     except (ValueError, TypeError):
         messages.error(request, 'Invalid project ID.')
         return redirect('site_diary:dashboard')
+
+@require_site_manager_role
+def diary_entry_pdf(request, entry_id):
+    """Generate PDF for specific diary entry using printlayout template"""
+    try:
+        entry_id = int(entry_id)
+        diary_entry = get_object_or_404(DiaryEntry, id=entry_id)
+        
+        # Verify user has access to this entry's project
+        if not request.user.is_staff:
+            user_projects = Project.objects.filter(
+                Q(project_manager=request.user) | Q(architect=request.user)
+            )
+            if diary_entry.project not in user_projects:
+                messages.error(request, 'Access denied.')
+                return redirect('site_diary:history')
+        
+        # Get the project
+        project = diary_entry.project
+        
+        # Render the printlayout template with all necessary data
+        context = {
+            'project': project,
+            'diary_entry': diary_entry,
+        }
+        
+        return render(request, 'site_diary/printlayout.html', context)
+        
+    except (ValueError, TypeError):
+        messages.error(request, 'Invalid entry ID.')
+        return redirect('site_diary:history')
+    except Exception as e:
+        logger.error(f"PDF generation error for entry {entry_id}: {str(e)}")
+        messages.error(request, 'Error generating PDF.')
+        return redirect('site_diary:history')
 
 @require_site_manager_role
 def sample_print(request):
@@ -663,6 +988,10 @@ def newproject(request):
                 if budget < 0:
                     messages.error(request, 'Budget cannot be negative.')
                     return redirect('site_diary:newproject')
+                # Check if budget exceeds database limit (10^10 - 1)
+                if budget >= 10000000000:  # 10 billion
+                    messages.error(request, 'Budget amount is too large. Maximum allowed is ₱9,999,999,999.99.')
+                    return redirect('site_diary:newproject')
             except (ValueError, TypeError):
                 messages.error(request, 'Invalid budget amount.')
                 return redirect('site_diary:newproject')
@@ -711,7 +1040,7 @@ def newproject(request):
                 start_date=start_date,
                 expected_end_date=expected_end_date,
                 project_manager=request.user,
-                status='pending_approval',  # Requires admin approval
+                status='pending_approval',  # Project needs admin approval
                 image=image_file
             )
             
@@ -728,7 +1057,11 @@ def newproject(request):
                 except Exception as e:
                     logger.error(f"Error updating client profile: {str(e)}")
             
-            messages.success(request, f'Project "{project.name}" submitted for admin approval. You will be notified once approved.')
+            # Set session flag for success modal
+            request.session['show_success_modal'] = {
+                'project_name': project.name,
+                'project_id': project.id
+            }
             logger.info(f"Project {project.id} created by user {request.user.id}")
             return redirect('site_diary:dashboard')
         except Exception as e:
@@ -811,7 +1144,7 @@ def project_edit(request, project_id):
 @login_required
 @require_site_manager_role
 def revision_diary(request, entry_id):
-    """Revision diary page for specific entry"""
+    """Revision diary page for specific entry with complete data"""
     entry = get_object_or_404(DiaryEntry, id=entry_id)
     
     # Verify user has access to this entry's project
@@ -825,15 +1158,192 @@ def revision_diary(request, entry_id):
     
     if request.method == 'POST':
         # Handle revision form submission
-        # Add your revision processing logic here
-        messages.success(request, 'Revision request submitted successfully!')
+        from .models_revision import RevisionRequest
+        
+        try:
+            # Handle dynamic worker types data
+            from .models import WorkerType
+            worker_types = WorkerType.objects.filter(is_active=True)
+            
+            # Clear existing labor entries for this entry (except overtime)
+            LaborEntry.objects.filter(diary_entry=entry).exclude(labor_type='overtime').delete()
+            
+            # Process each worker type dynamically
+            for worker_type in worker_types:
+                worker_slug = worker_type.name.lower().replace(' ', '-')
+                count_field = f"{worker_slug}Count"
+                rate_field = f"{worker_slug}Rate"
+                
+                worker_count = request.POST.get(count_field, 0)
+                worker_rate = request.POST.get(rate_field, 0)
+                
+                if int(worker_count or 0) > 0:
+                    LaborEntry.objects.create(
+                        diary_entry=entry,
+                        labor_type=worker_slug,
+                        trade_description=worker_type.name,
+                        workers_count=worker_count,
+                        hours_worked=8,
+                        overtime_hours=0,
+                        hourly_rate=worker_rate or worker_type.default_daily_rate or 0
+                    )
+            
+            # Handle materials JSON data
+            materials_json = request.POST.get('materials_json')
+            if materials_json:
+                MaterialEntry.objects.filter(diary_entry=entry).delete()
+                materials_data = json.loads(materials_json)
+                for material_data in materials_data:
+                    MaterialEntry.objects.create(
+                        diary_entry=entry,
+                        material_name=material_data['name'],
+                        quantity_delivered=material_data['quantity'],
+                        unit=material_data['unit'],
+                        unit_cost=material_data['cost'] / material_data['quantity'] if material_data['quantity'] > 0 else 0,
+                        supplier='',
+                        delivery_time=None
+                    )
+            
+            # Handle equipment JSON data
+            equipment_json = request.POST.get('equipment_json')
+            if equipment_json:
+                EquipmentEntry.objects.filter(diary_entry=entry).delete()
+                equipment_data = json.loads(equipment_json)
+                for equip_data in equipment_data:
+                    EquipmentEntry.objects.create(
+                        diary_entry=entry,
+                        equipment_name=equip_data['name'],
+                        equipment_type=equip_data['name'],
+                        hours_operated=equip_data['hours'],
+                        rental_cost_per_hour=equip_data['cost'] / equip_data['hours'] if equip_data['hours'] > 0 else 0,
+                        operator_name='',
+                        fuel_consumption=0
+                    )
+            
+            # Handle overtime JSON data if provided
+            overtime_json = request.POST.get('overtime_json')
+            if overtime_json:
+                # Clear existing overtime entries for this entry
+                LaborEntry.objects.filter(diary_entry=entry, labor_type='overtime').delete()
+                overtime_data = json.loads(overtime_json)
+                for overtime_entry in overtime_data:
+                    LaborEntry.objects.create(
+                        diary_entry=entry,
+                        labor_type='overtime',
+                        trade_description=f"{overtime_entry['personnel']} {overtime_entry['role']} personnel",
+                        workers_count=overtime_entry['personnel'],
+                        hours_worked=overtime_entry['hours'],
+                        overtime_hours=overtime_entry['hours'],
+                        hourly_rate=overtime_entry['rate']
+                    )
+            
+            # Handle delays JSON data
+            delays_json = request.POST.get('delays_json')
+            if delays_json:
+                DelayEntry.objects.filter(diary_entry=entry).delete()
+                delays_data = json.loads(delays_json)
+                for delay_data in delays_data:
+                    DelayEntry.objects.create(
+                        diary_entry=entry,
+                        category=delay_data['type'],
+                        description=delay_data['description'],
+                        start_time=None,
+                        end_time=None,
+                        duration_hours=delay_data.get('duration', 0),
+                        impact_level=delay_data['impact'],
+                        mitigation_actions='',
+                        affected_activities='General work activities'
+                    )
+            
+            # Handle subcontractor JSON data if provided
+            subcontractor_json = request.POST.get('subcontractor_json')
+            if subcontractor_json:
+                SubcontractorEntry.objects.filter(diary_entry=entry).delete()
+                subcontractor_data = json.loads(subcontractor_json)
+                for sub_data in subcontractor_data:
+                    SubcontractorEntry.objects.create(
+                        diary_entry=entry,
+                        company_name=sub_data['name'],
+                        work_description=sub_data['work'],
+                        daily_cost=sub_data.get('cost', 0)
+                    )
+            
+            # Update diary entry fields if provided
+            if request.POST.get('revised_work_description'):
+                entry.work_description = request.POST.get('revised_work_description')
+            if request.POST.get('revised_progress_percentage'):
+                entry.progress_percentage = request.POST.get('revised_progress_percentage')
+            if request.POST.get('revised_quality_issues'):
+                entry.quality_issues = request.POST.get('revised_quality_issues')
+            if request.POST.get('revised_safety_incidents'):
+                entry.safety_incidents = request.POST.get('revised_safety_incidents')
+            if request.POST.get('revised_general_notes'):
+                entry.general_notes = request.POST.get('revised_general_notes')
+            
+            entry.save()
+            
+            # Create revision request
+            revision_request = RevisionRequest.objects.create(
+                diary_entry=entry,
+                revision_type=request.POST.get('revisionType'),
+                revision_reason=request.POST.get('revisionReason'),
+                description=request.POST.get('revisionDescription'),
+                impact_level=request.POST.get('revisionImpact', 'no_impact'),
+                estimated_cost_impact=request.POST.get('actualCostImpact', 0),
+                requested_by=request.user
+            )
+            messages.success(request, f'Revision request #{revision_request.id} submitted successfully!')
+        except Exception as e:
+            messages.error(request, f'Error submitting revision request: {str(e)}')
+        
         return redirect('site_diary:history')
     
-    # Get related data for the entry
-    labor_entries = LaborEntry.objects.filter(diary_entry=entry)
-    material_entries = MaterialEntry.objects.filter(diary_entry=entry)
-    equipment_entries = EquipmentEntry.objects.filter(diary_entry=entry)
-    delay_entries = DelayEntry.objects.filter(diary_entry=entry)
+    # Get all related data for the entry
+    labor_entries = LaborEntry.objects.filter(diary_entry=entry).order_by('id')
+    material_entries = MaterialEntry.objects.filter(diary_entry=entry).order_by('id')
+    equipment_entries = EquipmentEntry.objects.filter(diary_entry=entry).order_by('id')
+    delay_entries = DelayEntry.objects.filter(diary_entry=entry).order_by('id')
+    visitor_entries = VisitorEntry.objects.filter(diary_entry=entry).order_by('id')
+    photo_entries = DiaryPhoto.objects.filter(diary_entry=entry).order_by('id')
+    subcontractor_entries = SubcontractorEntry.objects.filter(diary_entry=entry).order_by('id')
+    
+    # Debug: Print what data we're fetching
+    print(f"DEBUG: Revision diary for entry {entry.id}: {labor_entries.count()} labor, {material_entries.count()} materials, {equipment_entries.count()} equipment, {delay_entries.count()} delays, {visitor_entries.count()} visitors, {photo_entries.count()} photos, {subcontractor_entries.count()} subcontractors")
+    
+    # Debug subcontractor data specifically
+    print(f"DEBUG: Subcontractor entries for entry {entry.id}:")
+    for sub in subcontractor_entries:
+        print(f"DEBUG:   - {sub.company_name}: {sub.work_description} (₱{sub.daily_cost})")
+    
+    # Also check if there are any VisitorEntry records with visitor_type='contractor'
+    contractor_visitors = VisitorEntry.objects.filter(diary_entry=entry, visitor_type='contractor')
+    print(f"DEBUG: Found {contractor_visitors.count()} contractor visitor entries for entry {entry.id}:")
+    for cv in contractor_visitors:
+        print(f"DEBUG:   - {cv.visitor_name}: {cv.company} - {cv.purpose}")
+    
+    # Get milestone and subcontractor data for dropdowns
+    milestones = Milestone.objects.filter(is_active=True).order_by('order', 'name')
+    subcontractor_companies = SubcontractorCompany.objects.filter(is_active=True).order_by('name')
+    
+    # Debug: Check if we have any SubcontractorEntry records at all
+    all_subcontractor_entries = SubcontractorEntry.objects.all()
+    print(f"DEBUG: Total SubcontractorEntry records in database: {all_subcontractor_entries.count()}")
+    for sub in all_subcontractor_entries:
+        print(f"DEBUG:   - Entry {sub.diary_entry.id}: {sub.company_name} - {sub.work_description} (₱{sub.daily_cost})")
+    
+
+    
+    # Get active worker types for dynamic form generation
+    from .models import WorkerType
+    worker_types = WorkerType.objects.filter(is_active=True).order_by('order', 'name')
+    
+    # Populate worker types with existing values
+    for worker_type in worker_types:
+        worker_slug = worker_type.name.lower().replace(' ', '-')
+        # Find existing labor entry for this worker type
+        existing_labor = labor_entries.filter(labor_type=worker_slug).first()
+        worker_type.current_count = existing_labor.workers_count if existing_labor else 0
+        worker_type.current_rate = existing_labor.hourly_rate if existing_labor else (worker_type.default_daily_rate or 0)
     
     context = {
         'entry_id': entry.id,
@@ -844,7 +1354,19 @@ def revision_diary(request, entry_id):
         'material_entries': material_entries,
         'equipment_entries': equipment_entries,
         'delay_entries': delay_entries,
+        'visitor_entries': visitor_entries,
+        'photo_entries': photo_entries,
+        'subcontractor_entries': subcontractor_entries,
+        'milestones': milestones,
+        'subcontractor_companies': subcontractor_companies,
+        'worker_types': worker_types,
     }
+    
+
+    # Final debug before rendering
+    print(f"DEBUG: Context subcontractor_entries count: {len(context['subcontractor_entries'])}")
+    print(f"DEBUG: Subcontractor entries found: {subcontractor_entries.count()}")
+    
     return render(request, 'site_diary/revision_diary.html', context)
 
 @login_required
@@ -1016,8 +1538,8 @@ def reports(request):
             'avg_progress': progress_data['avg_progress'] or 0,
             'max_progress': progress_data['max_progress'] or 0,
             'min_progress': progress_data['min_progress'] or 0,
-            'approved_entries': project_entries.filter(approved=True).count(),
-            'pending_entries': project_entries.filter(approved=False).count(),
+            'approved_entries': project_entries.filter(status='complete').count(),
+            'pending_entries': project_entries.filter(status='needs_revision').count(),
             'safety_incidents': safety_incidents,
             'quality_issues': quality_issues,
             'visitor_count': visitor_entries.count(),
@@ -1089,8 +1611,8 @@ def reports(request):
     overall_summary = {
         'total_projects': projects.count(),
         'total_entries': entries.count(),
-        'total_approved': entries.filter(approved=True).count(),
-        'total_pending': entries.filter(approved=False).count(),
+        'total_approved': entries.filter(status='complete').count(),
+        'total_pending': entries.filter(status='needs_revision').count(),
         'total_labor_entries': LaborEntry.objects.filter(diary_entry__in=entries).count(),
         'total_material_entries': MaterialEntry.objects.filter(diary_entry__in=entries).count(),
         'total_equipment_entries': EquipmentEntry.objects.filter(diary_entry__in=entries).count(),
@@ -1870,9 +2392,27 @@ def debug_entries(request):
 @login_required
 @require_site_manager_role
 @csrf_protect
+def delete_draft(request, draft_id):
+    """Delete a specific draft via AJAX"""
+    if request.method == 'POST':
+        try:
+            draft = DiaryEntry.objects.get(id=draft_id, created_by=request.user, draft=True)
+            draft.delete()
+            logger.info(f"Draft {draft_id} deleted by user {request.user.id}")
+            return JsonResponse({'success': True, 'message': 'Draft deleted successfully'})
+        except DiaryEntry.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Draft not found or access denied'}, status=404)
+        except Exception as e:
+            logger.error(f"Error deleting draft {draft_id}: {str(e)}")
+            return JsonResponse({'success': False, 'message': 'Error deleting draft'}, status=500)
+    return JsonResponse({'success': False, 'message': 'Method not allowed'}, status=405)
+
+@login_required
+@require_site_manager_role
+@csrf_protect
 def sitedraft(request):
     """Site Manager drafts view with real database data"""
-    # Handle draft deletion
+    # Handle draft deletion via form submission (fallback)
     if request.method == 'POST' and request.POST.get('action') == 'delete_draft':
         draft_id = request.POST.get('draft_id')
         try:

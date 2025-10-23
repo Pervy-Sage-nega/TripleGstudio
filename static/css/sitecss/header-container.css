@@ -1,0 +1,19 @@
+.container {
+    flex: 1!important;
+    width: 100%!important;
+    max-width: 1400px!important;
+    margin: 20px auto!important;
+    padding: 0 20px!important;
+    display: flex!important
+;
+    flex-direction: column!important;
+}
+.page-header {
+    display: flex!important
+;
+    justify-content: space-between!important;
+    align-items: center!important;
+    margin-bottom: 30px!important;
+    padding-bottom: 15px!important;
+    border-bottom: 2px solid var(--primary-color)!important;
+}

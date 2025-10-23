@@ -57,9 +57,13 @@ class Project(models.Model):
     
     def get_progress_percentage(self):
         """Get the latest progress percentage from diary entries"""
-        latest_entry = self.diary_entries.order_by('-entry_date').first()
-        if latest_entry:
-            return int(latest_entry.progress_percentage)
+        try:
+            latest_entry = self.diary_entries.order_by('-entry_date').first()
+            if latest_entry and latest_entry.progress_percentage is not None:
+                return int(latest_entry.progress_percentage)
+        except (ValueError, TypeError, AttributeError):
+            pass
+        
         # Fallback to status-based progress
         status_progress = {
             'pending_approval': 0,
@@ -339,6 +343,31 @@ class SubcontractorCompany(models.Model):
     
     def __str__(self):
         return f"{self.name} - {self.get_company_type_display()}"
+
+class WorkerType(models.Model):
+    name = models.CharField(max_length=100, unique=True, help_text="Worker type name (e.g., Supervisor, Skilled Labor)")
+    description = models.CharField(max_length=200, blank=True, help_text="Brief description of this worker type")
+    default_daily_rate = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text="Default daily rate in PHP")
+    is_active = models.BooleanField(default=True, help_text="Whether this worker type is available for selection")
+    order = models.PositiveIntegerField(default=1, help_text="Display order")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['order', 'name']
+    
+    def __str__(self):
+        return self.name
+
+class SubcontractorEntry(models.Model):
+    diary_entry = models.ForeignKey(DiaryEntry, on_delete=models.CASCADE, related_name='subcontractor_entries')
+    company_name = models.CharField(max_length=200)
+    work_description = models.TextField()
+    daily_cost = models.DecimalField(max_digits=10, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.company_name} - {self.diary_entry.entry_date}"
 
 class DiaryPhoto(models.Model):
     diary_entry = models.ForeignKey(DiaryEntry, on_delete=models.CASCADE, related_name='photos')

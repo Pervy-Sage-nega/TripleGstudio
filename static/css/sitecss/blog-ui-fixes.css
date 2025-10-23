@@ -13,6 +13,7 @@
     box-shadow: var(--shadow);
 }
 
+
 .section-title {
     display: flex;
     align-items: center;
@@ -345,7 +346,7 @@
 /* 7. SPACING AND LAYOUT FIXES */
 .container {
     max-width: 1400px;
-    margin: 0 auto;
+    margin: 57px auto;
     padding: 20px;
 }
 
@@ -353,6 +354,9 @@
 .drafts-section {
     margin-bottom: 25px;
 }
+/* .page-header{
+    margin-top
+} */
 
 .drafts-section .section-header {
     display: flex;

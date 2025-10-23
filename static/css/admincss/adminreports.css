@@ -15,7 +15,9 @@
     align-items: center;
     margin-bottom: 1.5rem;
 }
-
+.container{
+    margin: 10px auto 20px auto !important;
+}
 .section-title {
     display: flex;
     align-items: center;

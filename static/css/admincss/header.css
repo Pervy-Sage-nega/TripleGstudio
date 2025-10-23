@@ -41,6 +41,7 @@
   align-items: center;
   margin-bottom: 20px;
   padding: 10px 15px;
+  margin-top: 0 !important;
   background-color: #f8f9fa;
   border-radius: var(--radius);
   box-shadow: var(--shadow);

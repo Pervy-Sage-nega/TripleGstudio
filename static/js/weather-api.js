@@ -95,9 +95,7 @@ async function fetchWeatherData() {
         return;
     }
     
-    // Simplify location for weather API (extract city/region)
     const fullLocation = locationInput.value.trim();
-    const location = simplifyLocationForWeather(fullLocation);
     
     // Show loading state
     if (fetchBtn) {
@@ -106,29 +104,44 @@ async function fetchWeatherData() {
     }
     updateWeatherLoadingState(true);
     
-    try {
-        const response = await fetch(`${WEATHER_API_URL}?q=${encodeURIComponent(location)}&appid=${WEATHER_API_KEY}&units=metric`);
-        
-        if (!response.ok) {
-            throw new Error(`Weather API error: ${response.status}`);
+    // Try multiple location formats in order of preference
+    const locationVariants = getLocationVariants(fullLocation);
+    
+    let weatherData = null;
+    let lastError = null;
+    
+    for (const location of locationVariants) {
+        try {
+            const response = await fetch(`${WEATHER_API_URL}?q=${encodeURIComponent(location)}&appid=${WEATHER_API_KEY}&units=metric`);
+            
+            if (response.ok) {
+                weatherData = await response.json();
+                console.log(`Weather found for: ${location}`);
+                break;
+            } else {
+                console.log(`Weather not found for: ${location} (${response.status})`);
+            }
+        } catch (error) {
+            console.log(`Weather API error for ${location}:`, error);
+            lastError = error;
         }
-        
-        const data = await response.json();
-        updateWeatherDisplay(data);
-        updateFormFields(data);
-        
-    } catch (error) {
-        console.error('Weather fetch error:', error);
-        showWeatherError('Failed to fetch weather data. Please check the location or try again.');
-        enableManualInput();
-    } finally {
-        // Reset loading state
-        if (fetchBtn) {
-            fetchBtn.innerHTML = '<i class="fas fa-cloud-sun"></i> Fetch Weather';
-            fetchBtn.disabled = false;
-        }
-        updateWeatherLoadingState(false);
     }
+    
+    if (weatherData) {
+        updateWeatherDisplay(weatherData);
+        updateFormFields(weatherData);
+    } else {
+        console.error('All weather location variants failed:', lastError);
+        showWeatherError('Weather data not available for this location. Please enter manually.');
+        enableManualInput();
+    }
+    
+    // Reset loading state
+    if (fetchBtn) {
+        fetchBtn.innerHTML = '<i class="fas fa-cloud-sun"></i> Fetch Weather';
+        fetchBtn.disabled = false;
+    }
+    updateWeatherLoadingState(false);
 }
 
 function updateWeatherDisplay(data) {
@@ -315,24 +328,25 @@ async function updateProjectLocation() {
     }
 }
 
-function simplifyLocationForWeather(fullLocation) {
+function getLocationVariants(fullLocation) {
     const parts = fullLocation.split(',').map(part => part.trim());
+    const variants = [];
     
-    // Known Philippine cities and districts
+    // Known Philippine cities
     const knownCities = ['manila', 'quezon city', 'makati', 'taguig', 'pasig', 'mandaluyong', 'san juan', 'marikina', 'pasay', 'paranaque', 'las pinas', 'muntinlupa', 'pateros', 'valenzuela', 'malabon', 'navotas', 'caloocan', 'cebu', 'davao', 'iloilo', 'bacolod', 'cagayan', 'zamboanga', 'baguio', 'tagaytay', 'naga'];
     
-    // Skip terms that are not useful for weather
-    const skipTerms = ['road', 'street', 'avenue', 'district', 'metro', 'capital', 'townhomes', 'subdivision', 'village', 'phase', 'block', 'lot', 'unit'];
-    const numberPattern = /^\d+$/;
+    // 1. Try original location first
+    variants.push(fullLocation);
     
+    // 2. Try with Philippines appended if not already there
+    if (!fullLocation.toLowerCase().includes('philippines')) {
+        variants.push(`${fullLocation}, Philippines`);
+    }
+    
+    // 3. Find and try known cities
     let foundCity = null;
-    let foundBarangay = null;
-    
-    // Find city first
     for (const part of parts) {
         const cleanPart = part.toLowerCase().trim();
-        
-        // Check for known cities (exact match or contains)
         for (const city of knownCities) {
             if (cleanPart === city || cleanPart.includes(city)) {
                 foundCity = city.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
@@ -342,38 +356,26 @@ function simplifyLocationForWeather(fullLocation) {
         if (foundCity) break;
     }
     
-    // Find barangay/district (look for meaningful location names)
-    for (const part of parts) {
-        const cleanPart = part.toLowerCase().trim();
-        
-        // Skip if it's a number, contains skip terms, or is the found city
-        if (numberPattern.test(cleanPart) || 
-            skipTerms.some(term => cleanPart.includes(term)) ||
-            cleanPart === 'philippines' ||
-            (foundCity && cleanPart.includes(foundCity.toLowerCase()))) {
-            continue;
-        }
-        
-        // Look for meaningful location names (barangays, areas)
-        if (cleanPart.length > 2 && !cleanPart.includes('.') && 
-            !cleanPart.includes('sr') && !cleanPart.includes('jr')) {
-            // This could be a barangay/area name
-            foundBarangay = part;
-            break;
+    // 4. Try just the city if found
+    if (foundCity) {
+        variants.push(foundCity);
+        variants.push(`${foundCity}, Philippines`);
+    }
+    
+    // 5. Try the last part (usually the city/region)
+    if (parts.length > 1) {
+        const lastPart = parts[parts.length - 1];
+        if (lastPart.toLowerCase() !== 'philippines') {
+            variants.push(lastPart);
+            variants.push(`${lastPart}, Philippines`);
         }
     }
     
-    // Construct the location string for OpenWeatherMap
-    if (foundBarangay && foundCity) {
-        return `${foundBarangay}, ${foundCity}`;
-    } else if (foundCity) {
-        return foundCity;
-    } else if (foundBarangay) {
-        return `${foundBarangay}, Philippines`;
-    }
+    // 6. Fallback to Manila
+    variants.push('Manila, Philippines');
     
-    // Fallback: use "Manila, Philippines"
-    return "Manila, Philippines";
+    // Remove duplicates while preserving order
+    return [...new Set(variants)];
 }
 
 function capitalizeFirst(str) {

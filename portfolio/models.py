@@ -2,7 +2,9 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.text import slugify
 from django.urls import reverse
+from django.contrib.auth.models import User
 from datetime import datetime
+import json
 
 # Create your models here.
 
@@ -142,3 +144,28 @@ class ProjectTimeline(models.Model):
     
     def __str__(self):
         return f"{self.project.title} - {self.title} ({self.date})"
+
+
+class ProjectUpdateRequest(models.Model):
+    """Model for project update requests that need admin approval"""
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+    
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='update_requests')
+    requested_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='project_update_requests')
+    requested_data = models.JSONField(help_text="JSON data of requested changes")
+    reason = models.TextField(help_text="Reason for the update request")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    admin_notes = models.TextField(blank=True, help_text="Admin notes for approval/rejection")
+    reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_project_updates')
+    created_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Update request for {self.project.title} - {self.status}"

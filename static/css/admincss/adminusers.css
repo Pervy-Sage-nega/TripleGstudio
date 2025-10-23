@@ -711,13 +711,13 @@ body {
 }
 
 /* Container - Match blog management style */
-.container {
+/* .container {
     width: 100%;
     max-width: 1200px;
     margin: 0 auto;
     padding: 2rem;
     overflow-x: hidden;
-}
+} */
 
 .card {
     background-color: #fff;

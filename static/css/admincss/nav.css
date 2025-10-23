@@ -100,12 +100,13 @@
 }
 
 .nav-links a {
-  text-decoration: none;
-  color: #fff;
-  font-weight: 500;
-  position: relative;
-  padding: 5px 0;
-  transition: color 0.3s ease;
+      text-decoration: none;
+    color: #fff !important;
+    font-weight: 500;
+    position: relative;
+    padding: 5px 0;
+    transition: color 0.3s 
+ease;
 }
 
 .nav-links a::after {

@@ -4,9 +4,11 @@
 {% block title %}Triple G BuildHub - Dashboard{% endblock %}
 
 {% block head %}
+<link rel="stylesheet" href="{% static 'css/sitecss/header-container.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/global-footer.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/dashboard.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/createblog.css' %}">
+    
     
 {% endblock %}
 
@@ -183,11 +185,63 @@
         </div>
         
     </div>
+
+    <!-- Project Approval Modal -->
+    {% if approval_modal_data %}
+    <div id="approvalModal" class="modal-backdrop">
+        <div class="modal-content approval-modal">
+            <div class="modal-header">
+                <div class="modal-icon success">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <h3>Project Submitted for Approval</h3>
+                <button class="modal-close" onclick="closeApprovalModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="approval-message">
+                    <h4>{{ approval_modal_data.project_name }}</h4>
+                    <p>Your project has been successfully submitted and is now waiting for admin approval.</p>
+                    <div class="approval-details">
+                        <div class="detail-item">
+                            <i class="fas fa-info-circle"></i>
+                            <span>You will be notified via email once your project is approved</span>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-eye"></i>
+                            <span>You can track the approval status in your dashboard</span>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-clock"></i>
+                            <span>Approval typically takes 1-2 business days</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closeApprovalModal()">Got it, thanks!</button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
    
 
     <!-- Scripts -->
     <script src="{% static 'js/sitejs/sitemanager-dashboard.js' %}"></script>
     <script src="{% static 'js/sitejs/dashboardjs' %}"></script>
+    
+    {% if approval_modal_data %}
+    <script>
+        function closeApprovalModal() {
+            document.getElementById('approvalModal').style.display = 'none';
+        }
+        
+        // Show modal on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('approvalModal').style.display = 'flex';
+        });
+    </script>
+    {% endif %}
+    
     <!-- loader.js will be loaded by loader-init.js -->
     {% include "site_diary/navtemplate/layoutfooter.html" %}
 {% endblock %}

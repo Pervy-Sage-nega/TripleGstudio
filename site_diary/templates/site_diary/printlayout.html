@@ -11,7 +11,34 @@
     <style>
         @page {
             size: A4;
-            margin: 2.5cm 2cm 2.5cm 2cm;
+            margin: 1cm;
+        }
+        
+        .size-controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .size-btn {
+            padding: 8px 12px;
+            background: #00273C;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .size-btn:hover {
+            background: #FF7120;
+        }
+        
+        .size-btn.active {
+            background: #FF7120;
         }
         
         * {
@@ -36,19 +63,23 @@
             justify-content: flex-start;
             align-items: center;
             position: relative;
+        }
+        
+        .line-content {
            
+            padding: 0 20px 0 40px ;
         }
         
         .header {
             background: #00273C;
             color: white;
-            padding: 15px 20px;
+            padding: 15px  38px;
             display: flex;
             justify-content: flex-start;
             align-items: center;
             margin-bottom: 30px;
             position: relative;
-            clip-path: polygon(0 0, 30% 0, 25% 100%, 0 100%);
+               clip-path: polygon(5% 0, 32% 0, 29% 100%, 2% 100%);
             overflow: visible;
         }
         
@@ -57,23 +88,21 @@
             left: 250px;
             top: 18px;
             right: 20px;
-            font-size: 30pt;
+            font-size: 28pt;
             font-weight: bold;
             color: #00273C;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
             white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            overflow: visible;
         }
         
         .header-line {
             position: absolute;
-            left: 320px;
+            left: 250px;
             top: 71px;
             right: 20px;
             height: 2px;
-            width: 350px;
             background: #FF7120;
         }
         
@@ -127,6 +156,24 @@
         
         .section {
             margin-bottom: 20px;
+            page-break-inside: avoid;
+        }
+        
+        .material-section {
+            page-break-inside: avoid;
+        }
+        
+        .material-item {
+            page-break-inside: avoid;
+        }
+        
+        .description-section {
+            page-break-inside: avoid;
+        }
+        
+        .signature-section {
+            page-break-inside: avoid;
+            margin-top: 30px;
         }
         
         .section-title {
@@ -232,23 +279,118 @@
         }
         
         @media print {
-            .header, .footer {
+            @page {
+                margin: 0;
+            }
+            
+            * {
+                margin: 0;
+                padding: 0;
+            }
+            
+            html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
+                background: white;
+            }
+            
+            .print-container {
+                width: 100%;
+                max-width: none;
+                margin: 0;
+                padding: 0;
+                box-shadow: none;
+                background: white;
             }
             
             .content {
-                margin-bottom: 60px;
+                width: 100%;
+                padding: 0 40px 40px;
+                margin: 0;
             }
             
-            body {
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
+            .header {
+                width: 100%;
+                margin: 0 0 15px 0;
+                padding: 15px 38px;
+                clip-path: polygon(5% 0, 32% 0, 29% 100%, 2% 100%);
+            }
+            
+            .header-line {
+                width: 400px;
+                left: 60%;
+                transform: translateX(-50%);
+            }
+            
+            .line-content {
+                padding: 0 20px 0 40px;
+            }
+            
+            .footer {
+                width: 100%;
+                margin: 10px 0 0 0;
+                padding: 8px 0;
+                position: relative;
             }
             
             .section {
+                page-break-inside: avoid;
                 break-inside: avoid;
+                width: 100%;
+                margin-bottom: 15px;
             }
+            
+            .material-section {
+                page-break-inside: avoid;
+            }
+            
+            .description-section {
+                page-break-inside: avoid;
+            }
+            
+            .signature-section {
+                page-break-inside: avoid;
+                margin-top: 20px;
+            }
+            
+            .size-controls {
+                display: none;
+            }
+        }
+        
+        /* Size variations */
+        .size-small {
+            font-size: 10pt;
+        }
+        
+        .size-small .field-label,
+        .size-small .field-value {
+            font-size: 9pt;
+        }
+        
+        .size-small .section-title {
+            font-size: 12pt;
+        }
+        
+        .size-medium {
+            font-size: 12pt;
+        }
+        
+        .size-large {
+            font-size: 14pt;
+        }
+        
+        .size-large .field-label,
+        .size-large .field-value {
+            font-size: 13pt;
+        }
+        
+        .size-large .section-title {
+            font-size: 16pt;
         }
         
         @media screen {
@@ -341,10 +483,19 @@
         }
     </style>
 </head>
-<body>
+<body class="size-medium">
+    
+    <div class="size-controls">
+        <button class="size-btn" onclick="setSize('small')">Small</button>
+        <button class="size-btn active" onclick="setSize('medium')">Medium</button>
+        <button class="size-btn" onclick="setSize('large')">Large</button>
+        <button class="size-btn" onclick="window.print()">Print</button>
+    </div>
     
     <div class="print-container">
-         <div class="line"> </div>
+         <div class="line-content">
+            <div class="line"> </div>
+         </div>
         <div class="header">
             <div class="logo-section">
                 <div class="logo">
@@ -413,7 +564,7 @@
             </div>
 
             <div class="section">
-                <div class="section-title">Materials & Equipment</div>
+                <div class="section-title">Materials</div>
                 <div class="material-section">
                     {% if diary_entry.material_entries.all %}
                         {% for material in diary_entry.material_entries.all %}
@@ -430,6 +581,77 @@
                     {% endif %}
                 </div>
             </div>
+
+            <div class="section">
+                <div class="section-title">Equipment</div>
+                <div class="material-section">
+                    {% if diary_entry.equipment_entries.all %}
+                        {% for equipment in diary_entry.equipment_entries.all %}
+                        <div class="material-item">
+                            <div class="material-name">{{ equipment.equipment_name }}</div>
+                            <div class="material-quantity">{{ equipment.hours_operated }} hours operated</div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="material-item">
+                            <div class="material-name">No equipment recorded</div>
+                            <div class="material-quantity">—</div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Labor & Personnel</div>
+                <div class="material-section">
+                    {% if diary_entry.labor_entries.all %}
+                        {% for labor in diary_entry.labor_entries.all %}
+                        <div class="material-item">
+                            <div class="material-name">{{ labor.trade_description }}</div>
+                            <div class="material-quantity">{{ labor.workers_count }} workers, {{ labor.hours_worked }} hours</div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="material-item">
+                            <div class="material-name">No labor recorded</div>
+                            <div class="material-quantity">—</div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Subcontractors</div>
+                <div class="material-section">
+                    {% if diary_entry.subcontractor_entries.all %}
+                        {% for subcontractor in diary_entry.subcontractor_entries.all %}
+                        <div class="material-item">
+                            <div class="material-name">{{ subcontractor.company_name }}</div>
+                            <div class="material-quantity">{{ subcontractor.work_description }} - ₱{{ subcontractor.daily_cost }}</div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="material-item">
+                            <div class="material-name">No subcontractors recorded</div>
+                            <div class="material-quantity">—</div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if diary_entry.delay_entries.all %}
+            <div class="section">
+                <div class="section-title">Delays & Issues</div>
+                <div class="material-section">
+                    {% for delay in diary_entry.delay_entries.all %}
+                    <div class="material-item">
+                        <div class="material-name">{{ delay.get_category_display }}</div>
+                        <div class="material-quantity">{{ delay.description }} ({{ delay.duration_hours }} hours)</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
 
             <div class="section">
                 <div class="section-title">Quality & Safety</div>
@@ -483,5 +705,43 @@
             Triple G BuildHub — Confidential Report | Page 1 of 1
         </div>
     </div>
+    
+    <script>
+        function setSize(size) {
+            const body = document.body;
+            const buttons = document.querySelectorAll('.size-btn');
+            
+            // Remove all size classes
+            body.classList.remove('size-small', 'size-medium', 'size-large');
+            
+            // Add new size class
+            body.classList.add('size-' + size);
+            
+            // Update active button
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+        
+        // Force full width on load and before print
+        window.addEventListener('beforeprint', function() {
+            document.body.style.margin = '0';
+            document.body.style.padding = '0';
+            document.documentElement.style.margin = '0';
+            document.documentElement.style.padding = '0';
+        });
+        
+        window.addEventListener('load', function() {
+            // Override any browser default margins
+            const style = document.createElement('style');
+            style.textContent = `
+                @media print {
+                    @page { margin: 0 !important; }
+                    html, body { margin: 0 !important; padding: 0 !important; }
+                    .header, .footer { width: 100% !important; margin-left: 0 !important; margin-right: 0 !important; }
+                }
+            `;
+            document.head.appendChild(style);
+        });
+    </script>
 </body>
 </html>
