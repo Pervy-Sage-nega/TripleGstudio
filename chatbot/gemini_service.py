@@ -16,9 +16,9 @@ class GeminiChatService:
     def __init__(self):
         if GEMINI_AVAILABLE and genai is not None:
             try:
-                self.model = genai.GenerativeModel('gemini-pro')
+                self.model = genai.GenerativeModel('gemini-2.5-flash')
             except Exception as e:
-                print(f"Failed to initialize Gemini: {e}")
+                (f"Failed to initialize Gemini: {e}")
                 self.model = None
         else:
             self.model = None
@@ -32,7 +32,8 @@ class GeminiChatService:
         - If asked about topics outside construction/building, politely redirect to construction-related topics
         - Do not provide personal information about users or specific project statuses
         - Focus on general construction advice, services, and platform features
-        
+       
+
         Triple G BuildHub offers:
         - Construction project management
         - Communication tools for construction teams
@@ -41,6 +42,7 @@ class GeminiChatService:
         - Team collaboration features
         
         If users ask about scheduling calls or appointments, guide them to use the contact form or scheduling options.
+        You can also engage in casual conversation that is appropriate.
         """
     
     def get_response(self, user_message):
