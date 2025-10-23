@@ -50,7 +50,6 @@
     // Add trigger keywords for enhanced response system
     const triggerKeywords = {
         navigation: ['where', 'how do i', 'find', 'locate', 'view'],
-        projectStatus: ['project status', 'milestone', 'progress', 'update'],
         support: ['talk to someone', 'need help', 'contact support', 'human', 'representative'],
         appointment: ['schedule', 'appointment', 'meeting', 'call back', 'phone'],
         faqs: ['what is triple g', 'faq', 'question', 'contact information', 'supervisor']
@@ -59,11 +58,25 @@
     // Add variables to track chat state
     let currentMode = 'normal';
     let lastResponseType = '';
+    let awaitingPhone = false;
+    let sessionStartTime = Date.now();
     // Global element references (assigned in init)
     let chatWindow;
     let chatButton;
     let chatMessages;
     let chatInput;
+    
+    // API Configuration
+    const apiEndpoints = {
+        createContact: '/chat/api/create-contact/',
+        chat: '/chat/api/chat/'
+    };
+    
+    // Get CSRF token
+    function getCsrfToken() {
+        return document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+               document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1];
+    }
 
     // Create and append styles
     function createStyles() {
@@ -441,11 +454,7 @@
             return true;
         }
         
-        // Check for project status queries
-        if (triggerKeywords.projectStatus.some(keyword => message.includes(keyword))) {
-            addMessage("You're currently in the Structural Phase. Estimated completion: August 12, 2025.", 'bot');
-            return true;
-        }
+
         
         // Check for support requests
         if (triggerKeywords.support.some(keyword => message.includes(keyword))) {
@@ -486,7 +495,7 @@
         return false; // No specific trigger found
     }
 
-    // Send message function - Enhanced version
+    // Send message function - Enhanced version with API integration
     function sendMessage() {
         const messageText = chatInput.value.trim();
         if (messageText === '') return;
@@ -495,34 +504,57 @@
         addMessage(messageText, 'user');
         chatInput.value = '';
         
-        // Handle phone number validation if in that mode
-        if (currentMode === 'awaitingPhoneNumber') {
-            validatePhoneNumber(messageText);
-            return;
-        }
-        
-        // Try to process with our enhanced query handler
+        // Process message locally
+        handleMessageLocally(messageText);
+    }
+    
+    // Send message to API
+    function sendMessageToAPI(messageText) {
+        return fetch(apiEndpoints.sendMessage, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({
+                message: messageText,
+                awaiting_phone: awaitingPhone
+            })
+        })
+        .then(response => response.json());
+    }
+    
+    // Handle message with Gemini AI
+    function handleMessageLocally(messageText) {
+        // First try local processing for specific triggers
         const wasProcessed = processUserQuery(messageText);
         
-        // If no specific response was triggered, use the random response as before
         if (!wasProcessed) {
-            // Simulate typing
-            setTimeout(() => {
-                const typingIndicator = document.createElement('div');
-                typingIndicator.className = 'tg-message bot';
-                typingIndicator.textContent = 'Typing...';
-                typingIndicator.id = 'typing-indicator';
-                chatMessages.appendChild(typingIndicator);
-                scrollToBottom();
-                
-                // Remove typing indicator and add bot response after a delay
-                setTimeout(() => {
-                    chatMessages.removeChild(typingIndicator);
-                    const randomResponse = botResponses[Math.floor(Math.random() * botResponses.length)];
-                    addMessage(randomResponse, 'bot');
-                    refreshMainOptions();
-                }, 1500);
-            }, 500);
+            // Send to Gemini AI
+            fetch(apiEndpoints.chat, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: JSON.stringify({
+                    message: messageText
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.response) {
+                    addMessage(data.response, 'bot');
+                } else {
+                    addMessage("I'm here to help with construction and building-related questions. How can I assist you?", 'bot');
+                }
+                refreshMainOptions();
+            })
+            .catch(error => {
+                console.error('Chat API error:', error);
+                addMessage("I'm here to help with construction and building-related questions. How can I assist you?", 'bot');
+                refreshMainOptions();
+            });
         }
     }
 
@@ -700,6 +732,7 @@
         notifyButton.addEventListener('click', () => {
             addMessage('Notify Admin', 'user');
             chatMessages.removeChild(buttonsContainer);
+            addMessage("Admin has been notified. Someone will assist you shortly.", 'bot');
             simulateAdminNotification();
         });
         
@@ -713,18 +746,38 @@
 
     // Validate phone number
     function validatePhoneNumber(phoneNumber) {
-        // Simple phone validation (11 digits)
-        const phoneRegex = /^\d{11}$/;
+        // Simple phone validation (10-15 digits)
+        const phoneRegex = /^\d{10,15}$/;
         
         if (phoneRegex.test(phoneNumber.replace(/\D/g, ''))) {
             addMessage("Thanks! A member of our team will call you back at " + phoneNumber + " within one business day.", 'bot');
             currentMode = 'normal';
+            awaitingPhone = false;
             simulateAdminNotification();
         } else {
-            addMessage("That doesn't look like a valid 11-digit phone number. Please try again or type 'cancel' to go back.", 'bot');
+            addMessage("That doesn't look like a valid phone number. Please try again or type 'cancel' to go back.", 'bot');
         }
     }
 
+    // No conversation history loading
+    
+    // Submit feedback to API
+    function submitFeedback(messageId, rating, feedbackText = '') {
+        fetch(apiEndpoints.submitFeedback, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({
+                message_id: messageId,
+                rating: rating,
+                feedback_text: feedbackText
+            })
+        })
+        .catch(error => console.error('Error submitting feedback:', error));
+    }
+    
     // Open contact form
     function openContactForm() {
         // Create overlay
@@ -774,9 +827,51 @@
         const form = document.createElement('form');
         form.onsubmit = (e) => {
             e.preventDefault();
-            document.body.removeChild(overlay);
-            addMessage("Thanks for your message! Our team will get back to you soon.", 'bot');
-            simulateAdminNotification();
+            
+            const formData = new FormData(form);
+            const contactData = {
+                name: formData.get('name'),
+                email: formData.get('email'),
+                phone: formData.get('phone'),
+                subject: 'Chat Contact Form',
+                message: formData.get('message')
+            };
+            
+            // Submit to API
+            fetch(apiEndpoints.createContact, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: JSON.stringify(contactData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.body.removeChild(overlay);
+                if (data.success) {
+                    addMessage("Thanks for your message! Our team will get back to you soon.", 'bot');
+                } else {
+                    addMessage("Sorry, there was an error sending your message. Please try again.", 'bot');
+                }
+                // Trigger real-time notification
+                if (window.location.pathname.includes('/admin')) {
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    simulateAdminNotification();
+                }
+            })
+            .catch(error => {
+                console.error('Error submitting contact form:', error);
+                document.body.removeChild(overlay);
+                addMessage("Thanks for your message! Our team will get back to you soon.", 'bot');
+                // Trigger real-time notification
+                if (window.location.pathname.includes('/admin')) {
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    simulateAdminNotification();
+                }
+            });
         };
         
         // Create form fields
@@ -863,60 +958,68 @@
         return container;
     }
 
-    // Function to simulate admin notification
+    // Function to simulate admin notification (only for admin users)
     function simulateAdminNotification() {
-        // Create notification element
-        const notification = document.createElement('div');
-        notification.className = 'tg-notification';
-        notification.style.position = 'fixed';
-        notification.style.top = '20px';
-        notification.style.right = '20px';
-        notification.style.backgroundColor = config.colors.primary;
-        notification.style.color = config.colors.text;
-        notification.style.padding = '15px';
-        notification.style.borderRadius = '5px';
-        notification.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.2)';
-        notification.style.zIndex = '10000';
-        notification.style.display = 'flex';
-        notification.style.alignItems = 'center';
-        notification.style.transform = 'translateX(120%)';
-        notification.style.transition = 'transform 0.3s ease';
+        // Always show notifications on admin pages
+        const isAdminPage = window.location.pathname.includes('/admin') ||
+                           document.querySelector('meta[name="user-role"]')?.content === 'admin';
         
-        const notificationIcon = document.createElement('div');
-        notificationIcon.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 22C13.1046 22 14 21.1046 14 20H10C10 21.1046 10.8954 22 12 22Z" fill="white"/><path d="M18 16V11C18 7.93 16.36 5.36 13.5 4.68V4C13.5 3.17 12.83 2.5 12 2.5C11.17 2.5 10.5 3.17 10.5 4V4.68C7.63 5.36 6 7.92 6 11V16L4 18V19H20V18L18 16Z" fill="white"/></svg>';
-        notificationIcon.style.marginRight = '10px';
-        
-        const notificationText = document.createElement('div');
-        notificationText.innerHTML = '<strong>Admin Notification</strong><br>A new customer message has been received';
-        
-        notification.appendChild(notificationIcon);
-        notification.appendChild(notificationText);
-        document.body.appendChild(notification);
-        
-        // Show notification
-        setTimeout(() => {
-            notification.style.transform = 'translateX(0)';
+        if (isAdminPage) {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = 'tg-notification';
+            notification.style.position = 'fixed';
+            notification.style.top = '20px';
+            notification.style.right = '20px';
+            notification.style.backgroundColor = '#0f87c8';
+            notification.style.color = 'white';
+            notification.style.padding = '15px';
+            notification.style.borderRadius = '8px';
+            notification.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
+            notification.style.zIndex = '10001';
+            notification.style.display = 'flex';
+            notification.style.alignItems = 'center';
+            notification.style.transform = 'translateX(120%)';
+            notification.style.transition = 'transform 0.3s ease';
+            notification.style.minWidth = '300px';
             
-            // Auto dismiss after 5 seconds
+            const notificationIcon = document.createElement('div');
+            notificationIcon.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 22C13.1046 22 14 21.1046 14 20H10C10 21.1046 10.8954 22 12 22Z" fill="white"/><path d="M18 16V11C18 7.93 16.36 5.36 13.5 4.68V4C13.5 3.17 12.83 2.5 12 2.5C11.17 2.5 10.5 3.17 10.5 4V4.68C7.63 5.36 6 7.92 6 11V16L4 18V19H20V18L18 16Z" fill="white"/></svg>';
+            notificationIcon.style.marginRight = '12px';
+            notificationIcon.style.flexShrink = '0';
+            
+            const notificationText = document.createElement('div');
+            notificationText.innerHTML = '<strong>Admin Notification</strong><br>Customer needs assistance - Check message center';
+            notificationText.style.fontSize = '14px';
+            notificationText.style.lineHeight = '1.4';
+            
+            notification.appendChild(notificationIcon);
+            notification.appendChild(notificationText);
+            document.body.appendChild(notification);
+            
+            // Show notification
             setTimeout(() => {
-                notification.style.transform = 'translateX(120%)';
+                notification.style.transform = 'translateX(0)';
                 
-                // Remove from DOM after animation
+                // Auto dismiss after 6 seconds
                 setTimeout(() => {
-                    if (document.body.contains(notification)) {
-                        document.body.removeChild(notification);
-                    }
-                }, 300);
-            }, 5000);
-        }, 100);
+                    notification.style.transform = 'translateX(120%)';
+                    
+                    // Remove from DOM after animation
+                    setTimeout(() => {
+                        if (document.body.contains(notification)) {
+                            document.body.removeChild(notification);
+                        }
+                    }, 300);
+                }, 6000);
+            }, 100);
+        }
     }
 
     // Function to add preset quick replies
     function addQuickReplies() {
         const options = [
-            "Project Status",
             "Contact Support",
-            "Schedule Call",
             "FAQ"
         ];
         
@@ -1231,73 +1334,49 @@
         localStorage.setItem(interactionsKey, JSON.stringify(interactions));
     }
     
-    // Get or create session ID
-    function getOrCreateSessionId() {
-        const sessionKey = 'tg_chatbot_session_id';
-        let sessionId = localStorage.getItem(sessionKey);
+    // Detect page refresh and clear chat
+    function handlePageRefresh() {
+        const pageLoadedKey = 'tg_chatbot_page_loaded';
+        const wasPageLoaded = sessionStorage.getItem(pageLoadedKey);
         
-        if (!sessionId) {
-            sessionId = 'session_' + Math.random().toString(36).substring(2, 15);
-            localStorage.setItem(sessionKey, sessionId);
+        if (!wasPageLoaded) {
+            // First load or page refresh - clear chat
+            clearChatHistory();
+            sessionStorage.setItem(pageLoadedKey, 'true');
         }
-        
-        return sessionId;
     }
     
-    // Add chat history persistence
-    function saveChat() {
-        // Get all messages
-        const messages = [];
-        document.querySelectorAll('.tg-message').forEach(messageEl => {
-            if (!messageEl.id || messageEl.id !== 'typing-indicator') {
-                messages.push({
-                    type: messageEl.classList.contains('user') ? 'user' : 'bot',
-                    text: messageEl.textContent
-                });
-            }
-        });
-        
-        // Save to local storage
-        localStorage.setItem('tg_chatbot_history', JSON.stringify(messages));
-    }
-    
-    // Load chat history
-    function loadChat() {
-        const savedChat = localStorage.getItem('tg_chatbot_history');
-        if (savedChat) {
-            const messages = JSON.parse(savedChat);
-            if (messages && messages.length) {
-                // Prevent greeting when history exists
-                window.__TG_CHATBOT_GREETED__ = true;
-            }
-            // Clear existing welcome message
+    // Clear chat history
+    function clearChatHistory() {
+        if (chatMessages) {
             chatMessages.innerHTML = '';
+            window.__TG_CHATBOT_GREETED__ = false;
+        }
+        awaitingPhone = false;
+        currentMode = 'normal';
+    }
+    
+    // No chat history persistence - always start fresh
+    
+    // No chat history loading - always start fresh
+    
+    // No previous session checking
+    
+    // Simple session management for user side only
+    function setupSessionManagement() {
+        // Only apply session refresh on non-admin pages
+        if (!window.location.pathname.includes('/admin')) {
+            handlePageRefresh();
             
-            // Add saved messages
-            messages.forEach(message => {
-                // Render instantly and suppress side effects when restoring history
-                addMessage(message.text, message.type, { instant: true, suppressMainRefresh: true });
+            window.addEventListener('beforeunload', () => {
+                sessionStorage.removeItem('tg_chatbot_page_loaded');
             });
-            // Ensure we are scrolled to the latest message
-            scrollToBottom();
         }
     }
     
-    // Auto reopen chat if previous session was active
-    function checkPreviousSession() {
-        const wasActive = localStorage.getItem('tg_chatbot_active') === 'true';
-        if (wasActive) {
-            setTimeout(() => {
-                toggleChatWindow();
-            }, 2000);
-        }
-    }
+    // No session validation needed
     
-    // Store chat state when window is closed
-    window.addEventListener('beforeunload', () => {
-        localStorage.setItem('tg_chatbot_active', chatWindow.classList.contains('active'));
-        saveChat();
-    });
+    // No session refresh needed
     
     // Add feedback functionality
     function addFeedbackOption() {
@@ -1598,14 +1677,16 @@
     document.addEventListener('DOMContentLoaded', () => {
         // Initialize chatbot
         init();
-        // Load previous chat if available
-        loadChat();
-        // Check previous session state
-        checkPreviousSession();
+        
+        // Setup session management
+        setupSessionManagement();
+        
         // Add voice messaging capability
         addVoiceMessaging();
+        
         // Add file attachment capability
         addFileAttachment();
+        
         // Apply mobile adjustments
         applyMobileAdjustments();
     });
