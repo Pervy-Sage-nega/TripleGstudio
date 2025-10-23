@@ -313,11 +313,15 @@
 
 .date-range {
     display: flex;
-    gap: 1rem;
+    gap: 1rem !important;
 }
 
 .date-input {
     flex: 1;
+}
+
+.filter-group:has(#status) {
+    margin-left: 1rem !important;
 }
 
 .form-actions {

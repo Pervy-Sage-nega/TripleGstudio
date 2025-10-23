@@ -39,7 +39,7 @@ class Command(BaseCommand):
                 self.stdout.write(f"No folder found for: {post.title}")
                 continue
                 
-            folder_path = f'd:/tripleG/blogpost/{folder_name}'
+            folder_path = os.path.join(settings.BASE_DIR, 'blogpost', folder_name)
             if not os.path.exists(folder_path):
                 self.stdout.write(f"Folder not found: {folder_path}")
                 continue

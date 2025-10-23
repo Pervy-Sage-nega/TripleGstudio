@@ -264,7 +264,31 @@ body {
     font-size: 12px;
     font-weight: 600;
     color: var(--accent-color);
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 8px;
+}
+
+.milestone-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.current-milestone {
+    font-weight: 600;
+    color: var(--primary-color);
+    font-size: 13px;
+}
+
+.milestone-progress {
+    font-size: 11px;
+    color: var(--mid-gray);
+    font-weight: 500;
 }
 
 .progress-track {
@@ -293,7 +317,12 @@ body {
     align-items: center;
     position: relative;
     width: 25%;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
 }
+
+
 
 .milestone-dot {
     width: 12px;
@@ -303,6 +332,11 @@ body {
     border: 2px solid white;
     z-index: 1;
     margin-bottom: 5px;
+    transition: all 0.3s ease;
+}
+
+.milestone.current .milestone-dot {
+    background-color: var(--primary-color);
 }
 
 .milestone.completed .milestone-dot {
@@ -319,6 +353,34 @@ body {
 .milestone.completed .milestone-label {
     color: var(--accent-color);
     font-weight: 600;
+}
+
+.milestone.current .milestone-label {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.milestone-percentage {
+    font-size: 9px;
+    color: var(--primary-color);
+    font-weight: 600;
+    margin-top: 2px;
+}
+
+.milestone-progress-bar {
+    width: 100px;
+    height: 5px;
+    background-color: var(--light-gray);
+    border-radius: 2px;
+    margin-bottom: 4px;
+    overflow: hidden;
+}
+
+.milestone-progress-fill {
+    height: 100%;
+    background-color: var(--primary-color);
+    border-radius: 2px;
+    transition: width 0.3s ease;
 }
 
 .card-actions {

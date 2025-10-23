@@ -76,7 +76,7 @@
                     </div>
                     
                     <div class="filter-group">
-                        <label for="contractor">Contractor</label>
+                        <label for="contractor">Client</label>
                         <input type="text" id="contractor" name="contractor" readonly placeholder="Select project first" style="background-color: #f5f5f5;">
                     </div>
                     
@@ -84,10 +84,10 @@
                         <label>Date Range</label>
                         <div class="date-range">
                             <div class="date-input">
-                                <input type="date" id="dateFrom" name="start_date" readonly placeholder="From Date" value="{{ start_date }}" style="background-color: #f5f5f5;">
+                                <input type="date" id="dateFrom" name="start_date" placeholder="From Date" value="{{ start_date }}">
                             </div>
                             <div class="date-input">
-                                <input type="date" id="dateTo" name="end_date" readonly placeholder="To Date" value="{{ end_date }}" style="background-color: #f5f5f5;">
+                                <input type="date" id="dateTo" name="end_date" placeholder="To Date" value="{{ end_date }}">
                             </div>
                         </div>
                     </div>
@@ -139,10 +139,10 @@
             
             <div class="summary-card success">
                 <i class="fas fa-check-circle summary-icon"></i>
-                <div class="summary-title">Approved Entries</div>
-                <div class="summary-value">{{ overall_summary.total_approved }}</div>
+                <div class="summary-title">Completed Entries</div>
+                <div class="summary-value">{{ overall_summary.total_entries }}</div>
                 <div class="summary-change positive">
-                    <span>{{ overall_summary.total_approved }} of {{ overall_summary.total_entries }} entries</span>
+                    <span>{{ overall_summary.total_entries }} diary entries recorded</span>
                 </div>
             </div>
             

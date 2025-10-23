@@ -25,11 +25,6 @@ function initializeCharts() {
         
         const laborOption = {
             backgroundColor: 'transparent',
-            title: {
-                text: 'Labor Hours Distribution',
-                textStyle: { color: '#333', fontSize: 16, fontWeight: 'bold' },
-                left: 'center'
-            },
             tooltip: {
                 trigger: 'axis',
                 axisPointer: { type: 'shadow' },
@@ -68,32 +63,68 @@ function initializeCharts() {
         laborEChart.setOption(laborOption);
     }
 
-    // Project Progress Tracking Chart - Area Chart
+    // Project Progress Tracking Chart - Timeline Chart
     const progressChart = document.getElementById('progressChart');
     if (progressChart && data.projectStats && data.projectStats.length > 0) {
         const progressEChart = echarts.init(progressChart);
         
-        // Process project data
-        const projectNames = data.projectStats.map(stat => stat.project.name.substring(0, 20) || 'Unknown');
-        const progressData = data.projectStats.map(stat => stat.avg_progress || 0);
+        // Collect all progress entries from all projects
+        let allDates = [];
+        let seriesData = [];
+        
+        data.projectStats.forEach((stat, index) => {
+            if (stat.progress_entries && stat.progress_entries.length > 0) {
+                // Add dates to the master list
+                stat.progress_entries.forEach(entry => {
+                    if (!allDates.includes(entry.date)) {
+                        allDates.push(entry.date);
+                    }
+                });
+                
+                // Create series for this project
+                const projectData = allDates.map(date => {
+                    const entry = stat.progress_entries.find(e => e.date === date);
+                    return entry ? entry.progress : null;
+                });
+                
+                seriesData.push({
+                    name: stat.project.name.substring(0, 15),
+                    type: 'line',
+                    smooth: true,
+                    connectNulls: false,
+                    data: projectData,
+                    lineStyle: {
+                        color: ['#667eea', '#f093fb', '#4facfe', '#43e97b', '#fa709a'][index % 5]
+                    },
+                    areaStyle: index === 0 ? {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: 'rgba(102, 126, 234, 0.3)' },
+                            { offset: 1, color: 'rgba(118, 75, 162, 0.1)' }
+                        ])
+                    } : null
+                });
+            }
+        });
+        
+        // Sort dates
+        allDates.sort();
         
         const progressOption = {
             backgroundColor: 'transparent',
-            title: {
-                text: 'Project Progress Tracking',
-                textStyle: { color: '#333', fontSize: 16, fontWeight: 'bold' },
-                left: 'center'
-            },
             tooltip: {
                 trigger: 'axis',
                 backgroundColor: '#fff',
                 borderColor: '#ccc',
                 textStyle: { color: '#333' }
             },
-            grid: { left: '10%', right: '10%', bottom: '15%', top: '15%', containLabel: true },
+            legend: {
+                bottom: 10,
+                textStyle: { color: '#666' }
+            },
+            grid: { left: '10%', right: '10%', bottom: '20%', top: '15%', containLabel: true },
             xAxis: {
                 type: 'category',
-                data: projectNames,
+                data: allDates,
                 axisLabel: { color: '#666', fontSize: 12, rotate: 45 },
                 axisLine: { lineStyle: { color: '#ddd' } }
             },
@@ -105,24 +136,7 @@ function initializeCharts() {
                 axisLine: { lineStyle: { color: '#ddd' } },
                 splitLine: { lineStyle: { color: '#f0f0f0' } }
             },
-            series: [{
-                name: 'Progress',
-                type: 'line',
-                smooth: true,
-                areaStyle: {
-                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                        { offset: 0, color: 'rgba(102, 126, 234, 0.3)' },
-                        { offset: 1, color: 'rgba(118, 75, 162, 0.1)' }
-                    ])
-                },
-                lineStyle: {
-                    color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
-                        { offset: 0, color: '#667eea' },
-                        { offset: 1, color: '#764ba2' }
-                    ])
-                },
-                data: progressData
-            }]
+            series: seriesData
         };
         progressEChart.setOption(progressOption);
     }
@@ -146,11 +160,6 @@ function initializeCharts() {
         
         const materialsOption = {
             backgroundColor: 'transparent',
-            title: {
-                text: 'Equipment Usage Hours',
-                textStyle: { color: '#333', fontSize: 16, fontWeight: 'bold' },
-                left: 'center'
-            },
             tooltip: {
                 trigger: 'item',
                 formatter: '{a} <br/>{b}: {c} hours ({d}%)',
@@ -213,11 +222,6 @@ function initializeCharts() {
         
         const delaysOption = {
             backgroundColor: 'transparent',
-            title: {
-                text: 'Delay Analysis',
-                textStyle: { color: '#333', fontSize: 16, fontWeight: 'bold' },
-                left: 'center'
-            },
             tooltip: {
                 trigger: 'item',
                 formatter: '{a} <br/>{b}: {c} hours ({d}%)',
@@ -282,11 +286,6 @@ function initializeCharts() {
         
         const budgetOption = {
             backgroundColor: 'transparent',
-            title: {
-                text: 'Budget Usage',
-                textStyle: { color: '#333', fontSize: 16, fontWeight: 'bold' },
-                left: 'center'
-            },
             tooltip: {
                 trigger: 'item',
                 formatter: '{a} <br/>{b}: ₱{c} ({d}%)',
@@ -363,11 +362,6 @@ function initializeCharts() {
         
         const safetyOption = {
             backgroundColor: 'transparent',
-            title: {
-                text: 'Safety & Quality Issues',
-                textStyle: { color: '#333', fontSize: 16, fontWeight: 'bold' },
-                left: 'center'
-            },
             tooltip: {
                 trigger: 'axis',
                 backgroundColor: '#fff',
@@ -437,11 +431,6 @@ function initializeCharts() {
         
         const weatherOption = {
             backgroundColor: 'transparent',
-            title: {
-                text: 'Weather Impact',
-                textStyle: { color: '#333', fontSize: 16, fontWeight: 'bold' },
-                left: 'center'
-            },
             tooltip: {
                 trigger: 'item',
                 backgroundColor: '#fff',

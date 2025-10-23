@@ -119,7 +119,7 @@
                         </div>
                     </div>
                     <div class="draft-actions">
-                        <a href="{% url 'site_diary:diary' %}?edit={{ draft.id }}" class="action-btn revision-btn" title="Edit Draft">
+                        <a href="{% url 'site_diary:diary' %}?edit={{ draft.id }}" class="action-btn revision-btn" title="Edit Draft" data-draft-id="{{ draft.id }}">
                             <i class="fas fa-edit"></i>
                         </a>
                         <button type="button" class="action-btn delete-btn" title="Delete Draft" onclick="deleteDraft({{ draft.id }})">
@@ -169,7 +169,7 @@
                             <td>{{ draft.work_description|truncatechars:80|default:"No description" }}</td>
                             <td><span class="badge badge-warning">Draft</span></td>
                             <td>
-                                <a href="{% url 'site_diary:diary' %}?edit={{ draft.id }}" class="action-btn revision-btn" title="Edit">
+                                <a href="{% url 'site_diary:diary' %}?edit={{ draft.id }}" class="action-btn revision-btn" title="Edit" data-draft-id="{{ draft.id }}">
                                     <i class="fas fa-edit"></i>
                                 </a>
                                 <button type="button" class="action-btn delete-btn" title="Delete" onclick="deleteDraft({{ draft.id }})">
@@ -210,6 +210,33 @@
     </div>
 
     <script>
+        // Store draft data for potential use (database-driven, not localStorage)
+        window.draftData = {
+            {% for draft in page_obj %}
+            '{{ draft.id }}': {
+                id: {{ draft.id }},
+                project_id: {{ draft.project.id }},
+                project_name: '{{ draft.project.name|escapejs }}',
+                entry_date: '{{ draft.entry_date|date:"Y-m-d" }}',
+                work_description: '{{ draft.work_description|escapejs }}',
+                progress_percentage: {{ draft.progress_percentage|default:0 }},
+                weather_condition: '{{ draft.weather_condition }}',
+                temperature_high: {{ draft.temperature_high|default:'null' }},
+                temperature_low: {{ draft.temperature_low|default:'null' }},
+                humidity: {{ draft.humidity|default:'null' }},
+                wind_speed: {{ draft.wind_speed|default:'null' }},
+                quality_issues: '{{ draft.quality_issues|escapejs }}',
+                safety_incidents: '{{ draft.safety_incidents|escapejs }}',
+                general_notes: '{{ draft.general_notes|escapejs }}',
+                photos_taken: {{ draft.photos_taken|yesno:'true,false' }},
+                milestone_id: {{ draft.milestone.id|default:'null' }}
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        };
+        
+        // Override sitedraft.js localStorage behavior - use database data instead
+        window.sitedraftJsLoaded = true;
+        
         // View toggle functionality
         document.querySelectorAll('.view-btn').forEach(btn => {
             btn.addEventListener('click', function() {
@@ -256,10 +283,11 @@
             });
         });
 
-        // Category filter
+        // Category filter - disabled since we're using database data
         document.getElementById('category-filter').addEventListener('change', function() {
             const category = this.value;
-            // Add category filtering logic here if needed
+            // Category filtering would need server-side implementation
+            console.log('Category filter selected:', category);
         });
 
         // Delete draft function

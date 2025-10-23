@@ -111,18 +111,35 @@
                     <h3 class="project-title">{{ project.name }}</h3>
                     <p class="project-description">{{ project.description|default:'Project in progress with multiple phases and milestones.'|truncatechars:80 }}</p>
                     <div class="progress-container">
-                        <div class="progress-label">PROGRESS:</div>
-                        <div class="progress-track">
-                            <div class="progress-bar" style="width: {% if project.current_milestone_id %}{{ project.get_progress_percentage }}{% else %}0{% endif %}%;"></div>
+                        <div class="progress-header">
+                            <div class="progress-label">CURRENT MILESTONE:</div>
+                            <div class="milestone-info">
+                                <span class="current-milestone">{{ project.current_milestone|default:'Not Set' }}</span>
+                                {% if project.milestone_completion > 0 %}
+                                <span class="milestone-progress">({{ project.milestone_completion|floatformat:0 }}% Complete)</span>
+                                {% endif %}
+                            </div>
                         </div>
                         <div class="milestone-markers" style="overflow-x: auto; white-space: nowrap; display: flex; gap: 10px; padding-bottom: 5px; scrollbar-width: none; -ms-overflow-style: none;">
                             {% for milestone in project.milestones %}
-                            <div class="milestone {% if project.current_milestone_id == milestone.id or project.get_progress_percentage > milestone.threshold %}completed{% endif %}">
+                            <div class="milestone {% if milestone.is_completed %}completed{% elif milestone.is_current %}current{% endif %}">
+                                <div class="milestone-progress-bar">
+                                    {% if milestone.is_completed %}
+                                    <div class="milestone-progress-fill" style="width: 100%;"></div>
+                                    {% elif milestone.is_current %}
+                                    <div class="milestone-progress-fill" style="width: {{ milestone.completion_percentage|floatformat:0 }}%;"></div>
+                                    {% else %}
+                                    <div class="milestone-progress-fill" style="width: 0%;"></div>
+                                    {% endif %}
+                                </div>
                                 <div class="milestone-dot"></div>
                                 <div class="milestone-label">{{ milestone.name }}</div>
+                                {% if milestone.is_current %}
+                                <div class="milestone-percentage">{{ milestone.completion_percentage|floatformat:0 }}%</div>
+                                {% endif %}
                             </div>
                             {% empty %}
-                            <div class="milestone {% if project.get_progress_percentage > 0 %}completed{% endif %}">
+                            <div class="milestone {% if project.progress > 0 %}completed{% endif %}">
                                 <div class="milestone-dot"></div>
                                 <div class="milestone-label">In Progress</div>
                             </div>

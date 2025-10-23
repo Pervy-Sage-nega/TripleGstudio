@@ -231,11 +231,11 @@
                                 </div>
                             </div>
 
-                            <!-- Milestone Update Section -->
+                            <!-- Milestone Progress Section -->
                             <div class="form-section">
                                 <div class="section-header">
                                     <i class="fas fa-flag"></i>
-                                    <h2 class="section-title">Milestone Update</h2>
+                                    <h2 class="section-title">Milestone Progress</h2>
                                 </div>
                                 <div class="form-row">
                                     <div class="form-group">
@@ -243,6 +243,14 @@
                                         {{ diary_form.milestone }}
                                         {% if diary_form.milestone.errors %}
                                             <div class="invalid-feedback">{{ diary_form.milestone.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="{{ diary_form.progress_percentage.id_for_label }}">Milestone Completion (%)</label>
+                                        {{ diary_form.progress_percentage }}
+                                        <small class="form-text text-muted">Percentage completion of the selected milestone phase</small>
+                                        {% if diary_form.progress_percentage.errors %}
+                                            <div class="invalid-feedback">{{ diary_form.progress_percentage.errors.0 }}</div>
                                         {% endif %}
                                     </div>
                                 </div>
@@ -549,13 +557,7 @@
                                         <div class="invalid-feedback">{{ diary_form.work_description.errors.0 }}</div>
                                     {% endif %}
                                 </div>
-                                <div class="form-group">
-                                    <label for="{{ diary_form.progress_percentage.id_for_label }}">Progress Percentage (%)</label>
-                                    {{ diary_form.progress_percentage }}
-                                    {% if diary_form.progress_percentage.errors %}
-                                        <div class="invalid-feedback">{{ diary_form.progress_percentage.errors.0 }}</div>
-                                    {% endif %}
-                                </div>
+
                                 <div class="form-row">
                                     <div class="form-group">
                                         <label for="startTime">Start Time</label>
@@ -1053,6 +1055,10 @@
                                 <script>
                                 // Project data from Django - make it globally available
                                 window.projectData = {{ project_data|safe }};
+                                {% if draft_data_json %}
+                                // Draft data for editing
+                                window.editingDraftData = {{ draft_data_json|safe }};
+                                {% endif %}
                                 </script>
                             </div>
 
@@ -1103,7 +1109,25 @@
 
 
 <script>
+// Draft data from server
+{% if draft_data_json %}
+window.draftData = {{ draft_data_json|safe }};
+console.log('Draft data loaded:', window.draftData);
+{% endif %}
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Load draft data if editing
+    {% if editing_draft and draft_data_json %}
+    setTimeout(() => {
+        if (window.draftData) {
+            console.log('Attempting to load draft data...');
+            loadDraftData(window.draftData);
+        } else {
+            console.log('No draft data found in window object');
+        }
+    }, 2000); // Wait for diary.js to initialize
+    {% endif %}
+    
     // Force clear any cached form data
     if (window.performance && window.performance.navigation.type === 1) {
         // Page was refreshed, clear form cache
@@ -1248,6 +1272,255 @@ document.addEventListener('DOMContentLoaded', function() {
     //         {% endif %}
     //     {% endfor %}
     // {% endif %}
+    
+    // Function to load draft data into form
+    function loadDraftData(draftData) {
+        console.log('Loading draft data:', draftData);
+        
+        // Load project selection first
+        if (draftData.project_id) {
+            const projectSelect = document.getElementById('{{ diary_form.project.id_for_label }}');
+            if (projectSelect) {
+                projectSelect.value = draftData.project_id;
+                // Trigger change event to load location
+                projectSelect.dispatchEvent(new Event('change'));
+            }
+        }
+        
+        // Load entry date
+        if (draftData.entry_date) {
+            const entryDate = document.getElementById('{{ diary_form.entry_date.id_for_label }}');
+            if (entryDate) entryDate.value = draftData.entry_date;
+        }
+        
+        // Load basic form fields
+        if (draftData.work_description) {
+            const workDesc = document.getElementById('{{ diary_form.work_description.id_for_label }}');
+            if (workDesc) workDesc.value = draftData.work_description;
+        }
+        
+        if (draftData.progress_percentage) {
+            const progress = document.getElementById('{{ diary_form.progress_percentage.id_for_label }}');
+            if (progress) progress.value = draftData.progress_percentage;
+        }
+        
+        if (draftData.milestone_id) {
+            const milestone = document.getElementById('{{ diary_form.milestone.id_for_label }}');
+            if (milestone) milestone.value = draftData.milestone_id;
+        }
+        
+        if (draftData.weather_condition) {
+            const weather = document.getElementById('{{ diary_form.weather_condition.id_for_label }}');
+            if (weather) weather.value = draftData.weather_condition;
+        }
+        
+        if (draftData.temperature_high) {
+            const tempHigh = document.getElementById('{{ diary_form.temperature_high.id_for_label }}');
+            if (tempHigh) tempHigh.value = draftData.temperature_high;
+        }
+        
+        if (draftData.temperature_low) {
+            const tempLow = document.getElementById('{{ diary_form.temperature_low.id_for_label }}');
+            if (tempLow) tempLow.value = draftData.temperature_low;
+        }
+        
+        if (draftData.humidity) {
+            const humidity = document.getElementById('{{ diary_form.humidity.id_for_label }}');
+            if (humidity) humidity.value = draftData.humidity;
+        }
+        
+        if (draftData.wind_speed) {
+            const windSpeed = document.getElementById('{{ diary_form.wind_speed.id_for_label }}');
+            if (windSpeed) windSpeed.value = draftData.wind_speed;
+        }
+        
+        if (draftData.quality_issues) {
+            const quality = document.getElementById('{{ diary_form.quality_issues.id_for_label }}');
+            if (quality) quality.value = draftData.quality_issues;
+        }
+        
+        if (draftData.safety_incidents) {
+            const safety = document.getElementById('{{ diary_form.safety_incidents.id_for_label }}');
+            if (safety) safety.value = draftData.safety_incidents;
+        }
+        
+        if (draftData.general_notes) {
+            const notes = document.getElementById('{{ diary_form.general_notes.id_for_label }}');
+            if (notes) notes.value = draftData.general_notes;
+        }
+        
+        if (draftData.photos_taken) {
+            const photos = document.getElementById('{{ diary_form.photos_taken.id_for_label }}');
+            if (photos) photos.checked = draftData.photos_taken;
+        }
+        
+        // Load labor data
+        if (draftData.labor) {
+            for (const [laborType, laborData] of Object.entries(draftData.labor)) {
+                const countField = document.getElementById(laborType + 'Count');
+                const rateField = document.getElementById(laborType + 'Rate');
+                if (countField) countField.value = laborData.count;
+                if (rateField) rateField.value = laborData.rate;
+            }
+        }
+        
+        // Load materials
+        if (draftData.materials && draftData.materials.length > 0) {
+            // Initialize arrays if not exists
+            if (!window.dailyMaterials) window.dailyMaterials = [];
+            
+            window.dailyMaterials.length = 0;
+            window.dailyMaterials.push(...draftData.materials);
+            
+            const materialsList = document.getElementById('materialsList');
+            if (materialsList) {
+                materialsList.innerHTML = '';
+                draftData.materials.forEach((material, index) => {
+                    const listItem = document.createElement('div');
+                    listItem.className = 'entry-item';
+                    listItem.innerHTML = `
+                        <div class="entry-content">
+                            <strong>${material.name}</strong> - ${material.quantity} ${material.unit} - ₱${material.cost.toLocaleString('en-PH', {minimumFractionDigits: 2})}<br>
+                            ${material.supplier ? `Supplier: ${material.supplier}` : ''}${material.delivery_time ? ` | Delivery: ${material.delivery_time}` : ''}
+                        </div>
+                        <div class="entry-actions">
+                            <button type="button" class="entry-action-btn delete" onclick="removeMaterial(this, ${index})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                    materialsList.appendChild(listItem);
+                });
+            }
+        }
+        
+        // Load equipment
+        if (draftData.equipment && draftData.equipment.length > 0) {
+            if (!window.dailyEquipment) window.dailyEquipment = [];
+            
+            window.dailyEquipment.length = 0;
+            window.dailyEquipment.push(...draftData.equipment);
+            
+            const equipmentList = document.getElementById('equipmentList');
+            if (equipmentList) {
+                equipmentList.innerHTML = '';
+                draftData.equipment.forEach((equipment, index) => {
+                    const listItem = document.createElement('div');
+                    listItem.className = 'entry-item';
+                    listItem.innerHTML = `
+                        <div class="entry-content">
+                            <strong>${equipment.name}</strong>${equipment.operator ? ` (${equipment.operator})` : ''} - ${equipment.hours} hours${equipment.fuel ? ` - ${equipment.fuel}L fuel` : ''} - ₱${equipment.cost.toLocaleString('en-PH', {minimumFractionDigits: 2})}
+                        </div>
+                        <div class="entry-actions">
+                            <button type="button" class="entry-action-btn delete" onclick="removeEquipment(this, ${index})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                    equipmentList.appendChild(listItem);
+                });
+            }
+        }
+        
+        // Load overtime
+        if (draftData.overtime && draftData.overtime.length > 0) {
+            if (!window.dailyOvertime) window.dailyOvertime = [];
+            
+            window.dailyOvertime.length = 0;
+            window.dailyOvertime.push(...draftData.overtime);
+            
+            const overtimeList = document.getElementById('overtimeList');
+            if (overtimeList) {
+                overtimeList.innerHTML = '';
+                draftData.overtime.forEach((overtime, index) => {
+                    const listItem = document.createElement('div');
+                    listItem.className = 'entry-item';
+                    listItem.innerHTML = `
+                        <div class="entry-content">
+                            <strong>${overtime.personnel} ${overtime.role} personnel</strong> - ${overtime.hours} hours @ ₱${overtime.rate}/hr = ₱${(overtime.personnel * overtime.hours * overtime.rate).toLocaleString('en-PH', {minimumFractionDigits: 2})}
+                        </div>
+                        <div class="entry-actions">
+                            <button type="button" class="entry-action-btn delete" onclick="removeOvertime(this, ${index})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                    overtimeList.appendChild(listItem);
+                });
+            }
+        }
+        
+        // Load subcontractors
+        if (draftData.subcontractors && draftData.subcontractors.length > 0) {
+            console.log('Loading subcontractors:', draftData.subcontractors);
+            
+            // Initialize window.dailySubcontractors if not exists
+            if (!window.dailySubcontractors) {
+                window.dailySubcontractors = [];
+            }
+            
+            window.dailySubcontractors.length = 0;
+            window.dailySubcontractors.push(...draftData.subcontractors);
+            
+            const subcontractorList = document.getElementById('subcontractorList');
+            if (subcontractorList) {
+                subcontractorList.innerHTML = '';
+                draftData.subcontractors.forEach((sub, index) => {
+                    const costText = sub.cost > 0 ? `<br>Daily Cost: ₱${sub.cost.toLocaleString('en-PH', {minimumFractionDigits: 2})}` : '';
+                    const listItem = document.createElement('div');
+                    listItem.className = 'entry-item';
+                    listItem.innerHTML = `
+                        <div class="entry-content"><strong>${sub.name} - ${sub.work}</strong>${costText}</div>
+                        <div class="entry-actions">
+                            <button type="button" class="entry-action-btn delete" onclick="removeSubcontractor(this, ${index})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                    subcontractorList.appendChild(listItem);
+                });
+                console.log('Subcontractors loaded into UI');
+            }
+        }
+        
+        // Load delays
+        if (draftData.delays && draftData.delays.length > 0) {
+            if (!window.dailyDelays) window.dailyDelays = [];
+            
+            window.dailyDelays.length = 0;
+            window.dailyDelays.push(...draftData.delays);
+            
+            const delayList = document.getElementById('delayList');
+            if (delayList) {
+                // Clear existing sample delay
+                delayList.innerHTML = '';
+                draftData.delays.forEach((delay, index) => {
+                    const listItem = document.createElement('div');
+                    listItem.className = 'entry-item';
+                    listItem.innerHTML = `
+                        <div class="entry-content">
+                            <strong>${delay.type} - ${delay.impact}</strong><br>
+                            ${delay.description}<br>
+                            ${delay.start_time && delay.end_time ? `Time: ${delay.start_time} - ${delay.end_time} (${delay.duration}h)` : ''}
+                        </div>
+                        <div class="entry-actions">
+                            <button type="button" class="entry-action-btn delete" onclick="removeDelay(this, ${index})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                    delayList.appendChild(listItem);
+                });
+            }
+        }
+        
+        // Update budget summary after loading all data
+        setTimeout(() => {
+            if (window.updateBudgetSummary) {
+                window.updateBudgetSummary();
+            }
+        }, 500);
+    }
 });
 </script>
 {% endblock %}
