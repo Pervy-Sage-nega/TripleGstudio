@@ -79,6 +79,7 @@ def newsletter_confirm(request, token):
             messages.info(request, 'Your subscription is already confirmed.')
         else:
             subscriber.confirm_subscription()
+            send_welcome_email(subscriber, request)
             messages.success(request, 'Thank you! Your newsletter subscription has been confirmed.')
         
         return redirect('blog:blog_list')
@@ -202,14 +203,47 @@ def send_confirmation_email(subscriber, request):
         print(f"Error sending confirmation email: {e}")
 
 
+def send_welcome_email(subscriber, request):
+    """Send welcome email after confirmation"""
+    try:
+        unsubscribe_url = request.build_absolute_uri(
+            f'/blog/newsletter/unsubscribe/{subscriber.confirmation_token}/'
+        )
+        blog_url = request.build_absolute_uri('/blog/')
+        
+        context = {
+            'subscriber': subscriber,
+            'unsubscribe_url': unsubscribe_url,
+            'blog_url': blog_url,
+            'site_name': 'Triple G BuildHub'
+        }
+        
+        html_message = render_to_string('blog/emails/newsletter_welcome.html', context)
+        plain_message = strip_tags(html_message)
+        
+        send_mail(
+            subject='Welcome to Triple G BuildHub Newsletter!',
+            message=plain_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[subscriber.email],
+            html_message=html_message,
+            fail_silently=False,
+        )
+        
+    except Exception as e:
+        print(f"Error sending welcome email: {e}")
+
+
 def send_newsletter_campaign(campaign):
     """Send newsletter campaign to all active subscribers"""
     try:
+        print(f"DEBUG NEWSLETTER: Starting campaign send for: {campaign.title}")
         # Get active, confirmed subscribers based on campaign type
         subscribers = NewsletterSubscriber.objects.filter(
             is_active=True,
             is_confirmed=True
         )
+        print(f"DEBUG NEWSLETTER: Found {subscribers.count()} active confirmed subscribers")
         
         # Filter by preferences
         if campaign.campaign_type == 'weekly_digest':
@@ -219,14 +253,21 @@ def send_newsletter_campaign(campaign):
         elif campaign.campaign_type == 'featured_post':
             subscribers = subscribers.filter(featured_posts=True)
         
+        print(f"DEBUG NEWSLETTER: After filtering by type '{campaign.campaign_type}': {subscribers.count()} subscribers")
+        
         sent_count = 0
         
         for subscriber in subscribers:
             try:
+                # Build absolute URLs using settings
+                from django.conf import settings
+                site_url = getattr(settings, 'SITE_URL', 'http://localhost:8000')
+                
                 # Generate tracking URLs
-                open_tracking_url = f'/blog/newsletter/track/open/{campaign.id}/{subscriber.id}/'
-                click_tracking_url = f'/blog/newsletter/track/click/{campaign.id}/{subscriber.id}/'
-                unsubscribe_url = f'/blog/newsletter/unsubscribe/{subscriber.confirmation_token}/'
+                open_tracking_url = f'{site_url}/blog/newsletter/track/open/{campaign.id}/{subscriber.id}/'
+                click_tracking_url = f'{site_url}/blog/newsletter/track/click/{campaign.id}/{subscriber.id}/'
+                unsubscribe_url = f'{site_url}/blog/newsletter/unsubscribe/{subscriber.confirmation_token}/'
+                blog_post_url = f'{site_url}{campaign.blog_post.get_absolute_url()}' if campaign.blog_post else f'{site_url}/blog/'
                 
                 context = {
                     'subscriber': subscriber,
@@ -234,6 +275,8 @@ def send_newsletter_campaign(campaign):
                     'open_tracking_url': open_tracking_url,
                     'click_tracking_url': click_tracking_url,
                     'unsubscribe_url': unsubscribe_url,
+                    'blog_post_url': blog_post_url,
+                    'site_url': site_url,
                     'site_name': 'Triple G BuildHub'
                 }
                 
@@ -250,9 +293,10 @@ def send_newsletter_campaign(campaign):
                 )
                 
                 sent_count += 1
+                print(f"DEBUG NEWSLETTER: Successfully sent to {subscriber.email}")
                 
             except Exception as e:
-                print(f"Error sending to {subscriber.email}: {e}")
+                print(f"ERROR NEWSLETTER: Failed sending to {subscriber.email}: {e}")
                 continue
         
         # Update campaign status
@@ -261,6 +305,7 @@ def send_newsletter_campaign(campaign):
         campaign.total_sent = sent_count
         campaign.save()
         
+        print(f"DEBUG NEWSLETTER: Campaign completed. Total sent: {sent_count}")
         return sent_count
         
     except Exception as e:

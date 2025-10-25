@@ -64,6 +64,80 @@ def admin_settings(request):
     
     return render(request, 'adminsettings.html', context)
 
+@require_admin_role
+def security_logs(request):
+    """Security logs page showing Axes failed login attempts"""
+    from axes.models import AccessAttempt, AccessLog
+    from django.utils import timezone
+    from django.db.models import Count
+    from datetime import timedelta
+    
+    # Get all access attempts
+    access_attempts = AccessAttempt.objects.all().order_by('-attempt_time')[:100]
+    access_logs = AccessLog.objects.all().order_by('-attempt_time')[:100]
+    
+    # Calculate statistics
+    total_attempts = AccessAttempt.objects.count()
+    locked_count = AccessAttempt.objects.filter(failures_since_start__gte=5).count()
+    unique_ips = AccessAttempt.objects.values('ip_address').distinct().count()
+    
+    # Today's attempts
+    today = timezone.now().date()
+    today_attempts = AccessAttempt.objects.filter(
+        attempt_time__date=today
+    ).count()
+    
+    # Analytics data - Last 7 days
+    last_7_days = [today - timedelta(days=i) for i in range(6, -1, -1)]
+    attempts_by_day = []
+    for day in last_7_days:
+        count = AccessAttempt.objects.filter(attempt_time__date=day).count()
+        attempts_by_day.append(count)
+    
+    # Top IPs by attempts
+    top_ips = list(AccessAttempt.objects.values('ip_address')
+                   .annotate(count=Count('id'))
+                   .order_by('-count')[:5])
+    
+    # Attempts by status
+    locked = AccessAttempt.objects.filter(failures_since_start__gte=5).count()
+    failed = AccessAttempt.objects.filter(failures_since_start__lt=5).count()
+    
+    context = {
+        'access_attempts': access_attempts,
+        'access_logs': access_logs,
+        'total_attempts': total_attempts,
+        'locked_count': locked_count,
+        'unique_ips': unique_ips,
+        'today_attempts': today_attempts,
+        'days_labels': [day.strftime('%b %d') for day in last_7_days],
+        'attempts_by_day': attempts_by_day,
+        'top_ips': top_ips,
+        'locked_attempts': locked,
+        'failed_attempts': failed,
+    }
+    
+    return render(request, 'security_logs.html', context)
+
+@ajax_require_admin_role
+@csrf_protect
+@require_http_methods(["POST"])
+def unlock_user(request):
+    """Unlock a user blocked by Axes"""
+    from axes.utils import reset
+    
+    try:
+        data = json.loads(request.body)
+        username = data.get('username')
+        ip_address = data.get('ip_address')
+        
+        # Reset the lockout for this username and IP
+        reset(username=username, ip_address=ip_address)
+        
+        return JsonResponse({'success': True, 'message': 'User unlocked successfully'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
+
 @ajax_require_admin_role
 @csrf_protect
 @require_http_methods(["POST"])

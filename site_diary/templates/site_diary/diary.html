@@ -557,21 +557,6 @@
                                         <div class="invalid-feedback">{{ diary_form.work_description.errors.0 }}</div>
                                     {% endif %}
                                 </div>
-
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label for="startTime">Start Time</label>
-                                        <input type="text" class="form-control flatpickr" id="startTime" data-enable-time="true" data-no-calendar="true" data-date-format="H:i" placeholder="Select start time">
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="endTime">End Time</label>
-                                        <input type="text" class="form-control flatpickr" id="endTime" data-enable-time="true" data-no-calendar="true" data-date-format="H:i" placeholder="Select end time">
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="totalHours">Total Hours</label>
-                                        <input type="number" class="form-control" id="totalHours" placeholder="Auto-calculated" readonly>
-                                    </div>
-                                </div>
                                 <div class="form-group">
                                     <label>Tasks Completed</label>
                                     <div class="input-group">
@@ -582,19 +567,6 @@
                                     </div>
                                     <div class="entry-list" id="taskList">
                                         <!-- Dynamically added tasks will appear here -->
-                                        <div class="entry-item">
-                                            <div class="entry-content">
-                                                Foundation concrete pouring - Building B
-                                            </div>
-                                            <div class="entry-actions">
-                                                <button type="button" class="entry-action-btn edit">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button type="button" class="entry-action-btn delete">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -824,20 +796,6 @@
                                 </button>
                                 <div class="entry-list" id="delayList">
                                     <!-- Dynamically added delays will appear here -->
-                                    <div class="entry-item">
-                                        <div class="entry-content">
-                                            <strong>Material Shortage - Major Impact</strong><br>
-                                            Reinforcement steel delivery delayed by supplier. Expected to arrive tomorrow. Rescheduled concrete pour for foundation section F.
-                                        </div>
-                                        <div class="entry-actions">
-                                            <button type="button" class="entry-action-btn edit">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button type="button" class="entry-action-btn delete">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
 

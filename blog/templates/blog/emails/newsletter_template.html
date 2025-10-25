@@ -6,110 +6,168 @@
     <title>{{ campaign.title }}</title>
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             line-height: 1.6;
             color: #333;
             max-width: 600px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 0;
             background-color: #f4f4f4;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
         .container {
             background-color: #ffffff;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 40px 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            margin: 20px;
         }
         .header {
             text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #FF7120;
+            margin-bottom: 35px;
+            padding-bottom: 25px;
+            border-bottom: 3px solid #FF7120;
         }
         .logo {
-            font-size: 28px;
-            font-weight: bold;
+            font-size: 32px;
+            font-weight: 700;
             color: #FF7120;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
         }
         .tagline {
             color: #666;
-            font-size: 14px;
+            font-size: 15px;
+            font-weight: 500;
         }
         .content {
-            margin-bottom: 30px;
+            margin-bottom: 35px;
         }
         .content h2 {
-            color: #333;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+            font-size: 24px;
+            font-weight: 700;
+        }
+        .greeting {
+            font-size: 16px;
             margin-bottom: 20px;
         }
         .blog-post {
-            background-color: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-            border-left: 4px solid #FF7120;
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            padding: 25px;
+            border-radius: 10px;
+            margin: 25px 0;
+            border-left: 5px solid #FF7120;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
         .blog-post h3 {
             margin-top: 0;
-            color: #333;
+            color: #1a1a1a;
+            font-size: 22px;
+            font-weight: 700;
+            line-height: 1.3;
         }
         .blog-post .meta {
-            color: #666;
-            font-size: 14px;
-            margin-bottom: 15px;
+            color: #777;
+            font-size: 13px;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         .blog-post .excerpt {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+            color: #444;
+            font-size: 15px;
+            line-height: 1.7;
         }
         .read-more {
             display: inline-block;
-            background-color: #FF7120;
-            color: white;
-            padding: 10px 20px;
+            background: linear-gradient(135deg, #FF7120 0%, #e55a0d 100%);
+            color: #ffffff !important;
+            padding: 12px 28px;
             text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 15px;
+            transition: transform 0.2s;
+            box-shadow: 0 2px 4px rgba(255, 113, 32, 0.3);
         }
         .read-more:hover {
-            background-color: #e55a0d;
+            background: linear-gradient(135deg, #e55a0d 0%, #cc4f0a 100%);
+            transform: translateY(-1px);
         }
         .featured-image {
             width: 100%;
             max-width: 100%;
             height: auto;
-            border-radius: 8px;
-            margin-bottom: 15px;
+            border-radius: 10px;
+            margin-bottom: 18px;
+            display: block;
         }
         .footer {
             text-align: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #eee;
+            margin-top: 40px;
+            padding-top: 25px;
+            border-top: 2px solid #eee;
             color: #666;
-            font-size: 12px;
+            font-size: 13px;
         }
         .social-links {
-            margin: 20px 0;
+            margin: 25px 0;
         }
         .social-links a {
             display: inline-block;
-            margin: 0 10px;
+            margin: 0 12px;
             color: #FF7120;
             text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .social-links a:hover {
+            color: #e55a0d;
+            text-decoration: underline;
         }
         .unsubscribe {
-            margin-top: 20px;
-            font-size: 11px;
+            margin-top: 25px;
+            font-size: 12px;
             color: #999;
+            line-height: 1.5;
         }
         .unsubscribe a {
-            color: #999;
+            color: #FF7120;
+            text-decoration: underline;
         }
         .tracking-pixel {
             width: 1px;
             height: 1px;
             border: 0;
+            display: block;
+        }
+        @media only screen and (max-width: 600px) {
+            .container {
+                padding: 25px 20px;
+                margin: 10px;
+                border-radius: 8px;
+            }
+            .logo {
+                font-size: 26px;
+            }
+            .content h2 {
+                font-size: 20px;
+            }
+            .blog-post {
+                padding: 20px;
+            }
+            .blog-post h3 {
+                font-size: 18px;
+            }
+            .social-links a {
+                margin: 0 8px;
+                font-size: 12px;
+            }
         }
     </style>
 </head>
@@ -123,7 +181,7 @@
         <div class="content">
             <h2>{{ campaign.title }}</h2>
             
-            <p>Hi{% if subscriber.name %} {{ subscriber.name }}{% endif %},</p>
+            <p class="greeting">Hi{% if subscriber.name %} {{ subscriber.name }}{% endif %},</p>
             
             {% if campaign.campaign_type == 'new_post' and campaign.blog_post %}
                 <div class="blog-post">
@@ -143,7 +201,7 @@
                         {{ campaign.blog_post.excerpt|default:campaign.blog_post.content|truncatewords:30|striptags }}
                     </div>
                     
-                    <a href="{{ click_tracking_url }}?url={{ campaign.blog_post.get_absolute_url }}" class="read-more">
+                    <a href="{{ blog_post_url }}" class="read-more">
                         Read Full Article
                     </a>
                 </div>
@@ -156,7 +214,7 @@
                     <div class="excerpt">
                         {{ campaign.content|safe }}
                     </div>
-                    <a href="{{ click_tracking_url }}?url=/blog/" class="read-more">
+                    <a href="{{ site_url }}/blog/" class="read-more">
                         Visit Our Blog
                     </a>
                 </div>
@@ -166,7 +224,7 @@
                     <div class="excerpt">
                         {{ campaign.content|safe }}
                     </div>
-                    <a href="{{ click_tracking_url }}?url=/blog/" class="read-more">
+                    <a href="{{ site_url }}/blog/" class="read-more">
                         Learn More
                     </a>
                 </div>
@@ -177,10 +235,10 @@
         
         <div class="footer">
             <div class="social-links">
-                <a href="{{ click_tracking_url }}?url=https://facebook.com/triplegbuildhub">Facebook</a> |
-                <a href="{{ click_tracking_url }}?url=https://twitter.com/triplegbuildhub">Twitter</a> |
-                <a href="{{ click_tracking_url }}?url=https://linkedin.com/company/triplegbuildhub">LinkedIn</a> |
-                <a href="{{ click_tracking_url }}?url=https://instagram.com/triplegbuildhub">Instagram</a>
+                <a href="https://x.com/design86737">Twitter</a> |
+                <a href="https://www.instagram.com/tggg6000/">Instagram</a> |
+                <a href="https://www.tiktok.com/@triplegdesignstudio">TikTok</a> |
+                <a href="https://www.youtube.com/@tggg6000">YouTube</a>
             </div>
             
             <p>© {{ "now"|date:"Y" }} Triple G BuildHub. All rights reserved.</p>

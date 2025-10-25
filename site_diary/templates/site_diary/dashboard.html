@@ -134,9 +134,6 @@
                                 </div>
                                 <div class="milestone-dot"></div>
                                 <div class="milestone-label">{{ milestone.name }}</div>
-                                {% if milestone.is_current %}
-                                <div class="milestone-percentage">{{ milestone.completion_percentage|floatformat:0 }}%</div>
-                                {% endif %}
                             </div>
                             {% empty %}
                             <div class="milestone {% if project.progress > 0 %}completed{% endif %}">
@@ -150,19 +147,19 @@
                         <a href="{% url 'site_diary:project_detail' project.id %}" class="btn btn-outline">
                             <i class="fas fa-folder-open"></i> View Details
                         </a>
-                        <a href="{% url 'site_diary:diary' %}" class="btn btn-secondary">
+                        <a href="{% url 'site_diary:diary_logs' %}?project={{ project.id }}" class="btn btn-secondary">
                             <i class="fas fa-book"></i> Diary Logs
                         </a>
-                        <button class="btn btn-primary" onclick="generateReport({{ project.id }})">
+                        <a href="{% url 'site_diary:reports' %}?project={{ project.id }}" class="btn btn-primary">
                             <i class="fas fa-chart-bar"></i> Reports
-                        </button>
+                        </a>
                     </div>
                 </div>
                 <div class="performance-analytics">
                     <h4 class="analytics-title">Performance Analytics</h4>
                     <div class="analytics-item">
                         <span class="analytics-label">Budget Usage:</span>
-                        <span class="analytics-value {{ project.budget_health }}">{{ project.budget_used|floatformat:0 }}% Used</span>
+                        <span class="analytics-value {{ project.budget_health }}">{% if project.budget_used < 1 %}{{ project.budget_used|floatformat:2 }}{% else %}{{ project.budget_used|floatformat:0 }}{% endif %}% Used</span>
                     </div>
                     <div class="analytics-item">
                         <span class="analytics-label">Schedule Adherence:</span>

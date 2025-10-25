@@ -1,23 +1,64 @@
 {% extends 'base_auth.html' %}
+{% load static %}
 {% block title %}Account Locked | Triple G BuildHub{% endblock %}
 
-{% block modal_messages %}
-    {% include 'client/_modal_messages.html' %}
+{% block extra_head%}
+<style>
+    .btn-secondary {
+        background: transparent;
+        color: #3b3c3cff;
+        border: 1px solid #6c757d;
+    }
+    .btn-secondary:hover {
+        background: #f8f9fa;
+        color: #414142ff;
+        border-color: #6c757d;
+    }
+</style>
 {% endblock %}
-{% block form_content %}
-<div class="custom-modal-overlay custom-visible" role="dialog" aria-modal="true">
-  <div class="custom-modal-content">
-    <button class="custom-modal-close" aria-label="Close modal">&times;</button>
-    <div class="custom-modal-body custom-alert-warning">
-      <h3>Your Account is Locked</h3>
-      <p>Too many failed login or OTP attempts.<br>
-         Please try again in one hour or contact support if you need assistance.</p>
+{% block sidebar_content %}
+    <div class="sidebar-logo">
+        <img src="{% static 'images/tripleGlogo.jpg' %}" alt="Triple G BuildHub Logo">
     </div>
-    <div class="custom-modal-footer">
-      <button class="custom-modal-btn custom-cancel">Back</button>
-      <button class="custom-modal-btn custom-confirm">Contact Support</button>
+    <h1>Account Security</h1>
+    <p>Your account has been temporarily locked for security reasons. This helps protect your account from unauthorized access.</p>
+    <div class="auth-features">
+        <div class="feature"><i class="fas fa-shield-alt"></i><span>Account protection enabled</span></div>
+        <div class="feature"><i class="fas fa-clock"></i><span>Automatic unlock after cooldown</span></div>
+        <div class="feature"><i class="fas fa-headset"></i><span>24/7 support available</span></div>
     </div>
-  </div>
-</div>
 {% endblock %}
 
+{% block form_content %}
+    <div class="auth-form-wrapper">
+        <div class="auth-form-header">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <i class="fas fa-lock" style="font-size: 60px; color: #dc3545;"></i>
+            </div>
+            <h2>Your Account is Locked</h2>
+            <p>Too many failed login or OTP attempts</p>
+        </div>
+        
+        <div class="auth-form" style="text-align: center;">
+            <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+                <p style="margin: 0; color: #856404; line-height: 1.6;">
+                    <strong>Security Notice:</strong><br>
+                    Please try again in one hour or contact support if you need immediate assistance.
+                </p>
+            </div>
+            
+            <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                <a href="javascript:history.back()" class="btn btn-secondary" style="min-width: 150px;">
+                    <i class="fas fa-arrow-left"></i> Go Back
+                </a>
+                <a href="{% url 'accounts:contact_support' %}" class="btn btn-primary" style="min-width: 150px;">
+                    <i class="fas fa-envelope"></i> Contact Support
+                </a>
+            </div>
+        </div>
+        
+        <div class="auth-form-footer">
+            <p>Need help? <a href="{% url 'accounts:contact_support' %}">Contact our support team</a></p>
+        </div>
+    </div>
+{% endblock %}

@@ -376,6 +376,7 @@ select.form-control {
 }
 
 .btn-primary:hover {
+    color: white;
     background-color: #2a5254;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }

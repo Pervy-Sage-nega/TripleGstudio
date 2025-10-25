@@ -150,6 +150,7 @@ def createblog(request):
             tag_names = tags_raw.split(',')
             status = request.POST.get('status', 'draft')
             featured = request.POST.get('featured') == 'on'
+            send_newsletter = request.POST.get('send_newsletter') == 'on'
             seo_meta_title = request.POST.get('seo_meta_title', '')
             seo_meta_description = request.POST.get('seo_meta_description', '')
             featured_image_alt = request.POST.get('featured_image_alt', '')
@@ -162,6 +163,7 @@ def createblog(request):
                     blog_post.excerpt = excerpt
                     blog_post.status = status
                     blog_post.featured = featured
+                    blog_post.send_newsletter = send_newsletter
                     blog_post.seo_meta_title = seo_meta_title
                     blog_post.seo_meta_description = seo_meta_description
                     blog_post.featured_image_alt = featured_image_alt
@@ -178,6 +180,7 @@ def createblog(request):
                     author=request.user,  # Critical: Set the author to logged-in user
                     status=status,
                     featured=featured,
+                    send_newsletter=send_newsletter,
                     seo_meta_title=seo_meta_title,
                     seo_meta_description=seo_meta_description,
                     featured_image_alt=featured_image_alt,
@@ -269,12 +272,30 @@ def createblog(request):
                         except BlogImage.DoesNotExist:
                             pass
             
+            # Handle newsletter sending if requested and post is published
+            print(f"DEBUG: send_newsletter={blog_post.send_newsletter}, status={status}, newsletter_sent={blog_post.newsletter_sent}")
+            if blog_post.send_newsletter and status == 'published' and not blog_post.newsletter_sent:
+                print(f"DEBUG: Attempting to send newsletter for post: {blog_post.title}")
+                from .newsletter_views import create_new_post_campaign, send_newsletter_campaign
+                campaign = create_new_post_campaign(blog_post)
+                print(f"DEBUG: Campaign created: {campaign}")
+                if campaign:
+                    sent_count = send_newsletter_campaign(campaign)
+                    print(f"DEBUG: Newsletter sent to {sent_count} subscribers")
+                    blog_post.newsletter_sent = True
+                    blog_post.save()
+                else:
+                    print("DEBUG: Failed to create campaign")
+            
             # Success message and redirect
             if status == 'draft':
                 messages.success(request, 'Blog post saved as draft successfully!')
                 return redirect('blog:drafts')  # Redirect to drafts page
             else:
-                messages.success(request, 'Blog post created successfully!')
+                success_msg = 'Blog post created successfully!'
+                if blog_post.newsletter_sent:
+                    success_msg += ' Newsletter sent to subscribers.'
+                messages.success(request, success_msg)
                 return redirect('blog:drafts')
                 
         except Exception as e:
@@ -827,7 +848,25 @@ def approve_blog_post(request, post_id):
             blog_post.status = 'published'
             blog_post.save()
             
-            messages.success(request, f'Blog post "{blog_post.title}" approved and published!')
+            # Send newsletter if it was requested during creation and not already sent
+            print(f"DEBUG APPROVE: send_newsletter={blog_post.send_newsletter}, newsletter_sent={blog_post.newsletter_sent}")
+            if blog_post.send_newsletter and not blog_post.newsletter_sent:
+                print(f"DEBUG APPROVE: Attempting to send newsletter for post: {blog_post.title}")
+                from .newsletter_views import create_new_post_campaign, send_newsletter_campaign
+                campaign = create_new_post_campaign(blog_post)
+                print(f"DEBUG APPROVE: Campaign created: {campaign}")
+                if campaign:
+                    sent_count = send_newsletter_campaign(campaign)
+                    print(f"DEBUG APPROVE: Newsletter sent to {sent_count} subscribers")
+                    blog_post.newsletter_sent = True
+                    blog_post.save()
+                    messages.success(request, f'Blog post "{blog_post.title}" approved and published! Newsletter sent to {sent_count} subscribers.')
+                else:
+                    print("DEBUG APPROVE: Failed to create campaign")
+                    messages.success(request, f'Blog post "{blog_post.title}" approved and published!')
+            else:
+                print(f"DEBUG APPROVE: Newsletter not sent - conditions not met")
+                messages.success(request, f'Blog post "{blog_post.title}" approved and published!')
             
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({
@@ -1043,6 +1082,7 @@ def change_blog_status(request, post_id):
             new_status = request.POST.get('status')
             
             if new_status in ['draft', 'published', 'archived']:
+                old_status = blog_post.status
                 blog_post.status = new_status
                 
                 # Set published date when publishing
@@ -1051,6 +1091,27 @@ def change_blog_status(request, post_id):
                     blog_post.published_date = timezone.now()
                     
                 blog_post.save()
+                
+                # Send newsletter if changing to published and newsletter was requested
+                print(f"DEBUG STATUS CHANGE: old_status={old_status}, new_status={new_status}")
+                print(f"DEBUG STATUS CHANGE: send_newsletter={blog_post.send_newsletter}, newsletter_sent={blog_post.newsletter_sent}")
+                if new_status == 'published' and blog_post.send_newsletter and not blog_post.newsletter_sent:
+                    print(f"DEBUG STATUS CHANGE: Attempting to send newsletter for post: {blog_post.title}")
+                    from .newsletter_views import create_new_post_campaign, send_newsletter_campaign
+                    campaign = create_new_post_campaign(blog_post)
+                    print(f"DEBUG STATUS CHANGE: Campaign created: {campaign}")
+                    if campaign:
+                        sent_count = send_newsletter_campaign(campaign)
+                        print(f"DEBUG STATUS CHANGE: Newsletter sent to {sent_count} subscribers")
+                        blog_post.newsletter_sent = True
+                        blog_post.save()
+                        return JsonResponse({
+                            'success': True,
+                            'message': f'Blog post status changed to {new_status}. Newsletter sent to {sent_count} subscribers.',
+                            'new_status': new_status
+                        })
+                    else:
+                        print("DEBUG STATUS CHANGE: Failed to create campaign")
                 
                 return JsonResponse({
                     'success': True,
@@ -1061,6 +1122,7 @@ def change_blog_status(request, post_id):
                 return JsonResponse({'success': False, 'message': 'Invalid status'})
                 
         except Exception as e:
+            print(f"ERROR STATUS CHANGE: {str(e)}")
             return JsonResponse({'success': False, 'message': str(e)})
     
     return JsonResponse({'success': False, 'message': 'Invalid request method'})

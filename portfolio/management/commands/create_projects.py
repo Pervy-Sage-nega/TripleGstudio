@@ -3,6 +3,9 @@ from django.contrib.auth.models import User
 from portfolio.models import Category, Project, ProjectImage, ProjectStat
 from datetime import date
 import os
+import shutil
+from django.conf import settings
+from django.core.files import File
 
 
 class Command(BaseCommand):
@@ -11,12 +14,23 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         try:
             # Get the creator user
-            creator = User.objects.get(email='triplegotp@gmail.com')
+            creator = User.objects.get(email='sensitivity161@gmail.com')
             
-            # Create categories
-            residential_cat, _ = Category.objects.get_or_create(name='Residential')
-            commercial_cat, _ = Category.objects.get_or_create(name='Commercial')
-            interior_cat, _ = Category.objects.get_or_create(name='Interior Design')
+            # Get or create categories
+            try:
+                residential_cat = Category.objects.get(slug='residential')
+            except Category.DoesNotExist:
+                residential_cat = Category.objects.create(name='Residential')
+            
+            try:
+                commercial_cat = Category.objects.get(slug='commercial')
+            except Category.DoesNotExist:
+                commercial_cat = Category.objects.create(name='Commercial')
+            
+            try:
+                interior_cat = Category.objects.get(slug='interior-design')
+            except Category.DoesNotExist:
+                interior_cat = Category.objects.create(name='Interior Design')
             
             # Project data based on the documents
             projects_data = [
@@ -152,6 +166,20 @@ class Command(BaseCommand):
                 },
             ]
             
+            # Folder mapping
+            folder_mapping = {
+                '4-Storey Dormitel': '4-Storey Dormetil',
+                'A-Frame Residential Project': 'A-Frame Residential Project',
+                'House 23': 'House 23',
+                'House 27': 'House 27',
+                'House 33': 'House 33',
+                'Interior Design and Fitout': 'Interior Design and Fitout',
+                'Metrotowne': 'Metrotowne',
+                'Pellucid Reverence': 'Pellucid Reverence',
+                'Project Libertad': 'Project Libertad',
+                'Project Purple': 'Project Purple',
+            }
+            
             created_count = 0
             for project_data in projects_data:
                 project, created = Project.objects.get_or_create(
@@ -162,6 +190,29 @@ class Command(BaseCommand):
                 if created:
                     created_count += 1
                     self.stdout.write(f"Created project: {project.title}")
+                    
+                    # Add images from sitepost folder
+                    folder_name = folder_mapping.get(project.title)
+                    if folder_name:
+                        folder_path = os.path.join(settings.BASE_DIR, 'sitepost', folder_name)
+                        if os.path.exists(folder_path):
+                            image_files = sorted([f for f in os.listdir(folder_path) if f.lower().endswith(('.jpg', '.jpeg', '.png'))])
+                            
+                            for i, image_file in enumerate(image_files):
+                                src_path = os.path.join(folder_path, image_file)
+                                dest_path = f'portfolio/projects/{folder_name}_{image_file}'
+                                media_dest = os.path.join(settings.MEDIA_ROOT, dest_path)
+                                os.makedirs(os.path.dirname(media_dest), exist_ok=True)
+                                shutil.copy2(src_path, media_dest)
+                                
+                                ProjectImage.objects.create(
+                                    project=project,
+                                    image=dest_path,
+                                    alt_text=f'{project.title} - Image {i+1}',
+                                    order=i
+                                )
+                            
+                            self.stdout.write(f"  Added {len(image_files)} images")
                     
                     # Add some basic stats for each project
                     ProjectStat.objects.get_or_create(
@@ -191,7 +242,7 @@ class Command(BaseCommand):
             
         except User.DoesNotExist:
             self.stdout.write(
-                self.style.ERROR('User triplegotp@gmail.com not found. Please create the admin user first.')
+                self.style.ERROR('User sensitivity161@gmail.com not found. Please create the admin user first.')
             )
         except Exception as e:
             self.stdout.write(

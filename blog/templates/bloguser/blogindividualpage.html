@@ -223,7 +223,7 @@
 
                     <!-- Comments Section -->
                     <div class="comments-section">
-                        <h3>Comments ({{ comments.count }})</h3>
+                        <h3>Comments Section </h3>
                         
                         <!-- Comment Form -->
                         {% if user.is_authenticated %}
@@ -429,11 +429,13 @@
                         <h3>Stay Updated</h3>
                         <p>Subscribe to our newsletter for the latest articles and industry insights.</p>
                         <form id="newsletterForm">
+                            {% csrf_token %}
                             <div class="form-group">
-                                <input type="email" placeholder="Your Email Address" required>
+                                <input type="email" name="email" id="newsletterEmail" placeholder="Your Email Address" required>
                             </div>
                             <button type="submit" class="btn btn-primary full-width">Subscribe</button>
                         </form>
+                        <div id="newsletterMessage" style="margin-top: 10px; display: none;"></div>
                     </div>
                     
                     <!-- Categories -->

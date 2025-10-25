@@ -1047,3 +1047,25 @@
         font-size: 16px;
     }
 }
+
+/* Newsletter Subscribe Button Loading State */
+.newsletter-widget button[type="submit"] {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.newsletter-widget button[type="submit"].loading {
+    opacity: 0.9;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.newsletter-widget button[type="submit"].loading i {
+    color: white !important;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

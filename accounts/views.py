@@ -17,6 +17,7 @@ from .utils import get_user_role, get_user_dashboard_url, get_appropriate_redire
 from .activity_tracker import UserActivityTracker
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
+from .views_contact import contact_support
 
 # Forgot password views
 def admin_forgot_password(request):

@@ -5,7 +5,6 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from admin_side.decorators import require_admin_role
-from core.models import ContactMessage
 from site_diary.models import Project
 from .models import ChatbotMessage
 from .gemini_service import gemini_service

@@ -99,6 +99,8 @@ class BlogPost(models.Model):
     # Status and Features
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
     featured = models.BooleanField(default=False, help_text="Show in featured section")
+    send_newsletter = models.BooleanField(default=False, help_text="Send newsletter when published")
+    newsletter_sent = models.BooleanField(default=False, help_text="Newsletter has been sent")
     
     # Rejection tracking
     rejection_reason = models.TextField(blank=True, null=True, help_text="Admin's reason for rejection")

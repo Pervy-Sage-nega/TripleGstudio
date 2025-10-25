@@ -602,4 +602,63 @@ function showCopySuccess() {
     }
 }
 
+/**
+ * Initialize newsletter form
+ */
+function initNewsletterForm() {
+    const form = document.getElementById('newsletterForm');
+    const messageDiv = document.getElementById('newsletterMessage');
+    
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            const email = document.getElementById('newsletterEmail').value;
+            const csrfToken = form.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            submitBtn.disabled = true;
+            submitBtn.classList.add('loading');
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Subscribing...';
+            
+            fetch('/blog/newsletter/subscribe/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ email: email })
+            })
+            .then(response => response.json())
+            .then(data => {
+                messageDiv.style.display = 'block';
+                if (data.success) {
+                    messageDiv.style.color = '#4caf50';
+                    messageDiv.textContent = data.message;
+                    form.reset();
+                } else {
+                    messageDiv.style.color = '#f44336';
+                    messageDiv.textContent = data.message;
+                }
+            })
+            .catch(error => {
+                messageDiv.style.display = 'block';
+                messageDiv.style.color = '#f44336';
+                messageDiv.textContent = 'An error occurred. Please try again.';
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('loading');
+                submitBtn.innerHTML = originalText;
+            });
+        });
+    }
+}
+
+// Initialize newsletter form on page load
+document.addEventListener('DOMContentLoaded', function() {
+    initNewsletterForm();
+});
+
 console.log('Blog individual JS loaded');

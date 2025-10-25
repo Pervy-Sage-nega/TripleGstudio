@@ -181,9 +181,9 @@
                                 <span class="budget-value remaining">₱{{ remaining_budget|floatformat:2 }}</span>
                             </div>
                         </div>
-                        <button class="btn btn-primary" onclick="generateFinancialReport()">
+                        <a href="{% url 'site_diary:reports' %}?project={{ project.id }}" class="btn btn-primary">
                             <i class="fas fa-file-invoice-dollar"></i> Generate Report
-                        </button>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -217,42 +217,51 @@
 
 
 
-            <!-- Reports & Files -->
+            <!-- Team Members -->
             <div class="detail-card files-card">
                 <h3 class="card-title">
-                    <i class="fas fa-folder-open"></i> Reports & Documents
+                    <i class="fas fa-users"></i> Team Members
                 </h3>
                 <div class="files-list">
-                    {% for entry in recent_diary_entries %}
-                        {% for photo in entry.photos.all %}
-                        <div class="file-item">
-                            <div class="file-info">
-                                <i class="fas fa-file-image"></i>
-                                <span class="file-name">{{ photo.caption|default:'Site Photo' }} - {{ entry.entry_date|date:'M d' }}</span>
-                            </div>
-                            <div class="file-meta">
-                                <span class="file-date">{{ photo.uploaded_at|date:'M d, Y' }}</span>
-                                <div class="file-actions">
-                                    <button class="btn-icon" title="Download" onclick="window.open('{{ photo.photo.url }}', '_blank')">
-                                        <i class="fas fa-download"></i>
-                                    </button>
-                                    <button class="btn-icon" title="Preview" onclick="window.open('{{ photo.photo.url }}', '_blank')">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    {% empty %}
                     <div class="file-item">
                         <div class="file-info">
-                            <span class="file-name">No documents available</span>
+                            <i class="fas fa-user-tie"></i>
+                            <span class="file-name">{{ project.project_manager.get_full_name|default:project.project_manager.username }}</span>
+                        </div>
+                        <div class="file-meta">
+                            <span class="file-date">Site Manager</span>
                         </div>
                     </div>
-                    {% endfor %}
+                    <div class="file-item">
+                        <div class="file-info">
+                            <i class="fas fa-hard-hat"></i>
+                            <span class="file-name">Juan Dela Cruz</span>
+                        </div>
+                        <div class="file-meta">
+                            <span class="file-date">Foreman</span>
+                        </div>
+                    </div>
+                    <div class="file-item">
+                        <div class="file-info">
+                            <i class="fas fa-tools"></i>
+                            <span class="file-name">Maria Santos</span>
+                        </div>
+                        <div class="file-meta">
+                            <span class="file-date">Engineer</span>
+                        </div>
+                    </div>
+                    <div class="file-item">
+                        <div class="file-info">
+                            <i class="fas fa-clipboard-check"></i>
+                            <span class="file-name">Pedro Reyes</span>
+                        </div>
+                        <div class="file-meta">
+                            <span class="file-date">Safety Officer</span>
+                        </div>
+                    </div>
                 </div>
                 <button class="btn btn-outline">
-                    <i class="fas fa-upload"></i> Upload Document
+                    <i class="fas fa-user-plus"></i> Add Team Member
                 </button>
             </div>
         </div>

@@ -737,10 +737,14 @@ def dashboard(request):
             print(f"DEBUG: Project {project.name} - Default progress: {progress}%")
         
         # Budget calculations with revision impact analysis
-        total_labor_cost = sum(float(labor.total_cost) for labor in labor_entries)
-        total_material_cost = sum(float(material.total_cost) for material in material_entries)
-        total_equipment_cost = sum(float(equipment.total_rental_cost) for equipment in equipment_entries)
-        total_spent = total_labor_cost + total_material_cost + total_equipment_cost
+        total_labor_cost = sum(float(labor.total_cost) for labor in labor_entries if labor.total_cost)
+        total_material_cost = sum(float(material.total_cost) for material in material_entries if material.total_cost)
+        total_equipment_cost = sum(float(equipment.total_rental_cost) for equipment in equipment_entries if equipment.total_rental_cost)
+        subcontractor_entries = SubcontractorEntry.objects.filter(diary_entry__in=project_entries)
+        delay_cost_entries = DelayEntry.objects.filter(diary_entry__in=project_entries)
+        total_subcontractor_cost = sum(float(sub.daily_cost) for sub in subcontractor_entries if sub.daily_cost)
+        total_delay_cost = sum(float(delay.cost_impact) for delay in delay_cost_entries if delay.cost_impact)
+        total_spent = total_labor_cost + total_material_cost + total_equipment_cost + total_subcontractor_cost + total_delay_cost
         
         # Calculate revision impacts
         revision_entries = project_entries.filter(status='needs_revision')
@@ -769,11 +773,14 @@ def dashboard(request):
         else:
             budget_health = 'good'
         
-        # Calculate budget usage percentage based on adjusted budget
-        if adjusted_budget > 0:
-            budget_used_percentage = min((total_spent / adjusted_budget) * 100, 100)
+        # Calculate budget usage percentage based on original budget
+        if original_budget > 0:
+            budget_used_percentage = min((total_spent / original_budget) * 100, 100)
         else:
             budget_used_percentage = 0
+        
+        # Debug output
+        print(f"DEBUG Budget: Project={project.name}, Budget={original_budget}, Spent={total_spent}, Percentage={budget_used_percentage}%")
         
         # Budget variance from original
         if original_budget > 0:
@@ -893,6 +900,40 @@ def dashboard(request):
         'approval_modal_data': approval_modal_data
     }
     return render(request, 'site_diary/dashboard.html', context)
+
+@login_required
+@require_site_manager_role
+def diary_logs(request):
+    """Diary logs view - shows diary entries for specific project"""
+    project_id = request.GET.get('project')
+    if not project_id:
+        messages.error(request, 'No project specified.')
+        return redirect('site_diary:dashboard')
+    
+    project = get_object_or_404(Project, id=project_id)
+    
+    if not request.user.is_staff:
+        user_projects = Project.objects.filter(
+            Q(project_manager=request.user) | Q(architect=request.user)
+        )
+        if project not in user_projects:
+            messages.error(request, 'Access denied.')
+            return redirect('site_diary:dashboard')
+    
+    entries = DiaryEntry.objects.filter(project=project, draft=False).select_related(
+        'created_by', 'milestone'
+    ).order_by('-entry_date')
+    
+    paginator = Paginator(entries, 15)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'project': project,
+        'total_entries': entries.count(),
+    }
+    return render(request, 'site_diary/diary_logs.html', context)
 
 @require_site_manager_role
 @require_http_methods(["GET"])

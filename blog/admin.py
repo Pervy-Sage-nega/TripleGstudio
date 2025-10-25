@@ -3,6 +3,7 @@ from django.utils.html import format_html
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from .models import BlogPost, Category, Tag, BlogImage
+from .newsletter import NewsletterSubscriber, NewsletterCampaign, NewsletterAnalytics
 
 # Register your models here.
 
@@ -176,3 +177,28 @@ class BlogImageAdmin(admin.ModelAdmin):
             )
         return "No image"
     image_preview.short_description = "Preview"
+
+
+
+@admin.register(NewsletterSubscriber)
+class NewsletterSubscriberAdmin(admin.ModelAdmin):
+    list_display = ('email', 'name', 'is_active', 'is_confirmed', 'subscribed_date', 'open_count', 'click_count')
+    list_filter = ('is_active', 'is_confirmed', 'weekly_digest', 'new_posts', 'featured_posts', 'subscribed_date')
+    search_fields = ('email', 'name')
+    readonly_fields = ('confirmation_token', 'subscribed_date', 'unsubscribed_date', 'open_count', 'click_count', 'last_opened')
+
+
+@admin.register(NewsletterCampaign)
+class NewsletterCampaignAdmin(admin.ModelAdmin):
+    list_display = ('title', 'campaign_type', 'status', 'scheduled_date', 'sent_date', 'total_sent', 'open_rate', 'click_rate')
+    list_filter = ('campaign_type', 'status', 'created_date', 'scheduled_date')
+    search_fields = ('title', 'subject', 'content')
+    readonly_fields = ('created_date', 'sent_date', 'total_sent', 'total_opened', 'total_clicked', 'open_rate', 'click_rate')
+
+
+@admin.register(NewsletterAnalytics)
+class NewsletterAnalyticsAdmin(admin.ModelAdmin):
+    list_display = ('subscriber', 'campaign', 'action_type', 'timestamp', 'ip_address')
+    list_filter = ('action_type', 'timestamp')
+    search_fields = ('subscriber__email', 'campaign__title')
+    readonly_fields = ('subscriber', 'campaign', 'action_type', 'timestamp', 'ip_address', 'user_agent')

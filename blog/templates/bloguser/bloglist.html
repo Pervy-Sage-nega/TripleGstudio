@@ -11,6 +11,7 @@
     <title>Industry Insights | Triple G BuildHub</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/home.css' %}">
+        <link rel="stylesheet" href="{% static 'css/sitecss/modal_messages.css' %}">
     <link rel="stylesheet" href="{% static 'css/bloglist.css' %}">
 {% endblock %}
 </head>
@@ -133,7 +134,7 @@
                     {% if page_obj.has_other_pages %}
                     <div class="pagination">
                         {% if page_obj.has_previous %}
-                            <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category.slug }}{% endif %}" class="pagination-btn">
+                            <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category.slug }}{% endif %}" class="pagination-btn pagination-prev">
                                 <i class="fas fa-chevron-left"></i> Previous
                             </a>
                         {% endif %}

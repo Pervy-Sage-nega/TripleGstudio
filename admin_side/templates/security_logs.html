@@ -1,0 +1,322 @@
+{% extends 'admin-nav-footer-template/base.html' %}
+{% load static %}
+{% block title %}Security Logs | Triple G BuildHub{% endblock %}
+{% block extra_head %}
+    <link rel="stylesheet" href="{% static 'css/sitecss/reports.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admincss/adminreports.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admincss/header.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admincss/nav.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        .table-container {
+            max-height: 500px;
+            overflow-y: auto;
+            overflow-x: auto;
+        }
+        @media (max-width: 768px) {
+            .summary-section {
+                grid-template-columns: 1fr;
+            }
+            .page-header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            .export-options {
+                width: 100%;
+            }
+            .export-options .btn {
+                width: 100%;
+            }
+            .table-container {
+                max-height: 400px;
+            }
+            table {
+                font-size: 0.85rem;
+            }
+            table th, table td {
+                padding: 10px 8px;
+            }
+            .charts-section {
+                grid-template-columns: 1fr !important;
+            }
+        }
+        @media (max-width: 480px) {
+            .summary-value {
+                font-size: 1.5rem;
+            }
+            .summary-title {
+                font-size: 0.8rem;
+            }
+            table {
+                font-size: 0.75rem;
+            }
+            table th, table td {
+                padding: 8px 5px;
+            }
+        }
+    </style>
+{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <div class="page-title">
+            <i class="fas fa-shield-alt"></i>
+            <h1>Security Logs</h1>
+        </div>
+        <div class="export-options">
+            <a href="{% url 'admin_side:admin_user_list' %}" class="btn btn-primary"><i class="fas fa-users"></i> User Management</a>
+        </div>
+    </div>
+
+    <div class="summary-section">
+        <div class="summary-card">
+            <i class="fas fa-exclamation-triangle summary-icon"></i>
+            <div class="summary-title">Total Failed Attempts</div>
+            <div class="summary-value">{{ total_attempts }}</div>
+            <div class="summary-change neutral">
+                <span>Login failures recorded</span>
+            </div>
+        </div>
+        <div class="summary-card warning">
+            <i class="fas fa-lock summary-icon"></i>
+            <div class="summary-title">Locked Accounts</div>
+            <div class="summary-value">{{ locked_count }}</div>
+            <div class="summary-change negative">
+                <span>Accounts currently locked</span>
+            </div>
+        </div>
+        <div class="summary-card info">
+            <i class="fas fa-network-wired summary-icon"></i>
+            <div class="summary-title">Unique IPs Blocked</div>
+            <div class="summary-value">{{ unique_ips }}</div>
+            <div class="summary-change neutral">
+                <span>IP addresses flagged</span>
+            </div>
+        </div>
+        <div class="summary-card success">
+            <i class="fas fa-calendar-day summary-icon"></i>
+            <div class="summary-title">Today's Attempts</div>
+            <div class="summary-value">{{ today_attempts }}</div>
+            <div class="summary-change neutral">
+                <span>Failed attempts today</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="charts-section">
+        <div class="chart-container full-width">
+            <div class="chart-header">
+                <div class="chart-title">Failed Attempts Trend (Last 7 Days)</div>
+            </div>
+            <div class="chart-canvas-container">
+                <div id="attemptsChart" style="width: 100%; height: 100%;"></div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-header">
+                <div class="chart-title">Top 5 IPs by Attempts</div>
+            </div>
+            <div class="chart-canvas-container">
+                <div id="topIpsChart" style="width: 100%; height: 100%;"></div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-header">
+                <div class="chart-title">Attempts by Status</div>
+            </div>
+            <div class="chart-canvas-container">
+                <div id="statusChart" style="width: 100%; height: 100%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="reports-section">
+        <div class="section-header">
+            <div class="section-title">
+                <i class="fas fa-user-lock"></i>
+                Access Attempts
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>IP Address</th>
+                            <th>Attempts</th>
+                            <th>Status</th>
+                            <th>Last Attempt</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in access_attempts %}
+                        <tr>
+                            <td>{{ log.username|default:"Unknown" }}</td>
+                            <td>{{ log.ip_address }}</td>
+                            <td>{{ log.failures_since_start }}</td>
+                            <td>
+                                {% if log.failures_since_start >= 5 %}
+                                <span class="status-badge status-delayed">Locked</span>
+                                {% else %}
+                                <span class="status-badge status-progress">Failed</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ log.attempt_time|date:"M d, Y H:i" }}</td>
+                            <td>
+                                <div class="table-actions">
+                                    {% if log.failures_since_start >= 5 %}
+                                    <button class="action-btn view" onclick="unlockUser('{{ log.username }}', '{{ log.ip_address }}')" title="Unlock User">
+                                        <i class="fas fa-unlock"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 40px; color: #757575;">
+                                <i class="fas fa-check-circle" style="font-size: 48px; color: #27ae60;"></i>
+                                <p style="margin-top: 10px;">No access attempts recorded</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="reports-section">
+        <div class="section-header">
+            <div class="section-title">
+                <i class="fas fa-history"></i>
+                Access Logs
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>IP Address</th>
+                            <th>User Agent</th>
+                            <th>Path</th>
+                            <th>Attempt Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in access_logs %}
+                        <tr>
+                            <td>{{ log.username|default:"Unknown" }}</td>
+                            <td>{{ log.ip_address }}</td>
+                            <td>{{ log.user_agent|truncatewords:10 }}</td>
+                            <td>{{ log.path_info|default:"-" }}</td>
+                            <td>{{ log.attempt_time|date:"M d, Y H:i:s" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 40px; color: #757575;">
+                                <i class="fas fa-info-circle" style="font-size: 48px; color: #3498db;"></i>
+                                <p style="margin-top: 10px;">No access logs available</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script src="{% static 'js/adminjs/mobile-btn.js' %}"></script>
+<script>
+// Attempts Trend Chart
+var attemptsChart = echarts.init(document.getElementById('attemptsChart'));
+attemptsChart.setOption({
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: 'category', data: {{ days_labels|safe }} },
+    yAxis: { type: 'value' },
+    series: [{
+        data: {{ attempts_by_day|safe }},
+        type: 'line',
+        smooth: true,
+        areaStyle: { color: 'rgba(255, 113, 32, 0.2)' },
+        lineStyle: { color: '#ff7120', width: 3 },
+        itemStyle: { color: '#ff7120' }
+    }]
+});
+
+// Top IPs Chart
+var topIpsChart = echarts.init(document.getElementById('topIpsChart'));
+topIpsChart.setOption({
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    xAxis: { type: 'value' },
+    yAxis: { 
+        type: 'category', 
+        data: [{% for ip in top_ips %}'{{ ip.ip_address }}'{% if not forloop.last %},{% endif %}{% endfor %}]
+    },
+    series: [{
+        data: [{% for ip in top_ips %}{{ ip.count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+        type: 'bar',
+        itemStyle: { color: '#00273c' }
+    }]
+});
+
+// Status Chart
+var statusChart = echarts.init(document.getElementById('statusChart'));
+statusChart.setOption({
+    tooltip: { trigger: 'item' },
+    legend: { bottom: '5%', left: 'center' },
+    series: [{
+        type: 'pie',
+        radius: ['40%', '70%'],
+        avoidLabelOverlap: false,
+        itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 2 },
+        label: { show: false },
+        emphasis: { label: { show: true, fontSize: 20, fontWeight: 'bold' } },
+        data: [
+            { value: {{ locked_attempts }}, name: 'Locked', itemStyle: { color: '#dc3545' } },
+            { value: {{ failed_attempts }}, name: 'Failed', itemStyle: { color: '#ffc107' } }
+        ]
+    }]
+});
+
+window.addEventListener('resize', function() {
+    attemptsChart.resize();
+    topIpsChart.resize();
+    statusChart.resize();
+});
+
+function unlockUser(username, ip) {
+    if (confirm(`Unlock access for ${username} (${ip})?`)) {
+        fetch('{% url "admin_side:unlock_user" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ username: username, ip_address: ip })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('User unlocked successfully');
+                location.reload();
+            } else {
+                alert('Failed to unlock user');
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

@@ -13,8 +13,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+        <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   
@@ -235,12 +235,12 @@
 
             <div class="chart-container">
                 <div class="chart-header">
-                    <div class="chart-title">Delay Cause Analysis</div>
+                    <div class="chart-title">Delay Analysis</div>
                     <div class="chart-actions">
-                        <button class="chart-action" title="Download Chart" data-chart="delays">
+                        <button class="chart-action" title="Download Chart">
                             <i class="fas fa-download"></i>
                         </button>
-                        <button class="chart-action" title="Expand Chart" data-chart="delays">
+                        <button class="chart-action" title="Expand Chart">
                             <i class="fas fa-expand"></i>
                         </button>
                     </div>
@@ -302,18 +302,18 @@
 
                 <div class="chart-container">
                     <div class="chart-header">
-                        <div class="chart-title">Weather Impact Analysis</div>
+                        <div class="chart-title">Weather Impact</div>
                         <div class="chart-actions">
-                            <button class="chart-action" title="Download Chart" data-chart="weather">
+                            <button class="chart-action" title="Download Chart">
                                 <i class="fas fa-download"></i>
                             </button>
-                            <button class="chart-action" title="Expand Chart" data-chart="weather">
+                            <button class="chart-action" title="Expand Chart">
                                 <i class="fas fa-expand"></i>
                             </button>
                         </div>
                     </div>
                     <div class="chart-canvas-container">
-                        <div id="weatherImpactChart" style="width: 100%; height: 100%;"></div>
+                        <div id="weatherChart" style="width: 100%; height: 100%;"></div>
                     </div>
                 </div>
             </div>
@@ -520,7 +520,7 @@
         // Pass Django data to JavaScript
         window.reportsData = {
             laborStats: {{ labor_stats_json|safe }},
-            projectStats: {{ project_stats_json|safe }},
+             projectStats: {{ project_stats_json|safe }},
             materialStats: [],
             delayCategories: {{ delay_stats_json|safe }},
             weatherStats: {{ weather_stats_json|safe }},

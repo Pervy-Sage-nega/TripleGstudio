@@ -190,6 +190,9 @@ else:
 LOGIN_URL = '/accounts/sitemanager/login/'
 LOGIN_REDIRECT_URL = '/admin-panel/'
 
+# Site URL for newsletter and email links
+SITE_URL = os.getenv('SITE_URL', 'http://localhost:8000')
+
 # Security settings
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = not DEBUG

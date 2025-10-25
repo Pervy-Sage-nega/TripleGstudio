@@ -10,7 +10,7 @@ from accounts.forms import ProfileUpdateForm
 from accounts.decorators import allow_public_access, require_public_role
 from portfolio.models import Project, Category
 from site_diary.models import Project as SiteDiaryProject
-from .models import ContactMessage
+from chatbot.models import ChatbotMessage
 
 @allow_public_access
 def home(request):
@@ -54,14 +54,13 @@ def contact(request):
             messages.error(request, 'Please fill in all required fields.')
             return render(request, 'core/contacts.html')
         
-        # Create contact message
+        # Create contact message using chatbot model
         try:
-            contact_msg = ContactMessage.objects.create(
+            contact_msg = ChatbotMessage.objects.create(
                 name=name,
                 email=email,
                 phone=phone,
-                subject=subject,
-                message=message
+                message=f"{subject}: {message}"
             )
             messages.success(request, 'Message sent successfully! We will get back to you soon.')
             return redirect('core:contact')
@@ -102,17 +101,17 @@ def clientdashboard(request):
     #     messages.info(request, 'No project assigned yet. Please contact us to get started.')
     #     return redirect('core:usersettings')
     
-    # Get client's projects from site_diary
-    client_projects = SiteDiaryProject.objects.filter(client=current_user).order_by('-created_at')
+    # Get client's approved projects from site_diary
+    client_projects = SiteDiaryProject.objects.filter(client=current_user, approved_by__isnull=False).order_by('-created_at')
     
     # If no projects found by client field, try to find by client_name
     if not client_projects.exists():
         user_full_name = current_user.get_full_name()
         if user_full_name:
-            client_projects = SiteDiaryProject.objects.filter(client_name__icontains=user_full_name).order_by('-created_at')
+            client_projects = SiteDiaryProject.objects.filter(client_name__icontains=user_full_name, approved_by__isnull=False).order_by('-created_at')
             print(f"[DEBUG] Found {client_projects.count()} projects by name matching: {user_full_name}")
         else:
-            client_projects = SiteDiaryProject.objects.filter(client_name__icontains=current_user.username).order_by('-created_at')
+            client_projects = SiteDiaryProject.objects.filter(client_name__icontains=current_user.username, approved_by__isnull=False).order_by('-created_at')
             print(f"[DEBUG] Found {client_projects.count()} projects by username matching: {current_user.username}")
     
     # Calculate project statistics
@@ -163,15 +162,15 @@ def client_project_detail(request, project_id):
     """
     current_user = request.user
     
-    # Get the project and ensure it belongs to the current user
+    # Get the approved project and ensure it belongs to the current user
     try:
-        project = SiteDiaryProject.objects.get(id=project_id, client=current_user)
+        project = SiteDiaryProject.objects.get(id=project_id, client=current_user, approved_by__isnull=False)
     except SiteDiaryProject.DoesNotExist:
         # Try to find by client_name if client field is not set
         user_full_name = current_user.get_full_name()
         if user_full_name:
             try:
-                project = SiteDiaryProject.objects.get(id=project_id, client_name__icontains=user_full_name)
+                project = SiteDiaryProject.objects.get(id=project_id, client_name__icontains=user_full_name, approved_by__isnull=False)
             except SiteDiaryProject.DoesNotExist:
                 messages.error(request, 'Project not found or access denied.')
                 return redirect('core:clientdashboard')
@@ -179,9 +178,73 @@ def client_project_detail(request, project_id):
             messages.error(request, 'Project not found or access denied.')
             return redirect('core:clientdashboard')
     
+    # Get diary entries for this project
+    diary_entries = project.diary_entries.filter(draft=False).order_by('-entry_date')[:10]
+    
+    # Calculate budget used from all diary entries
+    from decimal import Decimal
+    budget_used = Decimal('0')
+    all_entries = project.diary_entries.filter(draft=False)
+    
+    for entry in all_entries:
+        # Sum material costs
+        for material in entry.material_entries.all():
+            budget_used += material.total_cost
+        # Sum labor costs
+        for labor in entry.labor_entries.all():
+            budget_used += labor.total_cost
+        # Sum equipment costs
+        for equipment in entry.equipment_entries.all():
+            budget_used += equipment.total_rental_cost
+        # Sum subcontractor costs
+        for subcontractor in entry.subcontractor_entries.all():
+            budget_used += subcontractor.daily_cost
+        # Sum delay cost impacts
+        for delay in entry.delay_entries.all():
+            if delay.cost_impact:
+                budget_used += delay.cost_impact
+    
+    budget_remaining = project.budget - budget_used if project.budget else Decimal('0')
+    budget_percentage = (budget_used / project.budget * 100) if project.budget and project.budget > 0 else 0
+    
+    # Get latest weather data from most recent diary entry
+    latest_entry = project.diary_entries.filter(draft=False, weather_condition__isnull=False).order_by('-entry_date').first()
+    
+    # Get all milestones with their completion status
+    from site_diary.models import Milestone
+    milestones = Milestone.objects.filter(is_active=True).order_by('order')
+    
+    # Get milestone progress from diary entries
+    milestone_progress = {}
+    current_milestone = None
+    current_milestone_progress = 0
+    completed_phases = 0
+    total_phases = milestones.count()
+    
+    for milestone in milestones:
+        latest_entry_for_milestone = project.diary_entries.filter(draft=False, milestone=milestone).order_by('-entry_date').first()
+        if latest_entry_for_milestone:
+            milestone_progress[milestone.id] = latest_entry_for_milestone.progress_percentage
+            if latest_entry_for_milestone.progress_percentage == 100:
+                completed_phases += 1
+            elif latest_entry_for_milestone.progress_percentage < 100 and not current_milestone:
+                current_milestone = milestone
+                current_milestone_progress = latest_entry_for_milestone.progress_percentage
+    
     context = {
         'project': project,
         'user': current_user,
+        'diary_entries': diary_entries,
+        'budget_used': budget_used,
+        'budget_remaining': budget_remaining,
+        'budget_percentage': budget_percentage,
+        'latest_weather': latest_entry,
+        'milestones': milestones,
+        'milestone_progress': milestone_progress,
+        'current_milestone': current_milestone,
+        'current_milestone_progress': current_milestone_progress,
+        'completed_phases': completed_phases,
+        'total_phases': total_phases,
     }
     
     return render(request, 'core/client_project_detail.html', context)
@@ -281,14 +344,14 @@ def usersettings(request):
         print(f"[DEBUG] USERSETTINGS - Initial form data: {initial_data}")
         form = ProfileUpdateForm(instance=profile, user=current_user, initial=initial_data)
     
-    # Get client's projects for display
-    client_projects = SiteDiaryProject.objects.filter(client=current_user).order_by('-created_at')
+    # Get client's approved projects for display
+    client_projects = SiteDiaryProject.objects.filter(client=current_user, approved_by__isnull=False).order_by('-created_at')
     if not client_projects.exists():
         user_full_name = current_user.get_full_name()
         if user_full_name:
-            client_projects = SiteDiaryProject.objects.filter(client_name__icontains=user_full_name).order_by('-created_at')
+            client_projects = SiteDiaryProject.objects.filter(client_name__icontains=user_full_name, approved_by__isnull=False).order_by('-created_at')
         else:
-            client_projects = SiteDiaryProject.objects.filter(client_name__icontains=current_user.username).order_by('-created_at')
+            client_projects = SiteDiaryProject.objects.filter(client_name__icontains=current_user.username, approved_by__isnull=False).order_by('-created_at')
     
     # SECURITY: Only pass current user's data to template
     context = {

@@ -125,9 +125,21 @@ h1{
 .auth-main {
     width: 100%;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     padding: 20px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.auth-main::-webkit-scrollbar {
+    width: 0;
+    background: transparent;
+}
+
+.auth-main {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
 .auth-content {

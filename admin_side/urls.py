@@ -20,4 +20,8 @@ urlpatterns = [
     path('users/online-status/', views.get_users_online_status, name='get_users_online_status'),
     path('assign-project/', assignment_views.assign_project, name='assign_project'),
     path('remove-assignment/<str:assignment_id>/', assignment_views.remove_assignment, name='remove_assignment'),
+    
+    # Security URLs
+    path('security-logs/', views.security_logs, name='security_logs'),
+    path('unlock-user/', views.unlock_user, name='unlock_user'),
 ]
