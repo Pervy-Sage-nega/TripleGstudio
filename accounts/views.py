@@ -12,7 +12,7 @@ from django.views.decorators.csrf import csrf_protect
 from django.utils import timezone
 from datetime import timedelta
 from .forms import ClientRegisterForm, OTPForm, AdminRegisterForm, AdminLoginForm, AdminOTPForm
-from .models import OneTimePassword, AdminProfile, SiteManagerProfile, Profile
+from .models import OneTimePassword, AdminProfile, SiteManagerProfile, Profile, SitePersonnelRole
 from .utils import get_user_role, get_user_dashboard_url, get_appropriate_redirect
 from .activity_tracker import UserActivityTracker
 from django.http import JsonResponse
@@ -948,10 +948,11 @@ def client_reset_password(request):
 # API endpoints for fetching users
 @login_required
 def api_sitemanagers(request):
-    """API endpoint to fetch site managers"""
+    """API endpoint to fetch architects only"""
     sitemanagers = User.objects.filter(
         sitemanagerprofile__isnull=False,
         sitemanagerprofile__approval_status='approved',
+        sitemanagerprofile__site_role__name='architect',
         is_active=True
     ).values('id', 'first_name', 'last_name', 'email')
     
@@ -982,3 +983,17 @@ def api_clients(request):
         })
     
     return JsonResponse({'clients': client_list})
+
+@login_required
+def api_architect_gallery(request, architect_id):
+    """API endpoint to fetch architect's gallery images"""
+    try:
+        user = User.objects.get(id=architect_id)
+        if hasattr(user, 'sitemanagerprofile'):
+            from accounts.models import ArchitectGallery
+            images = ArchitectGallery.objects.filter(architect=user.sitemanagerprofile)
+            image_list = [{'url': img.image.url, 'id': img.id} for img in images]
+            return JsonResponse({'images': image_list})
+    except User.DoesNotExist:
+        pass
+    return JsonResponse({'images': []})

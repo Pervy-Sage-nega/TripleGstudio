@@ -4,6 +4,7 @@
 
 {% block extra_head %}
     <link rel="stylesheet" href="{% static 'css/admincss/adminusers.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admincss/role-assignment.css' %}">
     <link rel="stylesheet" href="{% static 'css/admincss/nav.css' %}">
     <link rel="stylesheet" href="{% static 'css/admincss/header.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -72,6 +73,7 @@
                 <button class="tab-btn active" data-tab="account">Account Information</button>
                 <button class="tab-btn" data-tab="profile">Profile Information</button>
                 {% if user_role == 'Site Manager' %}
+                <button class="tab-btn" data-tab="role">Site Role</button>
                 <button class="tab-btn" data-tab="permissions">Permissions</button>
                 {% endif %}
             </div>
@@ -103,6 +105,12 @@
                         <label>Last Login</label>
                         <input type="text" value="{% if user.last_login %}{{ user.last_login|date:'M d, Y H:i' }}{% else %}Never{% endif %}" readonly>
                     </div>
+                    {% if user_role == 'Site Manager' %}
+                    <div class="form-group">
+                        <label>Site Role</label>
+                        <input type="text" value="{% if site_role %}{{ site_role.display_name }} ({{ site_role.employee_id_prefix }}){% else %}Not Assigned{% endif %}" readonly>
+                    </div>
+                    {% endif %}
                     {% if profile_data.department %}
                     <div class="form-group">
                         <label>Department</label>
@@ -164,8 +172,87 @@
                 </div>
             </div>
 
-            <!-- Permissions Tab (Site Managers only) -->
+            <!-- Site Role Tab (Site Managers only) -->
             {% if user_role == 'Site Manager' %}
+            <div class="tab-content" id="role">
+                <div class="role-assignment-section">
+                    <h3><i class="fas fa-user-tag"></i> Assign Site Role</h3>
+                    <p class="section-description">Assign a specific role to this site manager. The role determines their employee ID prefix and job function.</p>
+                    
+                    <form id="assignRoleForm" class="role-form" method="post" action="{% url 'admin_side:assign_site_role' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="user_id" value="{{ user.id }}">
+                        
+                        <div class="current-role-display">
+                            <label>Current Role:</label>
+                            <div class="role-badge-large">
+                                {% if site_role %}
+                                    <i class="fas fa-user-tag"></i>
+                                    <span>{{ site_role.display_name }}</span>
+                                    <small>({{ site_role.employee_id_prefix }}-YYYY-NNNN)</small>
+                                {% else %}
+                                    <i class="fas fa-user"></i>
+                                    <span>No Role Assigned</span>
+                                    <small>(Default: SM-YYYY-NNNN)</small>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="roleSelect">Select New Role:</label>
+                            <select id="roleSelect" name="role_id" class="form-control">
+                                <option value="">-- No Role (Default) --</option>
+                                {% for role in available_roles %}
+                                <option value="{{ role.id }}" {% if site_role and site_role.id == role.id %}selected{% endif %}>
+                                    {{ role.display_name }} ({{ role.employee_id_prefix }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-help">Employee ID will use the selected role's prefix</small>
+                        </div>
+
+                        <div class="role-description" id="roleDescription">
+                            {% if site_role and site_role.description %}
+                            <div class="description-box">
+                                <strong>Role Description:</strong>
+                                <p>{{ site_role.description }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Save Role Assignment
+                            </button>
+                            {% if site_role %}
+                            <button type="button" class="btn btn-secondary" id="removeRoleBtn">
+                                <i class="fas fa-times"></i> Remove Role
+                            </button>
+                            {% endif %}
+                        </div>
+                    </form>
+
+                    <div class="available-roles-list">
+                        <h4>Available Roles:</h4>
+                        <div class="roles-grid">
+                            {% for role in available_roles %}
+                            <div class="role-card" data-role-id="{{ role.id }}" data-description="{{ role.description }}">
+                                <div class="role-card-header">
+                                    <i class="fas fa-user-tag"></i>
+                                    <h5>{{ role.display_name }}</h5>
+                                </div>
+                                <div class="role-card-body">
+                                    <p class="role-prefix">Prefix: <strong>{{ role.employee_id_prefix }}</strong></p>
+                                    <p class="role-desc">{{ role.description|truncatewords:15 }}</p>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Permissions Tab (Site Managers only) -->
             <div class="tab-content" id="permissions">
                 <div class="permissions-section">
                     <h3>Current Permissions</h3>
@@ -354,6 +441,82 @@ document.addEventListener('click', function(e) {
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-magic"></i> Generate ID';
         });
+    }
+});
+
+// Role assignment form - must be DOMContentLoaded to ensure form exists
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('assignRoleForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+        
+        const formData = new FormData(e.target);
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        
+        fetch('{% url "admin_side:assign_site_role" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('An error occurred. Please try again.');
+        })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-save"></i> Save Role Assignment';
+            });
+        });
+    }
+});
+
+// Role description preview
+document.addEventListener('change', function(e) {
+    if (e.target.id === 'roleSelect') {
+        const selectedOption = e.target.options[e.target.selectedIndex];
+        const roleId = selectedOption.value;
+        const descBox = document.getElementById('roleDescription');
+        
+        if (roleId) {
+            const roleCard = document.querySelector(`.role-card[data-role-id="${roleId}"]`);
+            if (roleCard) {
+                const description = roleCard.dataset.description;
+                descBox.innerHTML = `
+                    <div class="description-box">
+                        <strong>Role Description:</strong>
+                        <p>${description}</p>
+                    </div>
+                `;
+            }
+        } else {
+            descBox.innerHTML = '';
+        }
+    }
+});
+
+// Remove role button
+document.addEventListener('click', function(e) {
+    if (e.target.id === 'removeRoleBtn' || e.target.closest('#removeRoleBtn')) {
+        e.preventDefault();
+        if (confirm('Are you sure you want to remove the assigned role? This will revert to default Site Manager.')) {
+            document.getElementById('roleSelect').value = '';
+            const form = document.getElementById('assignRoleForm');
+            const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+            form.dispatchEvent(submitEvent);
+        }
     }
 });
 </script>

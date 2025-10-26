@@ -223,17 +223,20 @@
                         <p class="error-message" id="location-error" style="display: none;">Project Location is required.</p>
                     </div>
 
-                    <!-- Project Image Upload -->
+                    <!-- Project Image from Gallery -->
                     <div class="filter-group">
                         <label for="project-image">Project Image (Optional)</label>
-                        <input type="file" id="project-image" accept="image/png, image/jpeg">
-                        <small>Supported formats: JPG, PNG. Max size: 2MB.</small>
+                        <button type="button" id="select-from-gallery" class="btn btn-outline" disabled>
+                            <i class="fas fa-images"></i> Select from Architect's Gallery
+                        </button>
+                        <small id="gallery-hint">Select an architect first to choose from their gallery</small>
                         <div class="image-preview" id="image-preview">
                             <img src="#" alt="Project Image Preview" id="image-output">
                             <button type="button" id="clear-image" class="btn btn-secondary">
                                 <i class="fas fa-trash-alt"></i> Remove Image
                             </button>
                         </div>
+                        <input type="hidden" id="selected-image-url" name="image_url">
                     </div>
 
                     <!-- Project Dates -->
@@ -311,6 +314,23 @@
         </div>
     </div>
 
+    <!-- Gallery Modal -->
+    <div id="galleryModal" class="map-modal">
+        <div class="map-modal-content">
+            <div class="map-modal-header">
+                <h3><i class="fas fa-images"></i> Select Image from Gallery</h3>
+            </div>
+            <div style="flex: 1; overflow-y: auto; padding: 20px;">
+                <div id="gallery-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;">
+                    <div style="grid-column: 1/-1; text-align: center; color: #666;">Loading gallery...</div>
+                </div>
+            </div>
+            <div class="map-modal-footer">
+                <button type="button" id="cancelGallerySelection" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Map Modal -->
     <div id="mapModal" class="map-modal">
         <div class="map-modal-content">
@@ -341,10 +361,15 @@
         const startDate = form.querySelector("#start-date");
         const endDate = form.querySelector("#end-date");
         const projectBudget = form.querySelector("#project-budget");
-        const imageInput = form.querySelector("#project-image");
         const imagePreview = document.getElementById("image-preview");
         const imageOutput = document.getElementById("image-output");
         const clearImage = document.getElementById("clear-image");
+        const selectFromGallery = document.getElementById('select-from-gallery');
+        const galleryModal = document.getElementById('galleryModal');
+        const closeGalleryModal = document.getElementById('closeGalleryModal');
+        const cancelGallerySelection = document.getElementById('cancelGallerySelection');
+        const selectedImageUrl = document.getElementById('selected-image-url');
+        let selectedArchitectId = null;
         const mapPickerBtn = document.getElementById('map-picker-btn');
         const mapModal = document.getElementById('mapModal');
         const closeMapModal = document.getElementById('closeMapModal');
@@ -478,6 +503,11 @@
                 menu.addEventListener('click', function(e) {
                     if (e.target.classList.contains('dropdown-item')) {
                         input.value = e.target.dataset.value;
+                        if (inputId === 'assigned-architect') {
+                            selectedArchitectId = e.target.dataset.id;
+                            selectFromGallery.disabled = false;
+                            document.getElementById('gallery-hint').textContent = 'Click to select an image from the architect\'s gallery';
+                        }
                         menu.classList.remove('show');
                     }
                 });
@@ -507,6 +537,7 @@
                             const item = document.createElement('div');
                             item.className = 'dropdown-item';
                             item.dataset.value = sitemanager.full_name;
+                            item.dataset.id = sitemanager.id;
                             item.textContent = sitemanager.full_name;
                             menu.appendChild(item);
                         });
@@ -557,25 +588,66 @@
             this.value = value;
         });
 
-        // Image upload preview
-        imageInput.addEventListener("change", (event) => {
-            const file = event.target.files[0];
-            if (file && (file.type === "image/jpeg" || file.type === "image/png")) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    imageOutput.src = e.target.result;
-                    imagePreview.style.display = "block";
-                };
-                reader.readAsDataURL(file);
-            } else {
-                alert("Invalid file type! Please upload a JPG or PNG image.");
-                event.target.value = "";
+        // Gallery selection
+        selectFromGallery.addEventListener('click', function() {
+            if (!selectedArchitectId) {
+                alert('Please select an architect first');
+                return;
+            }
+            galleryModal.style.display = 'block';
+            loadArchitectGallery(selectedArchitectId);
+        });
+
+        cancelGallerySelection.addEventListener('click', function() {
+            galleryModal.style.display = 'none';
+        });
+
+        window.addEventListener('click', function(event) {
+            if (event.target === galleryModal) {
+                galleryModal.style.display = 'none';
             }
         });
 
+        function loadArchitectGallery(architectId) {
+            const galleryGrid = document.getElementById('gallery-grid');
+            galleryGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #666;">Loading gallery...</div>';
+            
+            fetch(`/accounts/api/architect-gallery/${architectId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.images && data.images.length > 0) {
+                        galleryGrid.innerHTML = '';
+                        data.images.forEach(image => {
+                            const div = document.createElement('div');
+                            div.style.cssText = 'cursor: pointer; border: 2px solid transparent; border-radius: 4px; overflow: hidden; transition: border-color 0.3s;';
+                            div.innerHTML = `<img src="${image.url}" style="width: 100%; height: 150px; object-fit: cover;">`;
+                            div.addEventListener('click', function() {
+                                imageOutput.src = image.url;
+                                selectedImageUrl.value = image.url;
+                                imagePreview.style.display = 'block';
+                                galleryModal.style.display = 'none';
+                            });
+                            div.addEventListener('mouseenter', function() {
+                                this.style.borderColor = '#007cba';
+                            });
+                            div.addEventListener('mouseleave', function() {
+                                this.style.borderColor = 'transparent';
+                            });
+                            galleryGrid.appendChild(div);
+                        });
+                    } else {
+                        galleryGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #666;">No images in gallery</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading gallery:', error);
+                    galleryGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #f44;">Error loading gallery</div>';
+                });
+        }
+
         // Clear image preview
         clearImage.addEventListener("click", () => {
-            imageInput.value = "";
+            selectedImageUrl.value = '';
             imagePreview.style.display = "none";
         });
 
@@ -627,9 +699,9 @@
                 formData.append('expected_end_date', endDate.value);
                 formData.append('description', document.getElementById('project-description').value);
                 
-                // Add image file if selected
-                if (imageInput.files[0]) {
-                    formData.append('image', imageInput.files[0]);
+                // Add image URL if selected from gallery
+                if (selectedImageUrl.value) {
+                    formData.append('image_url', selectedImageUrl.value);
                 }
                 
                 formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);

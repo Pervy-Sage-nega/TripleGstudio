@@ -102,7 +102,9 @@
         <div class="project-grid">
             {% for project in projects %}
             <div class="project-card" data-category="{{ project.category|default:'commercial' }}" data-status="{{ project.status }}">
-                {% if project.image %}
+                {% if project.image_url %}
+                    <img src="{{ project.image_url }}" alt="{{ project.name }}" class="project-image">
+                {% elif project.image %}
                     <img src="{{ project.image.url }}" alt="{{ project.name }}" class="project-image">
                 {% else %}
                     <img src="{% static 'images/image6.jpg' %}" alt="{{ project.name }}" class="project-image">

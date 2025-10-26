@@ -7,7 +7,7 @@ from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.cache import never_cache
 from django.utils import timezone
-from accounts.models import AdminProfile, SiteManagerProfile, Profile
+from accounts.models import AdminProfile, SiteManagerProfile, Profile, SitePersonnelRole
 from django.contrib.auth.models import User
 from site_diary.models import Project
 from blog.models import BlogPost
@@ -284,23 +284,30 @@ def admin_user_detail(request, user_id):
     
     # Determine user type and get profile data
     if hasattr(user, 'sitemanagerprofile'):
-        profile_data = user.sitemanagerprofile
+        # Refresh from database to get latest data
+        profile_data = SiteManagerProfile.objects.select_related('site_role').get(user=user)
         user_role = 'Site Manager'
         status = profile_data.approval_status
         status_display = profile_data.get_approval_status_display()
         profile_pic = profile_data.get_profile_image_url()
+        site_role = profile_data.site_role
+        available_roles = SitePersonnelRole.objects.filter(is_active=True).order_by('order')
     elif hasattr(user, 'profile'):
         profile_data = user.profile
         user_role = 'Client'
         status = 'active' if user.is_active else 'inactive'
         status_display = 'Active' if user.is_active else 'Inactive'
         profile_pic = profile_data.get_profile_image_url()
+        site_role = None
+        available_roles = []
     else:
         profile_data = None
         user_role = 'Unknown'
         status = 'unknown'
         status_display = 'Unknown'
         profile_pic = '/static/images/default-profile.png'
+        site_role = None
+        available_roles = []
     
     context = {
         'user': user,
@@ -309,6 +316,8 @@ def admin_user_detail(request, user_id):
         'status_display': status_display,
         'profile_data': profile_data,
         'profile_pic': profile_pic,
+        'site_role': site_role,
+        'available_roles': available_roles,
     }
     
     return render(request, 'adminuserdetail.html', context)
@@ -385,7 +394,7 @@ def generate_employee_id(request):
         if user_type == 'admin':
             emp_id = AdminProfile.generate_employee_id('TG')
         elif user_type == 'sitemanager':
-            emp_id = SiteManagerProfile.generate_employee_id('SM')
+            emp_id = SiteManagerProfile.generate_employee_id()
         else:
             return JsonResponse({'success': False, 'message': 'Invalid user type'})
         
@@ -415,6 +424,43 @@ def get_users_online_status(request):
             'success': True,
             'online_status': online_status,
             'timestamp': timezone.now().isoformat()
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
+
+@ajax_require_admin_role
+@csrf_protect
+@require_http_methods(["POST"])
+def assign_site_role(request):
+    """Assign site role to site manager"""
+    try:
+        user_id = request.POST.get('user_id')
+        role_id = request.POST.get('role_id')
+        
+        user = get_object_or_404(User, id=user_id)
+        
+        if not hasattr(user, 'sitemanagerprofile'):
+            return JsonResponse({'success': False, 'message': 'User is not a site manager'})
+        
+        profile = user.sitemanagerprofile
+        
+        if role_id:
+            role = get_object_or_404(SitePersonnelRole, id=role_id, is_active=True)
+            profile.site_role = role
+            profile.employee_id = SiteManagerProfile.generate_employee_id(role)
+        else:
+            profile.site_role = None
+            if not profile.employee_id or not profile.employee_id.startswith('SM-'):
+                profile.employee_id = SiteManagerProfile.generate_employee_id()
+        
+        profile.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Role assigned successfully',
+            'role_name': profile.site_role.display_name if profile.site_role else 'Site Manager',
+            'employee_id': profile.employee_id
         })
         
     except Exception as e:

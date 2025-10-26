@@ -70,6 +70,12 @@
                     <i class="fas fa-database"></i>
                     <span>Backup & Data</span>
                 </li>
+                {% if user.sitemanagerprofile.site_role and user.sitemanagerprofile.site_role.name == 'architect' %}
+                <li class="settings-menu-item" data-section="gallery">
+                    <i class="fas fa-images"></i>
+                    <span>Project Gallery</span>
+                </li>
+                {% endif %}
                 <li class="settings-menu-item" data-section="logout">
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Logout</span>
@@ -144,7 +150,7 @@
                         </div>
                         <div class="form-group">
                             <label for="jobTitle" class="form-label">Job Title</label>
-                            <input type="text" id="jobTitle" class="form-input" value="Site Manager" readonly>
+                            <input type="text" id="jobTitle" class="form-input" value="{% if user.sitemanagerprofile.site_role %}{{ user.sitemanagerprofile.site_role.display_name }}{% else %}Site Manager{% endif %}" readonly>
                         </div>
                         <div class="form-group">
                             <label for="department" class="form-label">Department</label>
@@ -478,6 +484,60 @@
                 </form>
             </div>
 
+            <!-- Project Gallery Section (Architects Only) -->
+            {% if user.sitemanagerprofile.site_role and user.sitemanagerprofile.site_role.name == 'architect' %}
+            <div class="settings-section" id="gallery">
+                <div class="settings-header">
+                    <h2 class="settings-section-title">Project Gallery</h2>
+                    <p class="settings-section-desc">Upload and manage your architectural project designs</p>
+                </div>
+
+                <form method="post" enctype="multipart/form-data" id="galleryForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="upload_gallery">
+                    
+                    <div class="form-group">
+                        <label for="gallery-upload" class="form-label">Upload Project Design</label>
+                        <div class="upload-area" id="uploadArea">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Drag and drop images here or click to browse</p>
+                            <input type="file" name="gallery_images" id="gallery-upload" multiple accept="image/*" style="display: none;">
+                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('gallery-upload').click()">
+                                <i class="fas fa-folder-open"></i> Browse Files
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="imagePreview" class="image-preview-grid"></div>
+
+                    <div class="action-buttons">
+                        <button type="button" class="btn btn-secondary" id="clearGallery">
+                            <i class="fas fa-times"></i> Clear
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="uploadGallery">
+                            <i class="fas fa-upload"></i> Upload Images
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Uploaded Gallery Images -->
+                {% if gallery_images %}
+                <div class="settings-header" style="margin-top: 40px;">
+                    <h3 class="settings-section-title">Your Gallery</h3>
+                    <p class="settings-section-desc">{{ gallery_images.count }} image(s) uploaded</p>
+                </div>
+                <div class="image-preview-grid">
+                    {% for image in gallery_images %}
+                    <div class="preview-item">
+                        <img src="{{ image.image.url }}" alt="Gallery Image">
+                        <p>{{ image.uploaded_at|date:"M d, Y" }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
             <!-- Logout Section -->
             <div class="settings-section" id="logout">
                 <div class="settings-header">
@@ -673,6 +733,79 @@
         document.getElementById('clearBrowserData').addEventListener('change', function() {
             document.getElementById('clearBrowserDataValue').value = this.checked ? 'on' : 'off';
         });
+
+        // Gallery upload functionality (Architects only)
+        const galleryUpload = document.getElementById('gallery-upload');
+        const uploadArea = document.getElementById('uploadArea');
+        const imagePreview = document.getElementById('imagePreview');
+        const clearGalleryBtn = document.getElementById('clearGallery');
+        let selectedFiles = [];
+
+        if (galleryUpload && uploadArea) {
+            // Drag and drop
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.style.borderColor = '#007bff';
+                uploadArea.style.backgroundColor = '#f0f8ff';
+            });
+
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.style.borderColor = '#ddd';
+                uploadArea.style.backgroundColor = '';
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.style.borderColor = '#ddd';
+                uploadArea.style.backgroundColor = '';
+                handleFiles(e.dataTransfer.files);
+            });
+
+            // File input change
+            galleryUpload.addEventListener('change', (e) => {
+                handleFiles(e.target.files);
+            });
+
+            // Clear gallery
+            if (clearGalleryBtn) {
+                clearGalleryBtn.addEventListener('click', () => {
+                    selectedFiles = [];
+                    imagePreview.innerHTML = '';
+                    galleryUpload.value = '';
+                });
+            }
+        }
+
+        function handleFiles(files) {
+            for (let file of files) {
+                if (file.type.startsWith('image/')) {
+                    selectedFiles.push(file);
+                    displayImage(file);
+                }
+            }
+        }
+
+        function displayImage(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const div = document.createElement('div');
+                div.className = 'preview-item';
+                div.innerHTML = `
+                    <img src="${e.target.result}" alt="Preview">
+                    <button type="button" class="remove-btn" onclick="removeImage(this, '${file.name}')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <p>${file.name}</p>
+                `;
+                imagePreview.appendChild(div);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeImage(btn, fileName) {
+            selectedFiles = selectedFiles.filter(f => f.name !== fileName);
+            btn.parentElement.remove();
+        }
 
         // Only keep logout-specific functionality here
         // Other form handling is done by the external settings.js file

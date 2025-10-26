@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.html import format_html
 from django.urls import reverse
-from .models import Profile, AdminProfile, SiteManagerProfile, SuperAdminProfile, OneTimePassword
+from .models import Profile, AdminProfile, SiteManagerProfile, SuperAdminProfile, OneTimePassword, SitePersonnelRole
 
 
 @admin.register(Profile)
@@ -104,19 +104,36 @@ class AdminProfileAdmin(admin.ModelAdmin):
     suspend_admins.short_description = "Suspend selected admin accounts"
 
 
+@admin.register(SitePersonnelRole)
+class SitePersonnelRoleAdmin(admin.ModelAdmin):
+    list_display = ('display_name', 'name', 'employee_id_prefix', 'is_active', 'order')
+    list_filter = ('is_active',)
+    search_fields = ('name', 'display_name')
+    ordering = ('order', 'name')
+    
+    fieldsets = (
+        ('Role Information', {
+            'fields': ('name', 'display_name', 'employee_id_prefix', 'description')
+        }),
+        ('Settings', {
+            'fields': ('is_active', 'order')
+        }),
+    )
+
+
 @admin.register(SiteManagerProfile)
 class SiteManagerProfileAdmin(admin.ModelAdmin):
     list_display = (
-        'user', 'approval_status', 'department', 
+        'user', 'site_role', 'approval_status', 'department', 
         'employee_id', 'failed_login_attempts', 'created_at'
     )
-    list_filter = ('approval_status', 'department')
+    list_filter = ('approval_status', 'site_role', 'department')
     search_fields = ('user__username', 'user__email', 'employee_id', 'department')
     readonly_fields = ('created_at', 'updated_at', 'last_login_ip', 'failed_login_attempts')
     
     fieldsets = (
         ('User Information', {
-            'fields': ('user', 'department', 'employee_id')
+            'fields': ('user', 'site_role', 'department', 'employee_id')
         }),
         ('Approval Status', {
             'fields': ('approval_status', 'approved_by', 'approved_at')

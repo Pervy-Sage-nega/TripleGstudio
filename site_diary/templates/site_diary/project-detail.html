@@ -35,11 +35,20 @@
         <div class="project-header-section">
             <!-- Project Summary Header -->
             <div class="project-header">
-                <div class="project-image">
-                    {% if project.image %}
-                        <img src="{{ project.image.url }}" alt="{{ project.name }}">
+                <div class="project-image-container">
+                    {% if project.image_url %}
+                        <img src="{{ project.image_url }}" alt="{{ project.name }}" class="project-image" id="projectImage">
+                    {% elif project.image %}
+                        <img src="{{ project.image.url }}" alt="{{ project.name }}" class="project-image" id="projectImage">
                     {% else %}
-                        <img src="{% static 'images/image6.jpg' %}" alt="{{ project.name }}">
+                        <img src="{% static 'images/image6.jpg' %}" alt="{{ project.name }}" class="project-image" id="projectImage">
+                    {% endif %}
+                    {% if user.sitemanagerprofile.site_role.name == 'architect' %}
+                    <div class="image-overlay">
+                        <button class="change-image-btn" onclick="openImageGallery()">
+                            <i class="fas fa-camera"></i> Change Image
+                        </button>
+                    </div>
                     {% endif %}
                 </div>
                 <div class="project-info">
@@ -313,6 +322,27 @@
         </div>
     </div>
 
+    <!-- Image Gallery Modal -->
+    <div id="imageGalleryModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-images"></i> Select Project Image</h3>
+                <span class="modal-close" onclick="closeImageGallery()">&times;</span>
+            </div>
+            <div class="modal-body" style="max-height: 500px; overflow-y: auto;">
+                <div style="padding: 15px; border-bottom: 1px solid #ddd;">
+                    <button onclick="document.getElementById('deviceImageInput').click()" style="background: #3c6e71; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; width: 100%;">
+                        <i class="fas fa-upload"></i> Browse on Your Device
+                    </button>
+                    <input type="file" id="deviceImageInput" accept="image/*" style="display: none;" onchange="uploadDeviceImage(this)">
+                </div>
+                <div id="galleryGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; padding: 20px;">
+                    <div style="grid-column: 1/-1; text-align: center; color: #666;">Loading gallery...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="{% static 'js/sitejs/project-detail.js' %}"></script>
     
     <style>
@@ -373,7 +403,174 @@
         color: #333;
         font-weight: 600;
     }
+    .project-image-container {
+        position: relative;
+        overflow: hidden;
+        border-radius: 8px;
+    }
+    .project-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+    .project-image-container:hover .project-image {
+        transform: scale(1.05);
+    }
+    .image-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    .project-image-container:hover .image-overlay {
+        opacity: 1;
+    }
+    .change-image-btn {
+        background: #007cba;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background 0.3s ease;
+    }
+    .change-image-btn:hover {
+        background: #005a8a;
+    }
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+    }
+    .modal.show {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    #galleryGrid img {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+        cursor: pointer;
+        border: 2px solid transparent;
+        border-radius: 4px;
+        transition: border-color 0.3s;
+    }
+    #galleryGrid img:hover {
+        border-color: #007cba;
+    }
     </style>
+    
+    <script>
+    function openImageGallery() {
+        const modal = document.getElementById('imageGalleryModal');
+        modal.style.display = 'flex';
+        loadArchitectGallery();
+    }
+    
+    function closeImageGallery() {
+        const modal = document.getElementById('imageGalleryModal');
+        modal.style.display = 'none';
+    }
+    
+    function loadArchitectGallery() {
+        const galleryGrid = document.getElementById('galleryGrid');
+        galleryGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #666;">Loading gallery...</div>';
+        
+        fetch('/accounts/api/architect-gallery/{{ user.id }}/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.images && data.images.length > 0) {
+                    galleryGrid.innerHTML = '';
+                    data.images.forEach(image => {
+                        const img = document.createElement('img');
+                        img.src = image.url;
+                        img.onclick = function() {
+                            updateProjectImage(image.url);
+                        };
+                        galleryGrid.appendChild(img);
+                    });
+                } else {
+                    galleryGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #666;">No images in gallery</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading gallery:', error);
+                galleryGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #f44;">Error loading gallery</div>';
+            });
+    }
+    
+    function uploadDeviceImage(input) {
+        if (input.files && input.files[0]) {
+            const formData = new FormData();
+            formData.append('image_file', input.files[0]);
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+            
+            fetch('{% url "site_diary:update_project_image" project.id %}', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('projectImage').src = data.image_url;
+                    closeImageGallery();
+                } else {
+                    alert('Error uploading image');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error uploading image');
+            });
+        }
+    }
+    
+    function updateProjectImage(imageUrl) {
+        const formData = new FormData();
+        formData.append('image_url', imageUrl);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        
+        fetch('{% url "site_diary:update_project_image" project.id %}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('projectImage').src = imageUrl;
+                closeImageGallery();
+            } else {
+                alert('Error updating image');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error updating image');
+        });
+    }
+    
+    window.onclick = function(event) {
+        const modal = document.getElementById('imageGalleryModal');
+        if (event.target === modal) {
+            closeImageGallery();
+        }
+    }
+    </script>
     
     {% include "site_diary/navtemplate/layoutfooter.html" %}
 {% endblock %}

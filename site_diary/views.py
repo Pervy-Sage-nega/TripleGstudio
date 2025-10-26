@@ -2274,6 +2274,41 @@ def project_detail(request, project_id):
 
 @login_required
 @require_site_manager_role
+@csrf_protect
+def update_project_image(request, project_id):
+    """Update project image from architect's gallery or device upload"""
+    if request.method == 'POST':
+        try:
+            project = get_object_or_404(Project, id=project_id)
+            
+            # Verify user is architect
+            if not (hasattr(request.user, 'sitemanagerprofile') and 
+                    request.user.sitemanagerprofile.site_role and 
+                    request.user.sitemanagerprofile.site_role.name == 'architect'):
+                return JsonResponse({'success': False, 'message': 'Access denied'}, status=403)
+            
+            # Handle gallery image URL
+            image_url = request.POST.get('image_url')
+            if image_url:
+                project.image_url = image_url
+                project.save()
+                return JsonResponse({'success': True})
+            
+            # Handle device file upload
+            if 'image_file' in request.FILES:
+                image_file = request.FILES['image_file']
+                project.image = image_file
+                project.save()
+                return JsonResponse({'success': True, 'image_url': project.image.url})
+            
+            return JsonResponse({'success': False, 'message': 'No image provided'}, status=400)
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)}, status=500)
+    
+    return JsonResponse({'success': False, 'message': 'Method not allowed'}, status=405)
+
+@login_required
+@require_site_manager_role
 def settings(request):
     """Site Manager settings and preferences"""
     from accounts.models import SiteManagerProfile
@@ -2287,10 +2322,13 @@ def settings(request):
     
     # Get or create site manager profile
     try:
-        site_manager_profile = request.user.sitemanagerprofile
+        site_manager_profile = SiteManagerProfile.objects.select_related('site_role').get(user=request.user)
         print(f"DEBUG: Site manager profile found: {site_manager_profile}")
+        print(f"DEBUG: Site role: {site_manager_profile.site_role}")
+        print(f"DEBUG: Site role display_name: {site_manager_profile.site_role.display_name if site_manager_profile.site_role else 'None'}")
         print(f"DEBUG: Current profile data - Phone: {site_manager_profile.phone}, Emergency: {site_manager_profile.emergency_contact}")
         print(f"DEBUG: Current profile pic: {site_manager_profile.profile_pic}")
+        print(f"DEBUG: Employee ID: {site_manager_profile.employee_id}")
     except SiteManagerProfile.DoesNotExist:
         print(f"DEBUG: Site Manager profile not found for user: {request.user}")
         messages.error(request, 'Site Manager profile not found.')
@@ -2372,20 +2410,43 @@ def settings(request):
                 for error in password_form.errors.values():
                     messages.error(request, error[0])
         
+        elif action == 'upload_gallery':
+            # Handle gallery upload (Architects only)
+            if site_manager_profile.site_role and site_manager_profile.site_role.name == 'architect':
+                files = request.FILES.getlist('gallery_images')
+                if files:
+                    from accounts.models import ArchitectGallery
+                    for file in files:
+                        ArchitectGallery.objects.create(architect=site_manager_profile, image=file)
+                    messages.success(request, f'{len(files)} image(s) uploaded successfully!')
+                else:
+                    messages.error(request, 'No images selected.')
+            else:
+                messages.error(request, 'Access denied. Only architects can upload to gallery.')
+        
         return redirect('site_diary:settings')
     
     # Debug: Show current data being passed to template
     print(f"DEBUG: Template context - User: {request.user}")
     print(f"DEBUG: Template context - Profile: {site_manager_profile}")
+    print(f"DEBUG: Template context - site_role: {site_manager_profile.site_role}")
+    print(f"DEBUG: Template context - site_role.name: {site_manager_profile.site_role.name if site_manager_profile.site_role else 'None'}")
     print(f"DEBUG: Template context - User first_name: {request.user.first_name}")
     print(f"DEBUG: Template context - User last_name: {request.user.last_name}")
     print(f"DEBUG: Template context - User email: {request.user.email}")
     print(f"DEBUG: Template context - Profile phone: {site_manager_profile.phone}")
     print(f"DEBUG: Template context - Profile emergency_contact: {site_manager_profile.emergency_contact}")
     
+    # Get gallery images for architects
+    gallery_images = []
+    if site_manager_profile.site_role and site_manager_profile.site_role.name == 'architect':
+        from accounts.models import ArchitectGallery
+        gallery_images = ArchitectGallery.objects.filter(architect=site_manager_profile)
+    
     context = {
         'user': request.user,
         'site_manager_profile': site_manager_profile,
+        'gallery_images': gallery_images,
     }
     return render(request, 'site_diary/settings.html', context)
 

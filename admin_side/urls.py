@@ -18,6 +18,7 @@ urlpatterns = [
     path('users/<int:user_id>/update-status/', views.update_user_status, name='update_user_status'),
     path('generate-employee-id/', views.generate_employee_id, name='generate_employee_id'),
     path('users/online-status/', views.get_users_online_status, name='get_users_online_status'),
+    path('assign-site-role/', views.assign_site_role, name='assign_site_role'),
     path('assign-project/', assignment_views.assign_project, name='assign_project'),
     path('remove-assignment/<str:assignment_id>/', assignment_views.remove_assignment, name='remove_assignment'),
     

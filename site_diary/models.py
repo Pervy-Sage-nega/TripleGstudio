@@ -29,6 +29,7 @@ class Project(models.Model):
     budget = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
     status = models.CharField(max_length=20, choices=PROJECT_STATUS, default='pending_approval')
     image = models.ImageField(upload_to='project_images/', null=True, blank=True)
+    image_url = models.URLField(max_length=500, null=True, blank=True)
     
     # Admin approval fields
     approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_projects')

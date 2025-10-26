@@ -33,6 +33,7 @@ urlpatterns = [
     # API endpoints
     path('api/sitemanagers/', views.api_sitemanagers, name='api_sitemanagers'),
     path('api/clients/', views.api_clients, name='api_clients'),
+    path('api/architect-gallery/<int:architect_id>/', views.api_architect_gallery, name='api_architect_gallery'),
     
     # Contact support
     path('contact-support/', views.contact_support, name='contact_support'),

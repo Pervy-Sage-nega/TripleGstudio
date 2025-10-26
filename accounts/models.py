@@ -178,6 +178,25 @@ class AdminProfile(models.Model):
         return bool(re.match(pattern, emp_id))
 
 
+class SitePersonnelRole(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    display_name = models.CharField(max_length=100)
+    employee_id_prefix = models.CharField(max_length=2, unique=True)
+    description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+    order = models.PositiveIntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = 'Site Personnel Role'
+        verbose_name_plural = 'Site Personnel Roles'
+        ordering = ['order', 'name']
+    
+    def __str__(self):
+        return self.display_name
+
+
 class SiteManagerProfile(models.Model):
     APPROVAL_STATUS = [
         ('pending', 'Pending Approval'),
@@ -187,6 +206,7 @@ class SiteManagerProfile(models.Model):
     ]
     
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='sitemanagerprofile')
+    site_role = models.ForeignKey('SitePersonnelRole', on_delete=models.PROTECT, related_name='personnel', null=True, blank=True)
     approval_status = models.CharField(max_length=20, choices=APPROVAL_STATUS, default='pending')
     department = models.CharField(max_length=100, blank=True, null=True, default='Site Management')
     employee_id = models.CharField(max_length=50, blank=True, null=True, unique=True)
@@ -221,7 +241,8 @@ class SiteManagerProfile(models.Model):
         verbose_name_plural = 'Site Manager Profiles'
         
     def __str__(self):
-        return f"{self.user.get_full_name()} - Site Manager"
+        role_name = self.site_role.display_name if self.site_role else 'Site Manager'
+        return f"{self.user.get_full_name()} - {role_name}"
     
     def is_approved(self):
         return self.approval_status == 'approved'
@@ -250,12 +271,17 @@ class SiteManagerProfile(models.Model):
             return self.profile_pic.url
         return '/static/images/default-profile.png'
     
+    def get_role_display(self):
+        """Return role display name or default"""
+        return self.site_role.display_name if self.site_role else 'Site Manager'
+    
     @classmethod
-    def generate_employee_id(cls, prefix='SM'):
-        """Generate unique employee ID with format: SM-YYYY-NNNN"""
+    def generate_employee_id(cls, role=None):
+        """Generate unique employee ID with format: PREFIX-YYYY-NNNN"""
+        prefix = role.employee_id_prefix if role else 'SM'
         year = timezone.now().year
         
-        # Find the highest existing number for this year
+        # Find the highest existing number for this year and prefix
         existing_ids = cls.objects.filter(
             employee_id__startswith=f'{prefix}-{year}-'
         ).values_list('employee_id', flat=True)
@@ -272,9 +298,8 @@ class SiteManagerProfile(models.Model):
         return f'{prefix}-{year}-{next_number:04d}'
     
     def save(self, *args, **kwargs):
-        # Validate employee_id format if provided
         if self.employee_id and not self._is_valid_employee_id(self.employee_id):
-            raise ValueError('Employee ID must follow format: SM-YYYY-NNNN')
+            raise ValueError('Employee ID must follow format: PREFIX-YYYY-NNNN')
         super().save(*args, **kwargs)
     
     def _is_valid_employee_id(self, emp_id):
@@ -282,6 +307,20 @@ class SiteManagerProfile(models.Model):
         import re
         pattern = r'^[A-Z]{2}-\d{4}-\d{4}$'
         return bool(re.match(pattern, emp_id))
+
+
+class ArchitectGallery(models.Model):
+    architect = models.ForeignKey(SiteManagerProfile, on_delete=models.CASCADE, related_name='gallery_images')
+    image = models.ImageField(upload_to='architect_gallery/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = 'Architect Gallery Image'
+        verbose_name_plural = 'Architect Gallery Images'
+        ordering = ['-uploaded_at']
+    
+    def __str__(self):
+        return f"{self.architect.user.get_full_name()} - {self.uploaded_at.strftime('%Y-%m-%d')}"
 
 
 class SuperAdminProfile(models.Model):
