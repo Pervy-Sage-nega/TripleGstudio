@@ -59,6 +59,7 @@
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/home.css' %}">
+        <link rel="stylesheet" href="{% static 'css/sitecss/modal_messages.css' %}">
     <link rel="stylesheet" href="{% static 'css/blogindividual.css' %}">
     {% endblock %}
 </head>
@@ -424,65 +425,69 @@
                 
                 <!-- Sidebar -->
                 <aside class="blog-sidebar">
-                    <!-- Newsletter Signup -->
-                    <div class="sidebar-widget newsletter-widget">
-                        <h3>Stay Updated</h3>
-                        <p>Subscribe to our newsletter for the latest articles and industry insights.</p>
-                        <form id="newsletterForm">
-                            {% csrf_token %}
-                            <div class="form-group">
-                                <input type="email" name="email" id="newsletterEmail" placeholder="Your Email Address" required>
-                            </div>
-                            <button type="submit" class="btn btn-primary full-width">Subscribe</button>
-                        </form>
-                        <div id="newsletterMessage" style="margin-top: 10px; display: none;"></div>
-                    </div>
-                    
-                    <!-- Categories -->
-                    <div class="sidebar-widget categories-widget">
-                        <h3>Categories</h3>
-                        <ul class="category-list">
-                            {% for category in categories %}
-                            <li><a href="{% url 'blog:category_list' category.slug %}">{{ category.name }} <span>({{ category.post_count }})</span></a></li>
-                            {% empty %}
-                            <li><a href="#">No categories available</a></li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                    
-                    <!-- Popular Posts -->
-                    <div class="sidebar-widget popular-posts-widget">
-                        <h3>Recent Posts</h3>
-                        <div class="popular-posts">
-                            {% for post in recent_posts %}
-                            <article class="popular-post">
-                                <div class="popular-post-image">
-                                    {% if post.featured_image %}
-                                        <img src="{{ post.featured_image.url }}" alt="{{ post.title }}">
-                                    {% else %}
-                                        <img src="{% static 'images/image9.jpg' %}" alt="{{ post.title }}">
-                                    {% endif %}
+                    <div class="sidebar-grid-2">
+                        <!-- Newsletter Signup -->
+                        <div class="sidebar-widget newsletter-widget">
+                            <h3>Stay Updated</h3>
+                            <p>Subscribe to our newsletter for the latest articles and industry insights.</p>
+                            <form id="newsletterForm">
+                                {% csrf_token %}
+                                <div class="form-group">
+                                    <input type="email" name="email" id="newsletterEmail" placeholder="Your Email Address" required>
                                 </div>
-                                <div class="popular-post-content">
-                                    <h4><a href="{% url 'blog:blog_detail' post.slug %}">{{ post.title|truncatechars:50 }}</a></h4>
-                                    <span class="view-count"><i class="fas fa-eye"></i> {{ post.view_count }} views</span>
-                                </div>
-                            </article>
-                            {% empty %}
-                            <p>No recent posts available.</p>
-                            {% endfor %}
+                                <button type="submit" class="btn btn-primary full-width">Subscribe</button>
+                            </form>
+                            <div id="newsletterMessage" style="margin-top: 10px; display: none;"></div>
+                        </div>
+                        
+                        <!-- Categories -->
+                        <div class="sidebar-widget categories-widget">
+                            <h3>Categories</h3>
+                            <ul class="category-list">
+                                {% for category in categories %}
+                                <li><a href="{% url 'blog:category_list' category.slug %}">{{ category.name }} <span>({{ category.post_count }})</span></a></li>
+                                {% empty %}
+                                <li><a href="#">No categories available</a></li>
+                                {% endfor %}
+                            </ul>
                         </div>
                     </div>
                     
-                    <!-- Tags -->
-                    <div class="sidebar-widget tags-widget">
-                        <h3>Popular Tags</h3>
-                        <div class="tag-cloud">
-                            {% for tag in popular_tags %}
-                            <a href="{% url 'blog:tag_list' tag.slug %}" class="tag">{{ tag.name }}</a>
-                            {% empty %}
-                            <a href="#" class="tag">No tags available</a>
-                            {% endfor %}
+                    <div class="sidebar-grid-2">
+                        <!-- Popular Posts -->
+                        <div class="sidebar-widget popular-posts-widget">
+                            <h3>Recent Posts</h3>
+                            <div class="popular-posts">
+                                {% for post in recent_posts %}
+                                <article class="popular-post">
+                                    <div class="popular-post-image">
+                                        {% if post.featured_image %}
+                                            <img src="{{ post.featured_image.url }}" alt="{{ post.title }}">
+                                        {% else %}
+                                            <img src="{% static 'images/image9.jpg' %}" alt="{{ post.title }}">
+                                        {% endif %}
+                                    </div>
+                                    <div class="popular-post-content">
+                                        <h4><a href="{% url 'blog:blog_detail' post.slug %}">{{ post.title|truncatechars:50 }}</a></h4>
+                                        <span class="view-count"><i class="fas fa-eye"></i> {{ post.view_count }} views</span>
+                                    </div>
+                                </article>
+                                {% empty %}
+                                <p>No recent posts available.</p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <!-- Tags -->
+                        <div class="sidebar-widget tags-widget">
+                            <h3>Popular Tags</h3>
+                            <div class="tag-cloud">
+                                {% for tag in popular_tags %}
+                                <a href="{% url 'blog:tag_list' tag.slug %}" class="tag">{{ tag.name }}</a>
+                                {% empty %}
+                                <a href="#" class="tag">No tags available</a>
+                                {% endfor %}
+                            </div>
                         </div>
                     </div>
                 </aside>

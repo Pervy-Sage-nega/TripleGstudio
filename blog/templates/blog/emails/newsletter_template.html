@@ -1,266 +1,140 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ campaign.title }}</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 0;
-            background-color: #f4f4f4;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-        .container {
-            background-color: #ffffff;
-            padding: 40px 30px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            margin: 20px;
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 35px;
-            padding-bottom: 25px;
-            border-bottom: 3px solid #FF7120;
-        }
-        .logo {
-            font-size: 32px;
-            font-weight: 700;
-            color: #FF7120;
-            margin-bottom: 8px;
-            letter-spacing: -0.5px;
-        }
-        .tagline {
-            color: #666;
-            font-size: 15px;
-            font-weight: 500;
-        }
-        .content {
-            margin-bottom: 35px;
-        }
-        .content h2 {
-            color: #1a1a1a;
-            margin-bottom: 20px;
-            font-size: 24px;
-            font-weight: 700;
-        }
-        .greeting {
-            font-size: 16px;
-            margin-bottom: 20px;
-        }
-        .blog-post {
-            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-            padding: 25px;
-            border-radius: 10px;
-            margin: 25px 0;
-            border-left: 5px solid #FF7120;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        }
-        .blog-post h3 {
-            margin-top: 0;
-            color: #1a1a1a;
-            font-size: 22px;
-            font-weight: 700;
-            line-height: 1.3;
-        }
-        .blog-post .meta {
-            color: #777;
-            font-size: 13px;
-            margin-bottom: 18px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .blog-post .excerpt {
-            margin-bottom: 20px;
-            color: #444;
-            font-size: 15px;
-            line-height: 1.7;
-        }
-        .read-more {
-            display: inline-block;
-            background: linear-gradient(135deg, #FF7120 0%, #e55a0d 100%);
-            color: #ffffff !important;
-            padding: 12px 28px;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: 600;
-            font-size: 15px;
-            transition: transform 0.2s;
-            box-shadow: 0 2px 4px rgba(255, 113, 32, 0.3);
-        }
-        .read-more:hover {
-            background: linear-gradient(135deg, #e55a0d 0%, #cc4f0a 100%);
-            transform: translateY(-1px);
-        }
-        .featured-image {
-            width: 100%;
-            max-width: 100%;
-            height: auto;
-            border-radius: 10px;
-            margin-bottom: 18px;
-            display: block;
-        }
-        .footer {
-            text-align: center;
-            margin-top: 40px;
-            padding-top: 25px;
-            border-top: 2px solid #eee;
-            color: #666;
-            font-size: 13px;
-        }
-        .social-links {
-            margin: 25px 0;
-        }
-        .social-links a {
-            display: inline-block;
-            margin: 0 12px;
-            color: #FF7120;
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.2s;
-        }
-        .social-links a:hover {
-            color: #e55a0d;
-            text-decoration: underline;
-        }
-        .unsubscribe {
-            margin-top: 25px;
-            font-size: 12px;
-            color: #999;
-            line-height: 1.5;
-        }
-        .unsubscribe a {
-            color: #FF7120;
-            text-decoration: underline;
-        }
-        .tracking-pixel {
-            width: 1px;
-            height: 1px;
-            border: 0;
-            display: block;
-        }
-        @media only screen and (max-width: 600px) {
-            .container {
-                padding: 25px 20px;
-                margin: 10px;
-                border-radius: 8px;
-            }
-            .logo {
-                font-size: 26px;
-            }
-            .content h2 {
-                font-size: 20px;
-            }
-            .blog-post {
-                padding: 20px;
-            }
-            .blog-post h3 {
-                font-size: 18px;
-            }
-            .social-links a {
-                margin: 0 8px;
-                font-size: 12px;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>{{ campaign.title }}</title>
+  <!--[if mso]>
+  <style type="text/css">
+    body, table, td {font-family: Arial, Helvetica, sans-serif !important;}
+  </style>
+  <![endif]-->
+  <style type="text/css">
+    .ii a[href] { color: #ffffff !important; }
+    u + .body a { color: #ffffff !important; }
+  </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <div class="logo">Triple G BuildHub</div>
-            <div class="tagline">Building Excellence, Delivering Dreams</div>
-        </div>
-        
-        <div class="content">
-            <h2>{{ campaign.title }}</h2>
-            
-            <p class="greeting">Hi{% if subscriber.name %} {{ subscriber.name }}{% endif %},</p>
-            
-            {% if campaign.campaign_type == 'new_post' and campaign.blog_post %}
-                <div class="blog-post">
-                    {% if campaign.blog_post.featured_image %}
-                        <img src="{{ campaign.blog_post.featured_image.url }}" alt="{{ campaign.blog_post.title }}" class="featured-image">
-                    {% endif %}
-                    
-                    <h3>{{ campaign.blog_post.title }}</h3>
-                    
-                    <div class="meta">
-                        Published on {{ campaign.blog_post.published_date|date:"F j, Y" }} 
-                        {% if campaign.blog_post.category %}in {{ campaign.blog_post.category.name }}{% endif %}
-                        • {{ campaign.blog_post.reading_time }} min read
-                    </div>
-                    
-                    <div class="excerpt">
-                        {{ campaign.blog_post.excerpt|default:campaign.blog_post.content|truncatewords:30|striptags }}
-                    </div>
-                    
-                    <a href="{{ blog_post_url }}" class="read-more">
-                        Read Full Article
-                    </a>
-                </div>
-            {% elif campaign.campaign_type == 'weekly_digest' %}
-                <p>Here's what's been happening at Triple G BuildHub this week:</p>
-                
-                <!-- Weekly digest content would go here -->
-                <div class="blog-post">
-                    <h3>This Week's Highlights</h3>
-                    <div class="excerpt">
-                        {{ campaign.content|safe }}
-                    </div>
-                    <a href="{{ site_url }}/blog/" class="read-more">
-                        Visit Our Blog
-                    </a>
-                </div>
-            {% else %}
-                <!-- Custom campaign content -->
-                <div class="blog-post">
-                    <div class="excerpt">
-                        {{ campaign.content|safe }}
-                    </div>
-                    <a href="{{ site_url }}/blog/" class="read-more">
-                        Learn More
-                    </a>
-                </div>
-            {% endif %}
-            
-            <p>Thank you for being part of the Triple G BuildHub community. We're committed to bringing you the latest insights, tips, and updates from the construction industry.</p>
-        </div>
-        
-        <div class="footer">
-            <div class="social-links">
-                <a href="https://x.com/design86737">Twitter</a> |
-                <a href="https://www.instagram.com/tggg6000/">Instagram</a> |
-                <a href="https://www.tiktok.com/@triplegdesignstudio">TikTok</a> |
-                <a href="https://www.youtube.com/@tggg6000">YouTube</a>
-            </div>
-            
-            <p>© {{ "now"|date:"Y" }} Triple G BuildHub. All rights reserved.</p>
-            <p>Building Excellence, Delivering Dreams</p>
-            
-            <p style="margin-top: 20px;">
-                <strong>Triple G BuildHub</strong><br>
-                Your trusted construction partner<br>
-                Email: info@triplegbuildhub.com
-            </p>
-            
-            <div class="unsubscribe">
-                <p>
-                    You're receiving this email because you subscribed to Triple G BuildHub newsletter.<br>
-                    <a href="{{ unsubscribe_url }}">Unsubscribe</a> | 
-                    <a href="{{ click_tracking_url }}?url=/blog/newsletter/preferences/{{ subscriber.confirmation_token }}/">Update Preferences</a>
-                </p>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Tracking pixel for open tracking -->
-    <img src="{{ open_tracking_url }}" alt="" class="tracking-pixel">
+<body style="margin:0;padding:0;background-color:#f2f2f2;font-family:Arial,Helvetica,sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f2f2f2;">
+    <tr>
+      <td align="center" style="padding:20px 10px;">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:12px;">
+          
+          <!-- Header -->
+          <tr>
+            <td align="center" style="background-color:#00273C;padding:40px 20px;border-radius:12px 12px 0 0;">
+              <img src="{{ request.scheme }}://{{ request.get_host }}{% load static %}{% static 'images/logostick.png' %}" alt="Triple G Logo" width="80" style="display:block;margin:0 auto 20px;">
+              <h1 style="color:#ffffff;font-size:32px;font-weight:700;margin:0 0 10px;line-height:1.2;">Triple G BuildHub</h1>
+              <p style="color:#c7c7c7;font-size:14px;margin:0;">Building Excellence, Delivering Dreams</p>
+            </td>
+          </tr>
+
+          {% if campaign.campaign_type == 'new_post' and campaign.blog_post %}
+          <!-- Blog Post Section -->
+          <tr>
+            <td style="padding:30px 20px;">
+              {% if campaign.blog_post.featured_image %}
+              <img src="{{ campaign.blog_post.featured_image.url }}" alt="{{ campaign.blog_post.title }}" width="560" style="width:100%;max-width:560px;height:auto;display:block;border-radius:8px;border:3px solid #FF7120;margin-bottom:20px;">
+              {% endif %}
+              
+              <h2 style="color:#00273C;font-size:24px;font-weight:700;margin:0 0 15px;line-height:1.3;">{{ campaign.blog_post.title }}</h2>
+              
+              <p style="color:#777;font-size:13px;margin:0 0 20px;line-height:1.5;">
+                Published on {{ campaign.blog_post.published_date|date:"F j, Y" }}
+                {% if campaign.blog_post.category %} in {{ campaign.blog_post.category.name }}{% endif %}
+                • {{ campaign.blog_post.reading_time }} min read
+              </p>
+              
+              <p style="color:#555;font-size:15px;line-height:1.7;margin:0 0 25px;">
+                {{ campaign.blog_post.excerpt|default:campaign.blog_post.content|truncatewords:50|striptags }}
+              </p>
+              
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                  <td style="border-radius:6px;background-color:#FF7120;">
+                    <a href="{{ click_tracking_url }}?url={{ campaign.blog_post.get_absolute_url }}" style="display:inline-block;padding:14px 32px;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;border-radius:6px;">Read Full Article</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          {% endif %}
+
+          <!-- Highlight Section -->
+          <tr>
+            <td align="center" style="background-color:#00273C;padding:40px 20px;">
+              <h2 style="color:#FF7120;font-size:22px;font-weight:600;margin:0 0 15px;line-height:1.3;">Stay Connected With Triple G BuildHub</h2>
+              <p style="color:#e0e0e0;font-size:14px;line-height:1.7;margin:0;max-width:500px;">Get exclusive access to construction industry insights, expert advice, featured projects, and special offers — right in your inbox.</p>
+            </td>
+          </tr>
+
+          <!-- Services Section -->
+          <tr>
+            <td style="background-color:#fafafa;padding:40px 20px;">
+              <h2 style="color:#00273C;font-size:24px;font-weight:700;margin:0 0 30px;text-align:center;">Our Services</h2>
+              
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="10" border="0">
+                <tr>
+                  <td width="33.33%" valign="top" style="padding:10px;">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="15" border="0" style="background-color:#ffffff;border-radius:8px;">
+                      <tr>
+                        <td align="center">
+                          <h3 style="color:#00273C;font-size:16px;font-weight:600;margin:0 0 10px;">Design & Planning</h3>
+                          <p style="color:#555;font-size:13px;line-height:1.6;margin:0;">Innovative architecture and design solutions that bring your vision to life.</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                  <td width="33.33%" valign="top" style="padding:10px;">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="15" border="0" style="background-color:#ffffff;border-radius:8px;">
+                      <tr>
+                        <td align="center">
+                          <h3 style="color:#00273C;font-size:16px;font-weight:600;margin:0 0 10px;">Construction Management</h3>
+                          <p style="color:#555;font-size:13px;line-height:1.6;margin:0;">Efficient project coordination and execution with quality assurance.</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                  <td width="33.33%" valign="top" style="padding:10px;">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="15" border="0" style="background-color:#ffffff;border-radius:8px;">
+                      <tr>
+                        <td align="center">
+                          <h3 style="color:#00273C;font-size:16px;font-weight:600;margin:0 0 10px;">Smart Solutions</h3>
+                          <p style="color:#555;font-size:13px;line-height:1.6;margin:0;">Integrating technology for smarter, safer, and sustainable projects.</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="background-color:#00273C;padding:30px 20px;border-radius:0 0 12px 12px;">
+              <p style="color:#ccc;font-size:13px;margin:0 0 10px;">
+                Follow us on
+                <a href="https://x.com/design86737" style="color:#FF7120;text-decoration:none;margin:0 5px;">Twitter</a> •
+                <a href="https://www.instagram.com/tggg6000/" style="color:#FF7120;text-decoration:none;margin:0 5px;">Instagram</a> •
+                <a href="https://www.tiktok.com/@triplegdesignstudio" style="color:#FF7120;text-decoration:none;margin:0 5px;">TikTok</a> •
+                <a href="https://www.youtube.com/@tggg6000" style="color:#FF7120;text-decoration:none;margin:0 5px;">YouTube</a>
+              </p>
+              <p style="color:#ccc;font-size:13px;margin:10px 0;">© {{ "now"|date:"Y" }} Triple G BuildHub. All rights reserved.</p>
+              <p style="color:#999;font-size:11px;margin:15px 0 0;line-height:1.5;">
+                You're receiving this because you subscribed to our newsletter.<br>
+                <a href="{{ unsubscribe_url }}" style="color:#FF7120;text-decoration:underline;">Unsubscribe</a>
+              </p>
+            </td>
+          </tr>
+          
+        </table>
+      </td>
+    </tr>
+  </table>
+  
+  <!-- Tracking pixel -->
+  <img src="{{ open_tracking_url }}" alt="" width="1" height="1" style="display:block;width:1px;height:1px;border:0;">
 </body>
 </html>

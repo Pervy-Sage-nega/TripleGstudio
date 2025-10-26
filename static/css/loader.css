@@ -147,10 +147,11 @@
     height: 100%;
     width: 0;
     background: linear-gradient(90deg, #00273C 0%, #A1B9C7 50%, #FF7120 100%);
-    transition: width 0.3s ease-out;
+    transition: width 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
     border-radius: 3px;
     position: relative;
     overflow: hidden;
+    will-change: width;
 }
 
 .tripleG-progress-bar::after {

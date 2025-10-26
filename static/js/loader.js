@@ -5,6 +5,7 @@
 class TripleGLoader {
     constructor() {
         this.progress = 0;
+        this.lastLoggedProgress = -1;
         this.minLoadTime = 1500; // Minimum display time (ms)
         this.maxLoadTime = 10000; // Maximum time before force complete
         this.loaderContainer = null;
@@ -342,57 +343,63 @@ class TripleGLoader {
     updateProgress() {
         // Calculate total progress based on different resource types
         const weights = {
-            dom: 0.2,        // 20% for DOM ready
-            images: 0.3,     // 30% for images
+            dom: 0.15,       // 15% for DOM ready
+            images: 0.35,    // 35% for images
             stylesheets: 0.2, // 20% for CSS
             scripts: 0.2,    // 20% for JS
             fonts: 0.1       // 10% for fonts
         };
         
-        let totalProgress = 0;
+        let targetProgress = 0;
         
         // DOM Ready
         if (this.domReady) {
-            totalProgress += weights.dom;
+            targetProgress += weights.dom;
         }
         
         // Images
         if (this.resourceTypes.images.total > 0) {
-            totalProgress += weights.images * (this.resourceTypes.images.loaded / this.resourceTypes.images.total);
+            targetProgress += weights.images * (this.resourceTypes.images.loaded / this.resourceTypes.images.total);
         } else {
-            totalProgress += weights.images; // No images to load
+            targetProgress += weights.images;
         }
         
         // Stylesheets
         if (this.resourceTypes.stylesheets.total > 0) {
-            totalProgress += weights.stylesheets * (this.resourceTypes.stylesheets.loaded / this.resourceTypes.stylesheets.total);
+            targetProgress += weights.stylesheets * (this.resourceTypes.stylesheets.loaded / this.resourceTypes.stylesheets.total);
         } else {
-            totalProgress += weights.stylesheets;
+            targetProgress += weights.stylesheets;
         }
         
         // Scripts
         if (this.resourceTypes.scripts.total > 0) {
-            totalProgress += weights.scripts * (this.resourceTypes.scripts.loaded / this.resourceTypes.scripts.total);
+            targetProgress += weights.scripts * (this.resourceTypes.scripts.loaded / this.resourceTypes.scripts.total);
         } else {
-            totalProgress += weights.scripts;
+            targetProgress += weights.scripts;
         }
         
         // Fonts
         if (this.resourceTypes.fonts.total > 0) {
-            totalProgress += weights.fonts * (this.resourceTypes.fonts.loaded / this.resourceTypes.fonts.total);
+            targetProgress += weights.fonts * (this.resourceTypes.fonts.loaded / this.resourceTypes.fonts.total);
         } else {
-            totalProgress += weights.fonts;
+            targetProgress += weights.fonts;
         }
         
-        this.progress = Math.min(1, Math.max(0, totalProgress));
+        // Smooth interpolation to target progress
+        const smoothingFactor = 0.15;
+        this.progress += (targetProgress - this.progress) * smoothingFactor;
+        this.progress = Math.min(1, Math.max(0, this.progress));
+        
         this.progressBar.style.width = `${this.progress * 100}%`;
         
         // Update loading message based on current stage
         this.updateLoadingMessageByStage();
         
         // Log progress for debugging
-        if (Math.floor(this.progress * 100) % 10 === 0) {
-            console.log(` Loading Progress: ${Math.floor(this.progress * 100)}%`);
+        const progressPercent = Math.floor(this.progress * 100);
+        if (progressPercent % 10 === 0 && progressPercent !== this.lastLoggedProgress) {
+            console.log(` Loading Progress: ${progressPercent}%`);
+            this.lastLoggedProgress = progressPercent;
         }
     }
 
@@ -436,18 +443,13 @@ class TripleGLoader {
         const resourcesReady = this.resourcesLoaded || allStagesComplete;
         
         // Complete if minimum time reached AND resources are ready
-        if (minTimeReached && resourcesReady && this.progress >= 0.95) {
+        if (minTimeReached && resourcesReady && this.progress >= 0.98) {
             console.log(' Loading Complete! All resources loaded.');
             this.completeLoading();
         }
         // Emergency completion if taking too long
         else if (elapsed >= this.maxLoadTime) {
             console.warn(' Force completing due to timeout');
-            this.completeLoading();
-        }
-        // Complete if progress is essentially done
-        else if (this.progress >= 0.99 && minTimeReached) {
-            console.log(' Loading Complete! Progress reached 99%');
             this.completeLoading();
         }
     }
