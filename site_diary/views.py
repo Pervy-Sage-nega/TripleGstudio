@@ -1845,8 +1845,8 @@ def history(request):
             status__in=['planning', 'active', 'on_hold', 'completed']
         )
     
-    # Get diary entries with comprehensive prefetch for all related data
-    entries = DiaryEntry.objects.filter(project__in=projects).select_related(
+    # Get diary entries with comprehensive prefetch for all related data (exclude drafts)
+    entries = DiaryEntry.objects.filter(project__in=projects, draft=False).select_related(
         'project', 'created_by', 'reviewed_by', 'milestone'
     ).prefetch_related(
         'labor_entries', 'material_entries', 'equipment_entries', 

@@ -21,6 +21,8 @@ from datetime import timedelta
 @require_admin_role
 def admin_home(request):
     """Admin dashboard home page"""
+    from site_diary.models import DiaryEntry
+    
     admin_profile = AdminProfile.objects.get(user=request.user)
     
     # Get blog statistics
@@ -33,6 +35,63 @@ def admin_home(request):
     # Get recent blog posts
     recent_posts = BlogPost.objects.filter(is_deleted=False).order_by('-created_date')[:3]
     
+    # Get recent site diary entries
+    recent_diary_entries = DiaryEntry.objects.filter(draft=False).select_related('project', 'created_by').order_by('-entry_date', '-created_at')[:5]
+    
+    # Get pending project approvals
+    pending_projects = Project.objects.filter(status='pending_approval').select_related('client', 'project_manager').order_by('-created_at')[:3]
+    
+    # Get recent notifications
+    recent_notifications = []
+    
+    # New user registrations
+    new_users = User.objects.filter(date_joined__gte=timezone.now() - timedelta(hours=24)).order_by('-date_joined')[:2]
+    for user in new_users:
+        time_diff = timezone.now() - user.date_joined
+        recent_notifications.append({
+            'icon': 'fa-user-plus',
+            'color': '#0a6cf1',
+            'message': f'New user registered: {user.username}',
+            'time': time_diff
+        })
+    
+    # Pending diary approvals
+    pending_diaries = DiaryEntry.objects.filter(needs_revision=True).select_related('project').order_by('-created_at')[:2]
+    for diary in pending_diaries:
+        time_diff = timezone.now() - diary.created_at
+        recent_notifications.append({
+            'icon': 'fa-file-alt',
+            'color': '#7c3aed',
+            'message': f'Diary pending approval ({diary.project.name})',
+            'time': time_diff
+        })
+    
+    # Pending site manager approvals
+    pending_managers = SiteManagerProfile.objects.filter(approval_status='pending').select_related('user').order_by('-created_at')[:1]
+    for manager in pending_managers:
+        time_diff = timezone.now() - manager.created_at
+        recent_notifications.append({
+            'icon': 'fa-clipboard-check',
+            'color': '#f59e0b',
+            'message': f'Site manager approval needed: {manager.user.get_full_name()}',
+            'time': time_diff
+        })
+    
+    # Sort by time and limit to 5
+    recent_notifications.sort(key=lambda x: x['time'])
+    recent_notifications = recent_notifications[:5]
+    
+    # Get project statistics
+    total_projects = Project.objects.count()
+    ongoing_projects_qs = Project.objects.exclude(status__in=['completed', 'cancelled', 'rejected'])
+    ongoing_projects = ongoing_projects_qs.count()
+    
+    # Calculate average progress for ongoing projects
+    avg_progress = 0
+    if ongoing_projects > 0:
+        total_progress = sum([p.get_progress_percentage() for p in ongoing_projects_qs])
+        avg_progress = int(total_progress / ongoing_projects)
+    
     # Get dashboard statistics
     context = {
         'total_users': User.objects.count(),
@@ -42,12 +101,22 @@ def admin_home(request):
         'pending_site_managers': SiteManagerProfile.objects.filter(approval_status='pending').count(),
         'admin_profile': admin_profile,
         'user': request.user,
+        # Project statistics
+        'total_projects': total_projects,
+        'ongoing_projects': ongoing_projects,
+        'avg_progress': avg_progress,
         # Blog statistics
         'total_posts': total_posts,
         'published_posts': published_posts,
         'draft_posts': draft_posts,
         'pending_posts': pending_posts,
         'recent_posts': recent_posts,
+        # Site diary entries
+        'recent_diary_entries': recent_diary_entries,
+        # Pending projects
+        'pending_projects': pending_projects,
+        # Notifications
+        'recent_notifications': recent_notifications,
     }
     
     return render(request, 'adminhome.html', context)
@@ -252,16 +321,21 @@ def admin_user_list(request):
     
     # Add site managers to users list
     for user in site_managers:
+        profile = user.sitemanagerprofile
+        is_locked = profile.is_account_locked()
+        status = 'locked' if is_locked else profile.approval_status
+        status_display = 'Locked' if is_locked else profile.get_approval_status_display()
+        
         users.append({
             'user_id': user.id,
             'full_name': user.get_full_name() or user.username,
             'email': user.email,
             'role': 'sitemanager',
             'role_display': 'Site Manager',
-            'status': user.sitemanagerprofile.approval_status,
-            'status_display': user.sitemanagerprofile.get_approval_status_display(),
+            'status': status,
+            'status_display': status_display,
             'date_joined': user.date_joined,
-            'profile_pic': user.sitemanagerprofile.get_profile_image_url(),
+            'profile_pic': profile.get_profile_image_url(),
             'is_online': is_user_online(user)
         })
     
@@ -357,6 +431,12 @@ def update_user_status(request, user_id):
                 profile.approval_status = 'approved'
                 profile.save()
                 message = f'Site Manager {user.get_full_name()} has been reactivated.'
+                
+            elif action == 'unlock':
+                profile.account_locked_until = None
+                profile.failed_login_attempts = 0
+                profile.save()
+                message = f'Site Manager {user.get_full_name()} account has been unlocked.'
                 
             else:
                 return JsonResponse({'success': False, 'message': 'Invalid action'})
@@ -463,5 +543,86 @@ def assign_site_role(request):
             'employee_id': profile.employee_id
         })
         
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
+
+
+@require_admin_role
+def subcontractor_list(request):
+    """List all subcontractor companies"""
+    from site_diary.models import SubcontractorCompany
+    companies = SubcontractorCompany.objects.all().order_by('name')
+    return render(request, 'admin/subcontractors.html', {'companies': companies})
+
+@ajax_require_admin_role
+@csrf_protect
+@require_http_methods(["POST"])
+def subcontractor_add(request):
+    """Add new subcontractor company"""
+    from site_diary.models import SubcontractorCompany
+    try:
+        SubcontractorCompany.objects.create(
+            name=request.POST.get('name'),
+            company_type=request.POST.get('company_type'),
+            contact_person=request.POST.get('contact_person', ''),
+            phone=request.POST.get('phone', ''),
+            email=request.POST.get('email', ''),
+            address=request.POST.get('address', ''),
+            license_number=request.POST.get('license_number', ''),
+            is_active=request.POST.get('is_active') == 'true'
+        )
+        return JsonResponse({'success': True, 'message': 'Company added successfully'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
+
+@ajax_require_admin_role
+@require_http_methods(["GET"])
+def subcontractor_detail(request, company_id):
+    """Get subcontractor company details"""
+    from site_diary.models import SubcontractorCompany
+    company = get_object_or_404(SubcontractorCompany, id=company_id)
+    return JsonResponse({
+        'id': company.id,
+        'name': company.name,
+        'company_type': company.company_type,
+        'contact_person': company.contact_person,
+        'phone': company.phone,
+        'email': company.email,
+        'address': company.address,
+        'license_number': company.license_number,
+        'is_active': company.is_active
+    })
+
+@ajax_require_admin_role
+@csrf_protect
+@require_http_methods(["POST"])
+def subcontractor_update(request, company_id):
+    """Update subcontractor company"""
+    from site_diary.models import SubcontractorCompany
+    try:
+        company = get_object_or_404(SubcontractorCompany, id=company_id)
+        company.name = request.POST.get('name')
+        company.company_type = request.POST.get('company_type')
+        company.contact_person = request.POST.get('contact_person', '')
+        company.phone = request.POST.get('phone', '')
+        company.email = request.POST.get('email', '')
+        company.address = request.POST.get('address', '')
+        company.license_number = request.POST.get('license_number', '')
+        company.is_active = request.POST.get('is_active') == 'true'
+        company.save()
+        return JsonResponse({'success': True, 'message': 'Company updated successfully'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
+
+@ajax_require_admin_role
+@csrf_protect
+@require_http_methods(["POST"])
+def subcontractor_delete(request, company_id):
+    """Delete subcontractor company"""
+    from site_diary.models import SubcontractorCompany
+    try:
+        company = get_object_or_404(SubcontractorCompany, id=company_id)
+        company.delete()
+        return JsonResponse({'success': True, 'message': 'Company deleted successfully'})
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)})

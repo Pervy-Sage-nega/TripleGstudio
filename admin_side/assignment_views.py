@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.models import User
 from site_diary.models import Project
+from accounts.models import SitePersonnelRole
 from .models import ProjectAssignment
 from .decorators import require_admin_role
 from django.http import JsonResponse
@@ -80,6 +81,9 @@ def assign_project(request):
     # Get current assignments using the new model
     current_assignments = ProjectAssignment.objects.filter(is_active=True).select_related('project', 'user')
     
+    # Get site personnel roles from database
+    personnel_roles = SitePersonnelRole.objects.filter(is_active=True).order_by('order')
+    
     # Prepare data for JavaScript
     site_managers_json = [{
         'id': manager.id,
@@ -88,15 +92,15 @@ def assign_project(request):
     } for manager in site_managers]
     
     role_choices_json = [{
-        'value': choice[0],
-        'display': choice[1]
-    } for choice in ProjectAssignment.ROLE_CHOICES]
+        'value': role.name,
+        'display': role.display_name
+    } for role in personnel_roles]
     
     context = {
         'site_managers': site_managers,
         'projects': projects,
         'current_assignments': current_assignments,
-        'role_choices': ProjectAssignment.ROLE_CHOICES,
+        'personnel_roles': personnel_roles,
         'site_managers_json': site_managers_json,
         'role_choices_json': role_choices_json
     }

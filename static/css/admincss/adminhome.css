@@ -101,6 +101,7 @@
 .section-header {
     display: flex;
     align-items: center;
+    gap: 100px;
     justify-content: space-between;
     margin-bottom: 10px;
 }
@@ -124,6 +125,7 @@
 
 .list-item {
     display: flex;
+    gap: 30px;
     align-items: center;
     justify-content: space-between;
     padding: 10px 12px;
@@ -171,6 +173,8 @@
 .btn-sm {
     padding: 6px 10px;
     font-size: 12px;
+
+    gap: 6px;
 }
 
 

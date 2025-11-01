@@ -1,0 +1,278 @@
+{% extends 'admin-nav-footer-template/base.html' %}
+{% load static %}
+
+{% block title %}Subcontractor Companies | Triple G BuildHub{% endblock %}
+
+{% block extra_head %}
+
+    <link rel="stylesheet" href="{% static 'css/sitecss/dashboard.css' %}">
+   
+    <link rel="stylesheet" href="{% static 'css/admincss/admindiaryreviewer.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admincss/adminusers.css' %}">
+     <link rel="stylesheet" href="{% static 'css/admincss/nav.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admincss/header.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        .header-content { display: flex !important; justify-content: space-between !important; align-items: center !important; width: 100% !important; }
+        .page-title {margin-right: 60%;}
+        .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; }
+        .form-control { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+        .btn { padding: 10px 20px; cursor: pointer; font-weight: 500; width: auto !important; }
+        .btn-primary { background: #3c6e71; color: white; border: none; border-radius: 6px; width: auto !important; }
+        .btn-secondary { background: none !important; border: none !important; color: #6c757d !important; }
+        .btn-secondary:hover { background: none !important; border: none !important; color: #6c757d !important; }
+        .btn-danger { background: none !important; border: none !important; color: #6c757d !important; }
+        .btn-danger:hover { background: none !important; border: none !important; color: #6c757d !important; }
+        .btn-sm { padding: 6px 12px; font-size: 16px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+        .modal.active { display: flex; align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: none; border-radius: 12px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; }
+        .modal-content::-webkit-scrollbar { display: none; }
+        form#companyForm {padding: 30px}
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; }
+        .table-responsive { overflow-x: auto; }
+        .users-table { width: 100%; border-collapse: collapse; }
+        .users-table th, .users-table td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        .users-table th { background: #f8f9fa; font-weight: 600; }
+        .status-badge { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500; }
+        .status-badge.status-active { background: #d4edda; color: #155724; }
+        .status-badge.status-inactive { background: #f8d7da; color: #721c24; }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <div class="header-content" style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="page-title">
+                <i class="fas fa-building"></i>
+                <h1>Subcontractor Companies</h1>
+            </div>
+            <button class="btn btn-primary" onclick="openAddModal()">
+                <i class="fas fa-plus"></i> Add Company
+            </button>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>Company Name</th>
+                        <th>Type</th>
+                        <th>Contact Person</th>
+                        <th>Phone</th>
+                        <th>Email</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="companiesTable">
+                    {% for company in companies %}
+                    <tr>
+                        <td><strong>{{ company.name }}</strong></td>
+                        <td>{{ company.get_company_type_display }}</td>
+                        <td>{{ company.contact_person|default:"-" }}</td>
+                        <td>{{ company.phone|default:"-" }}</td>
+                        <td>{{ company.email|default:"-" }}</td>
+                        <td>
+                            <span class="status-badge status-{% if company.is_active %}active{% else %}inactive{% endif %}">
+                                {% if company.is_active %}Active{% else %}Inactive{% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="btn btn-sm btn-secondary" onclick="editCompany({{ company.id }})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteCompany({{ company.id }})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px;">No companies found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal" id="companyModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">Add Subcontractor Company</h3>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <form id="companyForm">
+            {% csrf_token %}
+            <input type="hidden" id="companyId" name="id">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="name">Company Name *</label>
+                    <input type="text" class="form-control" id="name" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="company_type">Type *</label>
+                    <select class="form-control" id="company_type" name="company_type" required>
+                        <option value="">Select Type</option>
+                        <option value="electrical">Electrical</option>
+                        <option value="plumbing">Plumbing</option>
+                        <option value="hvac">HVAC</option>
+                        <option value="roofing">Roofing</option>
+                        <option value="flooring">Flooring</option>
+                        <option value="painting">Painting</option>
+                        <option value="concrete">Concrete</option>
+                        <option value="steel">Steel Work</option>
+                        <option value="carpentry">Carpentry</option>
+                        <option value="masonry">Masonry</option>
+                        <option value="landscaping">Landscaping</option>
+                        <option value="security">Security</option>
+                        <option value="cleaning">Cleaning</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="contact_person">Contact Person</label>
+                    <input type="text" class="form-control" id="contact_person" name="contact_person">
+                </div>
+                <div class="form-group">
+                    <label for="phone">Phone</label>
+                    <input type="text" class="form-control" id="phone" name="phone">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" class="form-control" id="email" name="email">
+            </div>
+            <div class="form-group">
+                <label for="address">Address</label>
+                <textarea class="form-control" id="address" name="address" rows="2"></textarea>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="license_number">License Number</label>
+                    <input type="text" class="form-control" id="license_number" name="license_number">
+                </div>
+                <div class="form-group">
+                    <label for="is_active">Status</label>
+                    <select class="form-control" id="is_active" name="is_active">
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="submit" class="btn btn-primary">Save</button>
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function openAddModal() {
+    document.getElementById('modalTitle').textContent = 'Add Subcontractor Company';
+    document.getElementById('companyForm').reset();
+    document.getElementById('companyId').value = '';
+    document.getElementById('companyModal').classList.add('active');
+}
+
+function closeModal() {
+    document.getElementById('companyModal').classList.remove('active');
+}
+
+function editCompany(id) {
+    fetch(`/admin-panel/subcontractors/${id}/`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('modalTitle').textContent = 'Edit Subcontractor Company';
+            document.getElementById('companyId').value = data.id;
+            document.getElementById('name').value = data.name;
+            document.getElementById('company_type').value = data.company_type;
+            document.getElementById('contact_person').value = data.contact_person || '';
+            document.getElementById('phone').value = data.phone || '';
+            document.getElementById('email').value = data.email || '';
+            document.getElementById('address').value = data.address || '';
+            document.getElementById('license_number').value = data.license_number || '';
+            document.getElementById('is_active').value = data.is_active ? 'true' : 'false';
+            document.getElementById('companyModal').classList.add('active');
+        });
+}
+
+function deleteCompany(id) {
+    if (!confirm('Are you sure you want to delete this company?')) return;
+    
+    fetch(`/admin-panel/subcontractors/${id}/delete/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    });
+}
+
+document.getElementById('companyForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const id = document.getElementById('companyId').value;
+    const url = id ? `/admin-panel/subcontractors/${id}/update/` : '/admin-panel/subcontractors/add/';
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    });
+});
+
+document.getElementById('companyModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+});
+</script>
+{% endblock %}

@@ -15,3 +15,5 @@ django-csp
 requests==2.32.5
 dj-database-url
 google-generativeai
+supabase
+

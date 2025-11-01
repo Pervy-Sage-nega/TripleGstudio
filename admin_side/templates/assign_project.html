@@ -20,6 +20,8 @@
         }
         .grid {
             display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
             max-width: 1400px;
             margin: 0 auto;
         }
@@ -129,6 +131,7 @@
 
 {% block content %}
 <div class="container">
+    {% csrf_token %}
     <div class="page-header">
         <div class="page-title">
             <i class="fas fa-user-cog"></i>
@@ -136,90 +139,40 @@
         </div>
     </div>
 
-    <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 30px;">
-        <!-- Multiple Assignment Form -->
+    <div class="grid">
+        <!-- Assignment Form -->
         <div class="assignment-form">
-            <div class="multi-assignment-section">
-                <h3>Assign Multiple Users to Project</h3>
-                <div class="form-group">
-                    <label for="multi_project">Select Project</label>
-                    <select id="multi_project" class="form-control">
-                        <option value="">Select Project</option>
-                        {% for project in projects %}
-                            <option value="{{ project.id }}">{{ project.name }} - {{ project.client_name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div id="assignments-container" style="display: none;">
-                    <h4>Add Assignments</h4>
-                    <div id="assignment-rows"></div>
-                    <div style="display: flex; gap: 10px;">
-                        <button type="button" id="add-assignment" class="btn btn-secondary">
-                            <i class="fas fa-plus"></i> Add Another Assignment
-                        </button>
-                        <button type="button" id="save-assignments" class="btn btn-primary">
-                            <i class="fas fa-save"></i> Save All Assignments
-                        </button>
-                    </div>
+            <h3>Assign Site Managers to Project</h3>
+            
+            <div class="form-group">
+                <label for="multi_project">Select Project</label>
+                <select id="multi_project" class="form-control">
+                    <option value="">Select Project</option>
+                    {% for project in projects %}
+                        <option value="{{ project.id }}">{{ project.name }} - {{ project.client_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div id="assignments-container" style="display: none;">
+                <h4>Add Assignments</h4>
+                <div id="assignment-rows"></div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="button" id="add-assignment" class="btn btn-secondary">
+                        <i class="fas fa-plus"></i> Add Another
+                    </button>
+                    <button type="button" id="save-assignments" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Assignments
+                    </button>
+                    <a href="{% url 'admin_side:admin_user_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </a>
                 </div>
             </div>
         </div>
-        
-        <!-- Single Assignment Form -->
+
+        <!-- Current Assignments -->
         <div class="assignment-form">
-            <div class="single-assignment-section">
-                <h3>Single Assignment</h3>
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="form-group">
-                        <label for="user">Site Manager</label>
-                        <select name="user" id="user" class="form-control" required>
-                            <option value="">Select Site Manager</option>
-                            {% for manager in site_managers %}
-                                <option value="{{ manager.id }}">{{ manager.get_full_name }} ({{ manager.username }})</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="project">Project</label>
-                        <select name="project" id="project" class="form-control" required>
-                            <option value="">Select Project</option>
-                            {% for project in projects %}
-                                <option value="{{ project.id }}">{{ project.name }} - {{ project.client_name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="role">Role</label>
-                        <select name="role" id="role" class="form-control" required>
-                            <option value="">Select Role</option>
-                            {% for role_value, role_display in role_choices %}
-                                <option value="{{ role_value }}">{{ role_display }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <div style="display: flex; gap: 10px;">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-plus"></i> Assign to Project
-                            </button>
-                            <a href="{% url 'admin_side:admin_user_list' %}" class="btn btn-secondary">
-                                <i class="fas fa-arrow-left"></i> Back to Users
-                            </a>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Current Assignments -->
-    <div class="assignment-form" style="margin-top: 30px;">
-        <div class="assignments-list">
             <h3>Current Assignments</h3>
             {% for assignment in current_assignments %}
                 <div class="assignment-item">

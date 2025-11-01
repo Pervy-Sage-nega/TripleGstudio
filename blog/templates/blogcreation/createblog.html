@@ -8,7 +8,9 @@
     <link rel="stylesheet" href="{% static 'css/sitecss/dashboard.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/global-footer.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/global-header.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/global-modal.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="{% static 'js/sitejs/global-modal.js' %}" defer></script>
 {% endblock %}
 
 {% block body %}
@@ -362,9 +364,49 @@
         }
 
         function submitForReview() {
-            // Set status to pending and submit form for admin review
-            document.getElementById('blogStatus').value = 'pending';
-            document.getElementById('blogForm').submit();
+            // Validate required fields first
+            const title = document.getElementById('blogTitle').value.trim();
+            const editorContent = document.getElementById('blogContentEditor').innerHTML.trim();
+            const category = document.getElementById('blogCategory').value;
+            
+            if (!title) {
+                globalModal.error('Missing Title', 'Please enter a blog title before submitting.');
+                return;
+            }
+            
+            if (!editorContent || editorContent === '<br>' || editorContent === '<div><br></div>') {
+                globalModal.error('Missing Content', 'Please enter blog content before submitting.');
+                return;
+            }
+            
+            if (!category) {
+                globalModal.error('Missing Category', 'Please select a category before submitting.');
+                return;
+            }
+            
+            // Show confirmation modal
+            const categoryText = document.querySelector('#blogCategory option:checked').text;
+            globalModal.show({
+                type: 'primary',
+                icon: 'fa-paper-plane',
+                title: 'Submit Blog for Review',
+                subtitle: 'Confirm submission',
+                message: 'Are you sure you want to submit this blog post for admin review? Once submitted, it will be reviewed before publication.',
+                details: {
+                    'Title': title,
+                    'Category': categoryText,
+                    'Status': 'Pending Review'
+                },
+                confirmText: 'Submit for Review',
+                cancelText: 'Cancel',
+                showCancel: true,
+                confirmClass: 'global-modal-btn-success',
+                onConfirm: () => {
+                    // Set status to pending and submit form
+                    document.getElementById('blogStatus').value = 'pending';
+                    document.getElementById('blogForm').submit();
+                }
+            });
         }
 
         // Form submission handler

@@ -25,4 +25,11 @@ urlpatterns = [
     # Security URLs
     path('security-logs/', views.security_logs, name='security_logs'),
     path('unlock-user/', views.unlock_user, name='unlock_user'),
+    
+    # Subcontractor URLs
+    path('subcontractors/', views.subcontractor_list, name='subcontractor_list'),
+    path('subcontractors/add/', views.subcontractor_add, name='subcontractor_add'),
+    path('subcontractors/<int:company_id>/', views.subcontractor_detail, name='subcontractor_detail'),
+    path('subcontractors/<int:company_id>/update/', views.subcontractor_update, name='subcontractor_update'),
+    path('subcontractors/<int:company_id>/delete/', views.subcontractor_delete, name='subcontractor_delete'),
 ]

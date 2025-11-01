@@ -36,7 +36,7 @@
                     <div class="icon blue"><i class="fas fa-diagram-project"></i></div>
                     <div class="meta">
                         <span class="label">Total Projects</span>
-                        <span class="value" id="totalProjects">{{ total_projects|default:"18" }}</span>
+                        <span class="value" id="totalProjects">{{ total_projects }}</span>
                     </div>
                 </div>
             </div>
@@ -45,9 +45,9 @@
                     <div class="icon green"><i class="fas fa-spinner"></i></div>
                     <div class="meta" style="width:100%">
                         <span class="label">Ongoing Projects</span>
-                        <span class="value" id="ongoingCount">{{ ongoing_projects|default:"7" }}</span>
+                        <span class="value" id="ongoingCount">{{ ongoing_projects }}</span>
                         <div class="progress" aria-label="Overall progress">
-                            <span id="ongoingProgress" style="width: 64%;"></span>
+                            <span id="ongoingProgress" style="width: {{ avg_progress }}%;"></span>
                         </div>
                     </div>
                 </div>
@@ -57,7 +57,7 @@
                     <div class="icon amber"><i class="fas fa-clipboard-check"></i></div>
                     <div class="meta">
                         <span class="label">Pending Site Manager Approvals</span>
-                        <span class="value" id="pendingCount">{{ pending_site_managers|default:"0" }}</span>
+                        <span class="value" id="pendingCount">{{ pending_site_managers }}</span>
                         <div style="margin-top:8px;">
                             <a href="{% url 'admin_side:admin_user_list' %}" class="btn btn-primary btn-sm"><i class="fas fa-bolt"></i>
                                 Review Now</a>
@@ -76,99 +76,54 @@
                     <a href="#" class="btn btn-outline"><i class="fas fa-list"></i> View All</a>
                 </div>
                 <ul class="list" id="recentDiary">
+                    {% for entry in recent_diary_entries %}
                     <li class="list-item">
                         <div class="left">
-                            <span class="badge">Mar 16</span>
+                            <span class="badge">{{ entry.entry_date|date:"M d" }}</span>
                             <div>
-                                <div><strong>Central Business District Tower</strong> — Day 142 update</div>
-                                <small>By Foreman: A. Reyes</small>
+                                <div><strong>{{ entry.project.name }}</strong> — {{ entry.work_description|truncatewords:5 }}</div>
+                                <small>By {{ entry.created_by.get_full_name|default:entry.created_by.username }}</small>
                             </div>
                         </div>
                         <a href="#" class="btn btn-secondary btn-sm"><i class="fas fa-eye"></i> View</a>
                     </li>
+                    {% empty %}
                     <li class="list-item">
                         <div class="left">
-                            <span class="badge">Mar 15</span>
-                            <div>
-                                <div><strong>Highway Bridge Expansion</strong> — Concrete pour log</div>
-                                <small>By Engineer: M. Santos</small>
-                            </div>
+                            <div>No diary entries available</div>
                         </div>
-                        <a href="#" class="btn btn-secondary btn-sm"><i class="fas fa-eye"></i> View</a>
                     </li>
-                    <li class="list-item">
-                        <div class="left">
-                            <span class="badge">Mar 15</span>
-                            <div>
-                                <div><strong>Residential Complex Phase 2</strong> — Inspection notes</div>
-                                <small>By Supervisor: K. Dalisay</small>
-                            </div>
-                        </div>
-                        <a href="#" class="btn btn-secondary btn-sm"><i class="fas fa-eye"></i> View</a>
-                    </li>
-                    <li class="list-item">
-                        <div class="left">
-                            <span class="badge">Mar 14</span>
-                            <div>
-                                <div><strong>Waterfront Development</strong> — Weather delay report</div>
-                                <small>By Foreman: P. Cruz</small>
-                            </div>
-                        </div>
-                        <a href="#" class="btn btn-secondary btn-sm"><i class="fas fa-eye"></i> View</a>
-                    </li>
-                    <li class="list-item">
-                        <div class="left">
-                            <span class="badge">Mar 14</span>
-                            <div>
-                                <div><strong>Tech Innovation Hub</strong> — Material delivery</div>
-                                <small>By Engineer: L. Tan</small>
-                            </div>
-                        </div>
-                        <a href="#" class="btn btn-secondary btn-sm"><i class="fas fa-eye"></i> View</a>
-                    </li>
+                    {% endfor %}
                 </ul>
             </div>
 
-            <!-- Client Requests -->
+            <!-- Pending Project Approvals -->
             <div class="card" style="grid-column: span 3;">
                 <div class="section-header">
-                    <div class="section-title"><i class="fas fa-handshake-angle"></i> Client Requests</div>
+                    <div class="section-title"><i class="fas fa-clock"></i> Pending Approvals</div>
                 </div>
                 <ul class="list">
+                    {% for project in pending_projects %}
                     <li class="list-item">
                         <div class="left">
-                            <i class="fas fa-circle text-amber" style="color:#f59e0b"></i>
+                            <i class="fas fa-circle" style="color:#f59e0b"></i>
                             <div>
-                                <div><strong>Design change</strong> — CBD Tower</div>
-                                <small>Awaiting admin review</small>
+                                <div><strong>{{ project.name|truncatewords:3 }}</strong></div>
+                                <small>{{ project.client_name }}</small>
                             </div>
                         </div>
-                        <span class="badge">Open</span>
+                        <span class="badge" style="background:#fef3c7;color:#92400e">Pending</span>
                     </li>
+                    {% empty %}
                     <li class="list-item">
                         <div class="left">
-                            <i class="fas fa-circle" style="color:#16a34a"></i>
-                            <div>
-                                <div><strong>Budget clarification</strong> — Phase 2</div>
-                                <small>In discussion</small>
-                            </div>
+                            <div>No pending approvals</div>
                         </div>
-                        <span class="badge" style="background:#ecfdf5;color:#065f46">Active</span>
                     </li>
-                    <li class="list-item">
-                        <div class="left">
-                            <i class="fas fa-circle" style="color:#ef4444"></i>
-                            <div>
-                                <div><strong>Schedule update</strong> — Bridge Expansion</div>
-                                <small>Needs action</small>
-                            </div>
-                        </div>
-                        <span class="badge" style="background:#fef2f2;color:#991b1b">Urgent</span>
-                    </li>
+                    {% endfor %}
                 </ul>
                 <div style="margin-top:12px;">
-                    <a href="#" class="btn btn-primary" style="width:100%"><i
-                            class="fas fa-sliders"></i> Manage</a>
+                    <a href="{% url 'site_diary:adminclientproject' %}" class="btn btn-primary" style="width:100%"><i class="fas fa-tasks"></i> Review All</a>
                 </div>
             </div>
 
@@ -179,31 +134,16 @@
                     <a href="#" class="btn btn-outline btn-sm"><i class="fas fa-gear"></i></a>
                 </div>
                 <ul class="list" id="notifications">
+                    {% for notification in recent_notifications %}
                     <li class="list-item">
-                        <div class="left"><i class="fas fa-user-plus" style="color:#0a6cf1"></i> New user registered:
-                            jcarlo</div>
-                        <small>2m</small>
+                        <div class="left"><i class="fas {{ notification.icon }}" style="color:{{ notification.color }}"></i> {{ notification.message }}</div>
+                        <small>{% if notification.time.total_seconds < 3600 %}{{ notification.time.total_seconds|floatformat:0|add:"0"|slice:":2" }}m{% elif notification.time.total_seconds < 86400 %}{{ notification.time.total_seconds|floatformat:0|add:"0"|slice:":2" }}h{% else %}{{ notification.time.days }}d{% endif %}</small>
                     </li>
+                    {% empty %}
                     <li class="list-item">
-                        <div class="left"><i class="fas fa-file-alt" style="color:#7c3aed"></i> Diary pending approval
-                            (Phase 2)</div>
-                        <small>20m</small>
+                        <div class="left">No recent notifications</div>
                     </li>
-                    <li class="list-item">
-                        <div class="left"><i class="fas fa-envelope" style="color:#16a34a"></i> Client message received
-                        </div>
-                        <small>1h</small>
-                    </li>
-                    <li class="list-item">
-                        <div class="left"><i class="fas fa-warning" style="color:#ef4444"></i> Weather alert for Bridge
-                            site</div>
-                        <small>3h</small>
-                    </li>
-                    <li class="list-item">
-                        <div class="left"><i class="fas fa-pen-ruler" style="color:#f59e0b"></i> Revision requested on
-                            CBD plan</div>
-                        <small>6h</small>
-                    </li>
+                    {% endfor %}
                 </ul>
             </div>
         </div>

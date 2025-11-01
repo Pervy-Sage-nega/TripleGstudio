@@ -164,6 +164,7 @@ document.addEventListener('DOMContentLoaded', function() {
                           btn.classList.contains('reject') ? 'deny' :
                           btn.classList.contains('activate') ? 'reactivate' :
                           btn.classList.contains('deactivate') ? 'suspend' :
+                          btn.classList.contains('unlock') ? 'unlock' :
                           btn.classList.contains('view') ? 'view' : null;
 
             if (action === 'view') {
@@ -194,7 +195,8 @@ document.addEventListener('DOMContentLoaded', function() {
             'approve': { title: 'Approve Site Manager', message: 'Are you sure you want to approve this site manager?' },
             'deny': { title: 'Deny Application', message: 'Are you sure you want to deny this site manager application?' },
             'suspend': { title: 'Suspend User', message: 'Are you sure you want to suspend this user?' },
-            'reactivate': { title: 'Unsuspend User', message: 'Are you sure you want to unsuspend this user?' }
+            'reactivate': { title: 'Unsuspend User', message: 'Are you sure you want to unsuspend this user?' },
+            'unlock': { title: 'Unlock Account', message: 'Are you sure you want to unlock this account?' }
         };
 
         const actionData = actions[action];

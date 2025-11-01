@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="{% static 'css/sitecss/reports.css' %}">   
     <link rel="stylesheet" href="{% static 'css/sitecss/createblog.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/newproject.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/global-modal.css' %}">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -223,22 +224,6 @@
                         <p class="error-message" id="location-error" style="display: none;">Project Location is required.</p>
                     </div>
 
-                    <!-- Project Image from Gallery -->
-                    <div class="filter-group">
-                        <label for="project-image">Project Image (Optional)</label>
-                        <button type="button" id="select-from-gallery" class="btn btn-outline" disabled>
-                            <i class="fas fa-images"></i> Select from Architect's Gallery
-                        </button>
-                        <small id="gallery-hint">Select an architect first to choose from their gallery</small>
-                        <div class="image-preview" id="image-preview">
-                            <img src="#" alt="Project Image Preview" id="image-output">
-                            <button type="button" id="clear-image" class="btn btn-secondary">
-                                <i class="fas fa-trash-alt"></i> Remove Image
-                            </button>
-                        </div>
-                        <input type="hidden" id="selected-image-url" name="image_url">
-                    </div>
-
                     <!-- Project Dates -->
                     <div class="filter-group">
                         <label for="start-date">Start Date <span class="required">*</span></label>
@@ -277,6 +262,22 @@
                             </div>
                         </div>
                         <p class="error-message" id="architect-error" style="display: none;">Assigned Architect is required.</p>
+                    </div>
+
+                    <!-- Project Image from Gallery -->
+                    <div class="filter-group">
+                        <label for="project-image">Project Image (Optional)</label>
+                        <button type="button" id="select-from-gallery" class="btn btn-outline" disabled>
+                            <i class="fas fa-images"></i> Select from Architect's Gallery
+                        </button>
+                        <small id="gallery-hint">Select an architect first to choose from their gallery</small>
+                        <div class="image-preview" id="image-preview">
+                            <img src="#" alt="Project Image Preview" id="image-output">
+                            <button type="button" id="clear-image" class="btn btn-secondary">
+                                <i class="fas fa-trash-alt"></i> Remove Image
+                            </button>
+                        </div>
+                        <input type="hidden" id="selected-image-url" name="image_url">
                     </div>
                     
                     <!-- Project Type -->
@@ -687,6 +688,11 @@
             }
 
             if (valid) {
+                const submitBtn = document.getElementById('submit-btn');
+                const originalHtml = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+                
                 // Submit form data to Django
                 const formData = new FormData();
                 formData.append('name', projectName.value);
@@ -711,16 +717,30 @@
                     body: formData
                 })
                 .then(response => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalHtml;
                     if (response.ok) {
-                        alert("Project created successfully!");
-                        window.location.href = '/diary/dashboard/';
+                        globalModal.show({
+                            type: 'info',
+                            icon: 'fa-clock',
+                            title: 'Project Submitted',
+                            message: 'Your project has been submitted successfully and is now pending admin approval. You will be notified once it has been reviewed.',
+                            confirmText: 'Go to Dashboard',
+                            showCancel: false,
+                            confirmClass: 'global-modal-btn-primary',
+                            onConfirm: () => {
+                                window.location.href = '/diary/dashboard/';
+                            }
+                        });
                     } else {
-                        alert("Error creating project. Please try again.");
+                        globalModal.error('Error', 'Error creating project. Please try again.');
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert("Error creating project. Please try again.");
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalHtml;
+                    globalModal.error('Error', 'Error creating project. Please try again.');
                 });
             }
         });
@@ -732,6 +752,7 @@
             })
         );
     </script>
+   <script src="{% static 'js/sitejs/global-modal.js' %}"></script>
    <script src="{% static 'js/sitejs/mobile-btn.js' %}"></script>
 </body>
 </html>

@@ -19,8 +19,10 @@
 
     <link rel="stylesheet" href="{% static 'css/admincss/nav.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/header-container.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/global-modal.css' %}">
     <script src="{% static 'js/sitejs/diary.js' %}"></script>
     <script src="{% static 'js/weather-api.js' %}"></script>
+    <script src="{% static 'js/sitejs/global-modal.js' %}"></script>
     <style>
         /* Fix dropdown direction and force refresh */
         .form-control option {
@@ -850,7 +852,7 @@
                                             };
                                             reader.readAsDataURL(file);
                                         } else {
-                                            alert('Please upload images only (max 10MB each)');
+                                            showErrorModal('Please upload images only (max 10MB each)');
                                         }
                                     });
                                 });
@@ -1042,28 +1044,6 @@
         </div>
     </div>
     {% include "site_diary/navtemplate/layoutfooter.html" %}
-    
-    <!-- Error Modal -->
-    <div class="modal fade" id="errorModal" tabindex="-1" role="dialog" aria-labelledby="errorModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title" id="errorModalLabel">
-                        <i class="fas fa-exclamation-triangle"></i> Submission Failed
-                    </h5>
-                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div id="errorModalContent"></div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
 
 
 <script>
@@ -1106,7 +1086,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (saveAsDraftBtn && siteEntryForm) {
         saveAsDraftBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            alert('Draft button clicked!');
             console.log('Save as draft clicked');
             
             // Check if projects are available
@@ -1140,11 +1119,11 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Date field ID:', '{{ diary_form.entry_date.id_for_label }}');
             
             if (!project) {
-                alert('Please select a project before saving as draft.');
+                showErrorModal('Please select a project before saving as draft.');
                 return;
             }
             if (!entryDate) {
-                alert('Please select an entry date before saving as draft.');
+                showErrorModal('Please select an entry date before saving as draft.');
                 return;
             }
             
@@ -1163,14 +1142,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }).then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert('Draft saved successfully!');
+                    showSuccessModal('Draft saved successfully!', data.draft_id);
                     console.log('Draft ID:', data.draft_id);
                 } else {
-                    alert('Error: ' + data.message);
+                    showErrorModal('Error: ' + data.message);
                 }
             }).catch(error => {
                 console.error('Error:', error);
-                alert('Error saving draft');
+                showErrorModal('Error saving draft');
             });
         });
     }
@@ -1194,20 +1173,46 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!progressPercentage) missingFields.push('Progress Percentage');
             
             if (missingFields.length > 0) {
-                alert('Please fill out the following required fields:\n\n• ' + missingFields.join('\n• '));
+                globalModal.error('Missing Required Fields', 'Please fill out the following required fields:<br><br>• ' + missingFields.join('<br>• '));
                 return;
             }
             
-            console.log('Form validation passed, submitting...');
-            
-            // Trigger the form submit event to ensure diary.js handlers run
-            const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
-            siteEntryForm.dispatchEvent(submitEvent);
-            
-            // If event wasn't prevented, submit the form
-            if (!submitEvent.defaultPrevented) {
-                siteEntryForm.submit();
-            }
+            // Show confirmation modal
+            const projectName = document.querySelector('#{{ diary_form.project.id_for_label }} option:checked').text;
+            globalModal.show({
+                type: 'primary',
+                icon: 'fa-paper-plane',
+                title: 'Submit Site Diary Entry',
+                subtitle: 'Confirm submission',
+                message: 'Are you sure you want to submit this site diary entry? Once submitted, it will be recorded and cannot be edited.',
+                details: {
+                    'Project': projectName,
+                    'Date': entryDate,
+                    'Progress': progressPercentage + '%'
+                },
+                confirmText: 'Submit Entry',
+                cancelText: 'Cancel',
+                showCancel: true,
+                confirmClass: 'global-modal-btn-success',
+                onConfirm: () => {
+                    console.log('Form validation passed, submitting...');
+                    
+                    // Trigger the form submit event to ensure diary.js handlers run
+                    const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+                    siteEntryForm.dispatchEvent(submitEvent);
+                    
+                    // Remove draft flag before final submission
+                    var draftInput = siteEntryForm.querySelector('input[name="save_as_draft"]');
+                    if (draftInput) {
+                        draftInput.remove();
+                    }
+                    
+                    // If event wasn't prevented, submit the form
+                    if (!submitEvent.defaultPrevented) {
+                        siteEntryForm.submit();
+                    }
+                }
+            });
         });
     }
     
@@ -1221,15 +1226,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 1000);
     }
     
-    // Show error modal if there are error messages - disabled for draft debugging
-    // {% if messages %}
-    //     {% for message in messages %}
-    //         {% if message.tags == 'error' %}
-    //             document.getElementById('errorModalContent').innerHTML = '<p>{{ message|escapejs }}</p>';
-    //             $('#errorModal').modal('show');
-    //         {% endif %}
-    //     {% endfor %}
-    // {% endif %}
+
     
     // Function to load draft data into form
     function loadDraftData(draftData) {
@@ -1478,6 +1475,35 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.updateBudgetSummary();
             }
         }, 500);
+    }
+    
+    // Custom modal functions for draft notifications
+    function showSuccessModal(message, draftId) {
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999';
+        modal.innerHTML = `
+            <div style="background:white;padding:30px;border-radius:8px;max-width:400px;text-align:center;box-shadow:0 4px 6px rgba(0,0,0,0.1)">
+                <div style="color:#28a745;font-size:48px;margin-bottom:15px"><i class="fas fa-check-circle"></i></div>
+                <h3 style="margin:0 0 10px 0;color:#333">${message}</h3>
+                ${draftId ? `<p style="color:#666;margin:10px 0">Draft ID: ${draftId}</p>` : ''}
+                <button onclick="this.closest('div[style*=fixed]').remove()" style="background:#3c6e71;color:white;border:none;padding:10px 30px;border-radius:4px;cursor:pointer;margin-top:15px;font-size:16px">OK</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    
+    function showErrorModal(message) {
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999';
+        modal.innerHTML = `
+            <div style="background:white;padding:30px;border-radius:8px;max-width:400px;text-align:center;box-shadow:0 4px 6px rgba(0,0,0,0.1)">
+                <div style="color:#dc3545;font-size:48px;margin-bottom:15px"><i class="fas fa-exclamation-circle"></i></div>
+                <h3 style="margin:0 0 10px 0;color:#333">Error</h3>
+                <div style="color:#666;margin:10px 0;text-align:left">${message}</div>
+                <button onclick="this.closest('div[style*=fixed]').remove()" style="background:#3c6e71;color:white;border:none;padding:10px 30px;border-radius:4px;cursor:pointer;margin-top:15px;font-size:16px">OK</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
     }
 });
 </script>
