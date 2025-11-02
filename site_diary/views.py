@@ -2424,6 +2424,23 @@ def settings(request):
             else:
                 messages.error(request, 'Access denied. Only architects can upload to gallery.')
         
+        elif action == 'delete_gallery_image':
+            # Handle gallery image deletion (Architects only)
+            if site_manager_profile.site_role and site_manager_profile.site_role.name == 'architect':
+                image_id = request.POST.get('image_id')
+                if image_id:
+                    from accounts.models import ArchitectGallery
+                    try:
+                        image = ArchitectGallery.objects.get(id=image_id, architect=site_manager_profile)
+                        image.delete()
+                        messages.success(request, 'Image deleted successfully!')
+                    except ArchitectGallery.DoesNotExist:
+                        messages.error(request, 'Image not found.')
+                else:
+                    messages.error(request, 'Invalid image ID.')
+            else:
+                messages.error(request, 'Access denied. Only architects can delete gallery images.')
+        
         return redirect('site_diary:settings')
     
     # Debug: Show current data being passed to template

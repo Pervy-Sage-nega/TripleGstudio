@@ -588,18 +588,7 @@ document.addEventListener("DOMContentLoaded", initSmoothScroll);
         });
     });
     
-    // Download PDF
-    document.querySelectorAll('.download').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const projectName = this.closest('.timeline-item') 
-                ? this.closest('.timeline-item').querySelector('h3').textContent
-                : this.closest('tr').querySelector('.table-project-name').textContent;
-                
-            // In a real application, you would generate and download a PDF
-            alert(`Generating PDF for ${projectName}. This would download a PDF in a real application.`);
-        });
-    });
+    // Download PDF - removed, handled by inline onclick in template
     
     // Pagination Controls
     const paginationButtons = document.querySelectorAll('.pagination .page-btn');

@@ -258,9 +258,9 @@
                             {% endif %}
                         </div>
                         <div class="timeline-actions">
-                            <a href="{% url 'site_diary:diary_entry_pdf' entry.id %}" class="action-btn download" title="Download PDF" target="_blank">
+                            <button class="action-btn download" title="Download PDF" onclick="downloadPDF({{ entry.id }}, '{{ entry.project.name|escapejs }}')">
                                 <i class="fas fa-file-pdf"></i>
-                            </a>
+                            </button>
                             <a href="{% url 'site_diary:revision_diary' entry.id %}" class="action-btn revision" title="Add Revision">
                                 <i class="fas fa-history"></i>
                             </a>
@@ -627,9 +627,9 @@
                                 <td>{{ entry.created_by.get_full_name|default:entry.created_by.username }}</td>
                                 <td>
                                     <div class="table-actions">
-                                        <a href="{% url 'site_diary:diary_entry_pdf' entry.id %}" class="action-btn download" title="Download PDF" target="_blank">
+                                        <button class="action-btn download" title="Download PDF" onclick="downloadPDF({{ entry.id }}, '{{ entry.project.name|escapejs }}')">
                                             <i class="fas fa-file-pdf"></i>
-                                        </a>
+                                        </button>
                                         <button class="action-btn view" title="View Details" onclick="viewEntry({{ entry.id }})" data-entry-id="{{ entry.id }}">
                                             <i class="fas fa-eye"></i>
                                         </button>
@@ -716,5 +716,10 @@
   
     
     <script src="{% static 'js/sitejs/history.js' %}"></script>
+    <script>
+        window.downloadPDF = function(entryId, projectName) {
+            window.open('{% url "site_diary:diary_entry_pdf" 0 %}'.replace('0', entryId), '_blank');
+        };
+    </script>
     {% include "site_diary/navtemplate/layoutfooter.html" %}
 {% endblock %}
