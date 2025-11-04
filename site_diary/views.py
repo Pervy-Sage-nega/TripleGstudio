@@ -1478,8 +1478,10 @@ def newproject(request):
                 except (User.DoesNotExist, ValidationError):
                     pass
             
-            # Validate image file if provided
+            # Handle image - either file upload or URL from gallery
             image_file = None
+            image_url = request.POST.get('image_url', '').strip()
+            
             if 'image' in request.FILES:
                 image_file = request.FILES['image']
                 # Validate file type and size
@@ -1503,8 +1505,9 @@ def newproject(request):
                 start_date=start_date,
                 expected_end_date=expected_end_date,
                 project_manager=request.user,
-                status='pending_approval',  # Project needs admin approval
-                image=image_file
+                status='pending_approval',
+                image=image_file,
+                image_url=image_url if image_url and not image_file else None
             )
             
             # Update client's profile if linked

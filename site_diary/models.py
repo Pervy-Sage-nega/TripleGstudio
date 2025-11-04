@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
 from decimal import Decimal
+from config.supabase_storage import SupabaseStorage
 
 class Project(models.Model):
     PROJECT_STATUS = [
@@ -28,8 +29,8 @@ class Project(models.Model):
     actual_end_date = models.DateField(null=True, blank=True)
     budget = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
     status = models.CharField(max_length=20, choices=PROJECT_STATUS, default='pending_approval')
-    image = models.ImageField(upload_to='project_images/', null=True, blank=True)
-    image_url = models.URLField(max_length=500, null=True, blank=True)
+    image = models.ImageField(upload_to='project_images/', storage=SupabaseStorage(), null=True, blank=True)
+    image_url = models.URLField(max_length=500, null=True, blank=True, help_text="Deprecated: Use image field instead")
     
     # Admin approval fields
     approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_projects')

@@ -264,13 +264,19 @@
                         <p class="error-message" id="architect-error" style="display: none;">Assigned Architect is required.</p>
                     </div>
 
-                    <!-- Project Image from Gallery -->
+                    <!-- Project Image from Gallery or Local -->
                     <div class="filter-group">
                         <label for="project-image">Project Image (Optional)</label>
-                        <button type="button" id="select-from-gallery" class="btn btn-outline" disabled>
-                            <i class="fas fa-images"></i> Select from Architect's Gallery
-                        </button>
-                        <small id="gallery-hint">Select an architect first to choose from their gallery</small>
+                        <div style="display: flex; gap: 10px;">
+                            <button type="button" id="select-from-gallery" class="btn btn-outline" disabled>
+                                <i class="fas fa-images"></i> Select from Gallery
+                            </button>
+                            <button type="button" id="upload-local-image" class="btn btn-outline">
+                                <i class="fas fa-upload"></i> Upload from Computer
+                            </button>
+                        </div>
+                        <small id="gallery-hint">Select an architect first to choose from their gallery, or upload from your computer</small>
+                        <input type="file" id="local-image-input" accept="image/*" style="display: none;">
                         <div class="image-preview" id="image-preview">
                             <img src="#" alt="Project Image Preview" id="image-output">
                             <button type="button" id="clear-image" class="btn btn-secondary">
@@ -370,7 +376,10 @@
         const closeGalleryModal = document.getElementById('closeGalleryModal');
         const cancelGallerySelection = document.getElementById('cancelGallerySelection');
         const selectedImageUrl = document.getElementById('selected-image-url');
+        const uploadLocalImage = document.getElementById('upload-local-image');
+        const localImageInput = document.getElementById('local-image-input');
         let selectedArchitectId = null;
+        let localImageFile = null;
         const mapPickerBtn = document.getElementById('map-picker-btn');
         const mapModal = document.getElementById('mapModal');
         const closeMapModal = document.getElementById('closeMapModal');
@@ -646,9 +655,30 @@
                 });
         }
 
+        // Upload local image
+        uploadLocalImage.addEventListener('click', function() {
+            localImageInput.click();
+        });
+
+        localImageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                localImageFile = file;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imageOutput.src = e.target.result;
+                    imagePreview.style.display = 'block';
+                    selectedImageUrl.value = '';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
         // Clear image preview
         clearImage.addEventListener("click", () => {
             selectedImageUrl.value = '';
+            localImageFile = null;
+            localImageInput.value = '';
             imagePreview.style.display = "none";
         });
 
@@ -705,8 +735,10 @@
                 formData.append('expected_end_date', endDate.value);
                 formData.append('description', document.getElementById('project-description').value);
                 
-                // Add image URL if selected from gallery
-                if (selectedImageUrl.value) {
+                // Add image from gallery or local file
+                if (localImageFile) {
+                    formData.append('image', localImageFile);
+                } else if (selectedImageUrl.value) {
                     formData.append('image_url', selectedImageUrl.value);
                 }
                 
