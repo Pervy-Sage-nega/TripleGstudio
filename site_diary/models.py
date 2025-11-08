@@ -69,9 +69,9 @@ class Project(models.Model):
         # Fallback to status-based progress
         status_progress = {
             'pending_approval': 0,
-            'planning': 10,
-            'active': 50,
-            'on_hold': 25,
+            'planning': 0,
+            'active': 0,
+            'on_hold': 0,
             'completed': 100,
             'cancelled': 0,
             'rejected': 0,

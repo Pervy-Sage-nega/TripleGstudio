@@ -695,13 +695,13 @@ def dashboard(request):
     # Check for success modal flag
     success_modal_data = request.session.pop('show_success_modal', None)
     approval_modal_data = success_modal_data  # For template compatibility
-    # Get user's approved projects only
+    # Get user's projects (including rejected for visibility)
     if request.user.is_staff:
-        projects = Project.objects.filter(status__in=['planning', 'active', 'on_hold', 'completed'])
+        projects = Project.objects.filter(status__in=['planning', 'active', 'on_hold', 'completed', 'rejected'])
     else:
         projects = Project.objects.filter(
             Q(project_manager=request.user) | Q(architect=request.user),
-            status__in=['planning', 'active', 'on_hold', 'completed']
+            status__in=['planning', 'active', 'on_hold', 'completed', 'rejected']
         )
     
     # Enhanced project data with progress and analytics
@@ -1468,11 +1468,10 @@ def newproject(request):
                 return redirect('site_diary:newproject')
             
             # Try to find existing client by email
+            from django.core.validators import validate_email
             client_user = None
             if client_email:
                 try:
-                    from django.contrib.auth.models import User
-                    from django.core.validators import validate_email
                     validate_email(client_email)
                     client_user = User.objects.get(email=client_email)
                 except (User.DoesNotExist, ValidationError):
@@ -1493,6 +1492,35 @@ def newproject(request):
                 if image_file.size > 5 * 1024 * 1024:  # 5MB limit
                     messages.error(request, 'Image file too large. Maximum size is 5MB.')
                     return redirect('site_diary:newproject')
+            elif image_url:
+                # Copy gallery image to Supabase
+                from django.core.files.base import ContentFile
+                from django.conf import settings
+                import os
+                
+                try:
+                    # Get local file path from URL
+                    local_path = image_url.replace('/media/', '')
+                    full_path = os.path.join(settings.MEDIA_ROOT, local_path)
+                    
+                    if os.path.exists(full_path):
+                        with open(full_path, 'rb') as f:
+                            file_content = f.read()
+                            file_name = os.path.basename(full_path)
+                            image_file = ContentFile(file_content, name=file_name)
+                except Exception as e:
+                    logger.error(f"Error copying gallery image: {str(e)}")
+                    messages.error(request, 'Error processing gallery image.')
+                    return redirect('site_diary:newproject')
+            
+            # Get architect and lookup User object
+            architect_name = request.POST.get('architect', '').strip()
+            architect_user = None
+            if architect_name:
+                for user in User.objects.filter(is_active=True):
+                    if user.get_full_name() == architect_name:
+                        architect_user = user
+                        break
             
             # Create project with pending approval status
             project = Project.objects.create(
@@ -1505,9 +1533,9 @@ def newproject(request):
                 start_date=start_date,
                 expected_end_date=expected_end_date,
                 project_manager=request.user,
+                architect=architect_user,
                 status='pending_approval',
-                image=image_file,
-                image_url=image_url if image_url and not image_file else None
+                image=image_file if image_file else None
             )
             
             # Update client's profile if linked
@@ -1529,10 +1557,14 @@ def newproject(request):
                 'project_id': project.id
             }
             logger.info(f"Project {project.id} created by user {request.user.id}")
+            messages.success(request, f'Project "{project.name}" created successfully! Pending admin approval.')
             return redirect('site_diary:dashboard')
         except Exception as e:
+            import traceback
             logger.error(f"Error creating project for user {request.user.id}: {str(e)}")
-            messages.error(request, 'Error creating project. Please try again.')
+            logger.error(traceback.format_exc())
+            messages.error(request, f'Error creating project: {str(e)}')
+            return redirect('site_diary:newproject')
     
     context = {
         'page_title': 'Create New Project'
@@ -2514,7 +2546,10 @@ def adminclientproject(request):
                     messages.success(request, f'Project "{project.name}" approved successfully.')
                     
                 elif action == 'reject':
-                    rejection_reason = request.POST.get('rejection_reason', '')
+                    rejection_reason = request.POST.get('rejection_reason', '').strip()
+                    if not rejection_reason:
+                        messages.error(request, 'Rejection reason is required.')
+                        return redirect('site_diary:adminclientproject')
                     project.status = 'rejected'
                     project.rejection_reason = rejection_reason
                     project.save()

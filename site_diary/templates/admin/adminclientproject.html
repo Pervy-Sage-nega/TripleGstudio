@@ -13,6 +13,12 @@
     <link rel="stylesheet" href="{% static 'css/admincss/header.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/global-modal.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; }
+        .modal.active { display: flex; align-items: center; justify-content: center; }
+        .modal .modal-content { background: white; border-radius: 8px; max-width: 800px; width: 90%; max-height: 90vh; overflow-y: auto; }
+        .form-actions { display: flex; gap: 10px; justify-content: flex-end; }
+    </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     {% endblock %}
@@ -190,7 +196,7 @@
                                 </td>
                                 <td>{{ project.project_manager.get_full_name|default:project.project_manager.username }}</td>
                                 <td>{{ project.description|truncatechars:20|default:"General" }}</td>
-                                <td>₱{{ project.budget|floatformat:2|default:"0.00" }}</td>
+                                <td class="budget-cell">₱{{ project.budget|floatformat:0 }}</td>
                                 <td>{{ project.start_date }} - {{ project.expected_end_date }}</td>
                                 <td>
                                     <span class="status-badge status-{% if project.status == 'pending_approval' %}pending{% elif project.status == 'rejected' %}rejected{% else %}approved{% endif %}">
@@ -431,6 +437,62 @@
     <script src="{% static 'js/sitejs/global-modal.js' %}"></script>
     <script src="{% static 'js/adminjs/mobile-btn.js' %}"></script>
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.budget-cell').forEach(cell => {
+                const text = cell.textContent;
+                const num = parseFloat(text.replace(/[^\d.]/g, ''));
+                if (!isNaN(num)) {
+                    cell.textContent = '₱' + num.toLocaleString('en-PH', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+                }
+            });
+            
+            let currentProjectId = null;
+            document.querySelectorAll('.action-btn.view').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    currentProjectId = this.dataset.id;
+                    const row = this.closest('tr');
+                    const name = row.querySelector('.project-title').textContent;
+                    const code = row.querySelector('.project-code').textContent;
+                    const architect = row.cells[2].textContent;
+                    const type = row.cells[3].textContent;
+                    const budget = row.cells[4].textContent;
+                    const dates = row.cells[5].textContent;
+                    const status = row.querySelector('.status-badge').textContent;
+                    const img = row.querySelector('.project-thumb').src;
+                    
+                    document.getElementById('modalProjectTitle').textContent = name;
+                    document.getElementById('modalProjectCode').textContent = code;
+                    document.getElementById('modalArchitect').textContent = architect;
+                    document.getElementById('modalProjectType').textContent = type;
+                    const budgetNum = parseFloat(budget.replace(/[^\d.]/g, ''));
+                    document.getElementById('modalBudget').textContent = '₱ ' + budgetNum.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                    document.getElementById('modalProjectImage').src = img;
+                    document.getElementById('modalStatusBadge').textContent = status;
+                    document.getElementById('projectDetailsModal').classList.add('active');
+                });
+            });
+            
+            document.getElementById('closeDetailsModal').addEventListener('click', () => {
+                document.getElementById('projectDetailsModal').classList.remove('active');
+            });
+            document.getElementById('modalCloseBtn').addEventListener('click', () => {
+                document.getElementById('projectDetailsModal').classList.remove('active');
+            });
+            
+            document.getElementById('modalRejectBtn').addEventListener('click', () => {
+                const projectName = document.getElementById('modalProjectTitle').textContent;
+                document.getElementById('projectDetailsModal').classList.remove('active');
+                showRejectModal(currentProjectId, projectName);
+            });
+            
+            document.getElementById('modalApproveBtn').addEventListener('click', () => {
+                const projectName = document.getElementById('modalProjectTitle').textContent;
+                const architect = document.getElementById('modalArchitect').textContent;
+                document.getElementById('projectDetailsModal').classList.remove('active');
+                showApproveModal(currentProjectId, projectName, architect);
+            });
+        });
+        
         function showApproveModal(projectId, projectName, architectName) {
             globalModal.show({
                 type: 'success',
@@ -456,32 +518,28 @@
         }
         
         function showRejectModal(projectId, projectName) {
-            const rejectReason = prompt('Please provide a reason for rejection:');
-            if (rejectReason && rejectReason.trim() !== '') {
-                globalModal.show({
-                    type: 'danger',
-                    icon: 'fa-times-circle',
-                    title: 'Reject Project',
-                    message: `Are you sure you want to reject "${projectName}"? The architect will need to revise and resubmit it.`,
-                    confirmText: 'Reject',
-                    cancelText: 'Cancel',
-                    showCancel: true,
-                    confirmClass: 'global-modal-btn-danger',
-                    onConfirm: () => {
-                        const form = document.createElement('form');
-                        form.method = 'POST';
-                        form.innerHTML = `
-                            <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
-                            <input type="hidden" name="action" value="reject">
-                            <input type="hidden" name="project_id" value="${projectId}">
-                            <input type="hidden" name="rejection_reason" value="${rejectReason}">
-                        `;
-                        document.body.appendChild(form);
-                        form.submit();
-                    }
-                });
-            }
+            document.getElementById('rejectProjectTitle').textContent = projectName;
+            document.getElementById('rejectProjectId').value = projectId;
+            document.getElementById('rejectReason').value = '';
+            document.getElementById('rejectNotes').value = '';
+            document.getElementById('rejectModal').classList.add('active');
         }
+        
+        document.getElementById('closeRejectModal').addEventListener('click', () => {
+            document.getElementById('rejectModal').classList.remove('active');
+        });
+        document.getElementById('cancelRejectBtn').addEventListener('click', () => {
+            document.getElementById('rejectModal').classList.remove('active');
+        });
+        
+        document.getElementById('rejectForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const reason = document.getElementById('rejectReason').value;
+            const notes = document.getElementById('rejectNotes').value.trim();
+            if (!reason || !notes) return;
+            document.getElementById('rejectReasonInput').value = `${reason}: ${notes}`;
+            e.target.submit();
+        });
     </script>
     {% endblock %}
 </body>
