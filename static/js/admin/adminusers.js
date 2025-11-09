@@ -168,15 +168,19 @@ document.addEventListener('DOMContentLoaded', function() {
                           btn.classList.contains('view') ? 'view' : null;
 
             if (action === 'view') {
-                viewUserDetails(userId);
+                viewUserDetails(userId, btn);
             } else if (action) {
-                showConfirmation(userId, action);
+                showConfirmation(userId, action, btn);
             }
         }
     });
 
     // View user details
-    function viewUserDetails(userId) {
+    function viewUserDetails(userId, btn) {
+        const icon = btn.querySelector('i');
+        icon.className = 'fas fa-spinner fa-spin';
+        btn.disabled = true;
+        
         fetch(`/admin-panel/users/${userId}/`)
             .then(response => response.text())
             .then(html => {
@@ -186,11 +190,15 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(error => {
                 console.error('Error:', error);
                 alert('Error loading user details');
+            })
+            .finally(() => {
+                icon.className = 'fas fa-eye';
+                btn.disabled = false;
             });
     }
 
     // Show confirmation modal
-    function showConfirmation(userId, action) {
+    function showConfirmation(userId, action, btn) {
         const actions = {
             'approve': { title: 'Approve Site Manager', message: 'Are you sure you want to approve this site manager?' },
             'deny': { title: 'Deny Application', message: 'Are you sure you want to deny this site manager application?' },
@@ -206,12 +214,19 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('confirmationModal').classList.add('active');
         
         document.getElementById('confirmAction').onclick = () => {
-            updateUserStatus(userId, action);
+            updateUserStatus(userId, action, btn);
         };
     }
 
     // Update user status
-    window.updateUserStatus = function(userId, action) {
+    window.updateUserStatus = function(userId, action, btn) {
+        document.getElementById('confirmationModal').classList.remove('active');
+        
+        const icon = btn.querySelector('i');
+        const originalIcon = icon.className;
+        icon.className = 'fas fa-spinner fa-spin';
+        btn.disabled = true;
+        
         fetch(`/admin-panel/users/${userId}/update-status/`, {
             method: 'POST',
             headers: {
@@ -226,14 +241,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 location.reload();
             } else {
                 alert('Error: ' + data.message);
+                icon.className = originalIcon;
+                btn.disabled = false;
             }
         })
         .catch(error => {
             console.error('Error:', error);
             alert('An error occurred. Please try again.');
+            icon.className = originalIcon;
+            btn.disabled = false;
         });
-        
-        document.getElementById('confirmationModal').classList.remove('active');
     }
 
     // Modal close handlers
