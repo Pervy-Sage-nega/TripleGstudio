@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="{% static 'css/sitecss/dashboard.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/createblog.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/milestone-scroll.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/global-modal.css' %}">
     
     
 {% endblock %}
@@ -212,21 +213,26 @@
         
     </div>
 
-    <!-- Rejection Reason Modal -->
-    <div id="rejectionModal" class="modal-backdrop" style="display: none;">
-        <div class="modal-content approval-modal">
-            <div class="modal-header">
-                <h3 id="rejectionProjectName">Project Rejected</h3>
-                <button class="modal-close" onclick="closeRejectionModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="approval-message">
-                    <h4 style="color: #dc3545;">Rejection Reason</h4>
-                    <p id="rejectionReasonText" style="padding: 15px; background: #fff; border-left: 4px solid #dc3545; margin: 10px 0;"></p>
+    <!-- Rejection Modal -->
+    <div id="rejectionModal" class="global-modal-overlay" style="display: none;">
+        <div class="global-modal">
+            <div class="global-modal-header">
+                <button class="global-modal-close" onclick="closeRejectionModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="global-modal-icon danger">
+                    <i class="fas fa-exclamation-circle"></i>
                 </div>
+                <h3 class="global-modal-title" id="rejectionTitle"></h3>
+                <p class="global-modal-subtitle">Project Rejected</p>
             </div>
-            <div class="modal-footer">
-                <button class="btn btn-primary" onclick="closeRejectionModal()">Close</button>
+            <div class="global-modal-body">
+                <p class="global-modal-message" id="rejectionMessage"></p>
+                <div class="global-modal-footer">
+                    <button class="global-modal-btn global-modal-btn-danger" onclick="closeRejectionModal()">
+                        <i class="fas fa-check"></i> OK
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -272,17 +278,25 @@
 
     <!-- Scripts -->
     <script src="{% static 'js/sitejs/sitemanager-dashboard.js' %}"></script>
-    <script src="{% static 'js/sitejs/dashboardjs' %}"></script>
+    <script src="{% static 'js/sitejs/dashboardjs.js' %}"></script>
     
     <script>
-        function showRejectionModal(projectName, reason) {
-            document.getElementById('rejectionProjectName').textContent = projectName;
-            document.getElementById('rejectionReasonText').textContent = reason;
+        function showRejectionModal(title, message) {
+            document.getElementById('rejectionTitle').textContent = title;
+            document.getElementById('rejectionMessage').textContent = message;
             document.getElementById('rejectionModal').style.display = 'flex';
+            setTimeout(() => {
+                document.getElementById('rejectionModal').classList.add('active');
+                const icon = document.querySelector('#rejectionModal .global-modal-icon');
+                if (icon) icon.classList.add('pop');
+            }, 10);
         }
         
         function closeRejectionModal() {
-            document.getElementById('rejectionModal').style.display = 'none';
+            document.getElementById('rejectionModal').classList.remove('active');
+            setTimeout(() => {
+                document.getElementById('rejectionModal').style.display = 'none';
+            }, 300);
         }
     </script>
     
