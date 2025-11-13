@@ -293,10 +293,11 @@
         }
         
         function closeRejectionModal() {
-            document.getElementById('rejectionModal').classList.remove('active');
-            setTimeout(() => {
-                document.getElementById('rejectionModal').style.display = 'none';
-            }, 300);
+            const modal = document.getElementById('rejectionModal');
+            const icon = modal.querySelector('.global-modal-icon');
+            if (icon) icon.classList.remove('pop');
+            modal.classList.remove('active');
+            modal.style.display = 'none';
         }
     </script>
     
