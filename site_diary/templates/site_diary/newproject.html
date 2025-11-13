@@ -738,6 +738,12 @@
                 formData.append('expected_end_date', endDate.value);
                 formData.append('description', document.getElementById('project-description').value);
                 
+                // Add edit_project_id if editing
+                const editProjectIdInput = document.querySelector('input[name="edit_project_id"]');
+                if (editProjectIdInput) {
+                    formData.append('edit_project_id', editProjectIdInput.value);
+                }
+                
                 // Add image from gallery or local file
                 if (localImageFile) {
                     formData.append('image', localImageFile);
