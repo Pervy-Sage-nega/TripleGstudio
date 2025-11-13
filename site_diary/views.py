@@ -1542,7 +1542,7 @@ def newproject(request):
                     project.expected_end_date = expected_end_date
                     project.architect = architect_user
                     project.status = 'pending_approval'
-                    project.rejection_reason = None
+                    project.rejection_reason = ''
                     project.approved_by = None
                     project.approved_at = None
                     if image_file:
