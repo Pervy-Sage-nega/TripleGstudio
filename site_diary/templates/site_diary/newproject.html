@@ -181,6 +181,9 @@
             
             <form id="new-project-form" method="post">
                 {% csrf_token %}
+                {% if edit_project %}
+                <input type="hidden" name="edit_project_id" value="{{ edit_project.id }}">
+                {% endif %}
                 <div class="filter-options">
                     <!-- Project Name -->
                     <div class="filter-group">
@@ -784,6 +787,28 @@
             })
         );
     </script>
+    
+    {% if edit_project %}
+    <script>
+        // Populate form with existing project data
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('project-name').value = '{{ edit_project.name|escapejs }}';
+            document.getElementById('client-name').value = '{{ edit_project.client_name|escapejs }}';
+            document.getElementById('project-location').value = '{{ edit_project.location|escapejs }}';
+            document.getElementById('assigned-architect').value = '{{ edit_project.architect.get_full_name|default:"" }}';
+            document.getElementById('project-budget').value = '{{ edit_project.budget|floatformat:0 }}';
+            document.getElementById('start-date').value = '{{ edit_project.start_date|date:"Y-m-d" }}';
+            document.getElementById('end-date').value = '{{ edit_project.expected_end_date|date:"Y-m-d" }}';
+            document.getElementById('project-description').value = '{{ edit_project.description|escapejs }}';
+            {% if edit_project.image %}
+            document.getElementById('image-output').src = '{{ edit_project.image.url }}';
+            document.getElementById('image-preview').style.display = 'block';
+            {% endif %}
+            document.getElementById('submit-btn').innerHTML = '<i class="fas fa-paper-plane"></i> Resubmit Project';
+        });
+    </script>
+    {% endif %}
+    
    <script src="{% static 'js/sitejs/global-modal.js' %}"></script>
    <script src="{% static 'js/sitejs/mobile-btn.js' %}"></script>
 </body>

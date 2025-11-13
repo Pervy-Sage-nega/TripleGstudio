@@ -536,7 +536,18 @@
             e.preventDefault();
             const reason = document.getElementById('rejectReason').value;
             const notes = document.getElementById('rejectNotes').value.trim();
-            if (!reason || !notes) return;
+            if (!reason || !notes) {
+                alert('Please select a reason and provide rejection notes.');
+                return;
+            }
+            
+            const btn = document.getElementById('confirmRejectBtn');
+            const icon = btn.querySelector('i');
+            if (icon) icon.className = 'fas fa-spinner fa-spin';
+            btn.disabled = true;
+            btn.textContent = ' Rejecting...';
+            if (icon) btn.prepend(icon);
+            
             document.getElementById('rejectReasonInput').value = `${reason}: ${notes}`;
             e.target.submit();
         });

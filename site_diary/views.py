@@ -1522,21 +1522,51 @@ def newproject(request):
                         architect_user = user
                         break
             
-            # Create project with pending approval status
-            project = Project.objects.create(
-                name=project_name,
-                client_name=client_name,
-                client=client_user,
-                location=location,
-                description=description,
-                budget=budget,
-                start_date=start_date,
-                expected_end_date=expected_end_date,
-                project_manager=request.user,
-                architect=architect_user,
-                status='pending_approval',
-                image=image_file if image_file else None
-            )
+            # Check if editing existing rejected project
+            edit_project_id = request.POST.get('edit_project_id')
+            if edit_project_id:
+                try:
+                    project = Project.objects.get(id=edit_project_id, status='rejected')
+                    if project.project_manager != request.user and project.architect != request.user:
+                        messages.error(request, 'Access denied.')
+                        return redirect('site_diary:dashboard')
+                    
+                    # Update project fields
+                    project.name = project_name
+                    project.client_name = client_name
+                    project.client = client_user
+                    project.location = location
+                    project.description = description
+                    project.budget = budget
+                    project.start_date = start_date
+                    project.expected_end_date = expected_end_date
+                    project.architect = architect_user
+                    project.status = 'pending_approval'
+                    project.rejection_reason = None
+                    if image_file:
+                        project.image = image_file
+                    project.save()
+                    
+                    messages.success(request, f'Project "{project.name}" resubmitted successfully! Pending admin approval.')
+                except Project.DoesNotExist:
+                    messages.error(request, 'Project not found.')
+                    return redirect('site_diary:dashboard')
+            else:
+                # Create new project with pending approval status
+                project = Project.objects.create(
+                    name=project_name,
+                    client_name=client_name,
+                    client=client_user,
+                    location=location,
+                    description=description,
+                    budget=budget,
+                    start_date=start_date,
+                    expected_end_date=expected_end_date,
+                    project_manager=request.user,
+                    architect=architect_user,
+                    status='pending_approval',
+                    image=image_file if image_file else None
+                )
             
             # Update client's profile if linked
             if client_user:
@@ -1566,8 +1596,22 @@ def newproject(request):
             messages.error(request, f'Error creating project: {str(e)}')
             return redirect('site_diary:newproject')
     
+    # Check if editing rejected project
+    edit_project_id = request.GET.get('edit')
+    edit_project = None
+    if edit_project_id:
+        try:
+            edit_project = Project.objects.get(id=edit_project_id, status='rejected')
+            if edit_project.project_manager != request.user and edit_project.architect != request.user:
+                messages.error(request, 'Access denied.')
+                return redirect('site_diary:dashboard')
+        except Project.DoesNotExist:
+            messages.error(request, 'Project not found.')
+            return redirect('site_diary:dashboard')
+    
     context = {
-        'page_title': 'Create New Project'
+        'page_title': 'Edit & Resubmit Project' if edit_project else 'Create New Project',
+        'edit_project': edit_project
     }
     return render(request, 'site_diary/newproject.html', context)
 
