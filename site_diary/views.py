@@ -1543,6 +1543,8 @@ def newproject(request):
                     project.architect = architect_user
                     project.status = 'pending_approval'
                     project.rejection_reason = None
+                    project.approved_by = None
+                    project.approved_at = None
                     if image_file:
                         project.image = image_file
                     project.save()
