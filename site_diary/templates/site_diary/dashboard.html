@@ -101,7 +101,7 @@
         <!-- Project Grid -->
         <div class="project-grid">
             {% for project in projects %}
-            <div class="project-card" data-category="{{ project.category|default:'commercial' }}" data-status="{{ project.status }}">
+            <div class="project-card" data-category="{{ project.category|default:'commercial' }}" data-status="{{ project.status }">
                 <div style="position: relative;">
                     {% if project.image_url %}
                         <img src="{{ project.image_url }}" alt="{{ project.name }}" class="project-image">
@@ -119,11 +119,9 @@
                 <div class="project-content">
                     <h3 class="project-title">{{ project.name }}</h3>
                     {% if project.status == 'rejected' and project.rejection_reason %}
-                    <div class="rejection-notice">
-                        <i class="fas fa-times-circle"></i>
-                        <span class="rejection-label">Rejected:</span>
-                        <span class="rejection-message">{{ project.rejection_reason }}</span>
-                    </div>
+                    <button class="btn btn-danger" onclick="showRejectionModal('{{ project.name|escapejs }}', '{{ project.rejection_reason|escapejs }}')" style="width: 100%; margin-bottom: 10px; background: #dc3545; color: white;">
+                        <i class="fas fa-exclamation-circle"></i> View Rejection Reason
+                    </button>
                     {% endif %}
                     <p class="project-description">{{ project.description|default:'Project in progress with multiple phases and milestones.'|truncatechars:80 }}</p>
                     <div class="progress-container">
@@ -212,6 +210,28 @@
         
     </div>
 
+    <!-- Rejection Reason Modal -->
+    <div id="rejectionModal" class="modal-backdrop" style="display: none;">
+        <div class="modal-content approval-modal">
+            <div class="modal-header">
+                <div class="modal-icon" style="background: #dc3545;">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <h3 id="rejectionProjectName">Project Rejected</h3>
+                <button class="modal-close" onclick="closeRejectionModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="approval-message">
+                    <h4 style="color: #dc3545;">Rejection Reason</h4>
+                    <p id="rejectionReasonText" style="padding: 15px; background: #fff; border-left: 4px solid #dc3545; margin: 10px 0;"></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closeRejectionModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Project Approval Modal -->
     {% if approval_modal_data %}
     <div id="approvalModal" class="modal-backdrop">
@@ -254,6 +274,18 @@
     <!-- Scripts -->
     <script src="{% static 'js/sitejs/sitemanager-dashboard.js' %}"></script>
     <script src="{% static 'js/sitejs/dashboardjs' %}"></script>
+    
+    <script>
+        function showRejectionModal(projectName, reason) {
+            document.getElementById('rejectionProjectName').textContent = projectName;
+            document.getElementById('rejectionReasonText').textContent = reason;
+            document.getElementById('rejectionModal').style.display = 'flex';
+        }
+        
+        function closeRejectionModal() {
+            document.getElementById('rejectionModal').style.display = 'none';
+        }
+    </script>
     
     {% if approval_modal_data %}
     <script>
