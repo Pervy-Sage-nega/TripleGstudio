@@ -748,15 +748,17 @@
         // Logout functionality
         document.getElementById('logoutForm').addEventListener('submit', function(e) {
             e.preventDefault();
+            const form = this;
             
-            if (confirm('Are you sure you want to logout from the Site Manager panel?')) {
-                // Update the clear browser data value based on checkbox
-                const clearBrowserData = document.getElementById('clearBrowserData').checked;
-                document.getElementById('clearBrowserDataValue').value = clearBrowserData ? 'on' : 'off';
-                
-                // Submit the form
-                this.submit();
-            }
+            globalModal.warning(
+                'Logout Confirmation',
+                'Are you sure you want to logout from the Site Manager panel?',
+                () => {
+                    const clearBrowserData = document.getElementById('clearBrowserData').checked;
+                    document.getElementById('clearBrowserDataValue').value = clearBrowserData ? 'on' : 'off';
+                    form.submit();
+                }
+            );
         });
 
         // Clear browser data checkbox sync
