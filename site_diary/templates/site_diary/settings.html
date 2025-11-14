@@ -255,7 +255,7 @@
                     <p class="settings-section-desc">Manage your password and account security settings</p>
                 </div>
 
-                <form method="post" id="passwordForm">
+                <form method="post" action="{% url 'site_diary:settings' %}" id="passwordForm">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="change_password">
 
