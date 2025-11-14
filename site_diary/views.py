@@ -2483,9 +2483,11 @@ def settings(request):
         
         elif action == 'change_password':
             # Handle password change
+            from django.contrib.auth import update_session_auth_hash
             password_form = PasswordChangeForm(request.user, request.POST)
             if password_form.is_valid():
-                password_form.save()
+                user = password_form.save()
+                update_session_auth_hash(request, user)
                 messages.success(request, 'Password changed successfully!')
             else:
                 for error in password_form.errors.values():
