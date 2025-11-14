@@ -167,6 +167,7 @@ else:
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 SUPABASE_BUCKET = os.getenv('SUPABASE_BUCKET', 'project-images')
+SUPABASE_PORTFOLIO_BUCKET = 'portfolio_project_images'
 
 # Media files
 MEDIA_URL = '/media/'
