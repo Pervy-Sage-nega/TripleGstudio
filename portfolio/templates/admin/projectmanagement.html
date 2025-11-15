@@ -4,7 +4,6 @@
 {% block extra_head %}
     <link rel="stylesheet" href="{% static 'css/admincss/header.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/dashboard.css' %}">
-    
     <link rel="stylesheet" href="{% static 'css/sitecss/reports.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/history.css' %}">
     <link rel="stylesheet" href="{% static 'css/admincss/blogmanagement.css' %}">
@@ -12,8 +11,7 @@
     <link rel="stylesheet" href="{% static 'css/admincss/nav.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/admincss/projectmanagement.css' %}">
-    
-     
+    <link rel="stylesheet" href="{% static 'css/sitecss/global-modal.css' %}">
 {% endblock %}
 {% block content %}
 
@@ -254,8 +252,23 @@
     </div>
     {% endblock %}
 {% block extra_scripts %}
+<script src="{% static 'js/sitejs/global-modal.js' %}"></script>
 <script src="{% static 'js/adminjs/projectmanagement.js' %}"></script>
 <script src="{% static 'js/adminjs/mobile-btn.js' %}"></script>
+<script>
+// Show success/error messages using global modal
+document.addEventListener('DOMContentLoaded', function() {
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.tags == 'success' %}
+                globalModal.success('Success', '{{ message|escapejs }}');
+            {% elif message.tags == 'error' %}
+                globalModal.error('Error', '{{ message|escapejs }}');
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+});
+</script>
 
 {% if edit_project %}
 <script>
