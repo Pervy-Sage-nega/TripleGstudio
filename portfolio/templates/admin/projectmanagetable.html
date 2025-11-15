@@ -471,44 +471,52 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Publish draft function
     window.publishDraft = function(projectId) {
-        if (confirm('Are you sure you want to publish this draft? It will become publicly visible.')) {
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = `/portfolio/publish/${projectId}/`;
-            
-            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
-            if (csrfToken) {
-                const csrfInput = document.createElement('input');
-                csrfInput.type = 'hidden';
-                csrfInput.name = 'csrfmiddlewaretoken';
-                csrfInput.value = csrfToken.value;
-                form.appendChild(csrfInput);
+        globalModal.warning(
+            'Publish Draft',
+            'Are you sure you want to publish this draft? It will become publicly visible.',
+            () => {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/portfolio/publish/${projectId}/`;
+                
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+                if (csrfToken) {
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = 'csrfmiddlewaretoken';
+                    csrfInput.value = csrfToken.value;
+                    form.appendChild(csrfInput);
+                }
+                
+                document.body.appendChild(form);
+                form.submit();
             }
-            
-            document.body.appendChild(form);
-            form.submit();
-        }
+        );
     };
     
     // Delete project function
     window.deleteProject = function(projectId) {
-        if (confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = `/portfolio/delete/${projectId}/`;
-            
-            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
-            if (csrfToken) {
-                const csrfInput = document.createElement('input');
-                csrfInput.type = 'hidden';
-                csrfInput.name = 'csrfmiddlewaretoken';
-                csrfInput.value = csrfToken.value;
-                form.appendChild(csrfInput);
+        globalModal.warning(
+            'Delete Project',
+            'Are you sure you want to delete this project? This action cannot be undone.',
+            () => {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/portfolio/delete/${projectId}/`;
+                
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+                if (csrfToken) {
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = 'csrfmiddlewaretoken';
+                    csrfInput.value = csrfToken.value;
+                    form.appendChild(csrfInput);
+                }
+                
+                document.body.appendChild(form);
+                form.submit();
             }
-            
-            document.body.appendChild(form);
-            form.submit();
-        }
+        );
     };
 
     // Refresh button functionality
@@ -526,31 +534,39 @@ document.addEventListener('DOMContentLoaded', function() {
         const selectedIds = Array.from(document.querySelectorAll('.project-checkbox:checked')).map(cb => cb.value);
         
         if (!action) {
-            alert('Please select an action.');
+            globalModal.error('No Action Selected', 'Please select an action.');
             return;
         }
         
         if (selectedIds.length === 0) {
-            alert('Please select at least one project.');
+            globalModal.error('No Projects Selected', 'Please select at least one project.');
             return;
         }
         
         if (action === 'draft') {
-            if (confirm(`Are you sure you want to set ${selectedIds.length} project(s) to draft?`)) {
-                bulkUpdateStatus(selectedIds, 'draft');
-            }
+            globalModal.warning(
+                'Set to Draft',
+                `Are you sure you want to set ${selectedIds.length} project(s) to draft?`,
+                () => bulkUpdateStatus(selectedIds, 'draft')
+            );
         } else if (action === 'publish') {
-            if (confirm(`Are you sure you want to publish ${selectedIds.length} project(s)?`)) {
-                bulkUpdateStatus(selectedIds, 'completed');
-            }
+            globalModal.warning(
+                'Publish Projects',
+                `Are you sure you want to publish ${selectedIds.length} project(s)?`,
+                () => bulkUpdateStatus(selectedIds, 'completed')
+            );
         } else if (action === 'unpublish') {
-            if (confirm(`Are you sure you want to unpublish ${selectedIds.length} project(s)?`)) {
-                bulkUpdateStatus(selectedIds, 'draft');
-            }
+            globalModal.warning(
+                'Unpublish Projects',
+                `Are you sure you want to unpublish ${selectedIds.length} project(s)?`,
+                () => bulkUpdateStatus(selectedIds, 'draft')
+            );
         } else if (action === 'delete') {
-            if (confirm(`Are you sure you want to delete ${selectedIds.length} project(s)? This action cannot be undone.`)) {
-                bulkDeleteProjects(selectedIds);
-            }
+            globalModal.warning(
+                'Delete Projects',
+                `Are you sure you want to delete ${selectedIds.length} project(s)? This action cannot be undone.`,
+                () => bulkDeleteProjects(selectedIds)
+            );
         }
     };
     
