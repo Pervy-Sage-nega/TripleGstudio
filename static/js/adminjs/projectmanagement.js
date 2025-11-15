@@ -399,10 +399,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const statusDropdown = document.getElementById('status');
             const hiddenStatus = document.getElementById('hiddenStatus');
             
-            // If publish checkbox is unchecked, set status to draft
             if (publishCheckbox && !publishCheckbox.checked) {
+                // Unchecked: use hidden field to force draft
                 if (hiddenStatus) hiddenStatus.value = 'draft';
-                if (statusDropdown) statusDropdown.value = 'draft';
+                if (statusDropdown) statusDropdown.disabled = true;
+            } else {
+                // Checked: remove hidden field name so dropdown value is used
+                if (hiddenStatus) hiddenStatus.removeAttribute('name');
             }
         });
     }
