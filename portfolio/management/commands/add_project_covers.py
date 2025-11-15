@@ -11,7 +11,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         try:
             # Base path to project images
-            project_base_path = Path('d:/tripleG/project')
+            project_base_path = Path('d:/tripleG/sitepost')
             
             if not project_base_path.exists():
                 self.stdout.write(
@@ -112,9 +112,9 @@ class Command(BaseCommand):
             
             # Summary
             self.stdout.write(f"\n" + "="*50)
-            self.stdout.write("COVER IMAGE SUMMARY:")
+            self.stdout.write("IMAGE UPLOAD SUMMARY:")
             self.stdout.write(f"Total projects processed: {projects.count()}")
-            self.stdout.write(f"Cover images added: {updated_count}")
+            self.stdout.write(f"Projects with images added: {updated_count}")
             
             # Final check
             projects_with_covers = Project.objects.exclude(hero_image='').count()
@@ -124,7 +124,8 @@ class Command(BaseCommand):
             self.stdout.write(f"\nProject Cover Status:")
             for project in Project.objects.all():
                 status = "[HAS COVER]" if project.hero_image else "[NO COVER]"
-                self.stdout.write(f"  {status} {project.title}")
+                gallery_count = project.images.count()
+                self.stdout.write(f"  {status} {project.title} ({gallery_count} gallery images)")
             
         except Exception as e:
             self.stdout.write(
