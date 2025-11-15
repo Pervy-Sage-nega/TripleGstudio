@@ -293,15 +293,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function saveAsDraft() {
-        var hiddenStatus = document.getElementById('hiddenStatus');
-        var statusDropdown = document.getElementById('status');
-        if (hiddenStatus) {
-            hiddenStatus.value = 'draft';
-            if (statusDropdown) statusDropdown.value = '';
-            document.getElementById('projectForm').submit();
-        } else {
-            alert('Draft status field missing. Please contact admin.');
-        }
+        document.getElementById('publish').checked = false;
+        document.getElementById('projectForm').submit();
     }
     
     function closeModal() {
@@ -407,22 +400,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const statusDropdown = document.getElementById('status');
             const hiddenStatus = document.getElementById('hiddenStatus');
             
-            if (isPublishClick) {
-                // Publish button clicked: always use dropdown status
-                if (hiddenStatus) hiddenStatus.removeAttribute('name');
-                if (statusDropdown) statusDropdown.setAttribute('name', 'status');
-            } else if (publishCheckbox && !publishCheckbox.checked) {
-                // Checkbox unchecked: force draft
-                if (hiddenStatus) {
-                    hiddenStatus.setAttribute('name', 'status');
-                    hiddenStatus.value = 'draft';
-                }
-                if (statusDropdown) statusDropdown.removeAttribute('name');
-            } else {
-                // Checkbox checked: use dropdown
-                if (hiddenStatus) hiddenStatus.removeAttribute('name');
-                if (statusDropdown) statusDropdown.setAttribute('name', 'status');
-            }
+            // Always use dropdown status, checkbox only controls publish_status
+            if (hiddenStatus) hiddenStatus.removeAttribute('name');
+            if (statusDropdown) statusDropdown.setAttribute('name', 'status');
         });
     }
     

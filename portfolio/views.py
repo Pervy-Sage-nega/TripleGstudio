@@ -36,14 +36,14 @@ def projectmanagement(request):
     
     # Get statistics for dashboard
     total_projects = projects.count()
-    draft_projects = projects.filter(status='draft').count()
+    draft_projects = projects.filter(publish_status='draft').count()
     completed_projects = projects.filter(status='completed').count()
     ongoing_projects = projects.filter(status='ongoing').count()
     planned_projects = projects.filter(status='planned').count()
     featured_projects = projects.filter(featured=True).count()
     
     # Get draft projects for the drafts section
-    draft_project_list = projects.filter(status='draft').order_by('-updated_at')
+    draft_project_list = projects.filter(publish_status='draft').order_by('-updated_at')
     
     # Get categories for filtering
     categories = Category.objects.all().order_by('name')
@@ -74,7 +74,7 @@ def projecttable(request):
     
     # Get statistics for dashboard
     total_projects = projects.count()
-    draft_projects = projects.filter(status='draft').count()
+    draft_projects = projects.filter(publish_status='draft').count()
     completed_projects = projects.filter(status='completed').count()
     ongoing_projects = projects.filter(status='ongoing').count()
     planned_projects = projects.filter(status='planned').count()
