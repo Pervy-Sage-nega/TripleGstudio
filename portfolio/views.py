@@ -200,36 +200,45 @@ def project_detail(request, project_id):
 def create_project(request):
     """Create a new project with milestones"""
     try:
+        # Validate required fields
+        if not request.POST.get('title'):
+            messages.error(request, 'Project title is required.')
+            return redirect('portfolio:projectmanagement')
+        if not request.POST.get('description'):
+            messages.error(request, 'Project description is required.')
+            return redirect('portfolio:projectmanagement')
+        if not request.POST.get('category'):
+            messages.error(request, 'Project category is required.')
+            return redirect('portfolio:projectmanagement')
+        if not request.FILES.get('hero_image'):
+            messages.error(request, 'Cover image is required.')
+            return redirect('portfolio:projectmanagement')
+        
         with transaction.atomic():
             # Create the main project
             project = Project.objects.create(
                 title=request.POST.get('title'),
                 description=request.POST.get('description'),
                 category_id=request.POST.get('category'),
-                year=int(request.POST.get('year')),
-                location=request.POST.get('location'),
-                size=request.POST.get('size'),
-                duration=request.POST.get('duration'),
-                completion_date=request.POST.get('completion_date'),
-                lead_architect=request.POST.get('lead_architect'),
+                year=int(request.POST.get('year')) if request.POST.get('year') else 2024,
+                location=request.POST.get('location', ''),
+                size=request.POST.get('size', ''),
+                duration=request.POST.get('duration', ''),
+                completion_date=request.POST.get('completion_date') if request.POST.get('completion_date') else None,
+                lead_architect=request.POST.get('lead_architect', ''),
                 status=request.POST.get('status', 'planned'),
                 featured=request.POST.get('featured') == 'on',
+                hero_image=request.FILES['hero_image'],
                 # SEO fields
                 seo_meta_title=request.POST.get('seo_meta_title', ''),
                 seo_meta_description=request.POST.get('seo_meta_description', ''),
                 hero_image_alt=request.POST.get('hero_image_alt', ''),
             )
             
-            # Handle hero image upload
-            if request.FILES.get('hero_image'):
-                project.hero_image = request.FILES['hero_image']
-            
             # Handle video upload
             if request.FILES.get('video'):
                 project.video = request.FILES['video']
-            
-            # Save project with uploaded files
-            project.save()
+                project.save()
             
             # Handle gallery images
             gallery_images = request.FILES.getlist('gallery_images')
@@ -260,6 +269,9 @@ def create_project(request):
             return redirect('portfolio:projectmanagement')
             
     except Exception as e:
+        import traceback
+        print(f"Error creating project: {str(e)}")
+        print(traceback.format_exc())
         messages.error(request, f'Error creating project: {str(e)}')
         return redirect('portfolio:projectmanagement')
 
