@@ -391,6 +391,22 @@ document.addEventListener('DOMContentLoaded', function() {
     updateCharacterCount('seo_meta_title', 'seo_title_count');
     updateCharacterCount('seo_meta_description', 'seo_desc_count');
     
+    // Form submission handler to check publish checkbox
+    const projectForm = document.getElementById('projectForm');
+    if (projectForm) {
+        projectForm.addEventListener('submit', function(e) {
+            const publishCheckbox = document.getElementById('publish');
+            const statusDropdown = document.getElementById('status');
+            const hiddenStatus = document.getElementById('hiddenStatus');
+            
+            // If publish checkbox is unchecked, set status to draft
+            if (publishCheckbox && !publishCheckbox.checked) {
+                if (hiddenStatus) hiddenStatus.value = 'draft';
+                if (statusDropdown) statusDropdown.value = 'draft';
+            }
+        });
+    }
+    
     // Expose functions to global scope immediately
     window.addMilestone = addMilestone;
     window.removeMilestone = removeMilestone;
