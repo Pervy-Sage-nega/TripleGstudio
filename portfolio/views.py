@@ -441,16 +441,18 @@ def bulk_update_status(request):
             messages.error(request, 'Invalid request parameters.')
             return redirect('portfolio:projecttable')
         
-        updated_count = Project.objects.filter(id__in=project_ids).update(status=status)
+        # Map bulk actions to appropriate field updates
+        if status == 'draft':
+            updated_count = Project.objects.filter(id__in=project_ids).update(publish_status='draft')
+            status_display = 'Draft'
+        elif status == 'completed':
+            updated_count = Project.objects.filter(id__in=project_ids).update(publish_status='published')
+            status_display = 'Published'
+        else:
+            updated_count = Project.objects.filter(id__in=project_ids).update(status=status)
+            status_display = status.title()
         
-        status_display = {
-            'draft': 'Draft',
-            'planned': 'Planned', 
-            'ongoing': 'Ongoing',
-            'completed': 'Published'
-        }.get(status, status.title())
-        
-        messages.success(request, f'Successfully updated {updated_count} project(s) to {status_display} status.')
+        messages.success(request, f'Successfully updated {updated_count} project(s) to {status_display}.')
         
     except Exception as e:
         messages.error(request, f'Error updating projects: {str(e)}')
