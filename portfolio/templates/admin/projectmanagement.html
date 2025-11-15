@@ -316,8 +316,8 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('featured').checked = true;
     {% endif %}
     
-    // Set publish checkbox based on project status (if not draft, it's published)
-    {% if edit_project.status != 'draft' %}
+    // Set publish checkbox based on publish_status
+    {% if edit_project.publish_status == 'published' %}
     document.getElementById('publish').checked = true;
     {% else %}
     document.getElementById('publish').checked = false;

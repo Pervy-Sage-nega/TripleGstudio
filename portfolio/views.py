@@ -107,7 +107,7 @@ def project_list(request):
     search_query = request.GET.get('search', '').strip()
     
     # Start with published projects only (exclude drafts), optimizing queries
-    projects = Project.objects.select_related('category').prefetch_related('images').exclude(status='draft')
+    projects = Project.objects.select_related('category').prefetch_related('images').filter(publish_status='published')
     
     # Apply filters
     if year_filter != 'all':
@@ -163,14 +163,14 @@ def project_detail(request, project_id):
     project = get_object_or_404(
         Project.objects.select_related('category').prefetch_related(
             'images', 'stats', 'timeline'
-        ).exclude(status='draft'),
+        ).filter(publish_status='published'),
         id=project_id
     )
     
     # Get related projects (same category, excluding current and drafts)
     related_projects = Project.objects.filter(
         category=project.category
-    ).exclude(id=project.id).exclude(status='draft').select_related('category')[:3]
+    ).exclude(id=project.id).filter(publish_status='published').select_related('category')[:3]
     
     # Generate SEO data
     seo_manager = PortfolioSEOManager()
@@ -227,6 +227,7 @@ def create_project(request):
                 completion_date=request.POST.get('completion_date') if request.POST.get('completion_date') else None,
                 lead_architect=request.POST.get('lead_architect', ''),
                 status=request.POST.get('status', 'planned'),
+                publish_status='published' if request.POST.get('publish') == 'on' else 'draft',
                 featured=request.POST.get('featured') == 'on',
                 hero_image=request.FILES['hero_image'],
                 # SEO fields
@@ -295,6 +296,7 @@ def edit_project(request, project_id):
             project.completion_date = request.POST.get('completion_date')
             project.lead_architect = request.POST.get('lead_architect')
             project.status = request.POST.get('status', 'planned')
+            project.publish_status = 'published' if request.POST.get('publish') == 'on' else 'draft'
             project.featured = request.POST.get('featured') == 'on'
             # SEO fields
             project.seo_meta_title = request.POST.get('seo_meta_title', '')

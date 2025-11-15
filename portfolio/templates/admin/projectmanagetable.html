@@ -107,7 +107,8 @@
                 <thead>
                     <tr>
                         <th>Title</th>
-                        <th>Status</th>
+                        <th>Project Status</th>
+                        <th>Publish Status</th>
                         <th>Visibility</th>
                         <th>Completion Date</th>
                         <th>Actions</th>
@@ -116,11 +117,16 @@
                 </thead>
                 <tbody>
                     {% for project in all_projects %}
-                    <tr class="project-row" data-status="{{ project.status|default:'draft' }}" data-featured="{{ project.featured|yesno:'true,false' }}">
+                    <tr class="project-row" data-status="{{ project.status }}" data-publish-status="{{ project.publish_status }}" data-featured="{{ project.featured|yesno:'true,false' }}">
                         <td class="table-project-name">{{ project.title }}</td>
                         <td>
-                            <span class="status-badge status-{{ project.status|default:'draft' }}">
-                                {{ project.get_status_display|default:"Draft" }}
+                            <span class="status-badge status-{{ project.status }}">
+                                {{ project.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="status-badge status-{{ project.publish_status }}">
+                                {{ project.get_publish_status_display }}
                             </span>
                         </td>
                         <td>

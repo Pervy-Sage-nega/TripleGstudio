@@ -30,10 +30,14 @@ class Category(models.Model):
 class Project(models.Model):
     """Main project model - no client information for privacy"""
     STATUS_CHOICES = [
-        ('draft', 'Draft'),
         ('planned', 'Planned'),
         ('ongoing', 'Ongoing'),
         ('completed', 'Completed'),
+    ]
+    
+    PUBLISH_STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('published', 'Published'),
     ]
     
     title = models.CharField(max_length=255)
@@ -51,6 +55,7 @@ class Project(models.Model):
     completion_date = models.DateField()
     lead_architect = models.CharField(max_length=255)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='planned')
+    publish_status = models.CharField(max_length=20, choices=PUBLISH_STATUS_CHOICES, default='draft')
     featured = models.BooleanField(default=False, help_text="Show in featured projects section")
     hero_image = models.ImageField(upload_to='projects/hero/', storage=PortfolioSupabaseStorage(), blank=True, null=True)
     video = models.FileField(upload_to='projects/videos/', storage=PortfolioSupabaseStorage(), blank=True, null=True)
