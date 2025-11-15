@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from portfolio.models import Project
+from portfolio.models import Project, ProjectImage
 from django.core.files.base import ContentFile
 import os
 from pathlib import Path
@@ -67,7 +67,7 @@ class Command(BaseCommand):
                         with open(cover_image, 'rb') as f:
                             image_content = f.read()
                         
-                        # Save as hero image
+                        # Save as hero image (will upload to Supabase)
                         project.hero_image.save(
                             f"{project.title.replace(' ', '_')}_cover{cover_image.suffix}",
                             ContentFile(image_content),
@@ -80,6 +80,28 @@ class Command(BaseCommand):
                         
                         updated_count += 1
                         self.stdout.write(f"  [OK] Added cover image: {cover_image.name}")
+                        
+                        # Add remaining images to gallery
+                        gallery_count = 0
+                        for img_file in project_folder.glob('*'):
+                            if img_file.suffix.lower() in ['.jpg', '.jpeg', '.png', '.gif', '.bmp'] and img_file != cover_image:
+                                try:
+                                    with open(img_file, 'rb') as f:
+                                        img_content = f.read()
+                                    
+                                    ProjectImage.objects.create(
+                                        project=project,
+                                        image=ContentFile(img_content, name=f"{project.title.replace(' ', '_')}_gallery_{gallery_count}{img_file.suffix}"),
+                                        alt_text=f"{project.title} - Gallery Image {gallery_count + 1}",
+                                        order=gallery_count
+                                    )
+                                    gallery_count += 1
+                                    self.stdout.write(f"    [OK] Added gallery image: {img_file.name}")
+                                except Exception as e:
+                                    self.stdout.write(f"    [ERROR] Failed to add gallery image {img_file.name}: {str(e)}")
+                        
+                        if gallery_count > 0:
+                            self.stdout.write(f"  [OK] Added {gallery_count} gallery images")
                         
                     except Exception as e:
                         self.stdout.write(
