@@ -391,21 +391,37 @@ document.addEventListener('DOMContentLoaded', function() {
     updateCharacterCount('seo_meta_title', 'seo_title_count');
     updateCharacterCount('seo_meta_description', 'seo_desc_count');
     
-    // Form submission handler to check publish checkbox
+    // Form submission handler
     const projectForm = document.getElementById('projectForm');
-    if (projectForm) {
+    const publishBtn = document.getElementById('publishBtn');
+    
+    if (projectForm && publishBtn) {
+        let isPublishClick = false;
+        
+        publishBtn.addEventListener('click', function() {
+            isPublishClick = true;
+        });
+        
         projectForm.addEventListener('submit', function(e) {
             const publishCheckbox = document.getElementById('publish');
             const statusDropdown = document.getElementById('status');
             const hiddenStatus = document.getElementById('hiddenStatus');
             
-            if (publishCheckbox && !publishCheckbox.checked) {
-                // Unchecked: use hidden field to force draft
-                if (hiddenStatus) hiddenStatus.value = 'draft';
-                if (statusDropdown) statusDropdown.disabled = true;
-            } else {
-                // Checked: remove hidden field name so dropdown value is used
+            if (isPublishClick) {
+                // Publish button clicked: always use dropdown status
                 if (hiddenStatus) hiddenStatus.removeAttribute('name');
+                if (statusDropdown) statusDropdown.setAttribute('name', 'status');
+            } else if (publishCheckbox && !publishCheckbox.checked) {
+                // Checkbox unchecked: force draft
+                if (hiddenStatus) {
+                    hiddenStatus.setAttribute('name', 'status');
+                    hiddenStatus.value = 'draft';
+                }
+                if (statusDropdown) statusDropdown.removeAttribute('name');
+            } else {
+                // Checkbox checked: use dropdown
+                if (hiddenStatus) hiddenStatus.removeAttribute('name');
+                if (statusDropdown) statusDropdown.setAttribute('name', 'status');
             }
         });
     }
