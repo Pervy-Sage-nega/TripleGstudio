@@ -409,6 +409,28 @@ def save_draft(request):
 
 @require_admin_role
 @require_http_methods(["POST"])
+def publish_project(request, project_id):
+    """Publish a draft project"""
+    print(f"\n=== PUBLISH PROJECT DEBUG ===")
+    print(f"Project ID: {project_id}")
+    try:
+        project = get_object_or_404(Project, id=project_id)
+        print(f"Project found: {project.title}")
+        print(f"Current publish_status: {project.publish_status}")
+        project.publish_status = 'published'
+        project.save()
+        print(f"New publish_status: {project.publish_status}")
+        messages.success(request, f'Project "{project.title}" published successfully!')
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
+        messages.error(request, f'Error publishing project: {str(e)}')
+    print("===========================\n")
+    return redirect('portfolio:projecttable')
+
+@require_admin_role
+@require_http_methods(["POST"])
 def bulk_update_status(request):
     """Bulk update project status"""
     try:
