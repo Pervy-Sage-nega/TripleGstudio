@@ -4,7 +4,6 @@
 {% block extra_head %}
     <link rel="stylesheet" href="{% static 'css/admincss/header.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/dashboard.css' %}">
-    
     <link rel="stylesheet" href="{% static 'css/sitecss/reports.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/history.css' %}">
     <link rel="stylesheet" href="{% static 'css/admincss/blogmanagement.css' %}">
@@ -12,8 +11,7 @@
     <link rel="stylesheet" href="{% static 'css/admincss/nav.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/admincss/projectmanagement.css' %}">
-    
-     
+    <link rel="stylesheet" href="{% static 'css/sitecss/global-modal.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -260,7 +258,19 @@
 
 {% block extra_scripts %}
 {% csrf_token %}
+<script src="{% static 'js/sitejs/global-modal.js' %}"></script>
 <script>
+// Show success/error messages using global modal
+{% if messages %}
+    {% for message in messages %}
+        {% if message.tags == 'success' %}
+            document.addEventListener('DOMContentLoaded', () => globalModal.success('Success', '{{ message|escapejs }}'));
+        {% elif message.tags == 'error' %}
+            document.addEventListener('DOMContentLoaded', () => globalModal.error('Error', '{{ message|escapejs }}'));
+        {% endif %}
+    {% endfor %}
+{% endif %}
+
 console.log('JavaScript loading...');
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded, initializing table functionality...');
