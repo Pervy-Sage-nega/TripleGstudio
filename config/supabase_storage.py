@@ -14,6 +14,9 @@ class SupabaseStorage(Storage):
         self.base_url = f"{self.supabase_url}/storage/v1/object/public/{self.bucket_name}/"
         
     def _save(self, name, content):
+        # Convert Windows backslashes to forward slashes for Supabase
+        name = name.replace('\\', '/')
+        
         url = f"{self.supabase_url}/storage/v1/object/{self.bucket_name}/{name}"
         headers = {
             'Authorization': f'Bearer {self.supabase_key}',
@@ -28,6 +31,8 @@ class SupabaseStorage(Storage):
             raise Exception(f"Failed to upload to Supabase: {response.text}")
     
     def url(self, name):
+        # Convert Windows backslashes to forward slashes
+        name = name.replace('\\', '/')
         return urljoin(self.base_url, name)
     
     def exists(self, name):
