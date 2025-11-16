@@ -143,6 +143,7 @@ function initializeCharts() {
 
     // Equipment Usage Hours Chart - Pie Chart
     const materialsChart = document.getElementById('materialsChart');
+    console.log('Equipment Stats Data:', data.equipmentStats);
     if (materialsChart && data.equipmentStats && data.equipmentStats.length > 0) {
         const materialsEChart = echarts.init(materialsChart);
         
@@ -669,4 +670,26 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     });
+    
+    // Filter toggle functionality
+    const toggleFilter = document.getElementById('toggleFilter');
+    const filterContent = document.getElementById('filterContent');
+    
+    if (toggleFilter && filterContent) {
+        toggleFilter.addEventListener('click', function() {
+            const isHidden = filterContent.style.display === 'none';
+            filterContent.style.display = isHidden ? 'block' : 'none';
+            
+            const span = this.querySelector('span');
+            const icon = this.querySelector('i');
+            
+            if (isHidden) {
+                span.textContent = 'Hide Filters';
+                icon.className = 'fas fa-chevron-up';
+            } else {
+                span.textContent = 'Show Filters';
+                icon.className = 'fas fa-chevron-down';
+            }
+        });
+    }
 });

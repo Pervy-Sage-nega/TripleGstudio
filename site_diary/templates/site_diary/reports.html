@@ -354,5 +354,30 @@
             equipmentStats: {{ equipment_stats_json|safe }},
             overallSummary: {{ overall_summary_json|safe }}
         };
+        
+        // Filter toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleFilter = document.getElementById('toggleFilter');
+            const filterContent = document.getElementById('filterContent');
+            
+            if (toggleFilter && filterContent) {
+                toggleFilter.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const isHidden = filterContent.style.display === 'none';
+                    filterContent.style.display = isHidden ? 'block' : 'none';
+                    
+                    const span = this.querySelector('span');
+                    const icon = this.querySelector('i');
+                    
+                    if (isHidden) {
+                        span.textContent = 'Hide Filters';
+                        icon.className = 'fas fa-chevron-up';
+                    } else {
+                        span.textContent = 'Show Filters';
+                        icon.className = 'fas fa-chevron-down';
+                    }
+                });
+            }
+        });
     </script>
 {% endblock %}
