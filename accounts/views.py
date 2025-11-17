@@ -1,8 +1,9 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from django.core.mail import send_mail
+from django.core.mail import send_mail, EmailMessage
 from django.contrib.auth.models import User
 from django.conf import settings
+import ssl
 from django.contrib.auth import authenticate, login, logout
 from django.db import transaction, IntegrityError
 from django.core.exceptions import ValidationError
@@ -13,7 +14,7 @@ from django.utils import timezone
 from datetime import timedelta
 from .forms import ClientRegisterForm, OTPForm, AdminRegisterForm, AdminLoginForm, AdminOTPForm
 from .models import OneTimePassword, AdminProfile, SiteManagerProfile, Profile, SitePersonnelRole
-from .utils import get_user_role, get_user_dashboard_url, get_appropriate_redirect
+from .utils import get_user_role, get_user_dashboard_url, get_appropriate_redirect, send_email_with_ssl
 from .activity_tracker import UserActivityTracker
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
@@ -797,13 +798,7 @@ def sitemanager_register_view(request):
             Triple G BuildHub Team
             '''
             
-            send_mail(
-                subject,
-                message,
-                settings.DEFAULT_FROM_EMAIL,
-                [email],
-                fail_silently=False,
-            )
+            send_email_with_ssl(subject, message, settings.DEFAULT_FROM_EMAIL, [email], fail_silently=False)
             
             # Store user ID in session for OTP verification
             request.session['registration_user_id'] = user.id

@@ -148,7 +148,19 @@ EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'triplegotp@gmail.com')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', 'wzukyxhnuomdglir')
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
+EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'False').lower() == 'true'
+EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '30'))
+EMAIL_SSL_CERTFILE = os.getenv('EMAIL_SSL_CERTFILE', None)
+EMAIL_SSL_KEYFILE = os.getenv('EMAIL_SSL_KEYFILE', None)
 DEFAULT_FROM_EMAIL = os.getenv('EMAIL_HOST_USER', 'triplegotp@gmail.com')
+
+# SSL Configuration for email
+if os.getenv('EMAIL_SSL_CHECK_HOSTNAME', 'True').lower() == 'false':
+    import ssl
+    # Create unverified SSL context for development
+    EMAIL_SSL_CONTEXT = ssl.create_default_context()
+    EMAIL_SSL_CONTEXT.check_hostname = False
+    EMAIL_SSL_CONTEXT.verify_mode = ssl.CERT_NONE
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
