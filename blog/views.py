@@ -212,14 +212,22 @@ def createblog(request):
             if 'featured_image' in request.FILES:
                 featured_image = request.FILES['featured_image']
                 print(f"DEBUG BLOG: Featured image uploaded: {featured_image.name}, Size: {featured_image.size}")
+                print(f"DEBUG BLOG: Featured image content type: {featured_image.content_type}")
                 blog_post.featured_image = featured_image
                 print(f"DEBUG BLOG: Before save - featured_image field: {blog_post.featured_image}")
-                blog_post.save()
-                print(f"DEBUG BLOG: After save - featured_image field: {blog_post.featured_image}")
-                blog_post.refresh_from_db()
-                print(f"DEBUG BLOG: After refresh - featured_image field: {blog_post.featured_image}")
-                if blog_post.featured_image:
-                    print(f"DEBUG BLOG: Featured image URL: {blog_post.featured_image.url}")
+                try:
+                    blog_post.save()
+                    print(f"DEBUG BLOG: After save - featured_image field: {blog_post.featured_image}")
+                    blog_post.refresh_from_db()
+                    print(f"DEBUG BLOG: After refresh - featured_image field: {blog_post.featured_image}")
+                    if blog_post.featured_image:
+                        print(f"DEBUG BLOG: Featured image URL: {blog_post.featured_image.url}")
+                    else:
+                        print(f"DEBUG BLOG: ERROR - Featured image field is empty after save!")
+                except Exception as e:
+                    print(f"DEBUG BLOG: ERROR saving featured image: {str(e)}")
+                    import traceback
+                    print(f"DEBUG BLOG: Traceback: {traceback.format_exc()}")
             else:
                 print(f"DEBUG BLOG: No featured image in request.FILES")
                 print(f"DEBUG BLOG: Available files: {list(request.FILES.keys())}")
@@ -314,6 +322,9 @@ def createblog(request):
                 return redirect('blog:drafts')
                 
         except Exception as e:
+            print(f"DEBUG BLOG: MAIN EXCEPTION: {str(e)}")
+            import traceback
+            print(f"DEBUG BLOG: MAIN TRACEBACK: {traceback.format_exc()}")
             messages.error(request, f'Error creating blog post: {str(e)}')
             return redirect('blog:createblog')
     

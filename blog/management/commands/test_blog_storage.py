@@ -14,13 +14,28 @@ class Command(BaseCommand):
         if posts_with_images.exists():
             sample_post = posts_with_images.first()
             self.stdout.write(f'Sample post: {sample_post.title}')
-            self.stdout.write(f'Featured image URL: {sample_post.featured_image.url}')
-            
-            # Check if URL contains the correct bucket
-            if 'blog-images' in sample_post.featured_image.url:
-                self.stdout.write(self.style.SUCCESS('Using blog-images bucket'))
-            else:
-                self.stdout.write(self.style.WARNING('Not using blog-images bucket'))
+            try:
+                self.stdout.write(f'Featured image URL: {sample_post.featured_image.url}')
+                
+                # Check if URL contains the correct bucket
+                if 'blog_images' in sample_post.featured_image.url:
+                    self.stdout.write(self.style.SUCCESS('Using blog_images bucket'))
+                else:
+                    self.stdout.write(self.style.WARNING('Not using blog_images bucket'))
+            except ValueError as e:
+                self.stdout.write(self.style.ERROR(f'Featured image field error: {e}'))
+                # Try to find a post with a working featured image
+                for post in posts_with_images:
+                    try:
+                        self.stdout.write(f'Trying post: {post.title}')
+                        self.stdout.write(f'Featured image URL: {post.featured_image.url}')
+                        if 'blog_images' in post.featured_image.url:
+                            self.stdout.write(self.style.SUCCESS('Using blog_images bucket'))
+                        else:
+                            self.stdout.write(self.style.WARNING('Not using blog_images bucket'))
+                        break
+                    except ValueError:
+                        continue
         
         # Test gallery images
         gallery_images = BlogImage.objects.all()
@@ -28,12 +43,15 @@ class Command(BaseCommand):
         
         if gallery_images.exists():
             sample_gallery = gallery_images.first()
-            self.stdout.write(f'Sample gallery image URL: {sample_gallery.image.url}')
-            
-            if 'blog-images' in sample_gallery.image.url:
-                self.stdout.write(self.style.SUCCESS('Gallery using blog-images bucket'))
-            else:
-                self.stdout.write(self.style.WARNING('Gallery not using blog-images bucket'))
+            try:
+                self.stdout.write(f'Sample gallery image URL: {sample_gallery.image.url}')
+                
+                if 'blog_images' in sample_gallery.image.url:
+                    self.stdout.write(self.style.SUCCESS('Gallery using blog_images bucket'))
+                else:
+                    self.stdout.write(self.style.WARNING('Gallery not using blog_images bucket'))
+            except ValueError as e:
+                self.stdout.write(self.style.ERROR(f'Gallery image field error: {e}'))
         
         # Test content images
         content_images = ContentImage.objects.all()
@@ -41,11 +59,14 @@ class Command(BaseCommand):
         
         if content_images.exists():
             sample_content = content_images.first()
-            self.stdout.write(f'Sample content image URL: {sample_content.image.url}')
-            
-            if 'blog-images' in sample_content.image.url:
-                self.stdout.write(self.style.SUCCESS('Content images using blog-images bucket'))
-            else:
-                self.stdout.write(self.style.WARNING('Content images not using blog-images bucket'))
+            try:
+                self.stdout.write(f'Sample content image URL: {sample_content.image.url}')
+                
+                if 'blog_images' in sample_content.image.url:
+                    self.stdout.write(self.style.SUCCESS('Content images using blog_images bucket'))
+                else:
+                    self.stdout.write(self.style.WARNING('Content images not using blog_images bucket'))
+            except ValueError as e:
+                self.stdout.write(self.style.ERROR(f'Content image field error: {e}'))
         
         self.stdout.write(self.style.SUCCESS('Blog storage test completed!'))
