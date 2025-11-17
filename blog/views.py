@@ -154,6 +154,10 @@ def createblog(request):
             seo_meta_title = request.POST.get('seo_meta_title', '')
             seo_meta_description = request.POST.get('seo_meta_description', '')
             featured_image_alt = request.POST.get('featured_image_alt', '')
+            
+            print(f"DEBUG BLOG: Form submission - Title: {title}, Status: {status}")
+            print(f"DEBUG BLOG: Files in request: {list(request.FILES.keys())}")
+            print(f"DEBUG BLOG: POST data keys: {list(request.POST.keys())}")
             if edit_id:
                 # Update existing blog post
                 try:
@@ -206,8 +210,19 @@ def createblog(request):
                     blog_post.tags.add(tag)
             # Handle featured image
             if 'featured_image' in request.FILES:
-                blog_post.featured_image = request.FILES['featured_image']
+                featured_image = request.FILES['featured_image']
+                print(f"DEBUG BLOG: Featured image uploaded: {featured_image.name}, Size: {featured_image.size}")
+                blog_post.featured_image = featured_image
+                print(f"DEBUG BLOG: Before save - featured_image field: {blog_post.featured_image}")
                 blog_post.save()
+                print(f"DEBUG BLOG: After save - featured_image field: {blog_post.featured_image}")
+                blog_post.refresh_from_db()
+                print(f"DEBUG BLOG: After refresh - featured_image field: {blog_post.featured_image}")
+                if blog_post.featured_image:
+                    print(f"DEBUG BLOG: Featured image URL: {blog_post.featured_image.url}")
+            else:
+                print(f"DEBUG BLOG: No featured image in request.FILES")
+                print(f"DEBUG BLOG: Available files: {list(request.FILES.keys())}")
             
             # Handle gallery images
             if 'gallery_images' in request.FILES:

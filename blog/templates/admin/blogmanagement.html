@@ -155,8 +155,10 @@
                                 <td>
                                     {% if blog.featured_image %}
                                     <img src="{{ blog.featured_image.url }}" alt="{{ blog.title }}" class="blog-thumb">
+                                    <!-- DEBUG: Image URL: {{ blog.featured_image.url }} -->
                                     {% else %}
                                     <img src="{% static 'images/default-blog.jpg' %}" alt="{{ blog.title }}" class="blog-thumb">
+                                    <!-- DEBUG: No featured image for blog ID {{ blog.id }} -->
                                     {% endif %}
                                 </td>
                                 <td class="blog-title">{{ blog.title }}</td>
@@ -214,8 +216,10 @@
                             <div class="blog-card-status status-{{ blog.status }}">{{ blog.get_status_display }}</div>
                             {% if blog.featured_image %}
                             <img src="{{ blog.featured_image.url }}" alt="{{ blog.title }}" class="blog-card-image">
+                            <!-- DEBUG: Grid Image URL: {{ blog.featured_image.url }} -->
                             {% else %}
                             <img src="{% static 'images/default-blog.jpg' %}" alt="{{ blog.title }}" class="blog-card-image">
+                            <!-- DEBUG: Grid No featured image for blog ID {{ blog.id }} -->
                             {% endif %}
                         </div>
                         <div class="blog-card-body">
