@@ -699,8 +699,16 @@ def dashboard(request):
     if request.user.is_staff:
         projects = Project.objects.filter(status__in=['planning', 'active', 'on_hold', 'completed', 'rejected'])
     else:
+        # Get projects through assignments or direct assignment
+        from admin_side.models import ProjectAssignment
+        assigned_projects = ProjectAssignment.objects.filter(
+            user=request.user, is_active=True
+        ).values_list('project_id', flat=True)
+        
         projects = Project.objects.filter(
-            Q(project_manager=request.user) | Q(architect=request.user),
+            Q(id__in=assigned_projects) | 
+            Q(project_manager=request.user) | 
+            Q(architect=request.user),
             status__in=['planning', 'active', 'on_hold', 'completed', 'rejected']
         )
     
