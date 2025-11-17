@@ -670,11 +670,18 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Approve blog functionality
     window.approveBlog = function(blogId) {
-        if (!confirm('Are you sure you want to approve and publish this blog post?')) {
-            return;
+        if (window.globalModal) {
+            window.globalModal.confirmAction(
+                'Approve & Publish Blog',
+                'Are you sure you want to approve and publish this blog post?',
+                () => changeStatusTo(blogId, 'published')
+            );
+        } else {
+            if (!confirm('Are you sure you want to approve and publish this blog post?')) {
+                return;
+            }
+            changeStatusTo(blogId, 'published');
         }
-        
-        changeStatusTo(blogId, 'published');
     };
     
     // Unpublish blog functionality

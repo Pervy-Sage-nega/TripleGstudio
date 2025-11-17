@@ -66,9 +66,19 @@ class DiaryEntryForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         
         if user:
-            # Filter projects to only show user's projects
+            # Filter projects to show user's projects including ProjectAssignment assignments
+            from admin_side.models import ProjectAssignment
+            from django.db.models import Q
+            
+            # Get projects through assignments or direct assignment
+            assigned_project_ids = ProjectAssignment.objects.filter(
+                user=user, is_active=True
+            ).values_list('project_id', flat=True)
+            
             self.fields['project'].queryset = Project.objects.filter(
-                project_manager=user,
+                Q(id__in=assigned_project_ids) | 
+                Q(project_manager=user) | 
+                Q(architect=user),
                 status__in=['planning', 'active', 'on_hold', 'completed']
             )
         

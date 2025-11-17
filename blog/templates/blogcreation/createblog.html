@@ -148,23 +148,7 @@
                         </div>
                     </div>
 
-                    <!-- Blog Status -->
-                    <div class="form-group">
-                        <label for="blogStatus">Status</label>
-                        <select id="blogStatus" name="status" class="form-control">
-                            <option value="draft" {% if not edit_blog or edit_blog.status == 'draft' %}selected{% endif %}>Draft</option>
-                            <option value="pending" {% if edit_blog.status == 'pending' %}selected{% endif %}>Pending Review</option>
-                            <option value="published" {% if edit_blog.status == 'published' %}selected{% endif %}>Published</option>
-                        </select>
-                    </div>
 
-                    <!-- Featured Post -->
-                    <div class="form-group">
-                        <div class="form-check">
-                            <input type="checkbox" id="featuredPost" name="featured" class="form-check-input" {% if edit_blog.featured %}checked{% endif %}>
-                            <label for="featuredPost" class="form-check-label">Mark as Featured Post</label>
-                        </div>
-                    </div>
 
                     <!-- Gallery Images Section -->
                     <div class="form-section">
@@ -358,9 +342,14 @@
     <script>
         // Django integration for blog creation
         function saveDraft() {
-            // Set status to draft and submit form
-            document.getElementById('blogStatus').value = 'draft';
-            document.getElementById('blogForm').submit();
+            // Add hidden input for draft status and submit form
+            const form = document.getElementById('blogForm');
+            const statusInput = document.createElement('input');
+            statusInput.type = 'hidden';
+            statusInput.name = 'status';
+            statusInput.value = 'draft';
+            form.appendChild(statusInput);
+            form.submit();
         }
 
         function submitForReview() {
@@ -402,9 +391,14 @@
                 showCancel: true,
                 confirmClass: 'global-modal-btn-success',
                 onConfirm: () => {
-                    // Set status to pending and submit form
-                    document.getElementById('blogStatus').value = 'pending';
-                    document.getElementById('blogForm').submit();
+                    // Add hidden input for pending status and submit form
+                    const form = document.getElementById('blogForm');
+                    const statusInput = document.createElement('input');
+                    statusInput.type = 'hidden';
+                    statusInput.name = 'status';
+                    statusInput.value = 'pending';
+                    form.appendChild(statusInput);
+                    form.submit();
                 }
             });
         }

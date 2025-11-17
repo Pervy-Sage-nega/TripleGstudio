@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="{% static 'css/admincss/header.css' %}">
     <link rel="stylesheet" href="{% static 'css/admincss/adminhome.css' %}">
     <link rel="stylesheet" href="{% static 'css/admincss/blog-management.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/global-modal.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .assignment-form {
@@ -260,7 +261,7 @@ document.addEventListener('DOMContentLoaded', function() {
     saveAssignmentsBtn.addEventListener('click', function() {
         const projectId = multiProject.value;
         if (!projectId) {
-            alert('Please select a project');
+            window.globalModal.error('Selection Required', 'Please select a project before saving assignments.');
             return;
         }
         
@@ -277,7 +278,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         if (assignments.length === 0) {
-            alert('Please add at least one assignment');
+            window.globalModal.error('Assignment Required', 'Please add at least one assignment before saving.');
             return;
         }
         
@@ -296,16 +297,18 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert(data.message);
-                location.reload();
+                window.globalModal.success('Assignment Successful', data.message, () => {
+                    location.reload();
+                });
             } else {
-                alert('Error: ' + data.message);
+                window.globalModal.error('Assignment Failed', data.message);
             }
         })
         .catch(error => {
-            alert('Error: ' + error.message);
+            window.globalModal.error('Network Error', 'Failed to save assignments: ' + error.message);
         });
     });
 });
 </script>
+<script src="{% static 'js/sitejs/global-modal.js' %}"></script>
 {% endblock %}

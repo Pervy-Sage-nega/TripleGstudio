@@ -7,10 +7,10 @@ class ProjectAssignment(models.Model):
         ('project_manager', 'Project Manager'),
         ('architect', 'Architect'),
         ('site_engineer', 'Site Engineer'),
+        ('engineer', 'Engineer'),  # Added this to match assignment data
         ('foreman', 'Foreman'),
         ('supervisor', 'Supervisor'),
-        ('quality_controller', 'Quality Controller'),
-        ('safety_officer', 'Safety Officer'),
+
     ]
     
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='assignments')

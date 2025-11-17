@@ -39,9 +39,18 @@ def diary(request):
     # Initialize draft_data to prevent UnboundLocalError
     draft_data = None
     
-    # Get user's assigned projects only - very strict filtering
+    # Get user's assigned projects - include direct assignments and ProjectAssignment assignments
+    from admin_side.models import ProjectAssignment
+    
+    # Get projects through assignments or direct assignment
+    assigned_project_ids = ProjectAssignment.objects.filter(
+        user=request.user, is_active=True
+    ).values_list('project_id', flat=True)
+    
     user_projects = Project.objects.filter(
-        project_manager=request.user,
+        Q(id__in=assigned_project_ids) | 
+        Q(project_manager=request.user) | 
+        Q(architect=request.user),
         status__in=['planning', 'active', 'on_hold', 'completed']
     )
     
@@ -305,6 +314,23 @@ def diary(request):
             else:
                 print(f"DEBUG: Draft save - no subcontractor_json found in POST data")
             
+            # Handle signature data
+            signature_data = request.POST.get('signature_data')
+            if signature_data:
+                diary_entry.supervisor_signature = signature_data
+                diary_entry.save()
+            
+            # Handle photo uploads for drafts
+            for key, file in request.FILES.items():
+                if key.startswith('diary_photo_'):
+                    photo_id = key.replace('diary_photo_', '')
+                    description = request.POST.get(f'photo_description_{photo_id}', '')
+                    DiaryPhoto.objects.create(
+                        diary_entry=diary_entry,
+                        photo=file,
+                        caption=description
+                    )
+            
             logger.info(f"Draft saved successfully with ID: {diary_entry.id}")
             
             # Handle AJAX requests
@@ -408,6 +434,22 @@ def diary(request):
             else:
                 print(f"DEBUG: Main diary - no subcontractor_json found in POST data")
                 print(f"DEBUG: Main diary - POST keys: {list(request.POST.keys())}")
+            
+            # Handle signature data
+            signature_data = request.POST.get('signature_data')
+            if signature_data:
+                diary_entry.supervisor_signature = signature_data
+            
+            # Handle photo uploads for final submission
+            for key, file in request.FILES.items():
+                if key.startswith('diary_photo_'):
+                    photo_id = key.replace('diary_photo_', '')
+                    description = request.POST.get(f'photo_description_{photo_id}', '')
+                    DiaryPhoto.objects.create(
+                        diary_entry=diary_entry,
+                        photo=file,
+                        caption=description
+                    )
             
             # Handle dynamic worker types
             from .models import WorkerType
@@ -701,12 +743,12 @@ def dashboard(request):
     else:
         # Get projects through assignments or direct assignment
         from admin_side.models import ProjectAssignment
-        assigned_projects = ProjectAssignment.objects.filter(
+        assigned_project_ids = ProjectAssignment.objects.filter(
             user=request.user, is_active=True
         ).values_list('project_id', flat=True)
         
         projects = Project.objects.filter(
-            Q(id__in=assigned_projects) | 
+            Q(id__in=assigned_project_ids) | 
             Q(project_manager=request.user) | 
             Q(architect=request.user),
             status__in=['planning', 'active', 'on_hold', 'completed', 'rejected']
@@ -921,8 +963,15 @@ def diary_logs(request):
     project = get_object_or_404(Project, id=project_id)
     
     if not request.user.is_staff:
+        from admin_side.models import ProjectAssignment
+        assigned_project_ids = ProjectAssignment.objects.filter(
+            user=request.user, is_active=True
+        ).values_list('project_id', flat=True)
+        
         user_projects = Project.objects.filter(
-            Q(project_manager=request.user) | Q(architect=request.user)
+            Q(id__in=assigned_project_ids) | 
+            Q(project_manager=request.user) | 
+            Q(architect=request.user)
         )
         if project not in user_projects:
             messages.error(request, 'Access denied.')
@@ -1045,8 +1094,15 @@ def diary_entry_pdf(request, entry_id):
         
         # Verify user has access to this entry's project
         if not request.user.is_staff:
+            from admin_side.models import ProjectAssignment
+            assigned_project_ids = ProjectAssignment.objects.filter(
+                user=request.user, is_active=True
+            ).values_list('project_id', flat=True)
+            
             user_projects = Project.objects.filter(
-                Q(project_manager=request.user) | Q(architect=request.user)
+                Q(id__in=assigned_project_ids) | 
+                Q(project_manager=request.user) | 
+                Q(architect=request.user)
             )
             if diary_entry.project not in user_projects:
                 messages.error(request, 'Access denied.')
@@ -1632,8 +1688,16 @@ def project_list(request):
     if request.user.is_staff:
         projects = Project.objects.filter(status__in=['planning', 'active', 'on_hold', 'completed'])
     else:
+        # Get projects through assignments or direct assignment
+        from admin_side.models import ProjectAssignment
+        assigned_project_ids = ProjectAssignment.objects.filter(
+            user=request.user, is_active=True
+        ).values_list('project_id', flat=True)
+        
         projects = Project.objects.filter(
-            Q(project_manager=request.user) | Q(architect=request.user),
+            Q(id__in=assigned_project_ids) | 
+            Q(project_manager=request.user) | 
+            Q(architect=request.user),
             status__in=['planning', 'active', 'on_hold', 'completed']
         )
     
@@ -1701,8 +1765,15 @@ def revision_diary(request, entry_id):
     
     # Verify user has access to this entry's project
     if not request.user.is_staff:
+        from admin_side.models import ProjectAssignment
+        assigned_project_ids = ProjectAssignment.objects.filter(
+            user=request.user, is_active=True
+        ).values_list('project_id', flat=True)
+        
         user_projects = Project.objects.filter(
-            Q(project_manager=request.user) | Q(architect=request.user)
+            Q(id__in=assigned_project_ids) | 
+            Q(project_manager=request.user) | 
+            Q(architect=request.user)
         )
         if entry.project not in user_projects:
             messages.error(request, 'Access denied.')
@@ -1929,8 +2000,16 @@ def history(request):
     if request.user.is_staff:
         projects = Project.objects.filter(status__in=['planning', 'active', 'on_hold', 'completed'])
     else:
+        # Get projects through assignments or direct assignment
+        from admin_side.models import ProjectAssignment
+        assigned_project_ids = ProjectAssignment.objects.filter(
+            user=request.user, is_active=True
+        ).values_list('project_id', flat=True)
+        
         projects = Project.objects.filter(
-            Q(project_manager=request.user) | Q(architect=request.user),
+            Q(id__in=assigned_project_ids) | 
+            Q(project_manager=request.user) | 
+            Q(architect=request.user),
             status__in=['planning', 'active', 'on_hold', 'completed']
         )
     
@@ -2026,8 +2105,16 @@ def reports(request):
     if request.user.is_staff:
         projects = Project.objects.filter(status__in=['planning', 'active', 'on_hold', 'completed'])
     else:
+        # Get projects through assignments or direct assignment
+        from admin_side.models import ProjectAssignment
+        assigned_project_ids = ProjectAssignment.objects.filter(
+            user=request.user, is_active=True
+        ).values_list('project_id', flat=True)
+        
         projects = Project.objects.filter(
-            Q(project_manager=request.user) | Q(architect=request.user),
+            Q(id__in=assigned_project_ids) | 
+            Q(project_manager=request.user) | 
+            Q(architect=request.user),
             status__in=['planning', 'active', 'on_hold', 'completed']
         )
     
@@ -2280,8 +2367,15 @@ def project_detail(request, project_id):
     
     # Verify user has access to this project
     if not request.user.is_staff:
+        from admin_side.models import ProjectAssignment
+        assigned_project_ids = ProjectAssignment.objects.filter(
+            user=request.user, is_active=True
+        ).values_list('project_id', flat=True)
+        
         user_projects = Project.objects.filter(
-            Q(project_manager=request.user) | Q(architect=request.user)
+            Q(id__in=assigned_project_ids) | 
+            Q(project_manager=request.user) | 
+            Q(architect=request.user)
         )
         if project not in user_projects:
             messages.error(request, 'You do not have access to this project.')
@@ -2298,6 +2392,15 @@ def project_detail(request, project_id):
             user_profile_image = profile.get_profile_image_url()
     except:
         pass
+    
+    # Get team members from ProjectAssignment
+    from admin_side.models import ProjectAssignment
+    team_members = ProjectAssignment.objects.filter(
+        project=project, is_active=True
+    ).select_related('user', 'user__sitemanagerprofile').order_by('role')
+    
+    # Add lead architect (project architect) if exists
+    lead_architect = project.architect
     
     # Get project entries and related data
     project_entries = DiaryEntry.objects.filter(project=project).order_by('-entry_date')
@@ -2336,11 +2439,49 @@ def project_detail(request, project_id):
     else:
         phase_name = "Finishing"
     
-    # Get project milestones
+    # Get project milestones with proper progression logic (matching dashboard)
     milestones = Milestone.objects.filter(is_active=True).order_by('order')[:4]
     project_milestones = []
+    current_milestone_order = None
+    
+    # Find current milestone order
+    if latest_entry and latest_entry.milestone:
+        current_milestone_order = latest_entry.milestone.order
+    
     for i, milestone in enumerate(milestones):
         milestone.threshold = (i + 1) * 25  # 25%, 50%, 75%, 100%
+        
+        if current_milestone_order is not None:
+            if milestone.order < current_milestone_order:
+                # Previous milestones are completed (100%)
+                milestone.is_completed = True
+                milestone.is_current = False
+                milestone.completion_percentage = 100
+                milestone.status = 'completed'
+                milestone.progress_width = 100
+            elif milestone.order == current_milestone_order:
+                # Current milestone in progress
+                milestone.is_completed = False
+                milestone.is_current = True
+                milestone.completion_percentage = float(latest_entry.progress_percentage) if latest_entry.progress_percentage else 0
+                milestone.status = 'active'
+                milestone.progress_width = milestone.completion_percentage
+            else:
+                # Future milestones not started
+                milestone.is_completed = False
+                milestone.is_current = False
+                milestone.completion_percentage = 0
+                milestone.status = 'pending'
+                milestone.progress_width = 0
+        else:
+            # No milestone set - show progress in first milestone only
+            if i == 0:
+                milestone.status = 'active'
+                milestone.progress_width = progress
+            else:
+                milestone.status = 'pending'
+                milestone.progress_width = 0
+        
         project_milestones.append(milestone)
     
     project.milestones = project_milestones
@@ -2358,6 +2499,8 @@ def project_detail(request, project_id):
         'phase_name': phase_name,
         'user_company': user_company,
         'user_profile_image': user_profile_image,
+        'team_members': team_members,
+        'lead_architect': lead_architect,
     }
     return render(request, 'site_diary/project-detail.html', context)
 
@@ -3030,8 +3173,15 @@ def api_project_location(request, project_id):
         
         # Verify user has access to this project
         if not request.user.is_staff:
+            from admin_side.models import ProjectAssignment
+            assigned_project_ids = ProjectAssignment.objects.filter(
+                user=request.user, is_active=True
+            ).values_list('project_id', flat=True)
+            
             user_projects = Project.objects.filter(
-                Q(project_manager=request.user) | Q(architect=request.user)
+                Q(id__in=assigned_project_ids) | 
+                Q(project_manager=request.user) | 
+                Q(architect=request.user)
             )
             if project not in user_projects:
                 return JsonResponse({'error': 'Access denied'}, status=403)
@@ -3056,8 +3206,15 @@ def api_project_data(request, project_id):
         
         # Verify user has access to this project
         if not request.user.is_staff:
+            from admin_side.models import ProjectAssignment
+            assigned_project_ids = ProjectAssignment.objects.filter(
+                user=request.user, is_active=True
+            ).values_list('project_id', flat=True)
+            
             user_projects = Project.objects.filter(
-                Q(project_manager=request.user) | Q(architect=request.user)
+                Q(id__in=assigned_project_ids) | 
+                Q(project_manager=request.user) | 
+                Q(architect=request.user)
             )
             if project not in user_projects:
                 return JsonResponse({'error': 'Access denied'}, status=403)

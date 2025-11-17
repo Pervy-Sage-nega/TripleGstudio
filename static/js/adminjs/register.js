@@ -63,24 +63,40 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Validate form
         if (!firstName || !lastName || !email || !password || !confirmPassword) {
-            alert('Please fill out all required fields');
+            if (window.globalModal) {
+                window.globalModal.error('Missing Information', 'Please fill out all required fields before submitting.');
+            } else {
+                alert('Please fill out all required fields');
+            }
             return;
         }
         
         if (password !== confirmPassword) {
-            alert('Passwords do not match');
+            if (window.globalModal) {
+                window.globalModal.error('Password Mismatch', 'The passwords you entered do not match. Please check and try again.');
+            } else {
+                alert('Passwords do not match');
+            }
             return;
         }
         
         if (!termsAccepted) {
-            alert('Please accept the Terms of Service and Privacy Policy');
+            if (window.globalModal) {
+                window.globalModal.error('Terms Required', 'Please accept the Terms and Conditions and Privacy Policy to continue.');
+            } else {
+                alert('Please accept the Terms of Service and Privacy Policy');
+            }
             return;
         }
         
         // Check password strength
         const strengthScore = calculatePasswordStrength(password);
         if (strengthScore < 2) {
-            alert('Please choose a stronger password');
+            if (window.globalModal) {
+                window.globalModal.error('Weak Password', 'Please choose a stronger password. Your password should contain at least 8 characters with a mix of letters, numbers, and symbols.');
+            } else {
+                alert('Please choose a stronger password');
+            }
             return;
         }
         

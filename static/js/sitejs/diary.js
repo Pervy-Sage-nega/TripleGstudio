@@ -468,7 +468,14 @@ document.addEventListener('DOMContentLoaded', function() {
             updateBudgetSummary();
         } else {
             console.log('DEBUG: Validation failed - missing name or work/cost');
-            alert('Please provide either a work description or daily cost for the subcontractor.');
+            if (window.globalModal) {
+                window.globalModal.error(
+                    'Missing Information',
+                    'Please provide either a work description or daily cost for the subcontractor.'
+                );
+            } else {
+                alert('Please provide either a work description or daily cost for the subcontractor.');
+            }
         }
     }
     
@@ -581,14 +588,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function initSignaturePads() {
-        const supervisorUpload = document.getElementById('supervisorSignatureUpload');
-        const supervisorPreview = document.getElementById('supervisorSignaturePreview');
-        const uploadContainer = document.getElementById('uploadContainer');
-        const canvasContainer = document.getElementById('canvasContainer');
         const signatureCanvas = document.getElementById('signatureCanvas');
-        const uploadMethod = document.getElementById('uploadMethod');
-        const drawMethod = document.getElementById('drawMethod');
-        
         let signaturePad = null;
         
         // Initialize signature pad
@@ -601,79 +601,38 @@ document.addEventListener('DOMContentLoaded', function() {
             window.signaturePad = signaturePad;
         }
         
-        // Handle method switching
-        function switchSignatureMethod() {
-            if (uploadMethod.checked) {
-                uploadContainer.style.display = 'block';
-                canvasContainer.style.display = 'none';
-            } else {
-                uploadContainer.style.display = 'none';
-                canvasContainer.style.display = 'block';
-            }
-        }
-        
-        if (uploadMethod && drawMethod) {
-            uploadMethod.addEventListener('change', switchSignatureMethod);
-            drawMethod.addEventListener('change', switchSignatureMethod);
-        }
-        
-        function setupSignatureUpload(uploadInput, previewContainer) {
-            previewContainer.addEventListener('click', function() {
-                uploadInput.click();
-            });
-            
-            uploadInput.addEventListener('change', function() {
-                if (this.files && this.files[0]) {
-                    const reader = new FileReader();
-                    
-                    reader.onload = function(e) {
-                        previewContainer.innerHTML = `<img src="${e.target.result}" alt="Signature">`;
-                    };
-                    
-                    reader.readAsDataURL(this.files[0]);
-                }
-            });
-        }
-        
         function clearSignature() {
-            if (uploadMethod.checked) {
-                supervisorUpload.value = '';
-                supervisorPreview.innerHTML = `
-                    <div class="upload-icon">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                    </div>
-                    <div class="upload-text">Click to upload signature image</div>
-                `;
-            } else if (signaturePad) {
+            if (signaturePad) {
                 signaturePad.clear();
             }
         }
         
-        if (supervisorUpload && supervisorPreview) {
-            setupSignatureUpload(supervisorUpload, supervisorPreview);
+        const clearBtn = document.getElementById('clearSupervisorSignature');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', clearSignature);
         }
-        
-        document.getElementById('clearSupervisorSignature').addEventListener('click', clearSignature);
         
         // Handle form submission for canvas signatures
         const form = document.getElementById('siteEntryForm');
         if (form) {
             form.addEventListener('submit', function(e) {
-                const drawMethod = document.getElementById('drawMethod');
-                if (drawMethod && drawMethod.checked && signaturePad && !signaturePad.isEmpty()) {
-                    // Convert canvas to blob and create hidden input
-                    const canvas = document.getElementById('signatureCanvas');
-                    canvas.toBlob(function(blob) {
-                        const formData = new FormData(form);
-                        formData.append('signature_canvas', blob, 'signature.png');
-                        
-                        // Create hidden input for signature data
-                        const hiddenInput = document.createElement('input');
-                        hiddenInput.type = 'hidden';
-                        hiddenInput.name = 'signature_data';
-                        hiddenInput.value = canvas.toDataURL();
-                        form.appendChild(hiddenInput);
-                    });
+                console.log('Form submission - checking signature');
+                if (signaturePad && !signaturePad.isEmpty()) {
+                    console.log('Signature found, adding to form data');
+                    // Remove any existing signature data input
+                    const existingInput = form.querySelector('input[name="signature_data"]');
+                    if (existingInput) {
+                        existingInput.remove();
+                    }
+                    // Create hidden input for signature data
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'signature_data';
+                    hiddenInput.value = signatureCanvas.toDataURL();
+                    form.appendChild(hiddenInput);
+                    console.log('Signature data added to form');
+                } else {
+                    console.log('No signature found or signature pad is empty');
                 }
             });
         }
@@ -787,26 +746,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 form.classList.add('was-validated');
                 
                 // Check supervisor signature
-                const uploadMethod = document.getElementById('uploadMethod');
-                const supervisorUpload = document.getElementById('supervisorSignatureUpload');
                 const signatureCanvas = document.getElementById('signatureCanvas');
                 let hasSignature = false;
                 
-                if (uploadMethod && uploadMethod.checked) {
-                    hasSignature = supervisorUpload && supervisorUpload.files.length > 0;
-                } else {
-                    // Check if canvas has signature
-                    if (signatureCanvas && window.signaturePad) {
-                        hasSignature = !window.signaturePad.isEmpty();
-                    }
+                // Check if canvas has signature
+                if (signatureCanvas && window.signaturePad) {
+                    hasSignature = !window.signaturePad.isEmpty();
+                    console.log('Signature validation - hasSignature:', hasSignature);
                 }
                 
                 if (!hasSignature) {
                     event.preventDefault();
+                    console.log('Form submission prevented - missing signature');
                     const sigFeedback = document.querySelector('.signature-container .invalid-feedback');
                     if (sigFeedback) sigFeedback.style.display = 'block';
-                    if (window.__focusTabForElement) window.__focusTabForElement(supervisorUpload || signatureCanvas);
+                    if (window.__focusTabForElement) window.__focusTabForElement(signatureCanvas);
                 } else {
+                    console.log('Signature validation passed');
                     const sigFeedback = document.querySelector('.signature-container .invalid-feedback');
                     if (sigFeedback) sigFeedback.style.display = 'none';
                 }
@@ -941,6 +897,23 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('DEBUG: Form submission - dailySubcontractors:', dailySubcontractors);
             console.log('DEBUG: Form submission - dailyMaterials:', dailyMaterials);
             console.log('DEBUG: Form submission - dailyEquipment:', dailyEquipment);
+            
+            // Ensure signature is captured
+            const signatureCanvas = document.getElementById('signatureCanvas');
+            if (signatureCanvas && window.signaturePad && !window.signaturePad.isEmpty()) {
+                // Remove any existing signature data input
+                const existingSignatureInput = form.querySelector('input[name="signature_data"]');
+                if (existingSignatureInput) {
+                    existingSignatureInput.remove();
+                }
+                // Create hidden input for signature data
+                const signatureInput = document.createElement('input');
+                signatureInput.type = 'hidden';
+                signatureInput.name = 'signature_data';
+                signatureInput.value = signatureCanvas.toDataURL();
+                this.appendChild(signatureInput);
+                console.log('DEBUG: Signature data captured and added to form');
+            }
             
             // Add JSON data for all dynamic content
             const jsonData = [

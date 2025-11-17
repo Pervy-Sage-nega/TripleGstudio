@@ -5,6 +5,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
 from decimal import Decimal
 from config.supabase_storage import SupabaseStorage
+from .storage import DiaryPhotoStorage
 
 class Project(models.Model):
     PROJECT_STATUS = [
@@ -117,6 +118,9 @@ class DiaryEntry(models.Model):
     # Notes and Observations
     general_notes = models.TextField(blank=True, max_length=1000)
     photos_taken = models.BooleanField(default=False)
+    
+    # Signature
+    supervisor_signature = models.TextField(blank=True, help_text="Base64 encoded signature image data")
     
     # Review and Status
     reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_entries')
@@ -373,10 +377,15 @@ class SubcontractorEntry(models.Model):
 
 class DiaryPhoto(models.Model):
     diary_entry = models.ForeignKey(DiaryEntry, on_delete=models.CASCADE, related_name='photos')
-    photo = models.ImageField(upload_to='diary_photos/%Y/%m/%d/')
+    photo = models.ImageField(upload_to='diary_photos/%Y/%m/%d/', storage=None)  # Will be set in __init__
     caption = models.CharField(max_length=200, blank=True)
     location = models.CharField(max_length=100, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from .storage import DiaryPhotoStorage
+        self._meta.get_field('photo').storage = DiaryPhotoStorage()
     
     def __str__(self):
         return f"Photo for {self.diary_entry} - {self.caption}"

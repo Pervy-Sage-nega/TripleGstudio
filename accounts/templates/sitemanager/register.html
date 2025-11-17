@@ -1,6 +1,10 @@
 {% extends 'base_auth.html' %}
 {% load static %}
 
+{% block extra_head %}
+    <link rel="stylesheet" href="{% static 'css/sitecss/global-modal.css' %}">
+{% endblock %}
+
 {% block modal_messages %}
     {% include 'admin/_modal_messages.html' %}
 {% endblock %}
@@ -89,7 +93,7 @@
                     <label for="terms">I agree to the <a href="{% url 'core:terms' %}" target="_blank">Terms and Conditions</a> and <a href="#" target="_blank">Privacy Policy</a></label>
                 </div>
             </div>
-            <button type="submit" class="btn btn-primary login-btn">Create Account</button>
+            <button type="submit" class="btn btn-primary login-btn" id="submitBtn" disabled>Create Account</button>
             <p class="terms-notice">By creating an account, you agree to our <a href="{% url 'core:terms' %}" target="_blank">Terms and Conditions</a> and confirm that you have read our <a href="#" target="_blank">Privacy Policy</a>.</p>
         </form>
         <div class="auth-form-footer">
@@ -114,5 +118,42 @@
             </div>
         </div>
     </div>
+    
+    <style>
+        #submitBtn:disabled {
+            cursor: not-allowed !important;
+            opacity: 1 !important;
+            background-color: white !important;
+            color: inherit !important;
+            border: 1px solid #ccc !important;
+        }
+    </style>
+    
+    <script src="{% static 'js/sitejs/global-modal.js' %}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const termsCheckbox = document.getElementById('terms');
+            const submitBtn = document.getElementById('submitBtn');
+            const passwordToggles = document.querySelectorAll('.password-toggle');
+            
+            // Enable/disable submit button based on terms checkbox
+            termsCheckbox.addEventListener('change', function() {
+                submitBtn.disabled = !this.checked;
+            });
+            
+            // Password visibility toggles
+            passwordToggles.forEach(toggle => {
+                toggle.addEventListener('click', function() {
+                    const input = this.parentElement.querySelector('input');
+                    const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+                    input.setAttribute('type', type);
+                    
+                    const icon = this.querySelector('i');
+                    icon.classList.toggle('fa-eye');
+                    icon.classList.toggle('fa-eye-slash');
+                });
+            });
+        });
+    </script>
 {% endblock %}
 {% block extra_scripts %}<script src="{% static 'js/adminjs/register.js' %}"></script>{% endblock %}

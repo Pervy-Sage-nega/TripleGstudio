@@ -103,10 +103,10 @@
                     </div>
                     <div class="milestone-progress">
                         {% for milestone in project.milestones %}
-                        <div class="milestone-item {% if progress > milestone.threshold %}completed{% elif progress >= milestone.threshold|add:'-25' %}active{% endif %}">
+                        <div class="milestone-item {{ milestone.status }}">
                             <span class="milestone-name">{{ milestone.name }}</span>
                             <div class="milestone-bar">
-                                <div class="milestone-fill" style="width: {% if progress > milestone.threshold %}100{% elif progress >= milestone.threshold|add:'-25' %}{{ progress|floatformat:0 }}{% else %}0{% endif %}%"></div>
+                                <div class="milestone-fill" style="width: {{ milestone.progress_width|floatformat:0 }}%"></div>
                             </div>
                         </div>
                         {% empty %}
@@ -232,42 +232,40 @@
                     <i class="fas fa-users"></i> Team Members
                 </h3>
                 <div class="files-list">
-                    <div class="file-item">
+                    {% if lead_architect %}
+                    <div class="file-item team-lead">
                         <div class="file-info">
-                            <i class="fas fa-user-tie"></i>
-                            <span class="file-name">{{ project.project_manager.get_full_name|default:project.project_manager.username }}</span>
+                            <i class="fas fa-drafting-compass"></i>
+                            <span class="file-name">{{ lead_architect.get_full_name|default:lead_architect.username }}</span>
+                            <span class="lead-badge">Lead</span>
                         </div>
                         <div class="file-meta">
-                            <span class="file-date">Site Manager</span>
+                            <span class="file-date">Lead Architect</span>
                         </div>
                     </div>
+                    {% endif %}
+                    
+
+                    
+                    {% for member in team_members %}
                     <div class="file-item">
                         <div class="file-info">
-                            <i class="fas fa-hard-hat"></i>
-                            <span class="file-name">Juan Dela Cruz</span>
+                            {% if member.role == 'foreman' %}
+                                <i class="fas fa-hard-hat"></i>
+                            {% elif member.role == 'engineer' or member.role == 'site_engineer' %}
+                                <i class="fas fa-tools"></i>
+                            {% elif member.role == 'supervisor' %}
+                                <i class="fas fa-eye"></i>
+                            {% else %}
+                                <i class="fas fa-user"></i>
+                            {% endif %}
+                            <span class="file-name">{{ member.user.get_full_name|default:member.user.username }}</span>
                         </div>
                         <div class="file-meta">
-                            <span class="file-date">Foreman</span>
+                            <span class="file-date">{{ member.get_role_display }}</span>
                         </div>
                     </div>
-                    <div class="file-item">
-                        <div class="file-info">
-                            <i class="fas fa-tools"></i>
-                            <span class="file-name">Maria Santos</span>
-                        </div>
-                        <div class="file-meta">
-                            <span class="file-date">Engineer</span>
-                        </div>
-                    </div>
-                    <div class="file-item">
-                        <div class="file-info">
-                            <i class="fas fa-clipboard-check"></i>
-                            <span class="file-name">Pedro Reyes</span>
-                        </div>
-                        <div class="file-meta">
-                            <span class="file-date">Safety Officer</span>
-                        </div>
-                    </div>
+                    {% endfor %}
                 </div>
                 <button class="btn btn-outline">
                     <i class="fas fa-user-plus"></i> Add Team Member
@@ -472,6 +470,35 @@
     }
     #galleryGrid img:hover {
         border-color: #007cba;
+    }
+    
+    /* Team Members Styles */
+    .team-lead {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-left: 4px solid #007cba;
+    }
+    
+    .lead-badge {
+        background: #007cba;
+        color: white;
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 10px;
+        margin-left: 8px;
+        font-weight: 600;
+    }
+    
+    .file-item {
+        transition: all 0.3s ease;
+    }
+    
+    .file-item:hover {
+        background: #f8f9fa;
+        transform: translateX(5px);
+    }
+    
+    .team-lead:hover {
+        background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
     }
     </style>
     

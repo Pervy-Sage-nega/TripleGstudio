@@ -832,12 +832,22 @@
                                                 const photoId = Date.now() + index;
                                                 uploadedPhotos.push({ id: photoId, file: file, description: '' });
                                                 
+                                                // Create hidden file input for form submission
+                                                const hiddenInput = document.createElement('input');
+                                                hiddenInput.type = 'file';
+                                                hiddenInput.name = `diary_photo_${photoId}`;
+                                                hiddenInput.style.display = 'none';
+                                                hiddenInput.files = createFileList([file]);
+                                                document.getElementById('siteEntryForm').appendChild(hiddenInput);
+                                                
                                                 const photoItem = document.createElement('div');
                                                 photoItem.className = 'photo-item';
+                                                photoItem.setAttribute('data-photo-id', photoId);
                                                 photoItem.innerHTML = `
                                                     <img src="${e.target.result}" alt="Site Photo" class="photo-preview">
                                                     <div class="photo-overlay">
                                                         <div class="photo-description" id="desc-${photoId}">Click to add description</div>
+                                                        <input type="hidden" name="photo_description_${photoId}" value="">
                                                         <div class="photo-actions">
                                                             <button type="button" class="photo-action-btn edit-desc" onclick="editPhotoDescription(${photoId})" title="Edit Description">
                                                                 <i class="fas fa-edit"></i>
@@ -852,15 +862,22 @@
                                             };
                                             reader.readAsDataURL(file);
                                         } else {
-                                            showErrorModal('Please upload images only (max 10MB each)');
+                                            globalModal.error('Invalid File', 'Please upload images only (max 10MB each)');
                                         }
                                     });
                                 });
+                                
+                                function createFileList(files) {
+                                    const dt = new DataTransfer();
+                                    files.forEach(file => dt.items.add(file));
+                                    return dt.files;
+                                }
                                 
                                 function editPhotoDescription(photoId) {
                                     const description = prompt('Enter photo description:');
                                     if (description !== null) {
                                         document.getElementById(`desc-${photoId}`).textContent = description || 'Click to add description';
+                                        document.querySelector(`input[name="photo_description_${photoId}"]`).value = description || '';
                                         const photo = uploadedPhotos.find(p => p.id === photoId);
                                         if (photo) photo.description = description;
                                     }
@@ -868,7 +885,12 @@
                                 
                                 function removePhoto(photoId) {
                                     uploadedPhotos = uploadedPhotos.filter(p => p.id !== photoId);
-                                    document.querySelector(`[onclick*="${photoId}"]`).closest('.photo-item').remove();
+                                    document.querySelector(`[data-photo-id="${photoId}"]`).remove();
+                                    // Remove hidden inputs
+                                    const fileInput = document.querySelector(`input[name="diary_photo_${photoId}"]`);
+                                    const descInput = document.querySelector(`input[name="photo_description_${photoId}"]`);
+                                    if (fileInput) fileInput.remove();
+                                    if (descInput) descInput.remove();
                                 }
                                 </script>
                             </div>
@@ -896,35 +918,8 @@
                                 <div class="signature-container">
                                     <label>Supervisor Signature *</label>
                                     
-                                    <!-- Signature Method Selection -->
-                                    <div class="signature-method-selection">
-                                        <div class="method-option">
-                                            <input type="radio" id="uploadMethod" name="signatureMethod" value="upload" checked>
-                                            <label for="uploadMethod">
-                                                <i class="fas fa-upload"></i> Upload Image
-                                            </label>
-                                        </div>
-                                        <div class="method-option">
-                                            <input type="radio" id="drawMethod" name="signatureMethod" value="draw">
-                                            <label for="drawMethod">
-                                                <i class="fas fa-pen"></i> Draw Signature
-                                            </label>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Upload Method -->
-                                    <div class="signature-upload-container" id="uploadContainer">
-                                        <input type="file" id="supervisorSignatureUpload" accept="image/*" style="display: none;">
-                                        <div class="signature-preview-container" id="supervisorSignaturePreview">
-                                            <div class="upload-icon">
-                                                <i class="fas fa-cloud-upload-alt"></i>
-                                            </div>
-                                            <div class="upload-text">Click to upload signature image</div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Draw Method -->
-                                    <div class="signature-canvas-container" id="canvasContainer" style="display: none;">
+                                    <!-- Draw Signature -->
+                                    <div class="signature-canvas-container" id="canvasContainer">
                                         <canvas id="signatureCanvas" width="400" height="200"></canvas>
                                         <div class="canvas-instructions">
                                             <small>Draw your signature above using mouse or touch</small>
@@ -1119,11 +1114,11 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Date field ID:', '{{ diary_form.entry_date.id_for_label }}');
             
             if (!project) {
-                showErrorModal('Please select a project before saving as draft.');
+                globalModal.warning('Missing Project', 'Please select a project before saving as draft.');
                 return;
             }
             if (!entryDate) {
-                showErrorModal('Please select an entry date before saving as draft.');
+                globalModal.warning('Missing Date', 'Please select an entry date before saving as draft.');
                 return;
             }
             
@@ -1142,14 +1137,16 @@ document.addEventListener('DOMContentLoaded', function() {
             }).then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    showSuccessModal('Draft saved successfully!', data.draft_id);
-                    console.log('Draft ID:', data.draft_id);
+                    const details = data.draft_id ? { 'Draft ID': data.draft_id } : null;
+                    globalModal.success('Draft Saved', 'Your diary entry has been saved as a draft successfully!', () => {
+                        console.log('Draft ID:', data.draft_id);
+                    });
                 } else {
-                    showErrorModal('Error: ' + data.message);
+                    globalModal.error('Save Failed', data.message || 'An error occurred while saving the draft.');
                 }
             }).catch(error => {
                 console.error('Error:', error);
-                showErrorModal('Error saving draft');
+                globalModal.error('Network Error', 'Unable to save draft. Please check your connection and try again.');
             });
         });
     }
@@ -1477,33 +1474,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 500);
     }
     
-    // Custom modal functions for draft notifications
+    // Modal functions using global modal system
     function showSuccessModal(message, draftId) {
-        const modal = document.createElement('div');
-        modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999';
-        modal.innerHTML = `
-            <div style="background:white;padding:30px;border-radius:8px;max-width:400px;text-align:center;box-shadow:0 4px 6px rgba(0,0,0,0.1)">
-                <div style="color:#28a745;font-size:48px;margin-bottom:15px"><i class="fas fa-check-circle"></i></div>
-                <h3 style="margin:0 0 10px 0;color:#333">${message}</h3>
-                ${draftId ? `<p style="color:#666;margin:10px 0">Draft ID: ${draftId}</p>` : ''}
-                <button onclick="this.closest('div[style*=fixed]').remove()" style="background:#3c6e71;color:white;border:none;padding:10px 30px;border-radius:4px;cursor:pointer;margin-top:15px;font-size:16px">OK</button>
-            </div>
-        `;
-        document.body.appendChild(modal);
+        const details = draftId ? { 'Draft ID': draftId } : null;
+        globalModal.success('Draft Saved Successfully', message, null);
     }
     
     function showErrorModal(message) {
-        const modal = document.createElement('div');
-        modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999';
-        modal.innerHTML = `
-            <div style="background:white;padding:30px;border-radius:8px;max-width:400px;text-align:center;box-shadow:0 4px 6px rgba(0,0,0,0.1)">
-                <div style="color:#dc3545;font-size:48px;margin-bottom:15px"><i class="fas fa-exclamation-circle"></i></div>
-                <h3 style="margin:0 0 10px 0;color:#333">Error</h3>
-                <div style="color:#666;margin:10px 0;text-align:left">${message}</div>
-                <button onclick="this.closest('div[style*=fixed]').remove()" style="background:#3c6e71;color:white;border:none;padding:10px 30px;border-radius:4px;cursor:pointer;margin-top:15px;font-size:16px">OK</button>
-            </div>
-        `;
-        document.body.appendChild(modal);
+        globalModal.error('Validation Error', message);
     }
 });
 </script>
