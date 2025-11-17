@@ -22,7 +22,7 @@
             <ul class="dropdown-menu">
                     <li><a href="{% url 'site_diary:adminclientproject' %}" {% if request.resolver_match.url_name == 'adminclientproject' %}class="active"{% endif %}>Client Projects</a></li>
                   <li><a href="{% url 'admin_side:subcontractor_list' %}" {% if request.resolver_match.url_name == 'subcontractor_list' %}class="active"{% endif %}>Subcontractors</a></li>
-                               
+                  <li><a href="{% url 'admin_side:assign_project' %}" {% if request.resolver_match.url_name == 'assign_project' %}class="active"{% endif %}>Assign Project</a></li>
                  <li><a href="{% url 'site_diary:admindiaryreviewer' %}" {% if request.resolver_match.url_name == 'admindiaryreviewer' %}class="active"{% endif %}>Project History</a></li>
                  <li><a href="{% url 'site_diary:adminreports' %}" {% if request.resolver_match.url_name == 'adminreports' %}class="active"{% endif %}>Reports & Analytics</a></li>
 
@@ -33,7 +33,7 @@
             <a href="#" class="dropdown-toggle" data-section="admin">Admin Tools <i class="fas fa-caret-down"></i></a>
             <ul class="dropdown-menu">
                 <li><a href="{% url 'admin_side:admin_user_list' %}" {% if request.resolver_match.url_name == 'admin_user_list' %}class="active"{% endif %}>User Management</a></li>
-              
+                
                 <li><a href="{% url 'chatbot:adminmessagecenter' %}" {% if request.resolver_match.url_name == 'adminmessagecenter' %}class="active"{% endif %}>Message Center</a></li>
                 <li><a href="{% url 'admin_side:admin_settings' %}" {% if request.resolver_match.url_name == 'admin_settings' %}class="active"{% endif %}>Settings</a></li>
             </ul>

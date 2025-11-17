@@ -124,6 +124,32 @@ def admin_home(request):
 @require_admin_role
 def admin_settings(request):
     """Admin settings page"""
+    if request.method == 'POST' and request.POST.get('action') == 'update_profile':
+        try:
+            admin_profile = AdminProfile.objects.get(user=request.user)
+            user = request.user
+            
+            # Update user fields
+            user.first_name = request.POST.get('firstName', '')
+            user.last_name = request.POST.get('lastName', '')
+            user.email = request.POST.get('email', user.email)
+            user.save()
+            
+            # Update admin profile fields
+            admin_profile.phone = request.POST.get('phone', '')
+            
+            # Handle profile picture upload
+            if request.FILES.get('profile_pic'):
+                admin_profile.profile_pic = request.FILES['profile_pic']
+            
+            admin_profile.save()
+            
+            messages.success(request, 'Profile updated successfully!')
+            return redirect('admin_side:admin_settings')
+            
+        except Exception as e:
+            messages.error(request, f'Error updating profile: {str(e)}')
+    
     admin_profile = AdminProfile.objects.get(user=request.user)
     
     context = {
@@ -193,17 +219,35 @@ def security_logs(request):
 @require_http_methods(["POST"])
 def unlock_user(request):
     """Unlock a user blocked by Axes"""
-    from axes.utils import reset
-    
     try:
         data = json.loads(request.body)
         username = data.get('username')
         ip_address = data.get('ip_address')
         
         # Reset the lockout for this username and IP
-        reset(username=username, ip_address=ip_address)
+        from axes.utils import reset
         
-        return JsonResponse({'success': True, 'message': 'User unlocked successfully'})
+        # Try different reset methods based on axes version
+        try:
+            # Method 1: Reset by username and IP separately
+            reset(username=username)
+            reset(ip=ip_address)
+        except TypeError:
+            try:
+                # Method 2: Reset by credentials dict
+                reset(credentials={'username': username, 'ip_address': ip_address})
+            except TypeError:
+                # Method 3: Reset all for this IP
+                from axes.models import AccessAttempt
+                AccessAttempt.objects.filter(
+                    username=username, 
+                    ip_address=ip_address
+                ).delete()
+        
+        return JsonResponse({'success': True, 'message': 'Account unlocked successfully'})
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'message': 'Invalid JSON data'})
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)})
 

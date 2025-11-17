@@ -182,32 +182,15 @@ SUPABASE_BUCKET = os.getenv('SUPABASE_BUCKET', 'project-images')
 SUPABASE_PORTFOLIO_BUCKET = 'portfolio_project_images'
 SUPABASE_BLOG_BUCKET = 'blog_images'
 
-# Media files
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
-
-# Render.com Media Configuration
-USE_RENDER_STATIC = os.getenv('USE_RENDER_STATIC', 'False').lower() == 'true'
-
-# Enhanced Media Configuration for Render
-if USE_RENDER_STATIC and not DEBUG:
-    # Production on Render - serve all media as static files
-    MEDIA_URL = '/static/media/'
-    MEDIA_ROOT = BASE_DIR / 'static' / 'media'
-    
-    # Ensure all media directories are collected
-    STATICFILES_DIRS = [
-        BASE_DIR / "static",
-        BASE_DIR / "static/media",
-        BASE_DIR / "static/media/videos",
-        BASE_DIR / "static/media/profile_pics",
-        BASE_DIR / "static/media/projects",
-    ]
+# Media files configuration
+if SUPABASE_URL and SUPABASE_KEY:
+    # Use Supabase storage for media files
+    DEFAULT_FILE_STORAGE = 'portfolio.storage.PortfolioSupabaseStorage'
+    MEDIA_URL = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_PORTFOLIO_BUCKET}/"
 else:
-    # Local development storage
+    # Fallback to local storage
     MEDIA_URL = '/media/'
     MEDIA_ROOT = BASE_DIR / 'media'
-    STATICFILES_DIRS = [BASE_DIR / "static"]
 
 # Login/logout URLs
 LOGIN_URL = '/accounts/sitemanager/login/'

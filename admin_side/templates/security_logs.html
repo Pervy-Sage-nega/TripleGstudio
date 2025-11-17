@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="{% static 'css/admincss/adminreports.css' %}">
     <link rel="stylesheet" href="{% static 'css/admincss/header.css' %}">
     <link rel="stylesheet" href="{% static 'css/admincss/nav.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sitecss/global-modal.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <style>
@@ -239,6 +240,7 @@
 {% endblock %}
 {% block extra_scripts %}
 <script src="{% static 'js/adminjs/mobile-btn.js' %}"></script>
+<script src="{% static 'js/sitejs/global-modal.js' %}"></script>
 <script>
 // Attempts Trend Chart
 var attemptsChart = echarts.init(document.getElementById('attemptsChart'));
@@ -298,25 +300,31 @@ window.addEventListener('resize', function() {
 });
 
 function unlockUser(username, ip) {
-    if (confirm(`Unlock access for ${username} (${ip})?`)) {
-        fetch('{% url "admin_side:unlock_user" %}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: JSON.stringify({ username: username, ip_address: ip })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('User unlocked successfully');
-                location.reload();
-            } else {
-                alert('Failed to unlock user');
-            }
-        });
-    }
+    globalModal.warning(
+        'Unlock Account',
+        `Are you sure you want to unlock access for user "${username}" from IP address "${ip}"?`,
+        () => {
+            return fetch('{% url "admin_side:unlock_user" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ username: username, ip_address: ip })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    globalModal.success('Success', data.message, () => location.reload());
+                } else {
+                    globalModal.error('Error', 'Failed to unlock user: ' + data.message);
+                }
+            })
+            .catch(error => {
+                globalModal.error('Network Error', 'Unable to connect to server. Please try again.');
+            });
+        }
+    );
 }
 </script>
 {% endblock %}

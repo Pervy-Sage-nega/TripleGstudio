@@ -6,6 +6,7 @@ from django.utils import timezone
 from datetime import timedelta
 import random
 import string
+from .storage import AdminProfileStorage, SiteManagerProfileStorage, ClientProfileStorage
 
 
 class Profile(models.Model):
@@ -21,7 +22,7 @@ class Profile(models.Model):
     assigned_architect = models.CharField(max_length=100, blank=True, null=True)
     project_name = models.CharField(max_length=200, blank=True, null=True)
     project_start = models.DateField(blank=True, null=True)
-    profile_pic = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
+    profile_pic = models.ImageField(upload_to='profile_pics/', storage=ClientProfileStorage(), blank=True, null=True)
 
     class Meta:
         verbose_name = 'Client Profile'
@@ -90,7 +91,7 @@ class AdminProfile(models.Model):
     specialization = models.CharField(max_length=200, blank=True, null=True)
     
     # Profile picture
-    profile_pic = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
+    profile_pic = models.ImageField(upload_to='profile_pics/', storage=AdminProfileStorage(), blank=True, null=True)
     
     # Email verification fields
     email_verified = models.BooleanField(default=False)
@@ -216,7 +217,7 @@ class SiteManagerProfile(models.Model):
     company_department = models.CharField(max_length=100, blank=True, null=True)
     
     # Profile picture
-    profile_pic = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
+    profile_pic = models.ImageField(upload_to='profile_pics/', storage=SiteManagerProfileStorage(), blank=True, null=True)
     
     # Email verification fields
     email_verified = models.BooleanField(default=False)
@@ -333,7 +334,7 @@ class SuperAdminProfile(models.Model):
     notes = models.TextField(blank=True, null=True)
     
     # Profile picture
-    profile_pic = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
+    profile_pic = models.ImageField(upload_to='profile_pics/', storage=AdminProfileStorage(), blank=True, null=True)
     last_login_ip = models.GenericIPAddressField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

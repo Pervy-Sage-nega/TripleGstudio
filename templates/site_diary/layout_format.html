@@ -47,6 +47,7 @@ You can customize this as needed for your project.
                     <a href="{% url 'site_diary:sitedraft' %}" class="{% if request.resolver_match.url_name == 'sitedraft' %}active{% endif %}">Drafts</a>
                     <a href="{% url 'site_diary:history' %}" class="{% if request.resolver_match.url_name == 'history' %}active{% endif %}">History</a>
                     <a href="{% url 'site_diary:reports' %}" class="{% if request.resolver_match.url_name == 'reports' %}active{% endif %}">Reports</a>
+                   
                 </div>
             </li>
             <li><a href="{% url 'site_diary:settings' %}" class="{% if request.resolver_match.url_name == 'settings' %}active{% endif %}">Settings</a></li>
