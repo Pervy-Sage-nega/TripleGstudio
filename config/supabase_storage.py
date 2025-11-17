@@ -9,7 +9,7 @@ from urllib.parse import urljoin
 class SupabaseStorage(Storage):
     def __init__(self):
         self.supabase_url = os.getenv('SUPABASE_URL')
-        self.supabase_key = os.getenv('SUPABASE_KEY')
+        self.supabase_key = os.getenv('SUPABASE_SERVICE_KEY', os.getenv('SUPABASE_KEY'))
         self.bucket_name = os.getenv('SUPABASE_BUCKET', 'project-images')
         self.base_url = f"{self.supabase_url}/storage/v1/object/public/{self.bucket_name}/"
         

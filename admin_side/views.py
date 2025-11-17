@@ -126,6 +126,8 @@ def admin_settings(request):
     """Admin settings page"""
     if request.method == 'POST' and request.POST.get('action') == 'update_profile':
         try:
+            print(f"POST data: {request.POST}")
+            print(f"FILES data: {request.FILES}")
             admin_profile = AdminProfile.objects.get(user=request.user)
             user = request.user
             
@@ -141,8 +143,20 @@ def admin_settings(request):
             # Handle profile picture upload
             if request.FILES.get('profile_pic'):
                 admin_profile.profile_pic = request.FILES['profile_pic']
+                print(f"Profile pic uploaded: {request.FILES['profile_pic'].name}")
+                print(f"Before save - profile_pic field: {admin_profile.profile_pic}")
             
-            admin_profile.save()
+            try:
+                admin_profile.save()
+                print(f"After save - profile_pic field: {admin_profile.profile_pic}")
+                
+                # Refresh from database
+                admin_profile.refresh_from_db()
+                print(f"After refresh - profile_pic field: {admin_profile.profile_pic}")
+            except Exception as save_error:
+                print(f"Error during save: {save_error}")
+                import traceback
+                traceback.print_exc()
             
             messages.success(request, 'Profile updated successfully!')
             return redirect('admin_side:admin_settings')
