@@ -4,7 +4,6 @@
 {% block extra_head %}
     <link rel="stylesheet" href="{% static 'css/admincss/header.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/dashboard.css' %}">
-    
     <link rel="stylesheet" href="{% static 'css/sitecss/reports.css' %}">
     <link rel="stylesheet" href="{% static 'css/sitecss/history.css' %}">
     <link rel="stylesheet" href="{% static 'css/admincss/blogmanagement.css' %}">
@@ -12,8 +11,7 @@
     <link rel="stylesheet" href="{% static 'css/admincss/nav.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/admincss/projectmanagement.css' %}">
-    
-     
+    <link rel="stylesheet" href="{% static 'css/sitecss/global-modal.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -109,7 +107,8 @@
                 <thead>
                     <tr>
                         <th>Title</th>
-                        <th>Status</th>
+                        <th>Project Status</th>
+                        <th>Publish Status</th>
                         <th>Visibility</th>
                         <th>Completion Date</th>
                         <th>Actions</th>
@@ -118,11 +117,16 @@
                 </thead>
                 <tbody>
                     {% for project in all_projects %}
-                    <tr class="project-row" data-status="{{ project.status|default:'draft' }}" data-featured="{{ project.featured|yesno:'true,false' }}">
+                    <tr class="project-row" data-status="{{ project.status }}" data-publish-status="{{ project.publish_status }}" data-featured="{{ project.featured|yesno:'true,false' }}">
                         <td class="table-project-name">{{ project.title }}</td>
                         <td>
-                            <span class="status-badge status-{{ project.status|default:'draft' }}">
-                                {{ project.get_status_display|default:"Draft" }}
+                            <span class="status-badge status-{{ project.status }}">
+                                {{ project.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="status-badge status-{{ project.publish_status }}">
+                                {{ project.get_publish_status_display }}
                             </span>
                         </td>
                         <td>
@@ -198,7 +202,7 @@
                 </div>
                 <div class="blog-card-actions" onclick="event.stopPropagation()">
                     <button class="btn btn-primary" onclick="editProject({{ project.id }})"><i class="fas fa-edit"></i> Edit</button>
-                    {% if project.status == 'draft' or not project.status %}
+                    {% if project.publish_status == 'draft' %}
                     <button class="btn btn-success" onclick="publishDraft({{ project.id }})"><i class="fas fa-upload"></i> Publish</button>
                     {% else %}
                     <button class="btn btn-info" onclick="window.open('{{ project.get_absolute_url }}', '_blank')"><i class="fas fa-eye"></i> View</button>
@@ -260,7 +264,19 @@
 
 {% block extra_scripts %}
 {% csrf_token %}
+<script src="{% static 'js/sitejs/global-modal.js' %}"></script>
 <script>
+// Show success/error messages using global modal
+{% if messages %}
+    {% for message in messages %}
+        {% if message.tags == 'success' %}
+            document.addEventListener('DOMContentLoaded', () => globalModal.success('Success', '{{ message|escapejs }}'));
+        {% elif message.tags == 'error' %}
+            document.addEventListener('DOMContentLoaded', () => globalModal.error('Error', '{{ message|escapejs }}'));
+        {% endif %}
+    {% endfor %}
+{% endif %}
+
 console.log('JavaScript loading...');
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded, initializing table functionality...');
@@ -340,7 +356,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     shouldShow = true;
                     break;
                 case 'draft':
-                    shouldShow = rowStatus === 'draft' || !rowStatus;
+                    shouldShow = row.dataset.publishStatus === 'draft';
                     break;
                 case 'planned':
                     shouldShow = rowStatus === 'planned';
@@ -376,7 +392,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     shouldShow = true;
                     break;
                 case 'draft':
-                    shouldShow = cardStatus === 'draft' || !cardStatus;
+                    shouldShow = card.dataset.publishStatus === 'draft';
                     break;
                 case 'planned':
                     shouldShow = cardStatus === 'planned';
@@ -471,44 +487,52 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Publish draft function
     window.publishDraft = function(projectId) {
-        if (confirm('Are you sure you want to publish this draft? It will become publicly visible.')) {
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = `/portfolio/publish/${projectId}/`;
-            
-            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
-            if (csrfToken) {
-                const csrfInput = document.createElement('input');
-                csrfInput.type = 'hidden';
-                csrfInput.name = 'csrfmiddlewaretoken';
-                csrfInput.value = csrfToken.value;
-                form.appendChild(csrfInput);
+        globalModal.warning(
+            'Publish Draft',
+            'Are you sure you want to publish this draft? It will become publicly visible.',
+            () => {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/portfolio/publish/${projectId}/`;
+                
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+                if (csrfToken) {
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = 'csrfmiddlewaretoken';
+                    csrfInput.value = csrfToken.value;
+                    form.appendChild(csrfInput);
+                }
+                
+                document.body.appendChild(form);
+                form.submit();
             }
-            
-            document.body.appendChild(form);
-            form.submit();
-        }
+        );
     };
     
     // Delete project function
     window.deleteProject = function(projectId) {
-        if (confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = `/portfolio/delete/${projectId}/`;
-            
-            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
-            if (csrfToken) {
-                const csrfInput = document.createElement('input');
-                csrfInput.type = 'hidden';
-                csrfInput.name = 'csrfmiddlewaretoken';
-                csrfInput.value = csrfToken.value;
-                form.appendChild(csrfInput);
+        globalModal.warning(
+            'Delete Project',
+            'Are you sure you want to delete this project? This action cannot be undone.',
+            () => {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/portfolio/delete/${projectId}/`;
+                
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+                if (csrfToken) {
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = 'csrfmiddlewaretoken';
+                    csrfInput.value = csrfToken.value;
+                    form.appendChild(csrfInput);
+                }
+                
+                document.body.appendChild(form);
+                form.submit();
             }
-            
-            document.body.appendChild(form);
-            form.submit();
-        }
+        );
     };
 
     // Refresh button functionality
@@ -526,31 +550,39 @@ document.addEventListener('DOMContentLoaded', function() {
         const selectedIds = Array.from(document.querySelectorAll('.project-checkbox:checked')).map(cb => cb.value);
         
         if (!action) {
-            alert('Please select an action.');
+            globalModal.error('No Action Selected', 'Please select an action.');
             return;
         }
         
         if (selectedIds.length === 0) {
-            alert('Please select at least one project.');
+            globalModal.error('No Projects Selected', 'Please select at least one project.');
             return;
         }
         
         if (action === 'draft') {
-            if (confirm(`Are you sure you want to set ${selectedIds.length} project(s) to draft?`)) {
-                bulkUpdateStatus(selectedIds, 'draft');
-            }
+            globalModal.warning(
+                'Set to Draft',
+                `Are you sure you want to set ${selectedIds.length} project(s) to draft?`,
+                () => bulkUpdateStatus(selectedIds, 'draft')
+            );
         } else if (action === 'publish') {
-            if (confirm(`Are you sure you want to publish ${selectedIds.length} project(s)?`)) {
-                bulkUpdateStatus(selectedIds, 'completed');
-            }
+            globalModal.warning(
+                'Publish Projects',
+                `Are you sure you want to publish ${selectedIds.length} project(s)?`,
+                () => bulkUpdateStatus(selectedIds, 'completed')
+            );
         } else if (action === 'unpublish') {
-            if (confirm(`Are you sure you want to unpublish ${selectedIds.length} project(s)?`)) {
-                bulkUpdateStatus(selectedIds, 'draft');
-            }
+            globalModal.warning(
+                'Unpublish Projects',
+                `Are you sure you want to unpublish ${selectedIds.length} project(s)?`,
+                () => bulkUpdateStatus(selectedIds, 'draft')
+            );
         } else if (action === 'delete') {
-            if (confirm(`Are you sure you want to delete ${selectedIds.length} project(s)? This action cannot be undone.`)) {
-                bulkDeleteProjects(selectedIds);
-            }
+            globalModal.warning(
+                'Delete Projects',
+                `Are you sure you want to delete ${selectedIds.length} project(s)? This action cannot be undone.`,
+                () => bulkDeleteProjects(selectedIds)
+            );
         }
     };
     

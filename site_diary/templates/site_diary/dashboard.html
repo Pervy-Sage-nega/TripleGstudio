@@ -281,6 +281,38 @@
     <script src="{% static 'js/sitejs/dashboardjs.js' %}"></script>
     
     <script>
+        // Update user info with profile data
+        function updateUserInfo() {
+            const userName = document.querySelector('.user-name');
+            const userRole = document.querySelector('.user-role');
+            const userAvatar = document.querySelector('.user-avatar');
+            
+            // Check if user has SiteManagerProfile
+            {% if user.sitemanagerprofile %}
+                {% if user.sitemanagerprofile.profile_pic %}
+                    userAvatar.innerHTML = `<img src="{{ user.sitemanagerprofile.profile_pic.url }}" alt="Profile" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+                {% endif %}
+                {% if user.sitemanagerprofile.site_role %}
+                    userRole.textContent = '{{ user.sitemanagerprofile.site_role.display_name }}';
+                {% endif %}
+            {% elif user.adminprofile %}
+                {% if user.adminprofile.profile_pic %}
+                    userAvatar.innerHTML = `<img src="{{ user.adminprofile.profile_pic.url }}" alt="Profile" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+                {% endif %}
+                userRole.textContent = '{{ user.adminprofile.get_admin_role_display }}';
+            {% elif user.profile %}
+                {% if user.profile.profile_pic %}
+                    userAvatar.innerHTML = `<img src="{{ user.profile.profile_pic.url }}" alt="Profile" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+                {% endif %}
+                userRole.textContent = '{{ user.profile.get_role_display }}';
+            {% endif %}
+        }
+        
+        // Load profile on page ready
+        document.addEventListener('DOMContentLoaded', updateUserInfo);
+    </script>
+    
+    <script>
         function showRejectionModal(title, message) {
             document.getElementById('rejectionTitle').textContent = title;
             document.getElementById('rejectionMessage').textContent = message;

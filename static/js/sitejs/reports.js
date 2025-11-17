@@ -3,6 +3,35 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeCharts();
     initializeProjectDataFetching();
     initializeExportFunctions();
+    
+    // Filter toggle functionality
+    const toggleFilter = document.getElementById('toggleFilter');
+    const filterContent = document.getElementById('filterContent');
+    
+    if (toggleFilter && filterContent) {
+        console.log('Filter toggle initialized');
+        toggleFilter.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Toggle clicked');
+            
+            const isVisible = filterContent.style.display !== 'none';
+            filterContent.style.display = isVisible ? 'none' : 'block';
+            
+            const span = this.querySelector('span');
+            const icon = this.querySelector('i');
+            
+            if (isVisible) {
+                span.textContent = 'Show Filters';
+                icon.className = 'fas fa-chevron-down';
+            } else {
+                span.textContent = 'Hide Filters';
+                icon.className = 'fas fa-chevron-up';
+            }
+        });
+    } else {
+        console.log('Filter elements not found:', toggleFilter, filterContent);
+    }
 });
 
 function initializeCharts() {
@@ -143,6 +172,7 @@ function initializeCharts() {
 
     // Equipment Usage Hours Chart - Pie Chart
     const materialsChart = document.getElementById('materialsChart');
+    console.log('Equipment Stats Data:', data.equipmentStats);
     if (materialsChart && data.equipmentStats && data.equipmentStats.length > 0) {
         const materialsEChart = echarts.init(materialsChart);
         

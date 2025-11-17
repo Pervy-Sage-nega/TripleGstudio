@@ -5,6 +5,7 @@ from django.urls import reverse
 from django.contrib.auth.models import User
 from datetime import datetime
 import json
+from .storage import PortfolioSupabaseStorage
 
 # Create your models here.
 
@@ -29,10 +30,14 @@ class Category(models.Model):
 class Project(models.Model):
     """Main project model - no client information for privacy"""
     STATUS_CHOICES = [
-        ('draft', 'Draft'),
         ('planned', 'Planned'),
         ('ongoing', 'Ongoing'),
         ('completed', 'Completed'),
+    ]
+    
+    PUBLISH_STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('published', 'Published'),
     ]
     
     title = models.CharField(max_length=255)
@@ -50,9 +55,10 @@ class Project(models.Model):
     completion_date = models.DateField()
     lead_architect = models.CharField(max_length=255)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='planned')
+    publish_status = models.CharField(max_length=20, choices=PUBLISH_STATUS_CHOICES, default='draft')
     featured = models.BooleanField(default=False, help_text="Show in featured projects section")
-    hero_image = models.ImageField(upload_to='projects/hero/', blank=True, null=True)
-    video = models.FileField(upload_to='projects/videos/', blank=True, null=True)
+    hero_image = models.ImageField(upload_to='projects/hero/', storage=PortfolioSupabaseStorage(), blank=True, null=True)
+    video = models.FileField(upload_to='projects/videos/', storage=PortfolioSupabaseStorage(), blank=True, null=True)
     
     # SEO Fields
     seo_meta_title = models.CharField(
@@ -104,7 +110,7 @@ class Project(models.Model):
 class ProjectImage(models.Model):
     """Gallery images for projects"""
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField(upload_to='projects/gallery/')
+    image = models.ImageField(upload_to='projects/gallery/', storage=PortfolioSupabaseStorage())
     alt_text = models.CharField(max_length=255, help_text="Descriptive text for accessibility")
     order = models.PositiveIntegerField(default=0, help_text="Display order in gallery")
     

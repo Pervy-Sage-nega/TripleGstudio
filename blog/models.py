@@ -5,6 +5,7 @@ from django.urls import reverse
 from django.utils import timezone
 from PIL import Image
 import os
+from .storage import BlogSupabaseStorage
 
 # Create your models here.
 
@@ -81,6 +82,7 @@ class BlogPost(models.Model):
     # Media
     featured_image = models.ImageField(
         upload_to='blog/featured_images/', 
+        storage=BlogSupabaseStorage(),
         blank=True, 
         null=True,
         help_text="Main image for the blog post"
@@ -367,7 +369,7 @@ class CommentLike(models.Model):
 class BlogImage(models.Model):
     """Additional images for blog posts (gallery)"""
     blog_post = models.ForeignKey(BlogPost, on_delete=models.CASCADE, related_name='gallery_images')
-    image = models.ImageField(upload_to='blog/gallery/')
+    image = models.ImageField(upload_to='blog/gallery/', storage=BlogSupabaseStorage())
     caption = models.CharField(max_length=200, blank=True, help_text="Image caption")
     alt_text = models.CharField(max_length=200, blank=True, help_text="Alt text for accessibility")
     order = models.IntegerField(default=0, help_text="Display order")
@@ -407,7 +409,7 @@ class BlogImage(models.Model):
 class ContentImage(models.Model):
     """Images inserted within blog content"""
     blog_post = models.ForeignKey(BlogPost, on_delete=models.CASCADE, related_name='content_images')
-    image = models.ImageField(upload_to='blog/content/')
+    image = models.ImageField(upload_to='blog/content/', storage=BlogSupabaseStorage())
     alt_text = models.CharField(max_length=200, blank=True, help_text="Alt text for accessibility")
     caption = models.CharField(max_length=200, blank=True, help_text="Image caption")
     uploaded_date = models.DateTimeField(auto_now_add=True)

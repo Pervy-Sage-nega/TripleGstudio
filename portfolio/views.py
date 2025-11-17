@@ -36,14 +36,14 @@ def projectmanagement(request):
     
     # Get statistics for dashboard
     total_projects = projects.count()
-    draft_projects = projects.filter(status='draft').count()
+    draft_projects = projects.filter(publish_status='draft').count()
     completed_projects = projects.filter(status='completed').count()
     ongoing_projects = projects.filter(status='ongoing').count()
     planned_projects = projects.filter(status='planned').count()
     featured_projects = projects.filter(featured=True).count()
     
     # Get draft projects for the drafts section
-    draft_project_list = projects.filter(status='draft').order_by('-updated_at')
+    draft_project_list = projects.filter(publish_status='draft').order_by('-updated_at')
     
     # Get categories for filtering
     categories = Category.objects.all().order_by('name')
@@ -74,7 +74,7 @@ def projecttable(request):
     
     # Get statistics for dashboard
     total_projects = projects.count()
-    draft_projects = projects.filter(status='draft').count()
+    draft_projects = projects.filter(publish_status='draft').count()
     completed_projects = projects.filter(status='completed').count()
     ongoing_projects = projects.filter(status='ongoing').count()
     planned_projects = projects.filter(status='planned').count()
@@ -107,7 +107,7 @@ def project_list(request):
     search_query = request.GET.get('search', '').strip()
     
     # Start with published projects only (exclude drafts), optimizing queries
-    projects = Project.objects.select_related('category').prefetch_related('images').exclude(status='draft')
+    projects = Project.objects.select_related('category').prefetch_related('images').filter(publish_status='published')
     
     # Apply filters
     if year_filter != 'all':
@@ -163,14 +163,14 @@ def project_detail(request, project_id):
     project = get_object_or_404(
         Project.objects.select_related('category').prefetch_related(
             'images', 'stats', 'timeline'
-        ).exclude(status='draft'),
+        ).filter(publish_status='published'),
         id=project_id
     )
     
     # Get related projects (same category, excluding current and drafts)
     related_projects = Project.objects.filter(
         category=project.category
-    ).exclude(id=project.id).exclude(status='draft').select_related('category')[:3]
+    ).exclude(id=project.id).filter(publish_status='published').select_related('category')[:3]
     
     # Generate SEO data
     seo_manager = PortfolioSEOManager()
@@ -200,36 +200,46 @@ def project_detail(request, project_id):
 def create_project(request):
     """Create a new project with milestones"""
     try:
+        # Validate required fields
+        if not request.POST.get('title'):
+            messages.error(request, 'Project title is required.')
+            return redirect('portfolio:projectmanagement')
+        if not request.POST.get('description'):
+            messages.error(request, 'Project description is required.')
+            return redirect('portfolio:projectmanagement')
+        if not request.POST.get('category'):
+            messages.error(request, 'Project category is required.')
+            return redirect('portfolio:projectmanagement')
+        if not request.FILES.get('hero_image'):
+            messages.error(request, 'Cover image is required.')
+            return redirect('portfolio:projectmanagement')
+        
         with transaction.atomic():
             # Create the main project
             project = Project.objects.create(
                 title=request.POST.get('title'),
                 description=request.POST.get('description'),
                 category_id=request.POST.get('category'),
-                year=int(request.POST.get('year')),
-                location=request.POST.get('location'),
-                size=request.POST.get('size'),
-                duration=request.POST.get('duration'),
-                completion_date=request.POST.get('completion_date'),
-                lead_architect=request.POST.get('lead_architect'),
+                year=int(request.POST.get('year')) if request.POST.get('year') else 2024,
+                location=request.POST.get('location', ''),
+                size=request.POST.get('size', ''),
+                duration=request.POST.get('duration', ''),
+                completion_date=request.POST.get('completion_date') if request.POST.get('completion_date') else None,
+                lead_architect=request.POST.get('lead_architect', ''),
                 status=request.POST.get('status', 'planned'),
+                publish_status='published' if request.POST.get('publish') == 'on' else 'draft',
                 featured=request.POST.get('featured') == 'on',
+                hero_image=request.FILES['hero_image'],
                 # SEO fields
                 seo_meta_title=request.POST.get('seo_meta_title', ''),
                 seo_meta_description=request.POST.get('seo_meta_description', ''),
                 hero_image_alt=request.POST.get('hero_image_alt', ''),
             )
             
-            # Handle hero image upload
-            if request.FILES.get('hero_image'):
-                project.hero_image = request.FILES['hero_image']
-            
             # Handle video upload
             if request.FILES.get('video'):
                 project.video = request.FILES['video']
-            
-            # Save project with uploaded files
-            project.save()
+                project.save()
             
             # Handle gallery images
             gallery_images = request.FILES.getlist('gallery_images')
@@ -260,6 +270,9 @@ def create_project(request):
             return redirect('portfolio:projectmanagement')
             
     except Exception as e:
+        import traceback
+        print(f"Error creating project: {str(e)}")
+        print(traceback.format_exc())
         messages.error(request, f'Error creating project: {str(e)}')
         return redirect('portfolio:projectmanagement')
 
@@ -283,6 +296,7 @@ def edit_project(request, project_id):
             project.completion_date = request.POST.get('completion_date')
             project.lead_architect = request.POST.get('lead_architect')
             project.status = request.POST.get('status', 'planned')
+            project.publish_status = 'published' if request.POST.get('publish') == 'on' else 'draft'
             project.featured = request.POST.get('featured') == 'on'
             # SEO fields
             project.seo_meta_title = request.POST.get('seo_meta_title', '')
@@ -395,6 +409,28 @@ def save_draft(request):
 
 @require_admin_role
 @require_http_methods(["POST"])
+def publish_project(request, project_id):
+    """Publish a draft project"""
+    print(f"\n=== PUBLISH PROJECT DEBUG ===")
+    print(f"Project ID: {project_id}")
+    try:
+        project = get_object_or_404(Project, id=project_id)
+        print(f"Project found: {project.title}")
+        print(f"Current publish_status: {project.publish_status}")
+        project.publish_status = 'published'
+        project.save()
+        print(f"New publish_status: {project.publish_status}")
+        messages.success(request, f'Project "{project.title}" published successfully!')
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
+        messages.error(request, f'Error publishing project: {str(e)}')
+    print("===========================\n")
+    return redirect('portfolio:projecttable')
+
+@require_admin_role
+@require_http_methods(["POST"])
 def bulk_update_status(request):
     """Bulk update project status"""
     try:
@@ -405,16 +441,18 @@ def bulk_update_status(request):
             messages.error(request, 'Invalid request parameters.')
             return redirect('portfolio:projecttable')
         
-        updated_count = Project.objects.filter(id__in=project_ids).update(status=status)
+        # Map bulk actions to appropriate field updates
+        if status == 'draft':
+            updated_count = Project.objects.filter(id__in=project_ids).update(publish_status='draft')
+            status_display = 'Draft'
+        elif status == 'completed':
+            updated_count = Project.objects.filter(id__in=project_ids).update(publish_status='published')
+            status_display = 'Published'
+        else:
+            updated_count = Project.objects.filter(id__in=project_ids).update(status=status)
+            status_display = status.title()
         
-        status_display = {
-            'draft': 'Draft',
-            'planned': 'Planned', 
-            'ongoing': 'Ongoing',
-            'completed': 'Published'
-        }.get(status, status.title())
-        
-        messages.success(request, f'Successfully updated {updated_count} project(s) to {status_display} status.')
+        messages.success(request, f'Successfully updated {updated_count} project(s) to {status_display}.')
         
     except Exception as e:
         messages.error(request, f'Error updating projects: {str(e)}')

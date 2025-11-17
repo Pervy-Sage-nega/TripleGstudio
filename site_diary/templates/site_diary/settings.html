@@ -630,17 +630,19 @@
         }
         
         // Show success/error messages using global modal
-        {% if messages %}
-            {% for message in messages %}
-                {% if message.tags == 'success' %}
-                    globalModal.success('Success', '{{ message|escapejs }}');
-                {% elif message.tags == 'error' %}
-                    globalModal.error('Error', '{{ message|escapejs }}');
-                {% else %}
-                    globalModal.show({type: 'info', icon: 'fa-info-circle', title: 'Information', message: '{{ message|escapejs }}', showCancel: false, confirmText: 'OK'});
-                {% endif %}
-            {% endfor %}
-        {% endif %}
+        document.addEventListener('DOMContentLoaded', function() {
+            {% if messages %}
+                {% for message in messages %}
+                    {% if message.tags == 'success' %}
+                        globalModal.success('Success', '{{ message|escapejs }}');
+                    {% elif message.tags == 'error' %}
+                        globalModal.error('Error', '{{ message|escapejs }}');
+                    {% else %}
+                        globalModal.show({type: 'info', icon: 'fa-info-circle', title: 'Information', message: '{{ message|escapejs }}', showCancel: false, confirmText: 'OK'});
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        });
     </script>
     <script>
         // Profile image preview with validation
@@ -742,6 +744,18 @@
                 errorDiv.style.display = 'block';
             } else {
                 errorDiv.style.display = 'none';
+            }
+        });
+
+        // Password form submission
+        document.getElementById('passwordForm').addEventListener('submit', function(e) {
+            const password1 = document.getElementById('new_password1').value;
+            const password2 = document.getElementById('new_password2').value;
+            
+            if (password1 !== password2) {
+                e.preventDefault();
+                globalModal.error('Password Mismatch', 'The passwords you entered do not match. Please try again.');
+                return false;
             }
         });
 

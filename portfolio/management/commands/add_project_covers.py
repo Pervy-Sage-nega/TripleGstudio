@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from portfolio.models import Project
+from portfolio.models import Project, ProjectImage
 from django.core.files.base import ContentFile
 import os
 from pathlib import Path
@@ -11,7 +11,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         try:
             # Base path to project images
-            project_base_path = Path('d:/tripleG/project')
+            project_base_path = Path('d:/tripleG/sitepost')
             
             if not project_base_path.exists():
                 self.stdout.write(
@@ -67,7 +67,7 @@ class Command(BaseCommand):
                         with open(cover_image, 'rb') as f:
                             image_content = f.read()
                         
-                        # Save as hero image
+                        # Save as hero image (will upload to Supabase)
                         project.hero_image.save(
                             f"{project.title.replace(' ', '_')}_cover{cover_image.suffix}",
                             ContentFile(image_content),
@@ -81,6 +81,28 @@ class Command(BaseCommand):
                         updated_count += 1
                         self.stdout.write(f"  [OK] Added cover image: {cover_image.name}")
                         
+                        # Add remaining images to gallery
+                        gallery_count = 0
+                        for img_file in project_folder.glob('*'):
+                            if img_file.suffix.lower() in ['.jpg', '.jpeg', '.png', '.gif', '.bmp'] and img_file != cover_image:
+                                try:
+                                    with open(img_file, 'rb') as f:
+                                        img_content = f.read()
+                                    
+                                    ProjectImage.objects.create(
+                                        project=project,
+                                        image=ContentFile(img_content, name=f"{project.title.replace(' ', '_')}_gallery_{gallery_count}{img_file.suffix}"),
+                                        alt_text=f"{project.title} - Gallery Image {gallery_count + 1}",
+                                        order=gallery_count
+                                    )
+                                    gallery_count += 1
+                                    self.stdout.write(f"    [OK] Added gallery image: {img_file.name}")
+                                except Exception as e:
+                                    self.stdout.write(f"    [ERROR] Failed to add gallery image {img_file.name}: {str(e)}")
+                        
+                        if gallery_count > 0:
+                            self.stdout.write(f"  [OK] Added {gallery_count} gallery images")
+                        
                     except Exception as e:
                         self.stdout.write(
                             self.style.ERROR(f"  [ERROR] Failed to add cover image: {str(e)}")
@@ -90,9 +112,9 @@ class Command(BaseCommand):
             
             # Summary
             self.stdout.write(f"\n" + "="*50)
-            self.stdout.write("COVER IMAGE SUMMARY:")
+            self.stdout.write("IMAGE UPLOAD SUMMARY:")
             self.stdout.write(f"Total projects processed: {projects.count()}")
-            self.stdout.write(f"Cover images added: {updated_count}")
+            self.stdout.write(f"Projects with images added: {updated_count}")
             
             # Final check
             projects_with_covers = Project.objects.exclude(hero_image='').count()
@@ -102,7 +124,8 @@ class Command(BaseCommand):
             self.stdout.write(f"\nProject Cover Status:")
             for project in Project.objects.all():
                 status = "[HAS COVER]" if project.hero_image else "[NO COVER]"
-                self.stdout.write(f"  {status} {project.title}")
+                gallery_count = project.images.count()
+                self.stdout.write(f"  {status} {project.title} ({gallery_count} gallery images)")
             
         except Exception as e:
             self.stdout.write(

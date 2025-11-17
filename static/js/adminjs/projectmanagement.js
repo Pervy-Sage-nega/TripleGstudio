@@ -293,15 +293,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function saveAsDraft() {
-        var hiddenStatus = document.getElementById('hiddenStatus');
-        var statusDropdown = document.getElementById('status');
-        if (hiddenStatus) {
-            hiddenStatus.value = 'draft';
-            if (statusDropdown) statusDropdown.value = '';
-            document.getElementById('projectForm').submit();
-        } else {
-            alert('Draft status field missing. Please contact admin.');
-        }
+        document.getElementById('publish').checked = false;
+        document.getElementById('projectForm').submit();
     }
     
     function closeModal() {
@@ -390,6 +383,28 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     updateCharacterCount('seo_meta_title', 'seo_title_count');
     updateCharacterCount('seo_meta_description', 'seo_desc_count');
+    
+    // Form submission handler
+    const projectForm = document.getElementById('projectForm');
+    const publishBtn = document.getElementById('publishBtn');
+    
+    if (projectForm && publishBtn) {
+        let isPublishClick = false;
+        
+        publishBtn.addEventListener('click', function() {
+            isPublishClick = true;
+        });
+        
+        projectForm.addEventListener('submit', function(e) {
+            const publishCheckbox = document.getElementById('publish');
+            const statusDropdown = document.getElementById('status');
+            const hiddenStatus = document.getElementById('hiddenStatus');
+            
+            // Always use dropdown status, checkbox only controls publish_status
+            if (hiddenStatus) hiddenStatus.removeAttribute('name');
+            if (statusDropdown) statusDropdown.setAttribute('name', 'status');
+        });
+    }
     
     // Expose functions to global scope immediately
     window.addMilestone = addMilestone;

@@ -24,7 +24,7 @@
           <!-- Header -->
           <tr>
             <td align="center" style="background-color:#00273C;padding:40px 20px;border-radius:12px 12px 0 0;">
-              <img src="{{ request.scheme }}://{{ request.get_host }}{% load static %}{% static 'images/logostick.png' %}" alt="Triple G Logo" width="80" style="display:block;margin:0 auto 20px;">
+              <img src="https://{{ request.get_host }}{% load static %}{% static 'images/logostick.png' %}" alt="Triple G Logo" width="80" style="display:block;margin:0 auto 20px;">
               <h1 style="color:#ffffff;font-size:32px;font-weight:700;margin:0 0 10px;line-height:1.2;">Triple G BuildHub</h1>
               <p style="color:#c7c7c7;font-size:14px;margin:0;">Building Excellence, Delivering Dreams</p>
             </td>
@@ -35,7 +35,7 @@
           <tr>
             <td style="padding:30px 20px;">
               {% if campaign.blog_post.featured_image %}
-              <img src="{{ campaign.blog_post.featured_image.url }}" alt="{{ campaign.blog_post.title }}" width="560" style="width:100%;max-width:560px;height:auto;display:block;border-radius:8px;border:3px solid #FF7120;margin-bottom:20px;">
+              <img src="{% if 'http' in campaign.blog_post.featured_image.url %}{{ campaign.blog_post.featured_image.url }}{% else %}https://{{ request.get_host }}{{ campaign.blog_post.featured_image.url }}{% endif %}" alt="{{ campaign.blog_post.title }}" width="560" style="width:100%;max-width:560px;height:auto;display:block;border-radius:8px;border:3px solid #FF7120;margin-bottom:20px;">
               {% endif %}
               
               <h2 style="color:#00273C;font-size:24px;font-weight:700;margin:0 0 15px;line-height:1.3;">{{ campaign.blog_post.title }}</h2>
@@ -53,7 +53,7 @@
               <table role="presentation" cellspacing="0" cellpadding="0" border="0">
                 <tr>
                   <td style="border-radius:6px;background-color:#FF7120;">
-                    <a href="{{ click_tracking_url }}?url={{ campaign.blog_post.get_absolute_url }}" style="display:inline-block;padding:14px 32px;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;border-radius:6px;">Read Full Article</a>
+                    <a href="{{ click_tracking_url }}?url=https://{{ request.get_host }}{{ campaign.blog_post.get_absolute_url }}" style="display:inline-block;padding:14px 32px;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;border-radius:6px;">Read Full Article</a>
                   </td>
                 </tr>
               </table>

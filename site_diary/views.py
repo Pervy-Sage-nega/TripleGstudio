@@ -699,8 +699,16 @@ def dashboard(request):
     if request.user.is_staff:
         projects = Project.objects.filter(status__in=['planning', 'active', 'on_hold', 'completed', 'rejected'])
     else:
+        # Get projects through assignments or direct assignment
+        from admin_side.models import ProjectAssignment
+        assigned_projects = ProjectAssignment.objects.filter(
+            user=request.user, is_active=True
+        ).values_list('project_id', flat=True)
+        
         projects = Project.objects.filter(
-            Q(project_manager=request.user) | Q(architect=request.user),
+            Q(id__in=assigned_projects) | 
+            Q(project_manager=request.user) | 
+            Q(architect=request.user),
             status__in=['planning', 'active', 'on_hold', 'completed', 'rejected']
         )
     
@@ -2483,9 +2491,11 @@ def settings(request):
         
         elif action == 'change_password':
             # Handle password change
+            from django.contrib.auth import update_session_auth_hash
             password_form = PasswordChangeForm(request.user, request.POST)
             if password_form.is_valid():
-                password_form.save()
+                user = password_form.save()
+                update_session_auth_hash(request, user)
                 messages.success(request, 'Password changed successfully!')
             else:
                 for error in password_form.errors.values():
