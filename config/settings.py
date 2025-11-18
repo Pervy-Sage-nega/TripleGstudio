@@ -31,10 +31,22 @@ DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 # Parse ALLOWED_HOSTS from environment variable
 allowed_hosts_env = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1')
 ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_env.split(',')]
-if os.environ.get('RENDER_EXTERNAL_HOSTNAME'):
-    ALLOWED_HOSTS.append(os.environ.get('RENDER_EXTERNAL_HOSTNAME'))
+
+# Add Railway domain
 if os.environ.get('RAILWAY_PUBLIC_DOMAIN'):
     ALLOWED_HOSTS.append(os.environ.get('RAILWAY_PUBLIC_DOMAIN'))
+
+# Add Render domain (keeping for compatibility)
+if os.environ.get('RENDER_EXTERNAL_HOSTNAME'):
+    ALLOWED_HOSTS.append(os.environ.get('RENDER_EXTERNAL_HOSTNAME'))
+
+# Railway automatically sets RAILWAY_STATIC_URL and RAILWAY_PUBLIC_DOMAIN
+if os.environ.get('RAILWAY_ENVIRONMENT'):
+    # We're on Railway
+    ALLOWED_HOSTS.append('.railway.app')
+    # Railway provides these automatically
+    if os.environ.get('RAILWAY_PUBLIC_DOMAIN'):
+        ALLOWED_HOSTS.append(os.environ.get('RAILWAY_PUBLIC_DOMAIN'))
 
 # Application definition
 INSTALLED_APPS = [
